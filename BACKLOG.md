@@ -1,9 +1,10 @@
 # Cammelot — Strategic Engineering Backlog
 
-> **Status**: Active — Last updated 2026-04-02
+> **Status**: ✅ ALL 12 SPRINTS COMPLETE — Last updated 2026-04-02
 > **Vision**: A public-facing simulation of the Dutch healthcare crisis that anyone can visit, understand, and share. People watch tiny citizens live, get sick, queue, wait, and sometimes die — not from disease alone, but from a system that can't keep up.
 > **URL target**: `cammelot.health` — static Docker container, zero backend
-> **Runtime**: Self-contained `v4.html` (~2500 lines) — no bundler, no framework
+> **Runtime**: Self-contained `v4.html` (~4300 lines) — no bundler, no framework
+> **Next phase**: MAKE IT PRETTY — visual polish, animations, micro-interactions
 
 ---
 
@@ -585,3 +586,311 @@ A feature is "done" when:
 5. No regressions — all existing features still work
 6. A non-technical person can understand the feature without explanation
 7. Mobile layout doesn't break (Phase 3+)
+
+---
+
+## ═══════════════════════════════════════════════════════════
+## PHASE 6: MAKE IT PRETTY ✨
+## ═══════════════════════════════════════════════════════════
+
+> **Status**: NEW — This is the next engineering phase
+> **Goal**: Transform Cammelot from functional to *beautiful*. Every pixel, every animation, every transition should feel crafted. When someone shares this on LinkedIn, the first reaction should be "Wow, this is gorgeous" before they even understand what it simulates.
+> **Principle**: "If it doesn't make you feel something, it's not done."
+
+---
+
+### Epic 16: Map & Environment Polish
+
+#### 16.1 — Day/Night Cycle
+- Smooth color overlay transitioning from dawn (warm gold) → day (bright) → dusk (amber) → night (deep blue)
+- Cycle tied to simulation time: 1 full day = 100 ticks
+- Night: warm window glow on buildings (yellow rectangles), street lamps (small light circles)
+- Dawn/dusk: long shadows from buildings and agents
+- Stars appear at night (tiny twinkling white dots)
+- Moon phases (quarter, half, full) change every few sim days
+
+**Acceptance**: Watching the simulation for 2 minutes, you see a full day pass. Night feels cozy, not dark.
+
+#### 16.2 — Weather System
+- Random weather events: ☀ Sunny, 🌧 Rain, ❄ Snow, 🌫 Fog, ⛈ Storm
+- Rain: animated blue streaks falling across screen, puddle reflections, agents walk faster
+- Snow: white particles drifting down, accumulation on rooftops (white line on top)
+- Fog: semi-transparent white overlay, agents further from camera fade
+- Storm: darker sky, lightning flash (brief white flash), agents run to buildings
+- Weather indicator in top bar or ticker
+
+**Acceptance**: Weather makes the town feel alive. Rain makes you feel the cold.
+
+#### 16.3 — Seasonal Foliage
+- Trees change color: Spring (bright green) → Summer (deep green) → Autumn (orange/red/gold) → Winter (bare branches, snow)
+- Season tied to simulation cycle (1 season = 250 ticks)
+- Fallen leaves drift across roads in autumn (tiny particle system)
+- Flowers bloom in spring near buildings (small colored dots)
+
+**Acceptance**: The town visually changes through the year.
+
+#### 16.4 — Ambient Particle System
+- Dust motes floating in sunlight (tiny gold dots moving slowly)
+- Fireflies at night (small green-yellow blinks near park)
+- Birds flying across the sky (tiny V-shapes, occasional, high up)
+- Smoke from chimneys in winter (small grey wisps rising from buildings)
+
+**Acceptance**: The world breathes. There's always something subtle moving.
+
+---
+
+### Epic 17: Character Visual Polish
+
+#### 17.1 — Smooth Movement & Pathfinding
+- Replace current jittery linear movement with eased interpolation (lerp with easing)
+- Agents slow down approaching destinations, speed up from stops
+- Head-turn: agent sprite faces direction of movement (flip sprite horizontally)
+- Group walking: agents near each other match pace slightly
+- Intersection behavior: agents yield to each other at crossings (brief pause)
+
+**Acceptance**: Movement feels natural, not robotic. Characters look like they belong in the world.
+
+#### 17.2 — Enhanced Sprite Animations
+- Idle animation: subtle breathing (1px vertical oscillation every 2s)
+- Sitting: agents at the park occasionally sit on benches (different sprite pose)
+- Waving: when two agents start chatting, brief wave animation
+- Phone checking: idle agents occasionally look at phone (hand up gesture)
+- Stretching: agents leaving buildings stretch (arms up 1 frame)
+
+**Acceptance**: Even standing still, characters feel alive.
+
+#### 17.3 — Shadow & Lighting on Agents
+- Dynamic shadow direction matches day/night cycle
+- Agents near buildings cast shorter shadows
+- Night: agents near street lamps get a warm glow highlight
+- Indoor agents (in buildings) not visible but shown as silhouettes in windows
+
+**Acceptance**: Characters look grounded in the world, not floating on top.
+
+#### 17.4 — Status Visual Effects
+- Healing: small green + particles float up from recovering agents
+- Damage: small red - particles when HP drops
+- Level-up style flash when someone recovers from critical
+- Subtle heart-rate line near critical agents (like ECG blip)
+- Money particle (€) floats up from GP building when consultation happens
+
+**Acceptance**: You can tell what's happening to someone without clicking them.
+
+---
+
+### Epic 18: UI & Panel Polish
+
+#### 18.1 — Panel Transitions & Micro-animations
+- Panel content fades in (opacity 0→1, 200ms ease)
+- Tab switching: smooth crossfade between views
+- Numbers animate when changing (count-up effect for stats)
+- HP bar: smooth width transition (CSS transition 300ms)
+- Care pathway badges: sequential reveal animation (pop in one by one)
+- Feed entries: slide in from right with staggered delay
+
+**Acceptance**: Every panel change feels smooth and intentional. No jarring jumps.
+
+#### 18.2 — Improved Typography & Hierarchy
+- Portrait + name: larger, more prominent, with subtle text shadow
+- Section headers: small decorative line underneath (like ──── )
+- Condition tags: pill-shaped with subtle gradient backgrounds
+- Numbers in monospace, labels in sans-serif (already mostly done, refine)
+- Consistent spacing rhythm: 8px grid alignment
+- Subtle separator lines between sections (not harsh borders)
+
+**Acceptance**: The panel looks like a designed product, not a debug view.
+
+#### 18.3 — Dark Mode / Theme Toggle
+- Default: Current warm parchment theme
+- Dark mode: deep navy (#0d1117) panel background, light text, blue accents
+- Toggle: small 🌙/☀ icon in top bar
+- Preference saved to localStorage
+- Canvas game area stays the same (the map doesn't change)
+
+**Acceptance**: Late-night viewers get a comfortable dark mode.
+
+#### 18.4 — Sound Design (Optional Toggle)
+- Ambient: soft medieval/pastoral background loop (very quiet)
+- UI sounds: subtle click for button press, page turn for panel switch
+- Events: gentle chime for recovery, somber tone for death, crowd murmur for busy queues
+- Volume slider + mute button in settings
+- All sounds via Web Audio API (no external files — generate procedurally or use tiny base64 samples)
+- Default: OFF (don't annoy visitors)
+
+**Acceptance**: Turning sound on makes the simulation feel immersive. Turning it off feels normal.
+
+---
+
+### Epic 19: Data Visualization Polish
+
+#### 19.1 — Animated Charts
+- HP Sparkline: smooth line drawing animation on panel open
+- Queue bar chart: animated bars growing/shrinking per tick
+- Death counter: odometer-style number roll animation
+- Wait time gauge: circular progress indicator with gradient (green→red)
+- Population pie chart: alive vs dead vs in-treatment, animated segments
+
+**Acceptance**: Every chart feels alive, not static.
+
+#### 19.2 — Heatmap Overlay
+- Toggle button: "🗺 Heatmap" shows overlay on map
+- Color intensity = density of events in that area
+- Red hotspots near hospital/GP when queues are long
+- Death markers create persistent red zones
+- Recovery zones glow green
+- Opacity: 30-40% so map is still visible underneath
+
+**Acceptance**: One glance at the heatmap tells the whole story of where the system is failing.
+
+#### 19.3 — Timeline Scrubber
+- Horizontal timeline bar at bottom: shows cycle range (0 → current)
+- Key events marked as dots on timeline (red = death, green = recovery, blue = admission)
+- Click/drag to "rewind" — shows stats at that point in time (from saved snapshots)
+- Snap to significant moments: "3 deaths occurred here", "Treeknorm violated"
+- Only stores snapshots every 50 cycles to save memory
+
+**Acceptance**: A researcher can scrub through the simulation history and pinpoint when things went wrong.
+
+#### 19.4 — Connection Lines (Relationship Visualization)
+- When viewing an agent, draw faint lines to their GP, hospital, and recent chat partners
+- Line color: green (GP), red (hospital), blue (social)
+- Line style: dashed for "referred to", solid for "currently at"
+- Pulse animation on active referral lines
+- Shows the invisible network of care relationships
+
+**Acceptance**: Click a citizen and see their care network visualized on the map.
+
+---
+
+### Epic 20: Loading & First Impression
+
+#### 20.1 — Animated Loading Screen
+- While map image loads: show Cammelot crest/logo with loading bar
+- Pixel-art animation: tiny character walking across loading bar
+- Loading text: "Spawning citizens...", "Building the healthcare system...", "Calibrating crisis..."
+- Smooth transition: loading screen fades out, game fades in
+- Total load should feel intentional, not broken (even if fast)
+
+**Acceptance**: First 2 seconds feel polished, not like a broken page.
+
+#### 20.2 — Intro Camera Pan
+- After loading, camera starts zoomed in on the town center
+- Slow cinematic pan showing the hospital, GP, citizens walking
+- Text overlay: "Cammelot. Population: 45. A town like any other..."
+- After 5 seconds, zoom out to full view and start simulation
+- Skip button for returning visitors
+
+**Acceptance**: First-time visitors feel like they're entering a world, not opening a tool.
+
+#### 20.3 — Idle Animations & Attract Mode
+- If no interaction for 60 seconds: camera slowly pans around town
+- Occasional zoom-in on interesting events (death, admission, long queue)
+- Ticker continues running with dramatic events
+- Any click/touch exits attract mode
+
+**Acceptance**: Left running on a screen at a conference, it looks compelling.
+
+---
+
+### Epic 21: Performance & Technical Polish
+
+#### 21.1 — Canvas Rendering Optimization
+- Double-buffering: render to offscreen canvas, blit to visible
+- Only redraw dirty regions (track which agents moved)
+- Layer separation: static map layer (rarely redrawn) + dynamic agent layer
+- RequestAnimationFrame throttle to 30fps when tab is background
+- WebGL fallback for devices that support it (optional, big lift)
+
+**Acceptance**: 60fps with 60 agents on a 2020 MacBook Air.
+
+#### 21.2 — Progressive Asset Loading
+- Inline critical CSS (first paint in <100ms)
+- Map image: show blurred placeholder, sharp version loads async
+- Font loading: system font fallback → custom font swap (no FOIT)
+- Lazy-generate portraits (only when panel opens, not all on init)
+
+**Acceptance**: Lighthouse Performance score >90.
+
+#### 21.3 — IndexedDB Migration
+- Move from localStorage (5MB limit) to IndexedDB for saves
+- Support multiple save slots ("Save 1", "Save 2", "Save 3")
+- Auto-save indicator: small 💾 icon that pulses during save
+- Save metadata: date, cycle count, alive/dead count, thumbnail
+
+**Acceptance**: Save system feels like a real game. Multiple runs can be compared.
+
+#### 21.4 — PWA (Progressive Web App)
+- Service worker for offline capability
+- manifest.json with app metadata
+- "Add to Home Screen" support on mobile
+- Offline mode: simulation runs without network
+- App icon: Cammelot crest
+
+**Acceptance**: Install on phone, works offline, feels like a native app.
+
+---
+
+## Sprint Schedule — Phase 6
+
+### Sprint 13 — Environment & Atmosphere
+| # | Task | Epic | Priority |
+|---|------|------|----------|
+| 33 | Day/Night Cycle | 16.1 | 🔴 Critical |
+| 34 | Weather System | 16.2 | 🟡 High |
+| 35 | Seasonal Foliage | 16.3 | 🟢 Medium |
+| 36 | Ambient Particles | 16.4 | 🟢 Medium |
+
+### Sprint 14 — Character Polish
+| # | Task | Epic | Priority |
+|---|------|------|----------|
+| 37 | Smooth Movement | 17.1 | 🔴 Critical |
+| 38 | Enhanced Sprite Animations | 17.2 | 🟡 High |
+| 39 | Shadow & Lighting | 17.3 | 🟡 High |
+| 40 | Status Visual Effects | 17.4 | 🟡 High |
+
+### Sprint 15 — UI Polish
+| # | Task | Epic | Priority |
+|---|------|------|----------|
+| 41 | Panel Micro-animations | 18.1 | 🔴 Critical |
+| 42 | Typography & Hierarchy | 18.2 | 🟡 High |
+| 43 | Dark Mode | 18.3 | 🟢 Medium |
+| 44 | Sound Design | 18.4 | 🟢 Medium |
+
+### Sprint 16 — Data Viz & Charts
+| # | Task | Epic | Priority |
+|---|------|------|----------|
+| 45 | Animated Charts | 19.1 | 🟡 High |
+| 46 | Heatmap Overlay | 19.2 | 🟡 High |
+| 47 | Timeline Scrubber | 19.3 | 🟢 Medium |
+| 48 | Connection Lines | 19.4 | 🟢 Medium |
+
+### Sprint 17 — First Impression
+| # | Task | Epic | Priority |
+|---|------|------|----------|
+| 49 | Animated Loading Screen | 20.1 | 🔴 Critical |
+| 50 | Intro Camera Pan | 20.2 | 🟡 High |
+| 51 | Idle / Attract Mode | 20.3 | 🟢 Medium |
+
+### Sprint 18 — Technical Polish
+| # | Task | Epic | Priority |
+|---|------|------|----------|
+| 52 | Canvas Optimization | 21.1 | 🔴 Critical |
+| 53 | Progressive Asset Loading | 21.2 | 🟡 High |
+| 54 | IndexedDB Migration | 21.3 | 🟢 Medium |
+| 55 | PWA Support | 21.4 | 🟢 Medium |
+
+---
+
+## Delivered Sprints (1–12) ✅
+
+| Sprint | Theme | Commit | Lines Added |
+|--------|-------|--------|-------------|
+| 1 | Disease Catalog, Population, Engine | `bb904c4` | +320 |
+| 2 | Buildings, Doctors, Simulation Balance | `c87a0a8` | +265 |
+| 3 | Event Log, History, Stats, Persistence | `be904de` | +459 |
+| 4 | Vivid Characters (bios, portraits, chat, emotions) | `0aba735` | +467 |
+| 5-6 | Visible Queues + Onboarding | `f2d02b8` | +544 |
+| 7-8 | Panel Redesign + Mobile & Social | `5ee6d0b` | +230 |
+| 9-10 | Security Gate + Docker + FHIR + Cognitive | `84c0dec` | +278 |
+| 11-12 | Rigor, Research, ROI, Export + Logo Fix | `4c33f76` | +304 |
+| **Total** | **55 features across 12 sprints** | **10 commits** | **~4300 lines** |
