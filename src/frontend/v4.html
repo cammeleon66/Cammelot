@@ -578,6 +578,60 @@ body.dark-mode .event-ticker {
 .save-slots-btns{display:flex;gap:8px;margin-top:12px;justify-content:center}
 .save-slots-btns button{font:600 11px 'JetBrains Mono',monospace;padding:8px 16px;border:2px solid var(--frame2);border-radius:6px;cursor:pointer;background:rgba(255,255,255,.5);color:var(--ink);transition:.15s}
 .save-slots-btns button:hover{background:rgba(255,179,0,.2)}
+
+/* ═══ SPRINT 19: CAMMELOT GAZETTE ═══ */
+.gazette-header{text-align:center;border:2px solid var(--gold);border-radius:8px;padding:12px 10px 8px;margin-bottom:12px;background:rgba(255,179,0,.06);position:relative}
+.gazette-header::before,.gazette-header::after{content:'';display:block;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:4px 0}
+.gazette-header .gazette-title{font:700 15px 'Playfair Display',serif;color:var(--gold);letter-spacing:2px;text-transform:uppercase}
+.gazette-header .gazette-date{font:500 11px 'Inter',sans-serif;color:var(--ink2);margin-top:2px}
+.gazette-section{margin:10px 0;padding:8px 0;border-top:1px solid rgba(255,179,0,.15)}
+.gazette-section h4{font:700 11px 'JetBrains Mono',monospace;color:var(--gold);letter-spacing:1px;margin:0 0 6px;text-transform:uppercase}
+.gazette-headline{font:500 11px 'Inter',sans-serif;color:var(--ink);line-height:1.6;padding:2px 0 2px 8px;border-left:2px solid transparent;margin:3px 0;transition:.15s}
+.gazette-headline:hover{border-left-color:var(--gold);background:rgba(255,179,0,.05)}
+.gazette-headline .gz-name{color:var(--gold);cursor:pointer;font-weight:700;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:2px}
+.gazette-headline .gz-name:hover{color:var(--red);text-decoration-style:solid}
+.gazette-headline.gz-death{color:var(--red)}
+.gazette-headline.gz-good{color:var(--green)}
+.gazette-headline.gz-warn{color:#ff9800}
+.gazette-stats{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;font:500 11px 'JetBrains Mono',monospace;padding:6px 8px;background:rgba(0,0,0,.04);border-radius:6px}
+.gazette-stats .gs-item{display:flex;justify-content:space-between;padding:2px 0}
+.gazette-stats .gs-label{color:var(--ink2)}
+.gazette-stats .gs-value{color:var(--ink);font-weight:700}
+.gazette-stats .gs-value.bad{color:var(--red)}
+.gazette-stats .gs-value.good{color:var(--green)}
+.gazette-mood{text-align:center;padding:10px;font:600 13px 'Inter',sans-serif;border-radius:6px;margin:8px 0}
+.gazette-mood.mood-peaceful{color:var(--green);background:rgba(76,175,80,.08)}
+.gazette-mood.mood-uneasy{color:#ff9800;background:rgba(255,152,0,.08)}
+.gazette-mood.mood-tense{color:#f57c00;background:rgba(245,124,0,.08)}
+.gazette-mood.mood-alarming{color:var(--red);background:rgba(229,57,53,.08)}
+.gazette-mood.mood-critical{color:#b71c1c;background:rgba(183,28,28,.12)}
+.gazette-mayor{background:rgba(255,179,0,.08);border:1px solid rgba(255,179,0,.25);border-radius:8px;padding:10px 12px;margin:10px 0;font:italic 12px 'Inter',sans-serif;color:var(--ink);line-height:1.5}
+.gazette-mayor .mayor-prefix{font-weight:700;font-style:normal;color:var(--gold)}
+.gazette-trend{margin:8px 0}
+.gazette-trend .trend-row{display:flex;align-items:center;gap:6px;font:500 11px 'JetBrains Mono',monospace;padding:3px 0}
+.gazette-trend .trend-label{color:var(--ink2);min-width:80px}
+.gazette-trend .trend-values{color:var(--ink)}
+.gazette-trend .trend-up{color:var(--red)}
+.gazette-trend .trend-down{color:var(--green)}
+.gazette-trend .trend-record{background:var(--red);color:#fff;font-size:9px;padding:1px 4px;border-radius:3px;margin-left:4px}
+.gazette-trend .sparkline{font-size:10px;letter-spacing:1px;color:var(--gold);margin-left:4px}
+.gazette-history-card{border:1px solid rgba(255,179,0,.15);border-radius:6px;margin:6px 0;overflow:hidden;transition:.15s}
+.gazette-history-card:hover{border-color:var(--gold)}
+.gazette-history-card .ghc-header{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;cursor:pointer;font:600 11px 'JetBrains Mono',monospace;color:var(--ink2);background:rgba(255,179,0,.04)}
+.gazette-history-card .ghc-header:hover{background:rgba(255,179,0,.08)}
+.gazette-history-card .ghc-body{display:none;padding:8px 10px;font:11px 'Inter',sans-serif;color:var(--ink);line-height:1.5;border-top:1px solid rgba(255,179,0,.1)}
+.gazette-history-card .ghc-body.open{display:block}
+.gazette-running-totals{font:500 11px 'JetBrains Mono',monospace;padding:6px 8px;background:rgba(0,0,0,.03);border-radius:6px;color:var(--ink2);margin-top:6px}
+.gazette-running-totals b{color:var(--ink)}
+.cm.mayor .w{color:var(--gold);font-weight:700}
+.cm.mayor .t{color:#ffe082}
+body.dark-mode .gazette-header{border-color:rgba(255,179,0,.4);background:rgba(255,179,0,.08)}
+body.dark-mode .gazette-headline{color:var(--ink)}
+body.dark-mode .gazette-stats{background:rgba(255,255,255,.04)}
+body.dark-mode .gazette-mayor{background:rgba(255,179,0,.1);border-color:rgba(255,179,0,.3)}
+body.dark-mode .gazette-history-card{border-color:rgba(255,179,0,.2)}
+body.dark-mode .gazette-history-card .ghc-header{background:rgba(255,179,0,.06)}
+body.dark-mode .gazette-running-totals{background:rgba(255,255,255,.03)}
 </style>
 </head>
 <body>
@@ -622,6 +676,7 @@ body.dark-mode .event-ticker {
         <button class="cb" id="btn-qa">🔬 QA</button>
         <button class="cb" id="btn-heatmap">🗺 Heatmap</button>
         <button class="cb" id="btn-timeline">📈 Timeline</button>
+        <button class="cb warn" id="btn-gazette" title="The Cammelot Gazette">📰 Gazette</button>
         <div class="cinfo">FHIR <b id="sF">0</b> · A2A <b id="sM">0</b></div>
       </div>
       <div id="timeline-bar" class="timeline-bar" style="display:none">
@@ -755,8 +810,8 @@ const NO_WALK_ZONES = [
 // Building zones — agents inside are hidden on map
 const BUILDINGS = [
   { id:'hospital', x1:.26, y1:.03, x2:.46, y2:.22, label:'Cammelot Hospital' },
-  { id:'gp1_bldg', x1:.56, y1:.08, x2:.66, y2:.22, label:'GP Collins' },
-  { id:'gp2_bldg', x1:.18, y1:.38, x2:.26, y2:.46, label:'GP Bennett' },
+  { id:'gp1_bldg', x1:.56, y1:.08, x2:.66, y2:.22, label:'GP de Jong' },
+  { id:'gp2_bldg', x1:.18, y1:.38, x2:.26, y2:.46, label:'GP Bakker' },
 ];
 
 // Key destinations for agent pathfinding
@@ -766,7 +821,7 @@ const DESTINATIONS = {
   hospital:    { entrance:{x:.38,y:.23}, building:'hospital' },
 };
 function getGPDest(gpName){
-  if(gpName && gpName.includes('Bennett')) return DESTINATIONS.gp_bennett;
+  if(gpName && gpName.includes('Bakker')) return DESTINATIONS.gp_bennett;
   if(gpName && gpName.includes('Hayes')) return DESTINATIONS.gp_bennett;
   return DESTINATIONS.gp_collins;
 }
@@ -876,6 +931,14 @@ function logEvent(type, agent, detail) {
   });
 }
 // ═══ END EVENT LOG ═══
+
+// ═══ SPRINT 19: CAMMELOT GAZETTE DATA ═══
+const GAZETTE_HISTORY = []; // { day, season, year, entries, mood, moodClass, moodEmoji, stats, mayorComment, trendPeriod }
+const TREND_DATA = { periods: [] }; // each: { startCycle, endCycle, deaths, naturalDeaths, treatments, admissions, recoveries, queuePeak, avgWait, cost }
+let lastGazetteCycle = 0;
+let mayorBubbleTimer = 0;
+let mayorBubbleText = '';
+// ═══ END GAZETTE DATA ═══
 
 // ═══ SPRINT 5: VISIBLE QUEUES ═══
 const QUEUES = {
@@ -1683,7 +1746,11 @@ const CBS_AGE_DIST = [
 
 const FIRST_NAMES_M = ['Jan','Piet','Hendrik','Willem','Klaas','Dirk','Cornelis','Johannes','Gerrit','Pieter','Anton','Bert','Frans','Henk','Jaap','Karel','Marcel','Nico','Rob','Theo','Wim','Arjen','Bas','Dennis','Erik','Frank','Guus','Hans','Ivo','Joost','Lars','Maarten','Niels','Oscar','Paul','Roel','Sander','Tom','Victor','Wouter'];
 const FIRST_NAMES_F = ['Maria','Anna','Johanna','Cornelia','Elisabeth','Wilhelmina','Geertje','Hendrika','Jantje','Pietje','Anja','Bettie','Carla','Diana','Eva','Femke','Grietje','Hilde','Ingrid','Julia','Katrin','Linda','Marieke','Nienke','Olga','Petra','Rita','Sophie','Truus','Vera'];
-const SURNAMES = ['de Jong','Jansen','de Vries','van den Berg','van Dijk','Bakker','Janssen','Visser','Smit','Meijer','de Boer','Mulder','de Groot','Bos','Vos','Peters','Hendriks','van Leeuwen','Dekker','Brouwer','de Wit','Dijkstra','Smits','de Graaf','van der Meer','van der Linden','Kok','Jacobs','de Haan','Vermeulen','van den Heuvel','van der Veen','van den Broek','de Bruijn','de Bruin','van der Heijden','Schouten','van Beek','Willems','van Vliet','van de Ven','Hoekstra','Maas','Verhoeven','Koster','van Dam','van der Wal','Prins','Blom','Huisman'];
+const FIRST_NAMES_CHILD_M = ['Sem','Finn','Daan','Lucas','Levi','Noah','Milan','Jesse','Sam','Liam','Jayden','Tim','Thomas','Max','Ruben','Luuk','Stijn','Lars','Bram','Thijs'];
+const FIRST_NAMES_CHILD_F = ['Emma','Lotte','Sophie','Julia','Mila','Sara','Tess','Noor','Eva','Fleur','Isa','Lieke','Sanne','Roos','Zoë','Anna','Lisa','Amy','Lynn','Fenna'];
+const FIRST_NAMES_TEEN_M = ['Daan','Sem','Luca','Noah','Finn','Jesse','Thijs','Luuk','Milan','Jayden','Bram','Stijn','Max','Tim','Lars','Thomas','Sam','Ruben','Sven','Rick'];
+const FIRST_NAMES_TEEN_F = ['Emma','Lotte','Fleur','Noor','Julia','Sophie','Tess','Mila','Sara','Sanne','Lisa','Isa','Zoë','Eva','Lieke','Roos','Elin','Merel','Nina','Femke'];
+const SURNAMES= ['de Jong','Jansen','de Vries','van den Berg','van Dijk','Bakker','Janssen','Visser','Smit','Meijer','de Boer','Mulder','de Groot','Bos','Vos','Peters','Hendriks','van Leeuwen','Dekker','Brouwer','de Wit','Dijkstra','Smits','de Graaf','van der Meer','van der Linden','Kok','Jacobs','de Haan','Vermeulen','van den Heuvel','van der Veen','van den Broek','de Bruijn','de Bruin','van der Heijden','Schouten','van Beek','Willems','van Vliet','van de Ven','Hoekstra','Maas','Verhoeven','Koster','van Dam','van der Wal','Prins','Blom','Huisman'];
 
 // ── Seeded RNG utilities ──
 function hashCode(str) {
@@ -1716,31 +1783,108 @@ const BIO_OCC_ICONS = {
   'Care worker':'❤️','Physiotherapist':'🦴','Architect':'📐','Journalist':'📰','Chef':'👨‍🍳',
   'Florist':'🌸','Veterinarian':'🐾','Musician':'🎵','Receptionist':'📞','Security guard':'🛡️'
 };
-const BIO_FAMILY_TEMPLATES = [
-  'Married to {spouse}, {children} children',
-  'Lives alone since partner passed',
-  'Single parent of {children}',
-  'Widowed. Grandchildren visit on Sundays',
-  'Married for {years} years. Dog named {pet}',
-  'Lives with elderly mother',
-  'Recently divorced',
-  'Never married. Devoted to {hobby}',
-  'Partner lives abroad',
-  'Shares a house with brother/sister'
-];
-const BIO_PERSONALITIES = ['Stoic','Anxious','Optimistic','Stubborn','Social','Quiet','Cheerful','Grumpy','Caring','Skeptical','Resilient','Impatient'];
-const BIO_BACKSTORY_TEMPLATES = [
-  'Worked at the {place} for {years} years. {bodypart} gave out first.',
-  'Moved to Cammelot in {year}. Never looked back.',
-  'Third generation in this town. Knows everyone.',
-  'Used to {hobby} every weekend until the diagnosis.',
-  'Volunteers at the {place} on Thursdays.',
-  'Dreams of visiting {country} one day.',
-  'The kind of person who always has {thing} in their pocket.',
-  'Neighbors say {pronoun} is the first to help when someone is ill.',
-  'Has a collection of {thing} that fills an entire room.',
-  'Once ran the town {event}. Still talks about it.'
-];
+// ── Sprint 25: Age-segmented family templates ──
+const BIO_FAMILY_TEMPLATES_BY_AGE = {
+  child: [
+    'Lives with parents in a cozy house on {street}',
+    'Has {childSiblings} sibling(s)',
+    'Lives with {singleParent} near the school',
+    'The youngest of {childSiblings} children'
+  ],
+  teen: [
+    'Lives with parents. Dreams of studying {teenStudy}',
+    'Has {childSiblings} sibling(s). Shares a room',
+    'Lives with {singleParent}. Helps around the house',
+    'The oldest of {childSiblings} children. Looks after the little ones'
+  ],
+  youngAdult: [
+    'Single. Saving up for a first apartment',
+    'Dating {spouse}. Thinking about the future',
+    'Lives with roommates near the centre',
+    'Recently moved in with {spouse}',
+    'Engaged to {spouse}'
+  ],
+  adult: [
+    'Married to {spouse}, {children} children',
+    'Single parent of {children}',
+    'Recently divorced. Starting over',
+    'Married for {smallYears} years. Dog named {pet}',
+    'Partner lives abroad. Managing alone',
+    'Lives with {spouse} and {children} children'
+  ],
+  senior: [
+    'Married for {years} years. Children have moved out',
+    'Widowed since last year. Keeps busy with {hobby}',
+    'Married to {spouse}. Grandchildren visit on weekends',
+    'Divorced. Enjoys the freedom of {hobby}',
+    'Lives with elderly mother'
+  ],
+  elderly: [
+    'Widowed. Grandchildren visit on Sundays',
+    'Married for {years} years. Still going strong',
+    'Lives alone since partner passed. Misses the company',
+    'Moved to sheltered housing last year',
+    'Spouse is in the care home. Visits every day',
+    'Great-grandchildren call every Sunday'
+  ]
+};
+const BIO_FAMILY_TEMPLATES = BIO_FAMILY_TEMPLATES_BY_AGE.adult;
+
+// ── Sprint 25: Age-segmented personality pools ──
+const BIO_PERSONALITIES_BY_AGE = {
+  child: ['Curious','Energetic','Shy','Playful','Brave','Creative'],
+  teen: ['Idealistic','Rebellious','Studious','Sporty','Social','Dreamy'],
+  adult: ['Stoic','Anxious','Optimistic','Stubborn','Social','Quiet','Cheerful','Grumpy','Caring','Skeptical','Resilient','Impatient'],
+  senior: ['Stoic','Anxious','Optimistic','Stubborn','Social','Quiet','Cheerful','Grumpy','Caring','Skeptical','Resilient','Impatient','Wise','Nostalgic','Patient','Gentle']
+};
+const BIO_PERSONALITIES = BIO_PERSONALITIES_BY_AGE.adult;
+
+// ── Sprint 25: Age-segmented backstory templates ──
+const BIO_BACKSTORY_TEMPLATES_BY_AGE = {
+  child: [
+    'Loves playing {childHobby} after school',
+    'Best friends with the neighbor\'s kid',
+    'Wants to be a {dreamJob} when grown up',
+    'Collects stickers and knows every dinosaur by name',
+    'The class clown. Teachers love {pronoun} anyway'
+  ],
+  teen: [
+    'Plays {teenSport} for the school team',
+    'Working on a school project about {topic}',
+    'Spends too much time on the phone, according to {singleParent}',
+    'Dreams of traveling to {country} after school',
+    'Volunteers at the {place} on weekends'
+  ],
+  adult: [
+    'Worked at the {place} for {years} years. {bodypart} gave out first.',
+    'Moved to Cammelot in {year}. Never looked back.',
+    'Third generation in this town. Knows everyone.',
+    'Used to {hobby} every weekend until the diagnosis.',
+    'Volunteers at the {place} on Thursdays.',
+    'Dreams of visiting {country} one day.',
+    'The kind of person who always has {thing} in their pocket.',
+    'Neighbors say {pronoun} is the first to help when someone is ill.',
+    'Has a collection of {thing} that fills an entire room.',
+    'Once ran the town {event}. Still talks about it.',
+    'Just started a new job at the {place}. Excited but nervous',
+    'Juggles work and family every day'
+  ],
+  senior: [
+    'Worked at the {place} for {years} years. {bodypart} gave out first.',
+    'Moved to Cammelot in {year}. Never looked back.',
+    'Third generation in this town. Knows everyone.',
+    'Volunteers at the {place} on Thursdays.',
+    'The kind of person who always has {thing} in their pocket.',
+    'Neighbors say {pronoun} is the first to help when someone is ill.',
+    'Has a collection of {thing} that fills an entire room.',
+    'Once ran the town {event}. Still talks about it.',
+    'Retired after {years} years of hard work. Enjoying the peace',
+    'Goes to the {place} every morning for coffee and a chat',
+    'Has a garden that is the envy of the whole street'
+  ]
+};
+const BIO_BACKSTORY_TEMPLATES = BIO_BACKSTORY_TEMPLATES_BY_AGE.adult;
+
 const BIO_FILL = {
   spouse:['Jan','Piet','Kees','Henk','Maria','Anna','Bep','Griet','Dirk','Cor','Roos','Lies'],
   children:['1','2','3','2','1','4','2','3'],
@@ -1753,11 +1897,28 @@ const BIO_FILL = {
   country:['Italy','Spain','Norway','Japan','Portugal','Greece','New Zealand','Iceland'],
   thing:['a handkerchief','peppermints','a pen','a photo of the grandchildren','reading glasses','a small notebook'],
   pronoun:['he','she','they'],
-  event:['marathon','flower show','cheese market','fishing derby','folk festival','pie contest']
+  event:['marathon','flower show','cheese market','fishing derby','folk festival','pie contest'],
+  childSiblings:['1','2','3','1','2'],
+  singleParent:['mother','father'],
+  childHobby:['football','drawing','building Lego','reading comics','playing in the park','swimming'],
+  dreamJob:['doctor','firefighter','astronaut','teacher','veterinarian','pilot','chef'],
+  teenSport:['football','hockey','volleyball','tennis','swimming','athletics'],
+  teenStudy:['medicine','engineering','art','law','computer science','biology'],
+  topic:['the environment','Dutch history','space','renewable energy','marine life'],
+  smallYears:['3','5','7','10','12','15','8'],
+  street:['the Dorpsstraat','the Kerkweg','the Marktplein','the Schoollaan','the Parkstraat']
 };
 
 function generateBio(id, age, gender) {
   const rng = seededRandom(hashCode(id) + 7);
+  // Age bracket
+  let ageBracket;
+  if (age <= 12) ageBracket = 'child';
+  else if (age <= 17) ageBracket = 'teen';
+  else if (age <= 30) ageBracket = 'youngAdult';
+  else if (age <= 55) ageBracket = 'adult';
+  else if (age <= 70) ageBracket = 'senior';
+  else ageBracket = 'elderly';
   // Age-appropriate occupation
   let occ;
   if (age < 22) { occ = 'Student'; }
@@ -1766,20 +1927,31 @@ function generateBio(id, age, gender) {
     const base = BIO_OCCUPATIONS[retiredIdx];
     occ = (base === 'Student' || base === 'Retired factory worker') ? 'Retired factory worker' : 'Retired ' + base.toLowerCase();
   } else {
-    // Filter out age-inappropriate
     const pool = BIO_OCCUPATIONS.filter(o => o !== 'Retired factory worker');
     occ = pool[Math.floor(rng() * pool.length)];
   }
-  // Family
-  const famTpl = BIO_FAMILY_TEMPLATES[Math.floor(rng() * BIO_FAMILY_TEMPLATES.length)];
+  // Family — age-gated
+  const famPool = BIO_FAMILY_TEMPLATES_BY_AGE[ageBracket] || BIO_FAMILY_TEMPLATES_BY_AGE.adult;
+  const famTpl = famPool[Math.floor(rng() * famPool.length)];
   const family = famTpl.replace(/\{(\w+)\}/g, (_, key) => {
     const arr = BIO_FILL[key];
     return arr ? arr[Math.floor(rng() * arr.length)] : key;
   });
-  // Personality
-  const personality = BIO_PERSONALITIES[Math.floor(rng() * BIO_PERSONALITIES.length)];
-  // Backstory
-  const bsTpl = BIO_BACKSTORY_TEMPLATES[Math.floor(rng() * BIO_BACKSTORY_TEMPLATES.length)];
+  // Personality — age-gated
+  let persPool;
+  if (age <= 12) persPool = BIO_PERSONALITIES_BY_AGE.child;
+  else if (age <= 17) persPool = BIO_PERSONALITIES_BY_AGE.teen;
+  else if (age <= 55) persPool = BIO_PERSONALITIES_BY_AGE.adult;
+  else persPool = BIO_PERSONALITIES_BY_AGE.senior;
+  const personality = persPool[Math.floor(rng() * persPool.length)];
+  // Backstory — age-gated
+  let bsBracket;
+  if (age <= 12) bsBracket = 'child';
+  else if (age <= 17) bsBracket = 'teen';
+  else if (age <= 55) bsBracket = 'adult';
+  else bsBracket = 'senior';
+  const bsPool = BIO_BACKSTORY_TEMPLATES_BY_AGE[bsBracket];
+  const bsTpl = bsPool[Math.floor(rng() * bsPool.length)];
   const backstory = bsTpl.replace(/\{(\w+)\}/g, (_, key) => {
     const arr = BIO_FILL[key];
     return arr ? arr[Math.floor(rng() * arr.length)] : key;
@@ -1807,24 +1979,56 @@ const SOCIAL_DIALOGUES = {
     "I'm scared it could happen to me.","The town feels emptier every week."
   ],
   about_system: [
-    "The hospital wait is terrible now!","Dr. Collins looks exhausted.",
+    "The hospital wait is terrible now!","Dr. de Jong looks exhausted.",
     "They say the system is 'under pressure'. I say it's broken.",
     "In SOLL mode it would be different, they say..."
   ]
 };
+// ── Sprint 25: Age-appropriate dialogue pools ──
+const CHILD_DIALOGUES = [
+  "Want to play?","School was boring today!","My tummy hurts",
+  "Can we get ice cream?","I found a cool bug!","Tag, you're it!",
+  "My teacher is really nice","I don't want to go home yet"
+];
+const TEEN_DIALOGUES = [
+  "This town is so boring","Did you finish the homework?",
+  "I can't wait to get my license","Have you seen that new show?",
+  "My parents don't understand anything","Want to hang out later?",
+  "I need a summer job","School is stressing me out"
+];
+const ELDERLY_DIALOGUES = [
+  "My knees aren't what they used to be","I remember when this town had only one doctor",
+  "The grandchildren keep me young","Back in my day things were different",
+  "I've got an appointment next week, dreading the wait",
+  "At least the weather is nice for a walk","Have you taken your pills today?",
+  "The new doctor is nice, but so young!"
+];
 let activeChatCount = 0;
 const MAX_ACTIVE_CHATS = 3;
 
 function pickDialogue(a, b, rng) {
+  const aAge = a.age || 30;
+  const bAge = b.age || 30;
+  const youngest = Math.min(aAge, bAge);
+  const oldest = Math.max(aAge, bAge);
+  // Children never discuss system/death topics
+  if (youngest <= 12) return CHILD_DIALOGUES[Math.floor(rng() * CHILD_DIALOGUES.length)];
+  if (youngest <= 17 && oldest <= 17) return TEEN_DIALOGUES[Math.floor(rng() * TEEN_DIALOGUES.length)];
+  // Teen talking to adult — 50% teen pool
+  if (youngest <= 17) {
+    if (rng() < 0.5) return TEEN_DIALOGUES[Math.floor(rng() * TEEN_DIALOGUES.length)];
+  }
   const aSick = a.conditions && a.conditions.length > 0;
   const bSick = b.conditions && b.conditions.length > 0;
   const recentDeaths = EVENT_LOG.filter(e => e.type === 'died' || e.type === 'natural_death').length;
-  // 20% chance death/system talk if deaths have occurred
+  // 20% chance death/system talk if deaths have occurred (adults only)
   if (recentDeaths > 0 && rng() < 0.2) {
     return rng() < 0.5
       ? SOCIAL_DIALOGUES.about_death[Math.floor(rng() * SOCIAL_DIALOGUES.about_death.length)]
       : SOCIAL_DIALOGUES.about_system[Math.floor(rng() * SOCIAL_DIALOGUES.about_system.length)];
   }
+  // Elderly pool — mix in elderly-specific dialogue
+  if (oldest >= 65 && rng() < 0.4) return ELDERLY_DIALOGUES[Math.floor(rng() * ELDERLY_DIALOGUES.length)];
   let pool;
   if (aSick && bSick) pool = SOCIAL_DIALOGUES.sick_sick;
   else if (aSick || bSick) pool = SOCIAL_DIALOGUES.healthy_sick;
@@ -2057,10 +2261,13 @@ function spawnPopulation(count) {
   const spawned = [];
   for (let i = 0; i < count; i++) {
     const gender = Math.random() < 0.50 ? 'M' : 'F';
-    const names = gender === 'M' ? FIRST_NAMES_M : FIRST_NAMES_F;
+    const age = generateAge();
+    let names;
+    if (age <= 12) names = gender === 'M' ? FIRST_NAMES_CHILD_M : FIRST_NAMES_CHILD_F;
+    else if (age <= 17) names = gender === 'M' ? FIRST_NAMES_TEEN_M : FIRST_NAMES_TEEN_F;
+    else names = gender === 'M' ? FIRST_NAMES_M : FIRST_NAMES_F;
     const firstName = names[Math.floor(Math.random() * names.length)];
     const surname = SURNAMES[Math.floor(Math.random() * SURNAMES.length)];
-    const age = generateAge();
     const conditions = assignConditions(age);
     const id = 'cit-' + i.toString().padStart(3,'0');
     // HP based on age + conditions
@@ -2076,7 +2283,7 @@ function spawnPopulation(count) {
       referredToHospital = waitWeeks >= 10;
     }
     const pos = getRandomRoadPosition();
-    const gpName = Math.random() < 0.5 ? 'Dr. Collins' : 'Dr. Bennett';
+    const gpName = Math.random() < 0.5 ? 'Dr. de Jong' : 'Dr. Bakker';
     let state = 'healthy';
     if (waitWeeks > 10) state = 'critical';
     else if (conditions.length > 0 && waitWeeks > 0) state = 'waiting';
@@ -2199,13 +2406,13 @@ function applyTreatmentEffect(conditionCode, currentSeverity) {
 
 // ═══ Infrastructure agents — GPs and Specialists (fixed) ═══
 const INFRASTRUCTURE_AGENTS = [
-  {id:'gp1',x:.61,y:.14,type:'gp',name:'Dr. Collins',age:52,gender:'M',role:'General Practitioner',
+  {id:'gp1',x:.61,y:.14,type:'gp',name:'Dr. de Jong',age:52,gender:'M',role:'General Practitioner',
    conditions:[],hp:100,state:'working',waitWeeks:0,insideBuilding:'gp1_bldg',
    thoughts:['30% of my day is paperwork. I became a doctor to help people.','My waiting room is full again.','If only I had more time per patient.'],
    color:'#40a870',
    patientsSeenToday:0,referralsMade:0,burnoutLevel:0,currentPatient:null,
    queue:[],totalPatientsSeen:0,actionHistory:[]},
-  {id:'gp2',x:.22,y:.42,type:'gp',name:'Dr. Bennett',age:47,gender:'F',role:'General Practitioner',
+  {id:'gp2',x:.22,y:.42,type:'gp',name:'Dr. Bakker',age:47,gender:'F',role:'General Practitioner',
    conditions:[],hp:100,state:'working',waitWeeks:0,insideBuilding:null,
    thoughts:['Another referral denied. The specialist queue is 12 weeks.','I need to finish 50 FHIR logs before lunch.','My colleagues are burning out.'],
    color:'#40a870',
@@ -2862,8 +3069,8 @@ function drawLabels(){
   cx.font=`600 ${Math.max(9,11*zoom)}px Inter,sans-serif`;
   cx.textAlign='center';
   [[.37,.04,'Cammelot Hospital','#c62828'],
-   [.62,.07,'GP Collins','#2e7d32'],
-   [.22,.50,'GP Bennett','#2e7d32'],
+   [.62,.07,'GP de Jong','#2e7d32'],
+   [.22,.50,'GP Bakker','#2e7d32'],
    [.48,.42,'Town Park','#2e7d32']].forEach(([fx,fy,txt,col])=>{
     const sx=(fx*worldW-camX)*zoom, sy=(fy*worldH-camY)*zoom;
     cx.fillStyle='rgba(0,0,0,.4)';cx.fillText(txt,sx+1,sy+1);
@@ -2874,8 +3081,8 @@ function drawLabels(){
 
 // ── Sprint 5: Queue positions per building ──
 const QUEUE_ORIGINS = {
-  gp1_bldg: { x: 0.62, y: 0.23, dir: 1 },   // GP Collins — queue going south
-  gp2_bldg: { x: 0.22, y: 0.46, dir: 1 },   // GP Bennett — queue going south
+  gp1_bldg: { x: 0.62, y: 0.23, dir: 1 },   // GP de Jong — queue going south
+  gp2_bldg: { x: 0.22, y: 0.46, dir: 1 },   // GP Bakker — queue going south
   hospital: { x: 0.38, y: 0.23, dir: 1 }     // Hospital — queue going south
 };
 
@@ -3417,6 +3624,9 @@ function render(){
 
   // ── Sprint 5: Draw grave markers (after agents) ──
   drawGraveMarkers();
+
+  // ── Sprint 19: Mayor speech bubble on map ──
+  drawMayorBubble(cx, mapImgW, mapImgH, zoom, camX, camY);
 
   // ── Sprint 13: Weather effects (rain/snow/fog on top of everything) ──
   drawWeather();
@@ -4507,7 +4717,7 @@ function tick(){
       say(a.name,`Recovery going well. HP: ${Math.round(a.hp)}/100.`);}
   }
   if(cycle%12===0){
-    say('Dr. Collins',`Admin load ${Math.round(p.admin*100)}%. ${p.admin>0.2?'Too much paperwork!':'Manageable.'}`);
+    say('Dr. de Jong',`Admin load ${Math.round(p.admin*100)}%. ${p.admin>0.2?'Too much paperwork!':'Manageable.'}`);
   }
 
   // ═══ Sprint 10: Cognitive Loop (every 8 ticks) ═══
@@ -4551,6 +4761,9 @@ function tick(){
   // ═══ Sprint 11: QA auto-run (every 100 cycles) ═══
   if(cycle%100===0) runQAChecks();
 
+  // ═══ Sprint 19: Auto-generate Gazette every 100 cycles ═══
+  if(cycle%100===0 && cycle>0) autoGenerateGazette();
+
   updateUI();
   updateTicker(); // Sprint 6
   if (timelineVisible) drawTimeline(); // Sprint 16
@@ -4570,6 +4783,7 @@ function resetSim(){
   FHIR_STORE.length=0;
   A2A_MESSAGES.length=0;
   TIMELINE_SNAPSHOTS.length=0; // Sprint 16
+  GAZETTE_HISTORY.length=0; TREND_DATA.periods.length=0; lastGazetteCycle=0; mayorBubbleTimer=0; mayorBubbleText=''; // Sprint 19
   Object.values(QUEUES).forEach(q => { q.agents = []; q.positions = []; });
   try{localStorage.removeItem('cammelot_save');}catch(e){}
   agents.forEach(a=>{
@@ -4609,6 +4823,487 @@ function setMode(m){
   document.getElementById('oS').textContent=Math.round(M[m].sick*100)+'%';
   document.getElementById('oT').textContent=M[m].tree+' weeks';
 }
+
+// ═══ SPRINT 19: CAMMELOT GAZETTE ENGINE ═══
+
+function getSeasonAndDay(c) {
+  var ticksPerDay = 4;
+  var totalDays = Math.floor(c / ticksPerDay);
+  var dayOfYear = totalDays % 365;
+  var year = Math.floor(totalDays / 365) + 1;
+  var season = dayOfYear < 91 ? 'Spring' : dayOfYear < 182 ? 'Summer' : dayOfYear < 273 ? 'Autumn' : 'Winter';
+  return { day: totalDays + 1, dayOfYear: dayOfYear, year: year, season: season };
+}
+
+function generateGazetteData() {
+  var pop = agents.filter(function(a) { return a.type === 'patient' || a.type === 'citizen'; });
+  var alive = pop.filter(function(a) { return a.hp > 0; });
+  var dead = pop.filter(function(a) { return a.hp <= 0; });
+  var startCycle = lastGazetteCycle;
+  var endCycle = cycle;
+
+  // Filter events in this period
+  var periodEvents = EVENT_LOG.filter(function(e) { return e.cycle > startCycle && e.cycle <= endCycle; });
+
+  // Count event types
+  var systemDeaths = periodEvents.filter(function(e) { return e.type === 'died'; });
+  var naturalDeaths = periodEvents.filter(function(e) { return e.type === 'natural_death'; });
+  var treatments = periodEvents.filter(function(e) { return e.type === 'treated' || e.type === 'gp_treated'; });
+  var admissions = periodEvents.filter(function(e) { return e.type === 'admitted'; });
+  var recoveries = periodEvents.filter(function(e) { return e.type === 'recovered' || e.type === 'discharged'; });
+  var referrals = periodEvents.filter(function(e) { return e.type === 'referred'; });
+
+  // Queue stats
+  var totalInQueue = 0;
+  Object.values(QUEUES).forEach(function(q) { totalInQueue += q.agents.length; });
+
+  // Wait time stats
+  var waitingAgents = alive.filter(function(a) { return a.waitWeeks > 0; });
+  var avgWait = waitingAgents.length > 0 ? waitingAgents.reduce(function(s, a) { return s + a.waitWeeks; }, 0) / waitingAgents.length : 0;
+  var maxWait = waitingAgents.length > 0 ? Math.max.apply(null, waitingAgents.map(function(a) { return a.waitWeeks; })) : 0;
+
+  // Cost estimate (waste from admin burden)
+  var cost = Math.round(S.waste);
+
+  // Total deaths count
+  var totalDeathCount = systemDeaths.length + naturalDeaths.length;
+
+  // Determine mood
+  var moodEmoji, moodText, moodClass;
+  if (totalDeathCount >= 3 || totalInQueue > 20) {
+    moodEmoji = '💀'; moodText = 'Critical — The system is failing our citizens'; moodClass = 'mood-critical';
+  } else if (totalDeathCount >= 2 || totalInQueue > 15) {
+    moodEmoji = '😰'; moodText = 'Alarming — Urgent intervention needed'; moodClass = 'mood-alarming';
+  } else if (totalDeathCount >= 1 || totalInQueue > 10) {
+    moodEmoji = '😟'; moodText = 'Tense — Citizens feel the strain'; moodClass = 'mood-tense';
+  } else if (totalInQueue >= 5) {
+    moodEmoji = '😐'; moodText = 'Uneasy — Queues are building'; moodClass = 'mood-uneasy';
+  } else {
+    moodEmoji = '😊'; moodText = 'Peaceful — The town is well'; moodClass = 'mood-peaceful';
+  }
+
+  // Build headlines
+  var headlines = [];
+
+  // Death headlines
+  systemDeaths.forEach(function(e) {
+    var ag = agents.find(function(a) { return a.id === e.agentId; });
+    var waitW = ag ? Math.round(ag.waitWeeks || 0) : 0;
+    var ageStr = ag ? ag.age : '?';
+    var condStr = ag && ag.conditions && ag.conditions.length > 0 ? ag.conditions.map(function(c) { return c.name; }).join(', ') : 'unknown condition';
+    headlines.push({
+      type: 'death',
+      text: '💀 ' + e.agentName + ' (age ' + ageStr + ') died after waiting ' + waitW + ' weeks — ' + condStr,
+      agentId: e.agentId,
+      agentName: e.agentName
+    });
+  });
+
+  naturalDeaths.forEach(function(e) {
+    var ag = agents.find(function(a) { return a.id === e.agentId; });
+    var ageStr = ag ? ag.age : '?';
+    headlines.push({
+      type: 'natural',
+      text: '🕊 ' + e.agentName + ' (age ' + ageStr + ') passed away peacefully',
+      agentId: e.agentId,
+      agentName: e.agentName
+    });
+  });
+
+  // Queue alerts
+  if (totalInQueue > 10) {
+    headlines.push({
+      type: 'warn',
+      text: '⚠ Hospital queue has reached ' + totalInQueue + ' patients — capacity strained'
+    });
+  }
+  if (maxWait > M[mode].tree) {
+    headlines.push({
+      type: 'warn',
+      text: '⚠ Longest wait: ' + Math.round(maxWait) + ' weeks (Treeknorm limit: ' + M[mode].tree + ')'
+    });
+  }
+
+  // Good news
+  recoveries.forEach(function(e) {
+    if (headlines.length < 8) {
+      headlines.push({
+        type: 'good',
+        text: '✅ ' + e.agentName + ' has recovered and been discharged',
+        agentId: e.agentId,
+        agentName: e.agentName
+      });
+    }
+  });
+
+  if (treatments.length > 0 && headlines.length < 8) {
+    headlines.push({
+      type: 'good',
+      text: '💊 ' + treatments.length + ' patient' + (treatments.length > 1 ? 's' : '') + ' received treatment this period'
+    });
+  }
+
+  if (headlines.length === 0) {
+    headlines.push({ type: 'neutral', text: '📝 A quiet period in Cammelot — no major incidents to report' });
+  }
+
+  // Mayor comment
+  var mayorComment = '';
+  if (systemDeaths.length > 0) {
+    var firstDeath = systemDeaths[0];
+    var dAg = agents.find(function(a) { return a.id === firstDeath.agentId; });
+    var pronoun = dAg && dAg.gender === 'F' ? 'She' : 'He';
+    var waitWks = dAg ? Math.round(dAg.waitWeeks || 0) : 0;
+    mayorComment = 'Citizens, we lost ' + firstDeath.agentName + ' today. ' + pronoun + ' waited ' + waitWks + ' weeks. We must do better.';
+  } else if (totalInQueue > 10) {
+    mayorComment = 'The hospital queue has reached ' + totalInQueue + '. Our staff is overwhelmed.';
+  } else if (recoveries.length > 0) {
+    var rAg = agents.find(function(a) { return a.id === recoveries[0].agentId; });
+    var rPronoun = rAg && rAg.gender === 'F' ? 'her' : 'him';
+    mayorComment = 'Good news: ' + recoveries[0].agentName + ' has recovered. Our system worked for ' + rPronoun + '.';
+  } else if (mode === 'SOLL' && treatments.length > 0) {
+    mayorComment = 'The AI triage system processed ' + treatments.length + ' patients efficiently today.';
+  } else {
+    mayorComment = 'Another day in Cammelot. ' + alive.length + ' citizens going about their lives.';
+  }
+
+  var dateInfo = getSeasonAndDay(endCycle);
+
+  // Trend period data
+  var trendPeriod = {
+    startCycle: startCycle,
+    endCycle: endCycle,
+    deaths: systemDeaths.length,
+    naturalDeaths: naturalDeaths.length,
+    treatments: treatments.length,
+    admissions: admissions.length,
+    recoveries: recoveries.length,
+    queuePeak: totalInQueue,
+    avgWait: Math.round(avgWait * 10) / 10,
+    cost: cost
+  };
+
+  return {
+    day: dateInfo.day,
+    season: dateInfo.season,
+    year: dateInfo.year,
+    headlines: headlines,
+    mood: moodText,
+    moodClass: moodClass,
+    moodEmoji: moodEmoji,
+    stats: {
+      died: systemDeaths.length,
+      naturalDied: naturalDeaths.length,
+      treated: treatments.length,
+      inQueue: totalInQueue,
+      avgWait: Math.round(avgWait * 10) / 10,
+      cost: cost,
+      alive: alive.length,
+      dead: dead.length
+    },
+    mayorComment: mayorComment,
+    trendPeriod: trendPeriod
+  };
+}
+
+function autoGenerateGazette() {
+  var data = generateGazetteData();
+  GAZETTE_HISTORY.push(data);
+  TREND_DATA.periods.push(data.trendPeriod);
+  lastGazetteCycle = cycle;
+
+  // Mayor says in chatlog
+  mayorSay(data.mayorComment);
+
+  // Set mayor bubble on map
+  mayorBubbleText = data.mayorComment;
+  mayorBubbleTimer = 200;
+
+  // System announce in chatlog
+  say('GAZETTE', 'Day ' + data.day + ' — ' + data.season + ', Year ' + data.year + ': ' + data.moodEmoji + ' ' + data.mood, 'sys');
+}
+
+function mayorSay(text) {
+  var d = document.getElementById('chatlog');
+  var div = document.createElement('div');
+  div.className = 'cm mayor';
+  var ws = document.createElement('span');
+  ws.className = 'w';
+  ws.textContent = '[👑 Mayor]';
+  var ts = document.createElement('span');
+  ts.className = 't';
+  ts.textContent = text;
+  div.appendChild(ws);
+  div.appendChild(document.createTextNode(' '));
+  div.appendChild(ts);
+  d.appendChild(div);
+  d.scrollTop = d.scrollHeight;
+  while (d.children.length > 40) d.removeChild(d.firstChild);
+}
+
+function buildSparkline(periods, key) {
+  if (periods.length < 2) return '';
+  var vals = periods.map(function(p) { return p[key] || 0; });
+  var last8 = vals.slice(-8);
+  var max = Math.max.apply(null, last8);
+  if (max === 0) return '▁▁▁▁▁▁▁▁';
+  var blocks = '▁▂▃▄▅▆▇█';
+  return last8.map(function(v) {
+    var idx = Math.round((v / max) * 7);
+    return blocks.charAt(Math.min(7, Math.max(0, idx)));
+  }).join('');
+}
+
+function renderTrendSection() {
+  if (TREND_DATA.periods.length < 2) return '';
+  var curr = TREND_DATA.periods[TREND_DATA.periods.length - 1];
+  var prev = TREND_DATA.periods[TREND_DATA.periods.length - 2];
+
+  function trendRow(label, currVal, prevVal, unit, invertBetter) {
+    var diff = currVal - prevVal;
+    var arrow, cls;
+    if (diff > 0) { arrow = '↑'; cls = invertBetter ? 'trend-down' : 'trend-up'; }
+    else if (diff < 0) { arrow = '↓'; cls = invertBetter ? 'trend-up' : 'trend-down'; }
+    else { arrow = '→'; cls = ''; }
+
+    // Check for all-time record
+    var allVals = TREND_DATA.periods.map(function(p) { return p[label.toLowerCase().replace(/\s/g, '')] || 0; });
+    var isRecord = currVal > 0 && currVal >= Math.max.apply(null, allVals);
+    var recordBadge = isRecord ? '<span class="trend-record">record!</span>' : '';
+
+    var sparkline = buildSparkline(TREND_DATA.periods, label.toLowerCase().replace(/\s/g, ''));
+    var unitStr = unit || '';
+    return '<div class="trend-row">' +
+      '<span class="trend-label">' + label + ':</span>' +
+      '<span class="trend-values">' + prevVal + unitStr + ' → ' + currVal + unitStr + ' ' +
+      '<span class="' + cls + '">' + arrow + ' (' + (diff > 0 ? '+' : '') + diff + unitStr + ')</span>' +
+      recordBadge +
+      (sparkline ? '<span class="sparkline">' + sparkline + '</span>' : '') +
+      '</span></div>';
+  }
+
+  var html = '<div class="gazette-section"><h4>📈 TRENDS</h4>';
+  html += '<div class="gazette-trend">';
+  html += '<div style="font-size:10px;color:var(--ink2);margin-bottom:4px">This period vs last:</div>';
+  html += trendRow('Deaths', curr.deaths, prev.deaths, '');
+  html += trendRow('Treated', curr.treatments, prev.treatments, '', true);
+  html += trendRow('Avg Wait', curr.avgWait, prev.avgWait, 'w');
+  html += trendRow('Queue', curr.queuePeak, prev.queuePeak, '');
+  html += '</div>';
+
+  // Running totals
+  var totalDeaths = TREND_DATA.periods.reduce(function(s, p) { return s + p.deaths; }, 0);
+  var totalNatural = TREND_DATA.periods.reduce(function(s, p) { return s + p.naturalDeaths; }, 0);
+  var totalTreated = TREND_DATA.periods.reduce(function(s, p) { return s + p.treatments; }, 0);
+  var totalCost = TREND_DATA.periods.reduce(function(s, p) { return s + p.cost; }, 0);
+  var deathSparkline = buildSparkline(TREND_DATA.periods, 'deaths');
+
+  html += '<div class="gazette-running-totals">';
+  html += 'Running totals: <b>' + totalDeaths + '</b> system deaths · <b>' + totalNatural + '</b> natural<br>';
+  html += 'Total treated: <b>' + totalTreated + '</b> · Cost: <b>€' + totalCost.toLocaleString() + '</b>';
+  if (deathSparkline) html += '<br>Deaths trend: <span class="sparkline" style="color:var(--red)">' + deathSparkline + '</span>';
+  html += '</div></div>';
+  return html;
+}
+
+function showGazette() {
+  selectedAgent = null;
+  var d = document.getElementById('agent-detail');
+  document.querySelector('.panel-header').textContent = '📰 THE CAMMELOT GAZETTE';
+
+  // Generate current gazette if none exist or force fresh
+  var currentData;
+  if (GAZETTE_HISTORY.length === 0 || cycle - lastGazetteCycle > 0) {
+    currentData = generateGazetteData();
+  } else {
+    currentData = GAZETTE_HISTORY[GAZETTE_HISTORY.length - 1];
+  }
+
+  var dateInfo = getSeasonAndDay(cycle);
+  var html = '<div class="panel-back" data-action="showTownFeed">← Town Feed</div>';
+
+  // Main gazette header
+  html += '<div class="gazette-header">';
+  html += '<div class="gazette-title">🏰 THE CAMMELOT GAZETTE</div>';
+  html += '<div class="gazette-date">Day ' + dateInfo.day + ' — ' + dateInfo.season + ', Year ' + dateInfo.year + '</div>';
+  html += '</div>';
+
+  // Mayor's address
+  html += '<div class="gazette-mayor">';
+  html += '<div class="mayor-prefix">👑 MAYOR\'S ADDRESS:</div>';
+  html += '"' + currentData.mayorComment + '"';
+  html += '</div>';
+
+  // Headlines
+  html += '<div class="gazette-section"><h4>HEADLINES</h4>';
+  currentData.headlines.forEach(function(h) {
+    var cls = h.type === 'death' ? 'gz-death' : h.type === 'good' ? 'gz-good' : h.type === 'warn' ? 'gz-warn' : '';
+    if (h.agentId) {
+      var namePart = h.agentName || '';
+      var rest = h.text;
+      if (namePart && rest.indexOf(namePart) !== -1) {
+        var parts = rest.split(namePart);
+        html += '<div class="gazette-headline ' + cls + '">' + parts[0] +
+          '<span class="gz-name" data-agent-id="' + h.agentId + '">' + namePart + '</span>' +
+          parts.slice(1).join(namePart) + '</div>';
+      } else {
+        html += '<div class="gazette-headline ' + cls + '">• ' + h.text + '</div>';
+      }
+    } else {
+      html += '<div class="gazette-headline ' + cls + '">• ' + h.text + '</div>';
+    }
+  });
+  html += '</div>';
+
+  // By the numbers
+  html += '<div class="gazette-section"><h4>BY THE NUMBERS</h4>';
+  html += '<div class="gazette-stats">';
+  html += '<div class="gs-item"><span class="gs-label">💀 Died</span><span class="gs-value' + (currentData.stats.died > 0 ? ' bad' : '') + '">' + currentData.stats.died + '</span></div>';
+  html += '<div class="gs-item"><span class="gs-label">💊 Treated</span><span class="gs-value' + (currentData.stats.treated > 0 ? ' good' : '') + '">' + currentData.stats.treated + '</span></div>';
+  html += '<div class="gs-item"><span class="gs-label">🏥 In Queue</span><span class="gs-value">' + currentData.stats.inQueue + '</span></div>';
+  html += '<div class="gs-item"><span class="gs-label">⏱ Avg Wait</span><span class="gs-value">' + currentData.stats.avgWait + 'w</span></div>';
+  html += '<div class="gs-item"><span class="gs-label">👥 Alive</span><span class="gs-value">' + currentData.stats.alive + '</span></div>';
+  html += '<div class="gs-item"><span class="gs-label">💰 Cost</span><span class="gs-value">€' + currentData.stats.cost.toLocaleString() + '</span></div>';
+  html += '</div></div>';
+
+  // Mood
+  html += '<div class="gazette-mood ' + currentData.moodClass + '">';
+  html += 'TOWN MOOD: ' + currentData.moodEmoji + ' ' + currentData.mood;
+  html += '</div>';
+
+  // Trends
+  html += renderTrendSection();
+
+  // History
+  if (GAZETTE_HISTORY.length > 0) {
+    html += '<div class="gazette-section"><h4>📜 PAST EDITIONS</h4>';
+    var historyToShow = GAZETTE_HISTORY.slice().reverse();
+    historyToShow.forEach(function(g, idx) {
+      var cardId = 'ghc-' + idx;
+      html += '<div class="gazette-history-card">';
+      html += '<div class="ghc-header" data-card="' + cardId + '">';
+      html += '<span>Day ' + g.day + ' — ' + g.season + '</span>';
+      html += '<span>' + g.moodEmoji + ' ' + g.stats.died + '💀 ' + g.stats.treated + '💊</span>';
+      html += '</div>';
+      html += '<div class="ghc-body" id="' + cardId + '">';
+      html += '<div class="gazette-mayor"><span class="mayor-prefix">👑</span> "' + g.mayorComment + '"</div>';
+      g.headlines.forEach(function(h) {
+        html += '<div style="font-size:11px;padding:2px 0">• ' + h.text + '</div>';
+      });
+      html += '</div></div>';
+    });
+    html += '</div>';
+  }
+
+  // Use setPanelContent for fade transition
+  setPanelContent(function() {
+    d.innerHTML = html;
+
+    // Wire up clickable names
+    d.querySelectorAll('.gz-name').forEach(function(nameEl) {
+      nameEl.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        var agId = this.dataset.agentId;
+        var ag = agents.find(function(a) { return a.id === agId; });
+        if (ag) selectAgent(ag);
+      });
+    });
+
+    // Wire up history card toggles
+    d.querySelectorAll('.ghc-header').forEach(function(header) {
+      header.addEventListener('click', function() {
+        var cardId = this.dataset.card;
+        var body = document.getElementById(cardId);
+        if (body) body.classList.toggle('open');
+      });
+    });
+  });
+}
+
+function drawMayorBubble(cx, worldW, worldH, zoom, camX, camY) {
+  if (mayorBubbleTimer <= 0 || !mayorBubbleText) return;
+  mayorBubbleTimer--;
+
+  // Draw near town center (0.5, 0.45 in world coords)
+  var mx = (0.5 * worldW - camX) * zoom;
+  var my = (0.35 * worldH - camY) * zoom;
+  var fontSize = Math.max(9, 11 * zoom);
+  cx.font = '500 ' + fontSize + 'px Inter,sans-serif';
+
+  // Word wrap
+  var maxWidth = 220 * zoom;
+  var words = mayorBubbleText.split(' ');
+  var lines = [];
+  var currentLine = '👑 Mayor: ';
+  words.forEach(function(word) {
+    var test = currentLine + word + ' ';
+    if (cx.measureText(test).width > maxWidth && currentLine.length > 0) {
+      lines.push(currentLine.trim());
+      currentLine = word + ' ';
+    } else {
+      currentLine = test;
+    }
+  });
+  if (currentLine.trim()) lines.push(currentLine.trim());
+
+  var lineHeight = fontSize * 1.4;
+  var padding = 8 * zoom;
+  var bw = maxWidth + padding * 2;
+  var bh = lines.length * lineHeight + padding * 2;
+  var bx = mx - bw / 2;
+  var by = my - bh;
+
+  // Background
+  cx.save();
+  cx.globalAlpha = Math.min(1, mayorBubbleTimer / 30); // fade out last 30 ticks
+  cx.fillStyle = 'rgba(30,20,10,0.88)';
+  cx.beginPath();
+  cx.roundRect(bx, by, bw, bh, 6 * zoom);
+  cx.fill();
+
+  // Gold border
+  cx.strokeStyle = '#FFB300';
+  cx.lineWidth = 2 * zoom;
+  cx.stroke();
+
+  // Triangle
+  cx.fillStyle = 'rgba(30,20,10,0.88)';
+  cx.beginPath();
+  cx.moveTo(mx - 6 * zoom, by + bh);
+  cx.lineTo(mx, by + bh + 8 * zoom);
+  cx.lineTo(mx + 6 * zoom, by + bh);
+  cx.fill();
+  cx.strokeStyle = '#FFB300';
+  cx.lineWidth = 2 * zoom;
+  cx.beginPath();
+  cx.moveTo(mx - 6 * zoom, by + bh);
+  cx.lineTo(mx, by + bh + 8 * zoom);
+  cx.lineTo(mx + 6 * zoom, by + bh);
+  cx.stroke();
+
+  // Text
+  cx.textAlign = 'left';
+  lines.forEach(function(line, i) {
+    var ty = by + padding + (i + 1) * lineHeight - fontSize * 0.3;
+    if (i === 0) {
+      // Gold prefix for first line
+      cx.fillStyle = '#FFB300';
+      cx.font = '700 ' + fontSize + 'px Inter,sans-serif';
+      var prefixWidth = cx.measureText('👑 Mayor: ').width;
+      cx.fillText('👑 Mayor: ', bx + padding, ty);
+      cx.fillStyle = '#FFE082';
+      cx.font = '500 ' + fontSize + 'px Inter,sans-serif';
+      cx.fillText(line.replace('👑 Mayor: ', ''), bx + padding + prefixWidth, ty);
+    } else {
+      cx.fillStyle = '#FFE082';
+      cx.font = '500 ' + fontSize + 'px Inter,sans-serif';
+      cx.fillText(line, bx + padding, ty);
+    }
+  });
+  cx.restore();
+}
+
+// ═══ END SPRINT 19: GAZETTE ENGINE ═══
 
 function say(w,t,c=''){
   const d=document.getElementById('chatlog');
