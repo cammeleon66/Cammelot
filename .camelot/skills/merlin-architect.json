@@ -1,0 +1,128 @@
+{
+  "skill": "merlin-architect",
+  "version": "1.0.0",
+  "displayName": "Merlin (Architect)",
+  "description": "Architectural governance agent. Automatically creates or updates ADRs whenever core types, data schemas, module boundaries, or public APIs change.",
+  "triggers": [
+    "architecture change",
+    "new module",
+    "change core type",
+    "modify FHIR schema",
+    "add dependency",
+    "change agent card schema",
+    "modify A2A protocol",
+    "restructure",
+    "ADR"
+  ],
+  "context": {
+    "primaryMemory": "docs/CODEBASE_MAP.md",
+    "projectSpec": "CLAUDE.md",
+    "adrDirectory": "docs/adr/"
+  },
+  "adrTemplate": {
+    "filename": "ADR-{NNN}-{slug}.md",
+    "sections": [
+      "# ADR-{NNN}: {Title}",
+      "**Date:** {ISO-8601}",
+      "**Status:** Proposed | Accepted | Deprecated | Superseded",
+      "**Deciders:** {agent names}",
+      "",
+      "## Context",
+      "{Why is this change needed? What problem does it solve?}",
+      "",
+      "## Decision",
+      "{What was decided and how will it be implemented?}",
+      "",
+      "## Consequences",
+      "### Positive",
+      "- {benefit}",
+      "### Negative",
+      "- {tradeoff}",
+      "### Risks",
+      "- {risk}",
+      "",
+      "## Affected Files",
+      "| File | Change Type |",
+      "|------|-------------|",
+      "| {path} | {created/modified/deleted} |",
+      "",
+      "## References",
+      "- CLAUDE.md Section {N}",
+      "- docs/CODEBASE_MAP.md"
+    ]
+  },
+  "coreTypes": {
+    "description": "Changes to any of these trigger a mandatory ADR",
+    "types": [
+      {
+        "name": "CammelotAgent",
+        "file": "src/agents/cognitive_loop.js",
+        "watchFields": ["constructor signature", "tick() contract", "getMemoryStream()", "reflect()", "plan()"]
+      },
+      {
+        "name": "PatientAgent",
+        "file": "src/agents/patient_agent.js",
+        "watchFields": ["hp", "diseaseState", "conditions[]", "referralPending", "tick()"]
+      },
+      {
+        "name": "GPAgent / SpecialistAgent",
+        "file": "src/agents/provider_agents.js",
+        "watchFields": ["maxPatients", "weeklyCapacity", "tick()", "queue processing"]
+      },
+      {
+        "name": "FHIRMemoryStore",
+        "file": "src/data_layer/fhir_store.js",
+        "watchFields": ["create* methods", "search() parameters", "index structure", "custom codes"]
+      },
+      {
+        "name": "AgentCard",
+        "file": "src/communication/a2a_protocol.js",
+        "watchFields": ["card schema fields", "discovery methods", "message types"]
+      },
+      {
+        "name": "A2AMessageBus",
+        "file": "src/communication/a2a_protocol.js",
+        "watchFields": ["sendMessage()", "registerAgent()", "discoverAgents()", "message routing"]
+      },
+      {
+        "name": "DiseaseProgressionModel",
+        "file": "src/clinical_logic/disease_engine.js",
+        "watchFields": ["transition matrix", "acceleration factor", "state enum"]
+      },
+      {
+        "name": "HPDrainEngine",
+        "file": "src/clinical_logic/disease_engine.js",
+        "watchFields": ["drain formula", "severity multipliers", "admin burden factor"]
+      },
+      {
+        "name": "TileMap",
+        "file": "src/grid_engine/tile_map.js",
+        "watchFields": ["tile types", "dimensions", "pathfinding algorithm", "entity management"]
+      },
+      {
+        "name": "SIMULATION_CONFIG",
+        "file": "config/simulation.js",
+        "watchFields": ["any parameter change"]
+      },
+      {
+        "name": "CBS/RIVM/NZa reference data",
+        "file": "config/reference_data.js",
+        "watchFields": ["tariffs", "prevalence rates", "mortality tables"]
+      }
+    ]
+  },
+  "workflow": [
+    "1. Detect change to a core type (via diff or agent notification)",
+    "2. Determine next ADR number: scan docs/adr/ for highest existing number",
+    "3. Generate ADR from template with context from the change",
+    "4. Write ADR to docs/adr/ADR-{NNN}-{slug}.md",
+    "5. Update docs/CODEBASE_MAP.md if the change affects architecture",
+    "6. Log the ADR creation as a commit message reference"
+  ],
+  "boundaries": {
+    "mayCreate": ["docs/adr/*.md"],
+    "mayEdit": ["docs/CODEBASE_MAP.md (append only — Section 9 Gaps)"],
+    "mustNotEdit": ["src/**/*", "config/**/*", "CLAUDE.md"],
+    "mustNotDelete": ["Any file"]
+  }
+}

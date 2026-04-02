@@ -1,0 +1,49 @@
+{
+  "worktree": {
+    "name": "camelot-qa",
+    "path": "../camelot-qa",
+    "relativeTo": "C:\\Users\\Public\\Cammelot",
+    "resolvedPath": "C:\\Users\\Public\\camelot-qa",
+    "branch": "feature/agentic-overhaul",
+    "mode": "detached",
+    "purpose": "Parallel test execution for Galahad QA agent — isolated from Lancelot's active edits"
+  },
+  "setup": {
+    "commands": [
+      "git worktree add --detach ../camelot-qa feature/agentic-overhaul",
+      "cd ../camelot-qa && npm install --if-present"
+    ],
+    "teardown": [
+      "git worktree remove ../camelot-qa"
+    ],
+    "verify": "git worktree list"
+  },
+  "sync": {
+    "strategy": "Before each test run, Galahad pulls latest from the main worktree",
+    "commands": [
+      "cd ../camelot-qa",
+      "git checkout --detach feature/agentic-overhaul",
+      "git pull origin feature/agentic-overhaul 2>/dev/null || true"
+    ],
+    "frequency": "Before every test invocation"
+  },
+  "isolation": {
+    "description": "The QA worktree is read-only for test execution. Galahad never writes code here.",
+    "lockFiles": false,
+    "sharedGitObjects": true,
+    "independentWorkingTree": true
+  },
+  "testExecution": {
+    "cwd": "../camelot-qa",
+    "command": "npm test",
+    "fallback": "node --test tests/",
+    "timeout": 30000,
+    "parallel": false
+  },
+  "notes": [
+    "A second worktree already exists at ../camelot-test-swarm (created earlier).",
+    "Use ../camelot-qa for Galahad's structured QA runs.",
+    "Use ../camelot-test-swarm for ad-hoc experimentation.",
+    "Both share Git objects with the main C:\\Users\\Public\\Cammelot repo."
+  ]
+}

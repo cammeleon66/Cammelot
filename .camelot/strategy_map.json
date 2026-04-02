@@ -1,0 +1,230 @@
+{
+  "sprint": "Sprint 1 — Core Loop Fix",
+  "generatedBy": "merlin-builder",
+  "generatedAt": "2026-04-02T06:00:00Z",
+  "branch": "feature/agentic-overhaul",
+
+  "currentStateAssessment": {
+    "frontendLines": 1454,
+    "hardcodedAgents": 15,
+    "backendEnginesConnected": false,
+    "testCoverage": "0%",
+    "tickLogicType": "simplified-inline",
+    "renderingEngine": "canvas-2d-with-map-image",
+    "pathfinding": "BFS-waypoint-graph",
+    "spriteSystem": "pre-rendered-offscreen-canvas-3-walk-frames-plus-ghost",
+    "workingFeatures": [
+      "Agent walking on roads (waypoint pathfinding)",
+      "Behavioral state machine (roaming → going_to_gp → at_gp → going_to_hospital → at_hospital → recovering → dead)",
+      "Click agent → sidebar dossier (HP, conditions, thoughts, history)",
+      "IST/SOLL mode toggle with different drain parameters",
+      "Speech bubbles and chat log",
+      "Loading screen with logo",
+      "Zoom/pan camera on canvas",
+      "Building SVG sprites (hospital, GP, townhall, houses)",
+      "Queue visualization near hospital"
+    ],
+    "brokenFeatures": [
+      "Disease spawning ignores RIVM statistical model — conditions hardcoded per agent",
+      "HP drain is a simplified formula, not real Markov transitions",
+      "Everyone dies too fast (IST) or nobody dies (SOLL) — no balance",
+      "Buildings not clickable — only agents can be selected",
+      "No building dashboards (GP workload, hospital beds, Treeknorm status)",
+      "Backend engines (disease_engine.js, fhir_store.js, cognitive_loop.js) completely unused",
+      "No natural mortality (age-based death)",
+      "No comorbidity interactions",
+      "No event log persistence",
+      "No test suite"
+    ]
+  },
+
+  "tasks": [
+    {
+      "id": "task-1",
+      "name": "Disease Catalog (DISEASE_DB)",
+      "backlogRef": "Epic 1.1",
+      "targetFile": "src/frontend/v4.html",
+      "approach": "Create a comprehensive DISEASE_DB object inline in v4.html by merging: (1) RIVM_DATA.chronicConditions from config/reference_data.js (10 conditions with prevalence data), (2) DiseaseProgressionModel.baseTransitions from disease_engine.js (Markov matrices), (3) New clinical metadata per condition (treatmentDuration, hpDrain/hpGain rates, GP-treatability, referral specialty, comorbidity interactions, mortality risk). Each condition gets a full entry with code, name, icd10, category, prevalenceNL, seniorPrevalence, ageMin, canBeReferred, referralSpecialty, gpTreatable, treatmentDurationTicks, recoveryDurationTicks, hpDrainPerTick, hpGainPerTreatmentTick, hpGainPerRecoveryTick, interactsWith, markovTransitions, treatmentEffect, mortalityRisk. This replaces all magic numbers in tick().",
+      "dependencies": [],
+      "estimatedComplexity": "medium",
+      "estimatedMinutes": 30,
+      "dataSourceFiles": [
+        "config/reference_data.js",
+        "src/clinical_logic/disease_engine.js"
+      ],
+      "portingNotes": "Pure data structure — no Node.js dependencies to worry about. Straightforward merge of existing data sources.",
+      "acceptanceCriteria": "Every condition referenced in the simulation has a full DISEASE_DB entry. No more hardcoded drain values in tick(). All 10 RIVM conditions have complete metadata including Markov transitions."
+    },
+    {
+      "id": "task-2",
+      "name": "Statistical Population Spawner",
+      "backlogRef": "Epic 1.2",
+      "targetFile": "src/frontend/v4.html",
+      "approach": "Port spawnPopulation() logic from population_engine.js into v4.html as an inline function. Key adaptations: (1) Replace node:crypto randomUUID() with crypto.randomUUID() (browser API) or Math.random-based IDs, (2) Port CBS_DATA.ageDistribution and RIVM_DATA.chronicConditions inline or as constants, (3) Port Dutch name lists (FIRST_NAMES_M/F, SURNAMES), (4) Generate 30-60 agents procedurally on page load, (5) CRITICAL: build a procedural LOOKS generator — current LOOKS dict is hardcoded per agent ID with specific skin/hair/shirt colors. Need a function generateLooks(id, age, gender) that creates varied but consistent appearances using seeded randomization from agent ID. (6) Call initCharSprites() dynamically for generated agents. (7) Assign GP by proximity to GP buildings. (8) Initial HP based on age + conditions (already modeled in population_engine.js). Target: 30-60 agents, refresh gives different citizens.",
+      "dependencies": ["task-1"],
+      "estimatedComplexity": "high",
+      "estimatedMinutes": 60,
+      "dataSourceFiles": [
+        "src/agents/population_engine.js",
+        "config/reference_data.js",
+        "config/simulation.js"
+      ],
+      "portingNotes": "BLOCKER RISK: The character rendering system (renderCharToCanvas) uses a LOOKS dictionary keyed by agent ID with specific pixel art parameters (skin color, hair color, hair type 0-11, shirt, pants, coat). Procedural agents need a procedural appearance generator. hType has 12 variants — can map randomly. Skin/hair/shirt colors need a palette system. This is the highest-risk task in Sprint 1.",
+      "acceptanceCriteria": "On page load, 30-60 citizens are procedurally generated with CBS age distribution and RIVM disease prevalence. Each has a unique appearance. Refresh gives different citizens. No hardcoded agent array."
+    },
+    {
+      "id": "task-3",
+      "name": "Inline Disease Engine (Markov)",
+      "backlogRef": "Epic 2.1",
+      "targetFile": "src/frontend/v4.html",
+      "approach": "Port three classes from disease_engine.js as inline functions: (1) DiseaseProgressionModel — Markov state transitions (healthy→mild→moderate→severe→critical→deceased) with wait-time acceleration. The getAdjustedTransitions() method is 30 lines and self-contained. (2) HPDrainEngine — calculateDrain() with Treeknorm violation detection, severity multipliers, admin burden factor. (3) TreeknormChecker — compliance checking and violation severity. Replace the current simplified drain in tick(): the roaming drain `a.hp -= 0.05 * p.drain * a.conditions.length` and the going_to_hospital drain `a.hp -= 0.4 * over * (1+p.admin) * p.drain * 0.25` with proper engine calls. Wire DISEASE_DB condition-specific Markov matrices into the model. Remove SIMULATION_CONFIG import dependency — inline the 3 config values needed (treeknormWeeks, drainPerWeekOverTreeknorm, ghostThreshold, criticalHP, administrativeBurdenFraction).",
+      "dependencies": ["task-1"],
+      "estimatedComplexity": "medium",
+      "estimatedMinutes": 30,
+      "dataSourceFiles": [
+        "src/clinical_logic/disease_engine.js",
+        "config/simulation.js"
+      ],
+      "portingNotes": "disease_engine.js has one import: SIMULATION_CONFIG. Only 3 values are used: systemFailure.treeknormWeeks (12), hpDrain.drainPerWeekOverTreeknorm (3), hpDrain.ghostThreshold (0), hpDrain.criticalHP (20), systemFailure.administrativeBurdenFraction (0.30). These already exist in the M{} mode config object in v4.html. Clean port — no Node.js dependencies in the logic itself.",
+      "acceptanceCriteria": "tick() uses real Markov transitions per condition. Disease states progress probabilistically. HP drain is calculated by the proper engine with severity multipliers and admin burden. No more `a.hp -= 0.05 * conditions.length`."
+    },
+    {
+      "id": "task-4",
+      "name": "Decay Curve Calibration",
+      "backlogRef": "Epic 5.4",
+      "targetFile": "src/frontend/v4.html",
+      "approach": "Calibrate the DISEASE_DB drain/heal parameters to achieve target outcomes over 1000 cycles (~250 sim days): IST mode: 5-15% mortality + 1-2% natural = ~6-17% total. SOLL mode: 1-3% system failure + 1-2% natural = ~2-5% total. Key parameters to tune: (1) Passive drain per tick by severity: mild ~0.02, moderate ~0.05, severe ~0.08. (2) Treeknorm drain: 0.3/tick per week overdue × severity multiplier. (3) Treatment heal: +2.5/tick (hospital), +1.0/tick (GP). (4) Recovery heal: +1.2/tick for 15-25 ticks. (5) Markov transition base rates — lower the healthy→mild base probability from 0.05 to ~0.02 to prevent everyone getting sick immediately. (6) Test by running batch(500) in IST and SOLL modes and checking ghost counts.",
+      "dependencies": ["task-1", "task-3"],
+      "estimatedComplexity": "medium",
+      "estimatedMinutes": 30,
+      "dataSourceFiles": [
+        "src/clinical_logic/disease_engine.js",
+        "config/simulation.js"
+      ],
+      "portingNotes": "This is an iterative tuning task. The current system has two failure modes: (1) IST everyone dies by cycle 50 because drain is too aggressive, (2) SOLL nobody dies because drain is too gentle. The key insight is that the going_to_hospital drain of 0.4*over*(1+admin)*drain*0.25 is very aggressive when waitWeeks>12. Need to ensure the Markov model itself doesn't progress too fast.",
+      "acceptanceCriteria": "Run 500 cycles in IST: ~10% ghost sprites. Switch to SOLL, run 500 more: ghost rate decreases meaningfully. Most agents cycle through healthy→sick→treated→recovered. Severe cases take 2-3 treatment cycles."
+    },
+    {
+      "id": "task-5",
+      "name": "GP Capacity Model",
+      "backlogRef": "Epic 5.2",
+      "targetFile": "src/frontend/v4.html",
+      "approach": "Add capacity constraints to GP agents: (1) Give each GP a `patientsSeenToday` counter (resets every 28 ticks = 1 sim week). (2) Max consultations per day: 30 (NZa standard). (3) Admin burden (30% IST) steals 9 slots → 21 effective. (4) SOLL: admin drops to 5% → 28.5 effective slots. (5) GP processes 1 patient per tick from their queue. (6) When queue > capacity, patients wait — visible queue buildup at GP building entrance. (7) Track in GP agent data: queue array, patientsSeenToday, referralsMade. (8) The at_gp behavioral state already has a stateTimer; add queue-based waiting before the timer starts.",
+      "dependencies": ["task-1"],
+      "estimatedComplexity": "low-medium",
+      "estimatedMinutes": 20,
+      "dataSourceFiles": [
+        "src/agents/provider_agents.js",
+        "config/reference_data.js"
+      ],
+      "portingNotes": "The current GP agents (gp1, gp2) have no queue tracking. The stateTimer in at_gp (3+random*3 ticks) represents consultation time, not queue waiting. Need to add a queue mechanism: when agent arrives at GP, they join the queue. GP processes 1 from queue per tick. If queue full, patient waits (stays in going_to_gp or new 'waiting_at_gp' state).",
+      "acceptanceCriteria": "When many agents are sick simultaneously, GP queue builds up visibly. GP dashboard (Sprint 2) can read queue size. In SOLL mode, effective capacity increases."
+    }
+  ],
+
+  "readinessScore": 55,
+
+  "readinessBreakdown": {
+    "dataReadiness": 85,
+    "dataReadinessNotes": "CBS/RIVM/NZa reference data is comprehensive and well-structured. 10 chronic conditions with prevalence rates, age distribution, tariff data, IZA parameters all ready in config/reference_data.js.",
+    "backendEngineReadiness": 80,
+    "backendEngineNotes": "disease_engine.js (Markov model, HP drain, Treeknorm checker), population_engine.js (spawner with Dutch names, age distribution, condition assignment), fhir_store.js (FHIR R4 partial store), cognitive_loop.js (Park et al. cognitive architecture) — all well-structured and portable. Only dependency on node:crypto (randomUUID) needs browser adaptation.",
+    "frontendReadiness": 45,
+    "frontendNotes": "Rendering engine is solid (canvas, sprites, pathfinding). But: 15 hardcoded agents, hardcoded LOOKS dictionary, simplified tick(), no building click detection, no event persistence. The monolithic v4.html structure means porting requires careful inline integration.",
+    "integrationReadiness": 25,
+    "integrationNotes": "Frontend and backend are completely disconnected. No shared data structures, no message passing, no FHIR integration in frontend. The M{} mode config in v4.html duplicates (poorly) what SIMULATION_CONFIG provides.",
+    "testReadiness": 0,
+    "testNotes": "Zero automated tests. No test framework configured. package.json has 'npm test' pointing to empty tests/ directory."
+  },
+
+  "blockers": [
+    {
+      "id": "blocker-1",
+      "severity": "high",
+      "title": "Procedural character appearance generation",
+      "description": "The LOOKS dictionary in v4.html maps hardcoded agent IDs to specific pixel art parameters (skin, hair, hType 0-11, shirt, pants, coat). Procedural population spawning (Task 2) requires a generateLooks() function that creates varied, consistent appearances from agent metadata (age, gender, role). Must produce valid hType values (0-11) and color palettes that look natural. This is the #1 technical risk for Sprint 1.",
+      "mitigation": "Build a palette system: skin tones (6 options), hair colors by age (grey for 65+, varied for younger), gendered hair types (0-4 male, 3,5,6,8,10,11 female), shirt/pants from a curated palette. Seed from agent ID hash for consistency across renders."
+    },
+    {
+      "id": "blocker-2",
+      "severity": "medium",
+      "title": "Node.js dependency in population_engine.js",
+      "description": "population_engine.js imports randomUUID from node:crypto. Browser equivalent crypto.randomUUID() exists in modern browsers but may need fallback. Also imports PatientAgent class which is the full backend agent — frontend doesn't need the class, just the spawning logic.",
+      "mitigation": "Use crypto.randomUUID() (supported in all modern browsers since 2021) or simple counter-based IDs (patient-0001 format already used). Skip PatientAgent class import — only port the data generation functions."
+    },
+    {
+      "id": "blocker-3",
+      "severity": "medium",
+      "title": "Monolithic frontend architecture",
+      "description": "v4.html is a single 1454-line file with no module imports. All backend logic must be copy-pasted as inline functions. Risk of namespace collisions, variable shadowing, and maintenance burden. The file will likely grow to 2500+ lines after Sprint 1.",
+      "mitigation": "Use clear section headers (═══ SECTION ═══ pattern already established). Keep ported functions self-contained. Consider extracting to a separate inline <script> block for disease/population logic. Accept the monolith for now — BACKLOG technical decision explicitly chose this approach."
+    },
+    {
+      "id": "blocker-4",
+      "severity": "low",
+      "title": "Markov transition rate calibration uncertainty",
+      "description": "The base Markov transition rates in disease_engine.js (e.g., healthy→mild at 5%/week) may produce unrealistic population-level outcomes when applied to 30-60 agents over 1000 cycles. Tuning requires iterative batch simulation runs.",
+      "mitigation": "Build a quick calibration harness: batch(500), count ghosts, adjust rates, repeat. Accept ±2% variance from target mortality rates. Different conditions should have different base transition rates (in DISEASE_DB)."
+    }
+  ],
+
+  "architecturalNotes": {
+    "ADR-001": {
+      "title": "Frontend-first architecture confirmed",
+      "decision": "All simulation logic runs in v4.html. Backend engines are ported as inline functions, not imported as ES modules.",
+      "rationale": "BACKLOG technical decisions explicitly chose this: 'Single-file app, no build step, instant reload. Port backend logic as inline functions.' No bundler, no framework.",
+      "consequence": "Backend files (disease_engine.js, population_engine.js, etc.) become reference implementations only. All active development happens in v4.html."
+    },
+    "ADR-002": {
+      "title": "DISEASE_DB as the single source of clinical truth",
+      "decision": "A single DISEASE_DB object in v4.html replaces all hardcoded clinical parameters: drain rates, treatment durations, Markov transitions, prevalence data.",
+      "rationale": "Currently clinical data is scattered across: reference_data.js (prevalence), disease_engine.js (Markov matrices), simulation.js (drain rates), and hardcoded in tick(). DISEASE_DB consolidates everything.",
+      "consequence": "Any clinical parameter change only needs to touch DISEASE_DB. Tick() reads from DISEASE_DB exclusively."
+    },
+    "ADR-003": {
+      "title": "Population size: 30-60 active agents",
+      "decision": "Despite the town being described as 5,000 inhabitants, the frontend renders 30-60 active agents for performance reasons.",
+      "rationale": "Canvas rendering, pathfinding, and sprite pre-rendering scale linearly. 60 agents × 3 walk frames × 2 (normal+ghost) = 360 offscreen canvases. Beyond that, frame rate drops below 60fps.",
+      "consequence": "Statistical models must be scaled to the active population size. Prevalence rates applied to 30-60 agents, not 5,000."
+    },
+    "ADR-004": {
+      "title": "Condition-specific Markov matrices",
+      "decision": "Each condition in DISEASE_DB gets its own Markov transition matrix rather than sharing the generic one from disease_engine.js.",
+      "rationale": "Heart disease (I25) progresses differently from depression (F32) or COPD (J44). Generic matrices produce unrealistic outcomes where all diseases behave identically.",
+      "consequence": "More data to maintain per condition, but significantly more realistic simulation outcomes."
+    }
+  },
+
+  "sprint2Preview": {
+    "name": "Sprint 2 — Buildings & Doctors",
+    "tasks": [
+      "Click detection for buildings (check BUILDINGS array before agents)",
+      "GP Dashboard Panel (queue, admin burden, patients seen, burnout)",
+      "Hospital Dashboard Panel (beds, specialists, wait list, Treeknorm)",
+      "Doctor Agent Tracking (patientsSeenToday, referralsMade, burnoutLevel)",
+      "Specialist Wait Times (Treeknorm visualization)"
+    ],
+    "prerequisite": "Sprint 1 must be complete — DISEASE_DB and population spawner provide the data these panels display."
+  },
+
+  "keyCodeLocations": {
+    "frontendTickFunction": "src/frontend/v4.html:1210-1387",
+    "agentDefinitions": "src/frontend/v4.html:378-433",
+    "agentInitialization": "src/frontend/v4.html:435-454",
+    "behaviorStateInit": "src/frontend/v4.html:1192-1207",
+    "looksDict": "src/frontend/v4.html:690-708",
+    "characterRenderer": "src/frontend/v4.html:714-833",
+    "waypointGraph": "src/frontend/v4.html:298-376",
+    "clickHandler": "src/frontend/v4.html:1081-1097",
+    "selectAgent": "src/frontend/v4.html:1099-1161",
+    "modeConfig": "src/frontend/v4.html:460 (M{IST,SOLL})",
+    "buildingZones": "src/frontend/v4.html:270-274",
+    "noWalkZones": "src/frontend/v4.html:251-267",
+    "backendDiseaseEngine": "src/clinical_logic/disease_engine.js:1-187",
+    "backendPopulationEngine": "src/agents/population_engine.js:1-238",
+    "backendFHIRStore": "src/data_layer/fhir_store.js:1-259",
+    "backendCognitiveLoop": "src/agents/cognitive_loop.js:1-245",
+    "referenceData": "config/reference_data.js:1-153",
+    "simulationConfig": "config/simulation.js:1-77"
+  }
+}

@@ -1,0 +1,69 @@
+{
+  "skill": "lancelot-builder",
+  "version": "1.0.0",
+  "displayName": "Lancelot (Builder)",
+  "description": "Implementation agent. Writes feature code, refactors modules, and wires systems together — always adhering to Cammelot's code conventions and module patterns.",
+  "triggers": [
+    "implement",
+    "build",
+    "add feature",
+    "wire up",
+    "refactor",
+    "connect frontend to backend",
+    "create module"
+  ],
+  "context": {
+    "primaryMemory": "docs/CODEBASE_MAP.md",
+    "projectSpec": "CLAUDE.md",
+    "backlog": "BACKLOG.md"
+  },
+  "rules": {
+    "language": "JavaScript (ES2020 modules)",
+    "moduleSystem": "ESM — import/export only, never CommonJS require()",
+    "typeAnnotations": "JSDoc comments (@param, @returns, @typedef)",
+    "variableDeclarations": "const preferred, let when mutation needed, never var",
+    "asyncPattern": "async/await for all I/O and promises",
+    "classPattern": "Classes for entities, singletons via export const globalX = new X()",
+    "naming": {
+      "files": "snake_case.js",
+      "classes": "PascalCase",
+      "functions": "camelCase",
+      "constants": "UPPER_SNAKE_CASE",
+      "agentIds": "role-lastname (e.g., gp-de-jong)"
+    },
+    "fhirCodes": {
+      "waitTime": "CAMMELOT-WAIT",
+      "hpChange": "CAMMELOT-HP",
+      "mortality": "CAMMELOT-GHOST",
+      "actionLog": "CAMMELOT-ACTION",
+      "diseaseState": "CAMMELOT-DISEASE-STATE"
+    },
+    "dependencies": "Prefer Node stdlib. Any new npm dependency requires an ADR via Merlin.",
+    "frontendRules": {
+      "aesthetic": "16-bit SNES RPG — saturated palette, pixel art, speech bubbles",
+      "font": "Press Start 2P",
+      "noModernUI": "No flat grey dashboards, no corporate chart layouts",
+      "rendering": "2D Canvas, tile-based (16×16px tiles)"
+    }
+  },
+  "workflow": [
+    "1. Read docs/CODEBASE_MAP.md for current architecture state",
+    "2. Read CLAUDE.md Section 11 for development instructions",
+    "3. Identify all files that will change — write a STRATEGY_MAP before coding",
+    "4. Implement changes using ES module patterns from existing codebase",
+    "5. Ensure all new agents register with globalMessageBus and log to globalFHIRStore",
+    "6. Run npm test after every change — if tests fail, revert immediately (see swarm.rules.json)",
+    "7. Update docs/CODEBASE_MAP.md if architecture changes"
+  ],
+  "boundaries": {
+    "mayCreate": ["src/**/*.js", "config/**/*.js", "assets/**/*"],
+    "mayEdit": ["src/**/*.js", "config/**/*.js", "src/frontend/*.html"],
+    "mustNotEdit": ["CLAUDE.md", "docs/CODEBASE_MAP.md (structure only — may append)"],
+    "mustNotDelete": ["Any existing file without explicit approval"]
+  },
+  "qualityGates": {
+    "preCommit": "npm test must pass",
+    "patternCompliance": "No CommonJS, no var, no untyped exports",
+    "securityCheck": "No hardcoded secrets, no eval(), no unvalidated external input"
+  }
+}

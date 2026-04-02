@@ -1,0 +1,97 @@
+{
+  "skill": "galahad-qa",
+  "version": "1.0.0",
+  "displayName": "Galahad (QA)",
+  "description": "Background test swarm agent. Monitors regressions, runs test suites in the parallel worktree, and enforces the veto protocol when tests fail.",
+  "triggers": [
+    "test",
+    "regression",
+    "validate",
+    "qa check",
+    "run tests",
+    "verify changes",
+    "swarm test"
+  ],
+  "context": {
+    "primaryMemory": "docs/CODEBASE_MAP.md",
+    "safetyProtocol": "swarm.rules.json",
+    "worktreeConfig": ".camelot/worktree-config.json"
+  },
+  "worktree": {
+    "path": "../camelot-qa",
+    "branch": "feature/agentic-overhaul",
+    "purpose": "Isolated test execution — no file locks on main workspace",
+    "syncStrategy": "git pull from main worktree before each test run"
+  },
+  "testFramework": {
+    "runner": "node --test",
+    "command": "npm test",
+    "testDir": "tests/",
+    "patterns": ["tests/**/*.test.js", "tests/**/*.spec.js"],
+    "timeout": 30000
+  },
+  "workflow": [
+    "1. Sync worktree: cd ../camelot-qa && git checkout feature/agentic-overhaul && git pull",
+    "2. Run full test suite: npm test",
+    "3. If ANY test fails → trigger VETO (see swarm.rules.json)",
+    "4. Report results: { passed, failed, skipped, duration, failedTests[] }",
+    "5. On veto: identify the last changed file and auto-revert via git checkout -- <file>"
+  ],
+  "monitoring": {
+    "triggerOn": ["file save", "pre-commit", "manual invocation"],
+    "watchPaths": ["src/**/*.js", "config/**/*.js"],
+    "excludePaths": ["docs/**", "assets/**", "00_Project_Strategy/**"],
+    "reportFormat": {
+      "passed": "number",
+      "failed": "number",
+      "skipped": "number",
+      "duration": "ms",
+      "failedTests": ["{ name, file, error }"],
+      "vetoTriggered": "boolean",
+      "revertedFiles": ["string"]
+    }
+  },
+  "regressionChecks": [
+    {
+      "name": "fhir-store-integrity",
+      "description": "FHIR store creates, queries, and bundles must return valid resources",
+      "scope": "src/data_layer/fhir_store.js"
+    },
+    {
+      "name": "agent-cognitive-loop",
+      "description": "CammelotAgent subclasses must implement tick() following Memory → Reflect → Plan → Execute",
+      "scope": "src/agents/*.js"
+    },
+    {
+      "name": "a2a-protocol-contracts",
+      "description": "Agent cards must conform to schema, messages must route correctly",
+      "scope": "src/communication/a2a_protocol.js"
+    },
+    {
+      "name": "disease-engine-markov",
+      "description": "Markov transitions must be valid probability distributions (sum to 1.0)",
+      "scope": "src/clinical_logic/disease_engine.js"
+    },
+    {
+      "name": "hp-drain-bounds",
+      "description": "HP must stay in [0, 100], drain must respect severity multipliers",
+      "scope": "src/clinical_logic/disease_engine.js"
+    },
+    {
+      "name": "tile-map-pathfinding",
+      "description": "A* pathfinding must return valid paths on walkable tiles",
+      "scope": "src/grid_engine/tile_map.js"
+    },
+    {
+      "name": "population-demographics",
+      "description": "Spawned population must match CBS age distribution within 5% tolerance",
+      "scope": "src/agents/population_engine.js"
+    }
+  ],
+  "boundaries": {
+    "mayRead": ["**/*"],
+    "mayExecute": ["npm test", "node --test tests/"],
+    "mustNotEdit": ["src/**/*", "config/**/*"],
+    "mustNotDelete": ["Any file"]
+  }
+}

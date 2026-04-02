@@ -1,0 +1,118 @@
+{
+  "$schema": "https://cammelot.sim/schemas/swarm-rules-v1.json",
+  "version": "1.0.0",
+  "description": "Safety protocol for the Cammelot autonomous agent swarm. Defines veto conditions, auto-revert behavior, and escalation rules.",
+
+  "veto": {
+    "enabled": true,
+    "description": "If any existing unit test fails after a code change, the agent MUST auto-revert the last file change before proceeding.",
+    "trigger": {
+      "condition": "ANY_TEST_FAILURE",
+      "scope": "npm test",
+      "appliesTo": ["lancelot-builder", "architect-prime"],
+      "excludes": ["galahad-qa", "merlin-architect"]
+    },
+    "action": {
+      "type": "auto-revert",
+      "strategy": "revert-last-changed-file",
+      "commands": [
+        "git diff --name-only HEAD | head -1",
+        "git checkout -- {lastChangedFile}"
+      ],
+      "fallback": "git stash",
+      "notification": {
+        "target": "galahad-qa",
+        "message": "VETO triggered: {testName} failed after change to {file}. Reverted.",
+        "severity": "critical"
+      }
+    },
+    "recovery": {
+      "maxRetries": 2,
+      "retryStrategy": "Agent must attempt a different approach after revert. Same change pattern blocked.",
+      "escalation": "If veto triggers 3 times on the same file, halt all changes and request human review."
+    }
+  },
+
+  "preCommitChecks": [
+    {
+      "name": "test-suite",
+      "command": "npm test",
+      "required": true,
+      "vetoOnFail": true
+    },
+    {
+      "name": "no-commonjs",
+      "description": "Reject any file using require() or module.exports",
+      "pattern": "require\\(|module\\.exports",
+      "type": "grep-reject",
+      "required": true,
+      "vetoOnFail": false
+    },
+    {
+      "name": "no-var-declarations",
+      "description": "Reject var declarations — use const or let",
+      "pattern": "\\bvar\\s+\\w",
+      "type": "grep-reject",
+      "required": false,
+      "vetoOnFail": false
+    }
+  ],
+
+  "boundaries": {
+    "protectedFiles": {
+      "description": "Files that cannot be modified without human approval",
+      "paths": [
+        "CLAUDE.md",
+        "swarm.rules.json",
+        ".camelot/skills/*.json"
+      ]
+    },
+    "destructiveActions": {
+      "description": "Actions that require human confirmation before execution",
+      "actions": [
+        "git push --force",
+        "git reset --hard",
+        "rm -rf",
+        "drop table",
+        "delete branch"
+      ]
+    },
+    "maxFilesPerCommit": 10,
+    "maxLinesChangedPerCommit": 500
+  },
+
+  "agentPermissions": {
+    "lancelot-builder": {
+      "mayCreate": ["src/**/*.js", "config/**/*.js", "tests/**/*.js"],
+      "mayEdit": ["src/**/*.js", "config/**/*.js", "src/frontend/*.html"],
+      "mustNotEdit": ["CLAUDE.md", "swarm.rules.json", ".camelot/**"],
+      "mustRunTests": true
+    },
+    "galahad-qa": {
+      "mayRead": ["**/*"],
+      "mayCreate": ["tests/**/*.js"],
+      "mayExecute": ["npm test", "node --test tests/"],
+      "mustNotEdit": ["src/**/*", "config/**/*"],
+      "mustNotDelete": ["Any file"]
+    },
+    "merlin-architect": {
+      "mayCreate": ["docs/adr/*.md"],
+      "mayEdit": ["docs/CODEBASE_MAP.md"],
+      "mustNotEdit": ["src/**/*", "config/**/*", "CLAUDE.md"],
+      "mustNotDelete": ["Any file"]
+    }
+  },
+
+  "logging": {
+    "logDir": "logs/swarm/",
+    "vetoLog": "logs/swarm/veto-events.jsonl",
+    "format": {
+      "timestamp": "ISO-8601",
+      "agent": "string",
+      "event": "veto | revert | test-pass | test-fail | escalation",
+      "file": "string",
+      "testName": "string",
+      "details": "string"
+    }
+  }
+}

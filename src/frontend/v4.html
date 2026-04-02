@@ -375,35 +375,590 @@ function findWaypointPath(fromIdx, toIdx) {
   return null;
 }
 
-const agents=[
-  // Patients — on roads
-  // Agents start on roads only
-  {id:'hendrik',x:.35,y:.27,type:'patient',name:'Henry Ward',age:75,gender:'M',
-   conditions:[{name:'Chronic Heart Disease',code:'I25',severity:'moderate'},{name:'Diabetes Type 2',code:'E11',severity:'mild'}],
-   hp:82,state:'waiting',waitWeeks:4,gpName:'Dr. Collins',insideBuilding:null,
-   thoughts:['My chest feels heavy again today...','The wait for cardiology is so long.','I hope Dr. Collins can help me soon.'],
-   color:'#e07040'},
-  {id:'maria',x:.50,y:.23,type:'patient',name:'Margaret Ellis',age:82,gender:'F',
-   conditions:[{name:'Dementia',code:'F03',severity:'moderate'},{name:'Osteoporosis',code:'M81',severity:'mild'}],
-   hp:65,state:'waiting',waitWeeks:8,gpName:'Dr. Collins',insideBuilding:null,
-   thoughts:['Where am I? I think I had an appointment...','My hip hurts when I walk.','I keep forgetting my medication times.'],
-   color:'#c87090'},
-  {id:'jan',x:.72,y:.27,type:'patient',name:'James Cooper',age:68,gender:'M',
-   conditions:[{name:'COPD',code:'J44',severity:'severe'}],
-   hp:45,state:'waiting',waitWeeks:14,gpName:'Dr. Bennett',insideBuilding:null,
-   thoughts:['I can barely breathe going up the stairs.','14 weeks wait... this is not right.','The system is failing people like me.'],
-   color:'#6090c0'},
-  {id:'sophie',x:.22,y:.54,type:'patient',name:'Sophie Taylor',age:42,gender:'F',
-   conditions:[{name:'Depression',code:'F32',severity:'moderate'}],
-   hp:78,state:'gp_visit',waitWeeks:2,gpName:'Dr. Bennett',insideBuilding:null,
-   thoughts:['At least my GP listens, even if it takes weeks.','The paperwork seems to slow everything down.','I wish there was less waiting.'],
-   color:'#a080d0'},
-  {id:'piet',x:.38,y:.23,type:'patient',name:'Peter Shaw',age:71,gender:'M',
-   conditions:[{name:'Lung Cancer',code:'C34',severity:'severe'},{name:'Hypertension',code:'I10',severity:'moderate'}],
-   hp:28,state:'critical',waitWeeks:16,gpName:'Dr. Hayes',insideBuilding:'hospital',
-   thoughts:['The hospital is full. Where do I go?','Every week counts for me...','I feel weaker every day in this queue.'],
-   color:'#d06050'},
-  // GPs — inside their clinics (hidden on map)
+// ── Sim ──
+let cycle=0,mode='IST',autoTimer=null;
+const M={IST:{admin:.3,sick:.08,tree:12,ai:1,drain:1},SOLL:{admin:.05,sick:.05,tree:4,ai:1.34,drain:.3}};
+let S={res:6,msgs:0,waste:0};
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// DISEASE_DB — Comprehensive Clinical Catalog (Epic 1.1)
+// Sources: RIVM VTV-2024, CBS 2024, disease_engine.js baseTransitions,
+//          simulation.js SIMULATION_CONFIG, CLAUDE.md calibration notes.
+// Each Markov transition row sums to 1.0 (Galahad-tested).
+// Deceased state is always absorbing.
+// ═══════════════════════════════════════════════════════════════════════════════
+const DISEASE_DB = {
+
+  // ── 1. Chronic Ischemic Heart Disease ──────────────────────────────────────
+  'I25': {
+    code: 'I25',
+    name: 'Chronic Ischemic Heart Disease',
+    icd10: 'I25',
+    category: 'cardiovascular',
+    prevalenceNL: 800_000,
+    seniorPrevalence: 0.12,
+    ageMin: 40,
+    canBeReferred: true,
+    referralSpecialty: 'cardiology',
+    gpTreatable: false,
+    treatmentDurationTicks: 6,
+    recoveryDurationTicks: 15,
+    hpDrainPerTick: 0.30,
+    hpGainPerTreatmentTick: 2.5,
+    hpGainPerRecoveryTick: 1.2,
+    interactsWith: ['E11', 'I10'],
+    comorbidityMultiplier: { 'E11': 1.4, 'I10': 1.3 },
+    markovTransitions: {
+      healthy:  { healthy: 0.95, mild: 0.04, moderate: 0.01, severe: 0,    critical: 0,    deceased: 0    },
+      mild:     { healthy: 0.10, mild: 0.80, moderate: 0.08, severe: 0.02, critical: 0,    deceased: 0    },
+      moderate: { healthy: 0.02, mild: 0.10, moderate: 0.75, severe: 0.10, critical: 0.03, deceased: 0    },
+      severe:   { healthy: 0,    mild: 0.02, moderate: 0.08, severe: 0.70, critical: 0.15, deceased: 0.05 },
+      critical: { healthy: 0,    mild: 0,    moderate: 0.02, severe: 0.10, critical: 0.68, deceased: 0.20 },
+      deceased: { healthy: 0,    mild: 0,    moderate: 0,    severe: 0,    critical: 0,    deceased: 1.0  }
+    },
+    treatmentEffect: { severe: 'moderate', moderate: 'mild', critical: 'severe' },
+    mortalityRisk: { untreated: 0.04, treated: 0.005 }
+  },
+
+  // ── 2. Diabetes Mellitus Type 2 ────────────────────────────────────────────
+  'E11': {
+    code: 'E11',
+    name: 'Diabetes Mellitus Type 2',
+    icd10: 'E11',
+    category: 'endocrine',
+    prevalenceNL: 1_200_000,
+    seniorPrevalence: 0.18,
+    ageMin: 30,
+    canBeReferred: true,
+    referralSpecialty: 'endocrinology',
+    gpTreatable: true,
+    treatmentDurationTicks: 8,
+    recoveryDurationTicks: 20,
+    hpDrainPerTick: 0.15,
+    hpGainPerTreatmentTick: 2.0,
+    hpGainPerRecoveryTick: 1.0,
+    interactsWith: ['I25', 'I50', 'I10'],
+    comorbidityMultiplier: { 'I25': 1.4, 'I50': 1.3, 'I10': 1.2 },
+    markovTransitions: {
+      healthy:  { healthy: 0.97, mild: 0.03, moderate: 0,    severe: 0,    critical: 0,    deceased: 0    },
+      mild:     { healthy: 0.08, mild: 0.85, moderate: 0.06, severe: 0.01, critical: 0,    deceased: 0    },
+      moderate: { healthy: 0.03, mild: 0.12, moderate: 0.76, severe: 0.07, critical: 0.02, deceased: 0    },
+      severe:   { healthy: 0,    mild: 0.02, moderate: 0.10, severe: 0.74, critical: 0.12, deceased: 0.02 },
+      critical: { healthy: 0,    mild: 0,    moderate: 0.03, severe: 0.12, critical: 0.72, deceased: 0.13 },
+      deceased: { healthy: 0,    mild: 0,    moderate: 0,    severe: 0,    critical: 0,    deceased: 1.0  }
+    },
+    treatmentEffect: { severe: 'moderate', moderate: 'mild', critical: 'severe' },
+    mortalityRisk: { untreated: 0.02, treated: 0.003 }
+  },
+
+  // ── 3. Dementia ────────────────────────────────────────────────────────────
+  'F03': {
+    code: 'F03',
+    name: 'Dementia',
+    icd10: 'F03',
+    category: 'neurological',
+    prevalenceNL: 300_000,
+    seniorPrevalence: 0.07,
+    ageMin: 65,
+    canBeReferred: true,
+    referralSpecialty: 'neurology',
+    gpTreatable: false,
+    treatmentDurationTicks: 10,
+    recoveryDurationTicks: 0,
+    hpDrainPerTick: 0.20,
+    hpGainPerTreatmentTick: 1.0,
+    hpGainPerRecoveryTick: 0.3,
+    interactsWith: [],
+    comorbidityMultiplier: {},
+    careSeekingDelayMultiplier: 2.0,
+    markovTransitions: {
+      healthy:  { healthy: 0.98, mild: 0.02, moderate: 0,    severe: 0,    critical: 0,    deceased: 0    },
+      mild:     { healthy: 0.01, mild: 0.90, moderate: 0.08, severe: 0.01, critical: 0,    deceased: 0    },
+      moderate: { healthy: 0,    mild: 0.02, moderate: 0.82, severe: 0.13, critical: 0.03, deceased: 0    },
+      severe:   { healthy: 0,    mild: 0,    moderate: 0.03, severe: 0.78, critical: 0.15, deceased: 0.04 },
+      critical: { healthy: 0,    mild: 0,    moderate: 0,    severe: 0.05, critical: 0.75, deceased: 0.20 },
+      deceased: { healthy: 0,    mild: 0,    moderate: 0,    severe: 0,    critical: 0,    deceased: 1.0  }
+    },
+    treatmentEffect: { severe: 'moderate', moderate: 'mild', critical: 'severe' },
+    mortalityRisk: { untreated: 0.05, treated: 0.02 }
+  },
+
+  // ── 4. COPD ────────────────────────────────────────────────────────────────
+  'J44': {
+    code: 'J44',
+    name: 'COPD',
+    icd10: 'J44',
+    category: 'pulmonary',
+    prevalenceNL: 600_000,
+    seniorPrevalence: 0.10,
+    ageMin: 45,
+    canBeReferred: true,
+    referralSpecialty: 'pulmonology',
+    gpTreatable: false,
+    treatmentDurationTicks: 8,
+    recoveryDurationTicks: 18,
+    hpDrainPerTick: 0.25,
+    hpGainPerTreatmentTick: 2.0,
+    hpGainPerRecoveryTick: 0.8,
+    interactsWith: ['C34'],
+    comorbidityMultiplier: { 'C34': 2.0 },
+    markovTransitions: {
+      healthy:  { healthy: 0.97, mild: 0.03, moderate: 0,    severe: 0,    critical: 0,    deceased: 0    },
+      mild:     { healthy: 0.05, mild: 0.85, moderate: 0.08, severe: 0.02, critical: 0,    deceased: 0    },
+      moderate: { healthy: 0.01, mild: 0.06, moderate: 0.78, severe: 0.12, critical: 0.03, deceased: 0    },
+      severe:   { healthy: 0,    mild: 0.01, moderate: 0.05, severe: 0.74, critical: 0.15, deceased: 0.05 },
+      critical: { healthy: 0,    mild: 0,    moderate: 0.01, severe: 0.08, critical: 0.66, deceased: 0.25 },
+      deceased: { healthy: 0,    mild: 0,    moderate: 0,    severe: 0,    critical: 0,    deceased: 1.0  }
+    },
+    treatmentEffect: { severe: 'moderate', moderate: 'mild', critical: 'severe' },
+    mortalityRisk: { untreated: 0.05, treated: 0.01 }
+  },
+
+  // ── 5. Arthrosis / Osteoarthritis ──────────────────────────────────────────
+  'M17': {
+    code: 'M17',
+    name: 'Arthrosis',
+    icd10: 'M17',
+    category: 'musculoskeletal',
+    prevalenceNL: 1_600_000,
+    seniorPrevalence: 0.25,
+    ageMin: 40,
+    canBeReferred: true,
+    referralSpecialty: 'orthopedics',
+    gpTreatable: true,
+    treatmentDurationTicks: 10,
+    recoveryDurationTicks: 20,
+    hpDrainPerTick: 0.08,
+    hpGainPerTreatmentTick: 1.5,
+    hpGainPerRecoveryTick: 0.8,
+    interactsWith: ['M81'],
+    comorbidityMultiplier: { 'M81': 1.2 },
+    markovTransitions: {
+      healthy:  { healthy: 0.96, mild: 0.04, moderate: 0,    severe: 0,    critical: 0,    deceased: 0    },
+      mild:     { healthy: 0.06, mild: 0.86, moderate: 0.07, severe: 0.01, critical: 0,    deceased: 0    },
+      moderate: { healthy: 0.02, mild: 0.10, moderate: 0.80, severe: 0.07, critical: 0.01, deceased: 0    },
+      severe:   { healthy: 0,    mild: 0.03, moderate: 0.12, severe: 0.78, critical: 0.07, deceased: 0    },
+      critical: { healthy: 0,    mild: 0,    moderate: 0.05, severe: 0.15, critical: 0.78, deceased: 0.02 },
+      deceased: { healthy: 0,    mild: 0,    moderate: 0,    severe: 0,    critical: 0,    deceased: 1.0  }
+    },
+    treatmentEffect: { severe: 'moderate', moderate: 'mild', critical: 'severe' },
+    mortalityRisk: { untreated: 0.001, treated: 0.0005 }
+  },
+
+  // ── 6. Heart Failure ───────────────────────────────────────────────────────
+  'I50': {
+    code: 'I50',
+    name: 'Heart Failure',
+    icd10: 'I50',
+    category: 'cardiovascular',
+    prevalenceNL: 240_000,
+    seniorPrevalence: 0.08,
+    ageMin: 65,
+    canBeReferred: true,
+    referralSpecialty: 'cardiology',
+    gpTreatable: false,
+    treatmentDurationTicks: 7,
+    recoveryDurationTicks: 20,
+    hpDrainPerTick: 0.40,
+    hpGainPerTreatmentTick: 2.8,
+    hpGainPerRecoveryTick: 1.0,
+    interactsWith: ['I25', 'I10', 'E11'],
+    comorbidityMultiplier: { 'I10': 1.5, 'I25': 1.4, 'E11': 1.3 },
+    markovTransitions: {
+      healthy:  { healthy: 0.97, mild: 0.03, moderate: 0,    severe: 0,    critical: 0,    deceased: 0    },
+      mild:     { healthy: 0.05, mild: 0.82, moderate: 0.10, severe: 0.03, critical: 0,    deceased: 0    },
+      moderate: { healthy: 0.01, mild: 0.05, moderate: 0.74, severe: 0.15, critical: 0.05, deceased: 0    },
+      severe:   { healthy: 0,    mild: 0.01, moderate: 0.05, severe: 0.68, critical: 0.18, deceased: 0.08 },
+      critical: { healthy: 0,    mild: 0,    moderate: 0.01, severe: 0.07, critical: 0.62, deceased: 0.30 },
+      deceased: { healthy: 0,    mild: 0,    moderate: 0,    severe: 0,    critical: 0,    deceased: 1.0  }
+    },
+    treatmentEffect: { severe: 'moderate', moderate: 'mild', critical: 'severe' },
+    mortalityRisk: { untreated: 0.08, treated: 0.02 }
+  },
+
+  // ── 7. Lung Cancer ─────────────────────────────────────────────────────────
+  'C34': {
+    code: 'C34',
+    name: 'Lung Cancer',
+    icd10: 'C34',
+    category: 'oncology',
+    prevalenceNL: 70_000,
+    seniorPrevalence: 0.02,
+    ageMin: 50,
+    canBeReferred: true,
+    referralSpecialty: 'oncology',
+    gpTreatable: false,
+    treatmentDurationTicks: 12,
+    recoveryDurationTicks: 30,
+    hpDrainPerTick: 0.50,
+    hpGainPerTreatmentTick: 2.0,
+    hpGainPerRecoveryTick: 0.6,
+    interactsWith: ['J44'],
+    comorbidityMultiplier: { 'J44': 2.0 },
+    markovTransitions: {
+      healthy:  { healthy: 0.97, mild: 0.03, moderate: 0,    severe: 0,    critical: 0,    deceased: 0    },
+      mild:     { healthy: 0.02, mild: 0.78, moderate: 0.15, severe: 0.05, critical: 0,    deceased: 0    },
+      moderate: { healthy: 0,    mild: 0.02, moderate: 0.70, severe: 0.20, critical: 0.08, deceased: 0    },
+      severe:   { healthy: 0,    mild: 0,    moderate: 0.02, severe: 0.60, critical: 0.25, deceased: 0.13 },
+      critical: { healthy: 0,    mild: 0,    moderate: 0,    severe: 0.05, critical: 0.55, deceased: 0.40 },
+      deceased: { healthy: 0,    mild: 0,    moderate: 0,    severe: 0,    critical: 0,    deceased: 1.0  }
+    },
+    treatmentEffect: { severe: 'moderate', moderate: 'mild', critical: 'severe' },
+    mortalityRisk: { untreated: 0.15, treated: 0.06 }
+  },
+
+  // ── 8. Depression ──────────────────────────────────────────────────────────
+  'F32': {
+    code: 'F32',
+    name: 'Depression',
+    icd10: 'F32',
+    category: 'psychiatric',
+    prevalenceNL: 900_000,
+    seniorPrevalence: 0.05,
+    ageMin: 18,
+    canBeReferred: true,
+    referralSpecialty: 'psychiatry',
+    gpTreatable: true,
+    treatmentDurationTicks: 10,
+    recoveryDurationTicks: 25,
+    hpDrainPerTick: 0.12,
+    hpGainPerTreatmentTick: 1.8,
+    hpGainPerRecoveryTick: 1.0,
+    interactsWith: [],
+    comorbidityMultiplier: {},
+    markovTransitions: {
+      healthy:  { healthy: 0.97, mild: 0.03, moderate: 0,    severe: 0,    critical: 0,    deceased: 0    },
+      mild:     { healthy: 0.15, mild: 0.75, moderate: 0.08, severe: 0.02, critical: 0,    deceased: 0    },
+      moderate: { healthy: 0.05, mild: 0.15, moderate: 0.68, severe: 0.10, critical: 0.02, deceased: 0    },
+      severe:   { healthy: 0,    mild: 0.05, moderate: 0.12, severe: 0.72, critical: 0.10, deceased: 0.01 },
+      critical: { healthy: 0,    mild: 0,    moderate: 0.05, severe: 0.15, critical: 0.72, deceased: 0.08 },
+      deceased: { healthy: 0,    mild: 0,    moderate: 0,    severe: 0,    critical: 0,    deceased: 1.0  }
+    },
+    treatmentEffect: { severe: 'moderate', moderate: 'mild', critical: 'severe' },
+    mortalityRisk: { untreated: 0.01, treated: 0.002 }
+  },
+
+  // ── 9. Hypertension ────────────────────────────────────────────────────────
+  'I10': {
+    code: 'I10',
+    name: 'Hypertension',
+    icd10: 'I10',
+    category: 'cardiovascular',
+    prevalenceNL: 2_800_000,
+    seniorPrevalence: 0.30,
+    ageMin: 35,
+    canBeReferred: true,
+    referralSpecialty: 'internal_medicine',
+    gpTreatable: true,
+    treatmentDurationTicks: 6,
+    recoveryDurationTicks: 12,
+    hpDrainPerTick: 0.10,
+    hpGainPerTreatmentTick: 2.0,
+    hpGainPerRecoveryTick: 1.2,
+    interactsWith: ['I25', 'I50'],
+    comorbidityMultiplier: { 'I50': 1.5, 'I25': 1.3 },
+    markovTransitions: {
+      healthy:  { healthy: 0.97, mild: 0.03, moderate: 0,    severe: 0,    critical: 0,    deceased: 0    },
+      mild:     { healthy: 0.12, mild: 0.80, moderate: 0.07, severe: 0.01, critical: 0,    deceased: 0    },
+      moderate: { healthy: 0.04, mild: 0.14, moderate: 0.74, severe: 0.07, critical: 0.01, deceased: 0    },
+      severe:   { healthy: 0,    mild: 0.03, moderate: 0.10, severe: 0.76, critical: 0.10, deceased: 0.01 },
+      critical: { healthy: 0,    mild: 0,    moderate: 0.04, severe: 0.12, critical: 0.76, deceased: 0.08 },
+      deceased: { healthy: 0,    mild: 0,    moderate: 0,    severe: 0,    critical: 0,    deceased: 1.0  }
+    },
+    treatmentEffect: { severe: 'moderate', moderate: 'mild', critical: 'severe' },
+    mortalityRisk: { untreated: 0.015, treated: 0.003 }
+  },
+
+  // ── 10. Osteoporosis ───────────────────────────────────────────────────────
+  'M81': {
+    code: 'M81',
+    name: 'Osteoporosis',
+    icd10: 'M81',
+    category: 'musculoskeletal',
+    prevalenceNL: 500_000,
+    seniorPrevalence: 0.15,
+    ageMin: 50,
+    canBeReferred: true,
+    referralSpecialty: 'rheumatology',
+    gpTreatable: true,
+    treatmentDurationTicks: 8,
+    recoveryDurationTicks: 16,
+    hpDrainPerTick: 0.08,
+    hpGainPerTreatmentTick: 1.5,
+    hpGainPerRecoveryTick: 0.8,
+    interactsWith: ['M17'],
+    comorbidityMultiplier: { 'M17': 1.2 },
+    markovTransitions: {
+      healthy:  { healthy: 0.97, mild: 0.03, moderate: 0,    severe: 0,    critical: 0,    deceased: 0    },
+      mild:     { healthy: 0.08, mild: 0.84, moderate: 0.07, severe: 0.01, critical: 0,    deceased: 0    },
+      moderate: { healthy: 0.02, mild: 0.10, moderate: 0.80, severe: 0.07, critical: 0.01, deceased: 0    },
+      severe:   { healthy: 0,    mild: 0.02, moderate: 0.10, severe: 0.80, critical: 0.07, deceased: 0.01 },
+      critical: { healthy: 0,    mild: 0,    moderate: 0.04, severe: 0.12, critical: 0.80, deceased: 0.04 },
+      deceased: { healthy: 0,    mild: 0,    moderate: 0,    severe: 0,    critical: 0,    deceased: 1.0  }
+    },
+    treatmentEffect: { severe: 'moderate', moderate: 'mild', critical: 'severe' },
+    mortalityRisk: { untreated: 0.008, treated: 0.002 }
+  }
+};
+// ═══ END DISEASE_DB ═════════════════════════════════════════════════════════
+
+// ═══ CBS/RIVM REFERENCE DATA — Population Spawner (Epic 1.2) ═══════════════
+const CBS_AGE_DIST = [
+  { min:0, max:17, fraction:0.20 },
+  { min:18, max:44, fraction:0.30 },
+  { min:45, max:64, fraction:0.30 },
+  { min:65, max:79, fraction:0.13 },
+  { min:80, max:99, fraction:0.07 }
+];
+
+const FIRST_NAMES_M = ['Jan','Piet','Hendrik','Willem','Klaas','Dirk','Cornelis','Johannes','Gerrit','Pieter','Anton','Bert','Frans','Henk','Jaap','Karel','Marcel','Nico','Rob','Theo','Wim','Arjen','Bas','Dennis','Erik','Frank','Guus','Hans','Ivo','Joost','Lars','Maarten','Niels','Oscar','Paul','Roel','Sander','Tom','Victor','Wouter'];
+const FIRST_NAMES_F = ['Maria','Anna','Johanna','Cornelia','Elisabeth','Wilhelmina','Geertje','Hendrika','Jantje','Pietje','Anja','Bettie','Carla','Diana','Eva','Femke','Grietje','Hilde','Ingrid','Julia','Katrin','Linda','Marieke','Nienke','Olga','Petra','Rita','Sophie','Truus','Vera'];
+const SURNAMES = ['de Jong','Jansen','de Vries','van den Berg','van Dijk','Bakker','Janssen','Visser','Smit','Meijer','de Boer','Mulder','de Groot','Bos','Vos','Peters','Hendriks','van Leeuwen','Dekker','Brouwer','de Wit','Dijkstra','Smits','de Graaf','van der Meer','van der Linden','Kok','Jacobs','de Haan','Vermeulen','van den Heuvel','van der Veen','van den Broek','de Bruijn','de Bruin','van der Heijden','Schouten','van Beek','Willems','van Vliet','van de Ven','Hoekstra','Maas','Verhoeven','Koster','van Dam','van der Wal','Prins','Blom','Huisman'];
+
+// ── Seeded RNG utilities ──
+function hashCode(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = ((h << 5) - h + str.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+function seededRandom(seed) {
+  let s = seed || 1;
+  return () => { s = (s * 16807 + 0) % 2147483647; return s / 2147483647; };
+}
+
+// ── Procedural LOOKS generator ──
+function generateLooks(id, age, gender) {
+  const seed = hashCode(id);
+  const rng = seededRandom(seed);
+  const SKIN_TONES = ['#E0C0A0','#D4A574','#C09060','#B87848','#A86838','#906838'];
+  const HAIR_YOUNG = ['#1A1A1A','#4A3020','#8B4513','#C87030','#6A3020','#904828'];
+  const HAIR_OLD = ['#A0A0A0','#B0B0B0','#D0D0D0','#E0E0E0'];
+  const MALE_HTYPES = [0,2,4,7,9];
+  const FEMALE_HTYPES = [1,3,5,6,8,10,11];
+  const SHIRTS = ['#5A7A4A','#3A6A8A','#8A6AA8','#C06080','#7A5A3A','#4A8A4A','#8A50A0','#E0D8C8','#C04838','#3878A0','#D05868','#58A868','#6A5A4A'];
+  const PANTS_C = ['#4A3A2A','#2A3A4A','#5A4A6A','#4A3A5A','#3A2A1A','#5A4A3A','#3A2A4A','#7A6A5A','#4A4038','#3A3A5A','#4A4A4A'];
+  const skin = SKIN_TONES[Math.floor(rng() * SKIN_TONES.length)];
+  const hairColors = age >= 65 ? HAIR_OLD : HAIR_YOUNG;
+  const hair = hairColors[Math.floor(rng() * hairColors.length)];
+  const hTypes = gender === 'M' ? MALE_HTYPES : FEMALE_HTYPES;
+  const hType = hTypes[Math.floor(rng() * hTypes.length)];
+  const shirt = SHIRTS[Math.floor(rng() * SHIRTS.length)];
+  const pants = PANTS_C[Math.floor(rng() * PANTS_C.length)];
+  return { skin, hair, hType, shirt, pants, coat: null };
+}
+
+// ── Age generator (CBS distribution) ──
+function generateAge() {
+  const r = Math.random();
+  let cum = 0;
+  for (const g of CBS_AGE_DIST) {
+    cum += g.fraction;
+    if (r <= cum) return g.min + Math.floor(Math.random() * (g.max - g.min + 1));
+  }
+  return 50;
+}
+
+// ── Condition assigner (RIVM prevalence) ──
+function assignConditions(age) {
+  const conditions = [];
+  const isSenior = age >= 65;
+  const isElderly = age >= 75;
+  for (const code in DISEASE_DB) {
+    const cond = DISEASE_DB[code];
+    if (cond.ageMin && age < cond.ageMin) continue;
+    let prob;
+    if (isSenior) {
+      prob = cond.seniorPrevalence;
+      if (isElderly) prob *= 1.3;
+    } else {
+      prob = (cond.prevalenceNL / 18000000) * 0.5;
+    }
+    if (Math.random() < prob) {
+      const severity = isSenior
+        ? ['mild','moderate','moderate','severe'][Math.floor(Math.random()*4)]
+        : ['mild','mild','moderate'][Math.floor(Math.random()*3)];
+      conditions.push({ name: cond.name, code, severity });
+    }
+  }
+  // Enforce multimorbidity for 75+ (45% rate)
+  if (isElderly && conditions.length < 2 && Math.random() < 0.45) {
+    const available = Object.entries(DISEASE_DB).filter(
+      ([c, d]) => !conditions.some(ex => ex.code === c) && (!d.ageMin || age >= d.ageMin)
+    );
+    if (available.length > 0) {
+      const [c2, d2] = available[Math.floor(Math.random() * available.length)];
+      conditions.push({ name: d2.name, code: c2, severity: 'mild' });
+    }
+  }
+  return conditions;
+}
+
+// ── Thought generator ──
+function generateThoughts(conditions, hp, age, waitWeeks) {
+  if (conditions.length === 0) return ['Beautiful day in Cammelot.','Life is good.','Heading to the shops.'];
+  if (hp < 40) return ['I feel terrible...','How much longer must I wait?','The system is failing me.'];
+  if (waitWeeks > 10) return ['The wait is unbearable.','I called the clinic but no answer.','Every week I feel worse.'];
+  if (waitWeeks > 0) return ['I should see the doctor soon.','My medication helps a bit.','Taking it one day at a time.'];
+  return ['Managing my condition day by day.','The GP said to come back next month.','At least the medication works.'];
+}
+
+// ── Road position picker ──
+function getRandomRoadPosition() {
+  const roadPositions = [
+    {x:.22,y:.15},{x:.22,y:.27},{x:.22,y:.42},{x:.22,y:.54},{x:.22,y:.72},
+    {x:.35,y:.27},{x:.50,y:.23},{x:.50,y:.42},{x:.50,y:.54},{x:.50,y:.80},
+    {x:.72,y:.27},{x:.72,y:.42},{x:.72,y:.54},{x:.72,y:.80},
+    {x:.85,y:.27},{x:.85,y:.42},{x:.85,y:.54},
+    {x:.28,y:.27},{x:.56,y:.27},{x:.30,y:.54},{x:.42,y:.54},{x:.60,y:.54},{x:.80,y:.54},
+    {x:.12,y:.80},{x:.35,y:.80},{x:.60,y:.80},{x:.85,y:.80},
+    {x:.50,y:.15},{x:.50,y:.65},{x:.72,y:.65},{x:.22,y:.65}
+  ];
+  const base = roadPositions[Math.floor(Math.random() * roadPositions.length)];
+  return { x: base.x + (Math.random()-0.5)*0.04, y: base.y + (Math.random()-0.5)*0.04 };
+}
+
+// ═══ POPULATION SPAWNER (Epic 1.2) ═════════════════════════════════════════
+function spawnPopulation(count) {
+  count = count || 45;
+  const spawned = [];
+  for (let i = 0; i < count; i++) {
+    const gender = Math.random() < 0.50 ? 'M' : 'F';
+    const names = gender === 'M' ? FIRST_NAMES_M : FIRST_NAMES_F;
+    const firstName = names[Math.floor(Math.random() * names.length)];
+    const surname = SURNAMES[Math.floor(Math.random() * SURNAMES.length)];
+    const age = generateAge();
+    const conditions = assignConditions(age);
+    const id = 'cit-' + i.toString().padStart(3,'0');
+    // HP based on age + conditions
+    let hp = 100;
+    if (age >= 80) hp = 50 + Math.floor(Math.random() * 35);
+    else if (age >= 65) hp = 65 + Math.floor(Math.random() * 30);
+    else if (conditions.length > 0) hp = 75 + Math.floor(Math.random() * 20);
+    // Some seniors already waiting
+    let waitWeeks = 0;
+    let referredToHospital = false;
+    if (conditions.length > 0 && age >= 65 && Math.random() < 0.15) {
+      waitWeeks = 1 + Math.floor(Math.random() * 15);
+      referredToHospital = waitWeeks >= 10;
+    }
+    const pos = getRandomRoadPosition();
+    const gpName = Math.random() < 0.5 ? 'Dr. Collins' : 'Dr. Bennett';
+    let state = 'healthy';
+    if (waitWeeks > 10) state = 'critical';
+    else if (conditions.length > 0 && waitWeeks > 0) state = 'waiting';
+    else if (conditions.length > 0) state = 'managed';
+    spawned.push({
+      id, name: firstName + ' ' + surname, age, gender,
+      type: conditions.length > 0 ? 'patient' : 'citizen',
+      conditions, hp, waitWeeks,
+      x: pos.x, y: pos.y,
+      state, gpName,
+      insideBuilding: referredToHospital ? 'hospital' : null,
+      referredToHospital,
+      thoughts: generateThoughts(conditions, hp, age, waitWeeks),
+      color: '#808080'
+    });
+  }
+  return spawned;
+}
+// ═══ END POPULATION SPAWNER ════════════════════════════════════════════════
+
+// ═══ DISEASE ENGINE (ported from disease_engine.js) ═══════════════════════
+
+// Markov state transition using condition-specific matrices from DISEASE_DB
+function transitionDiseaseState(conditionCode, currentState, waitWeeks, treeknormWeeks) {
+  const db = DISEASE_DB[conditionCode];
+  if (!db || !db.markovTransitions) return currentState;
+
+  const baseRow = db.markovTransitions[currentState];
+  if (!baseRow) return currentState;
+
+  // Adjust transitions if wait exceeds Treeknorm (acceleration)
+  let row = { ...baseRow };
+  if (waitWeeks > treeknormWeeks && currentState !== 'deceased') {
+    const overdue = waitWeeks - treeknormWeeks;
+    const acceleration = Math.min(overdue * 0.015, 0.30); // cap at 30% shift
+
+    // Reduce self-stay probability, increase worse-state probabilities
+    const states = ['healthy','mild','moderate','severe','critical','deceased'];
+    const currentIdx = states.indexOf(currentState);
+
+    if (currentIdx < states.length - 1) {
+      const selfStay = Math.max(row[currentState] - acceleration, 0.10);
+      const redistributed = row[currentState] - selfStay;
+      row = { ...row };
+      row[currentState] = selfStay;
+
+      // Distribute to worse states
+      const worseStates = states.slice(currentIdx + 1);
+      const perState = redistributed / worseStates.length;
+      for (const ws of worseStates) {
+        row[ws] = (row[ws] || 0) + perState;
+      }
+    }
+  }
+
+  // Sample from probability distribution
+  const r = Math.random();
+  let cumulative = 0;
+  const states = ['healthy','mild','moderate','severe','critical','deceased'];
+  for (const s of states) {
+    cumulative += (row[s] || 0);
+    if (r <= cumulative) return s;
+  }
+  return currentState;
+}
+
+// HP drain calculation per CLAUDE.md formula:
+// HP_drain = drainRate × (t_wait - T_Treeknorm) × severityMultiplier × (1 + adminBurden)
+const SEVERITY_MULTIPLIER = { healthy:0, mild:0.5, moderate:1.0, severe:2.0, critical:4.0 };
+
+function calculateHPDrain(condition, severity, waitWeeks, params) {
+  // params = p (the current mode's M.IST or M.SOLL)
+  const db = DISEASE_DB[condition.code];
+  if (!db) return 0;
+
+  // Passive drain (untreated condition, even within Treeknorm)
+  let drain = db.hpDrainPerTick * params.drain;
+
+  // Additional drain from Treeknorm violation
+  if (waitWeeks > params.tree) {
+    const overdue = waitWeeks - params.tree;
+    const sevMult = SEVERITY_MULTIPLIER[severity] || 1.0;
+    // 3 HP per week overdue × severity × admin burden (from CLAUDE.md Section 4.3)
+    drain += (3 * overdue * sevMult * (1 + params.admin)) * 0.05; // scaled per-tick
+  }
+
+  return drain;
+}
+
+// Comorbidity multiplier from DISEASE_DB
+function getComorbidityMultiplier(conditions) {
+  let mult = 1.0;
+  const codes = conditions.map(c => c.code);
+  for (const cond of conditions) {
+    const db = DISEASE_DB[cond.code];
+    if (!db || !db.interactsWith || !db.comorbidityMultiplier) continue;
+    for (const interactCode of db.interactsWith) {
+      if (codes.includes(interactCode) && db.comorbidityMultiplier[interactCode]) {
+        mult = Math.max(mult, db.comorbidityMultiplier[interactCode]);
+      }
+    }
+  }
+  return mult;
+}
+
+// Treatment effect: downgrades severity state
+function applyTreatmentEffect(conditionCode, currentSeverity) {
+  const db = DISEASE_DB[conditionCode];
+  if (!db || !db.treatmentEffect) return currentSeverity;
+  return db.treatmentEffect[currentSeverity] || currentSeverity;
+}
+
+// ═══ END DISEASE ENGINE ═══════════════════════════════════════════════════
+
+// ═══ Infrastructure agents — GPs and Specialists (fixed) ═══
+const INFRASTRUCTURE_AGENTS = [
   {id:'gp1',x:.61,y:.14,type:'gp',name:'Dr. Collins',age:52,gender:'M',role:'General Practitioner',
    conditions:[],hp:100,state:'working',waitWeeks:0,insideBuilding:'gp1_bldg',
    thoughts:['30% of my day is paperwork. I became a doctor to help people.','My waiting room is full again.','If only I had more time per patient.'],
@@ -412,7 +967,6 @@ const agents=[
    conditions:[],hp:100,state:'working',waitWeeks:0,insideBuilding:null,
    thoughts:['Another referral denied. The specialist queue is 12 weeks.','I need to finish 50 FHIR logs before lunch.','My colleagues are burning out.'],
    color:'#40a870'},
-  // Specialists — inside hospital (hidden on map)
   {id:'s1',x:.34,y:.12,type:'specialist',name:'Dr. Ashworth',age:55,gender:'M',role:'Cardiologist',
    conditions:[],hp:100,state:'overloaded',waitWeeks:0,insideBuilding:'hospital',
    thoughts:['My queue is 12 weeks deep. Patients are deteriorating while waiting.','We need more capacity, not more paperwork.'],
@@ -421,16 +975,10 @@ const agents=[
    conditions:[],hp:100,state:'overloaded',waitWeeks:0,insideBuilding:'hospital',
    thoughts:['COPD patients like James cannot wait 14 weeks.','The Treeknorm is being violated daily.'],
    color:'#4090d0'},
-  // Citizens — on roads
-  {id:'n1',x:.22,y:.15,type:'citizen',name:'Keith Miller',age:35,gender:'M',conditions:[],hp:100,state:'healthy',waitWeeks:0,insideBuilding:null,thoughts:['Beautiful day in Cammelot.'],color:'#c8a060'},
-  {id:'n2',x:.85,y:.27,type:'citizen',name:'Anna Parker',age:28,gender:'F',conditions:[],hp:100,state:'healthy',waitWeeks:0,insideBuilding:null,thoughts:['Walking to the pharmacy.'],color:'#e0a0b0'},
-  {id:'n3',x:.22,y:.72,type:'citizen',name:'David Harris',age:55,gender:'M',conditions:[{name:'Hypertension',code:'I10',severity:'mild'}],hp:90,state:'managed',waitWeeks:0,insideBuilding:null,thoughts:['My blood pressure medication is working.'],color:'#a0b060'},
-  {id:'n4',x:.72,y:.54,type:'citizen',name:'Lisa Brooks',age:63,gender:'F',conditions:[{name:'Arthrosis',code:'M17',severity:'moderate'}],hp:72,state:'waiting',waitWeeks:6,insideBuilding:null,thoughts:['My knee hurts more every week I wait.'],color:'#d09070'},
-  {id:'n5',x:.50,y:.42,type:'citizen',name:'Tom Richards',age:40,gender:'M',conditions:[],hp:100,state:'healthy',waitWeeks:0,insideBuilding:null,thoughts:['The park is nice this time of year.'],color:'#90a060'},
-  {id:'n6',x:.72,y:.80,type:'citizen',name:'Emma Clarke',age:31,gender:'F',conditions:[],hp:100,state:'healthy',waitWeeks:0,insideBuilding:null,thoughts:['Just picking up a prescription.'],color:'#d0a0c0'},
-  {id:'n7',x:.50,y:.80,type:'citizen',name:'Robert Green',age:78,gender:'M',conditions:[{name:'Heart Failure',code:'I50',severity:'moderate'}],hp:55,state:'waiting',waitWeeks:10,gpName:'Dr. Collins',insideBuilding:null,thoughts:['The stairs are getting harder.','I called the clinic but they said wait.'],color:'#a08050'},
-  {id:'n8',x:.85,y:.54,type:'citizen',name:'Sarah White',age:66,gender:'F',conditions:[{name:'Diabetes Type 2',code:'E11',severity:'mild'}],hp:85,state:'managed',waitWeeks:0,insideBuilding:null,thoughts:['My quarterly check-up went well.'],color:'#c0a0a0'},
 ];
+
+// Spawn procedural population + add infrastructure
+const agents = [...INFRASTRUCTURE_AGENTS, ...spawnPopulation(45)];
 
 agents.forEach(e=>{
   e.tx=e.x; e.ty=e.y;
@@ -454,11 +1002,6 @@ agents.forEach(e=>{
 });
 let lastFrameTime=performance.now();
 let selectedAgent=null;
-
-// ── Sim ──
-let cycle=0,mode='IST',autoTimer=null;
-const M={IST:{admin:.3,sick:.08,tree:12,ai:1,drain:1},SOLL:{admin:.05,sick:.05,tree:4,ai:1.34,drain:.3}};
-let S={res:6,msgs:0,waste:0};
 
 // ═══ SVG BUILDING SPRITES ═══
 // Pre-rendered as Image objects from inline SVGs for crisp scaling         
@@ -687,25 +1230,16 @@ function drawTile(x,y,t){
 // ═══ CHARACTER SYSTEM — Pokemon Gen3 Overworld Style ═══
 // Chibi proportions: big head (~60% of height), small body, clean pixel look
 
-const LOOKS = {
-  'hendrik': { skin:'#D4A574', hair:'#A0A0A0', hType:0, shirt:'#5A7A4A', pants:'#4A3A2A', coat:null },
-  'maria':   { skin:'#E0C0A0', hair:'#D0D0D0', hType:1, shirt:'#8A6AA8', pants:'#5A4A6A', coat:null },
-  'jan':     { skin:'#B87848', hair:'#1A1A1A', hType:2, shirt:'#3A6A8A', pants:'#2A3A4A', coat:null },
-  'sophie':  { skin:'#E0C0A0', hair:'#8B4513', hType:3, shirt:'#C06080', pants:'#4A3A5A', coat:null },
-  'piet':    { skin:'#D4A574', hair:'#B0B0B0', hType:4, shirt:'#7A5A3A', pants:'#3A2A1A', coat:null },
-  'gp1':     { skin:'#E0C0A0', hair:'#904828', hType:2, shirt:'#FFFFFF', pants:'#2A3A4A', coat:'#FFFFFF' },
-  'gp2':     { skin:'#B87848', hair:'#1A1210', hType:5, shirt:'#FFFFFF', pants:'#2A3A4A', coat:'#FFFFFF' },
-  's1':      { skin:'#D4A574', hair:'#2A2A2A', hType:2, shirt:'#4888B8', pants:'#2A3040', coat:'#4888B8' },
-  's2':      { skin:'#906838', hair:'#0A0A0A', hType:6, shirt:'#4888B8', pants:'#2A3040', coat:'#4888B8' },
-  'n1':      { skin:'#E0C0A0', hair:'#C87030', hType:7, shirt:'#4A8A4A', pants:'#5A4A3A', coat:null },
-  'n2':      { skin:'#7A4A28', hair:'#0A0A0A', hType:8, shirt:'#8A50A0', pants:'#3A2A4A', coat:null },
-  'n3':      { skin:'#C09060', hair:'#1A1A1A', hType:9, shirt:'#E0D8C8', pants:'#7A6A5A', coat:null },
-  'n4':      { skin:'#A86838', hair:'#0A0A0A', hType:3, shirt:'#C04838', pants:'#4A3A2A', coat:null },
-  'n5':      { skin:'#D4A574', hair:'#4A3020', hType:2, shirt:'#3878A0', pants:'#4A4038', coat:null },
-  'n6':      { skin:'#E0C0A0', hair:'#6A3020', hType:10,shirt:'#D05868', pants:'#3A3A5A', coat:null },
-  'n7':      { skin:'#D4A574', hair:'#E0E0E0', hType:0, shirt:'#6A5A4A', pants:'#3A2A1A', coat:null },
-  'n8':      { skin:'#B87848', hair:'#3A2A1A', hType:11,shirt:'#58A868', pants:'#4A4A4A', coat:null },
-};
+const LOOKS = {};
+// Infrastructure agents keep their handcrafted looks
+LOOKS['gp1'] = { skin:'#E0C0A0', hair:'#904828', hType:2, shirt:'#FFFFFF', pants:'#2A3A4A', coat:'#FFFFFF' };
+LOOKS['gp2'] = { skin:'#B87848', hair:'#1A1210', hType:5, shirt:'#FFFFFF', pants:'#2A3A4A', coat:'#FFFFFF' };
+LOOKS['s1']  = { skin:'#D4A574', hair:'#2A2A2A', hType:2, shirt:'#4888B8', pants:'#2A3040', coat:'#4888B8' };
+LOOKS['s2']  = { skin:'#906838', hair:'#0A0A0A', hType:6, shirt:'#4888B8', pants:'#2A3040', coat:'#4888B8' };
+// Generate looks for all spawned citizens/patients
+agents.forEach(a => {
+  if (!LOOKS[a.id]) LOOKS[a.id] = generateLooks(a.id, a.age, a.gender);
+});
 
 // Pre-render each character to offscreen canvases — 3 walk frames each
 const charCanvases = {};
@@ -1224,6 +1758,17 @@ function tick(){
       return;
     }
 
+    // === DISEASE STATE PROGRESSION (every 4 ticks ≈ 1 sim week) ===
+    if (cycle % 4 === 0 && a.conditions && a.conditions.length > 0) {
+      for (const cond of a.conditions) {
+        const newState = transitionDiseaseState(cond.code, cond.severity, a.waitWeeks, p.tree);
+        if (newState !== cond.severity) {
+          cond.severity = newState;
+          addHistory(a, 'worsened', `${cond.name} progressed to ${newState}`);
+        }
+      }
+    }
+
     // === BEHAVIORAL STATE MACHINE ===
     switch(a.behaviorState){
 
@@ -1242,9 +1787,14 @@ function tick(){
           sendAgentTo(a, getGPDest(a.gpName).entrance);
           a.bubbleTimer=80;
         }
-        // Slow passive drain for conditions NOT being treated
+        // Passive drain for untreated conditions (uses DISEASE_DB + comorbidity)
         if(hasConds && !a.healingTicksLeft){
-          a.hp=Math.max(0, a.hp - 0.05*p.drain*a.conditions.length);
+          let totalDrain = 0;
+          const comorbMult = getComorbidityMultiplier(a.conditions);
+          for (const cond of a.conditions) {
+            totalDrain += calculateHPDrain(cond, cond.severity, a.waitWeeks, p);
+          }
+          a.hp = Math.max(0, a.hp - totalDrain * comorbMult);
         }
         break;
       }
@@ -1301,14 +1851,14 @@ function tick(){
       }
 
       case 'going_to_hospital': {
-        // HP drain while waiting/traveling (the real killer)
-        a.waitWeeks+=0.25/p.ai;
-        if(a.waitWeeks>p.tree){
-          const over=a.waitWeeks-p.tree;
-          a.hp=Math.max(0, a.hp - 0.4*over*(1+p.admin)*p.drain*0.25);
+        // HP drain while waiting/traveling (uses DISEASE_DB + Treeknorm formula)
+        a.waitWeeks += 0.25 / p.ai;
+        let totalDrain = 0;
+        const comorbMult = getComorbidityMultiplier(a.conditions);
+        for (const cond of a.conditions) {
+          totalDrain += calculateHPDrain(cond, cond.severity, a.waitWeeks, p);
         }
-        // Passive condition drain
-        a.hp=Math.max(0, a.hp - 0.06*p.drain*a.conditions.length);
+        a.hp = Math.max(0, a.hp - totalDrain * comorbMult);
         if(a.pathComplete){
           a.insideBuilding='hospital'; a.behaviorState='at_hospital';
           a.stateTimer=5+Math.floor(Math.random()*6);
@@ -1320,15 +1870,34 @@ function tick(){
 
       case 'at_hospital': {
         a.stateTimer--;
-        a.hp=Math.min(100, a.hp+2.5); // Healing while hospitalized
+        // Healing per DISEASE_DB rates
+        if (a.conditions && a.conditions.length > 0) {
+          let bestHeal = 2.5; // fallback
+          for (const cond of a.conditions) {
+            const db = DISEASE_DB[cond.code];
+            if (db) bestHeal = Math.max(bestHeal, db.hpGainPerTreatmentTick);
+          }
+          a.hp = Math.min(100, a.hp + bestHeal);
+          // Apply treatment effect: downgrade severity
+          for (const cond of a.conditions) {
+            cond.severity = applyTreatmentEffect(cond.code, cond.severity);
+          }
+        } else {
+          a.hp = Math.min(100, a.hp + 2.5);
+        }
         if(a.stateTimer<=0){
           a.insideBuilding=null; a.behaviorState='recovering';
-          a.healingTicksLeft=15+Math.floor(Math.random()*10);
+          // Recovery duration from DISEASE_DB
+          let maxRecoveryTicks = 15; // fallback
+          for (const cond of a.conditions) {
+            const db = DISEASE_DB[cond.code];
+            if (db) maxRecoveryTicks = Math.max(maxRecoveryTicks, db.recoveryDurationTicks);
+          }
+          a.healingTicksLeft = maxRecoveryTicks;
           a.waitWeeks=0; a.referredToHospital=false;
-          // Improve condition severity
+          // Improve condition severity via treatmentEffect
           a.conditions.forEach(c=>{
-            if(c.severity==='severe') c.severity='moderate';
-            else if(c.severity==='moderate') c.severity='mild';
+            c.severity = applyTreatmentEffect(c.code, c.severity);
           });
           const hpGain=15+Math.floor(Math.random()*15);
           a.hp=Math.min(100, a.hp+hpGain);
@@ -1341,8 +1910,13 @@ function tick(){
       }
 
       case 'recovering': {
-        if(a.healingTicksLeft>0){
-          a.hp=Math.min(100, a.hp+1.2);
+        if(a.healingTicksLeft > 0){
+          let bestRecovery = 1.2; // fallback
+          for (const cond of a.conditions) {
+            const db = DISEASE_DB[cond.code];
+            if (db) bestRecovery = Math.max(bestRecovery, db.hpGainPerRecoveryTick);
+          }
+          a.hp = Math.min(100, a.hp + bestRecovery);
           a.healingTicksLeft--;
         }
         if(a.hp>=85 || a.healingTicksLeft<=0){
