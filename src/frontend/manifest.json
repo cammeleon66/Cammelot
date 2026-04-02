@@ -1,0 +1,12 @@
+{
+  "name": "Cammelot — Healthcare Crisis Simulation",
+  "short_name": "Cammelot",
+  "start_url": "/src/frontend/v4.html",
+  "display": "standalone",
+  "background_color": "#1a1a2e",
+  "theme_color": "#FFB300",
+  "icons": [
+    { "src": "/assets/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/assets/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

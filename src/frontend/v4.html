@@ -15,6 +15,8 @@
 <meta name="twitter:image" content="https://cammelot.health/assets/og-preview.png">
 <meta name="description" content="Cammelot: An interactive simulation of the Dutch healthcare crisis. Watch 5,000 citizens navigate a system under pressure — 30% admin burden, 12-week waits, and preventable deaths.">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏰</text></svg>">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#FFB300">
 <title>Cammelot — Healthcare Simulation</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Playfair+Display:wght@700;800;900&display=swap');
@@ -545,10 +547,43 @@ body.dark-mode .event-ticker {
   pointer-events: none;
   display: none;
 }
+
+/* ═══ Sprint 17.1: Enhanced Loading Screen ═══ */
+#load .castle-anim{font-size:64px;margin-bottom:12px;filter:drop-shadow(0 4px 12px rgba(0,0,0,.5));animation:castle-build 2s ease-out forwards}
+@keyframes castle-build{0%{clip-path:inset(100% 0 0 0);opacity:.3}50%{opacity:.8}100%{clip-path:inset(0 0 0 0);opacity:1}}
+#load .load-progress{font:500 10px 'JetBrains Mono',monospace;color:var(--gold);letter-spacing:1px;margin-top:12px;min-height:14px}
+#load .load-fact{font-size:9px;color:#a08060;max-width:380px;text-align:center;margin-top:16px;line-height:1.5;min-height:30px;transition:opacity .3s}
+#load .load-tip{font-size:9px;color:rgba(255,179,0,.6);position:absolute;bottom:32px;letter-spacing:1px}
+
+/* ═══ Sprint 17.2: Intro Camera Pan Overlay ═══ */
+#intro-overlay{position:fixed;inset:0;z-index:900;pointer-events:none;display:none}
+#intro-overlay .intro-text{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font:700 24px 'Playfair Display',serif;color:var(--gold);text-shadow:2px 2px 0 #2a1508,0 0 20px rgba(255,179,0,.3);opacity:0;text-align:center;letter-spacing:2px;white-space:nowrap;transition:opacity .5s}
+
+/* ═══ Sprint 17.3: Attract / Idle Mode ═══ */
+#attract-overlay{position:fixed;inset:0;z-index:800;pointer-events:none;display:none}
+#attract-overlay .attract-prompt{position:absolute;bottom:80px;left:50%;transform:translateX(-50%);font:600 14px 'JetBrains Mono',monospace;color:var(--gold);letter-spacing:2px;animation:attract-pulse 2s ease-in-out infinite;text-shadow:0 0 10px rgba(255,179,0,.5)}
+@keyframes attract-pulse{0%,100%{opacity:.3}50%{opacity:1}}
+#attract-overlay .attract-ticker{position:absolute;bottom:30px;left:0;right:0;font:10px 'JetBrains Mono',monospace;color:var(--parchment);text-align:center;opacity:.7}
+
+/* ═══ Sprint 18.3: Save Slot Picker ═══ */
+.save-slots-overlay{position:absolute;inset:0;z-index:90;background:rgba(26,14,5,.92);display:flex;align-items:center;justify-content:center}
+.save-slots-box{background:var(--parchment);border:4px solid var(--frame);border-radius:10px;padding:20px;max-width:400px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.5)}
+.save-slots-box h3{font:700 14px 'Playfair Display',serif;color:var(--ink);text-align:center;margin-bottom:12px}
+.save-slot{display:flex;align-items:center;gap:10px;padding:10px;margin:6px 0;border:2px solid var(--frame2);border-radius:6px;cursor:pointer;background:rgba(255,255,255,.5);transition:.15s}
+.save-slot:hover{background:rgba(255,179,0,.15);border-color:var(--gold)}
+.save-slot .slot-num{font:700 16px 'JetBrains Mono',monospace;color:var(--frame);width:24px}
+.save-slot .slot-info{flex:1;font:11px 'Inter',sans-serif;color:var(--ink2)}
+.save-slot .slot-info b{color:var(--ink)}
+.save-slot .slot-empty{color:#aaa;font-style:italic}
+.save-slots-btns{display:flex;gap:8px;margin-top:12px;justify-content:center}
+.save-slots-btns button{font:600 11px 'JetBrains Mono',monospace;padding:8px 16px;border:2px solid var(--frame2);border-radius:6px;cursor:pointer;background:rgba(255,255,255,.5);color:var(--ink);transition:.15s}
+.save-slots-btns button:hover{background:rgba(255,179,0,.2)}
 </style>
 </head>
 <body>
-<div id="load"><img class="logo" src="/assets/logo.png" alt="Cammelot"><h1>CAMMELOT</h1><p>A virtual town where healthcare meets AI</p><div class="ldbar"><div class="ldf"></div></div></div>
+<div id="load"><div class="castle-anim">🏰</div><h1>CAMMELOT</h1><p>A virtual town where healthcare meets AI</p><div class="ldbar"><div class="ldf"></div></div><div class="load-progress" id="load-progress">Initializing...</div><div class="load-fact" id="load-fact"></div><div class="load-tip">💡 Click any citizen to see their story</div></div>
+<div id="intro-overlay"><div class="intro-text" id="intro-text"></div></div>
+<div id="attract-overlay"><div class="attract-prompt">Click anywhere to interact</div><div class="attract-ticker" id="attract-ticker"></div></div>
 
 <div id="app">
   <div id="top">
@@ -656,11 +691,11 @@ const MAP_W = 1280; // image pixel width (will be measured from loaded image)
 const MAP_H = 720;  // image pixel height
 
 // Try loading from assets
-mapImg.onload = () => { mapLoaded = true; mapImgW = mapImg.naturalWidth; mapImgH = mapImg.naturalHeight; };
+mapImg.onload = () => { mapLoaded = true; mapImgW = mapImg.naturalWidth; mapImgH = mapImg.naturalHeight; mapCacheDirty = true; };
 mapImg.onerror = () => {
   // Try alternate extensions
   const alt = new Image();
-  alt.onload = () => { mapImg = alt; mapLoaded = true; mapImgW = alt.naturalWidth; mapImgH = alt.naturalHeight; };
+  alt.onload = () => { mapImg = alt; mapLoaded = true; mapImgW = alt.naturalWidth; mapImgH = alt.naturalHeight; mapCacheDirty = true; };
   alt.onerror = () => { console.log('No map image found — drag and drop one onto the game area.'); };
   alt.src = '/assets/map.jpg';
 };
@@ -3188,18 +3223,29 @@ function render(){
   
   cx.clearRect(0,0,cv.width,cv.height);
   
-  // Draw background — either loaded image or green fallback
+  // Draw background — cached map image, placeholder, or fallback
   if(mapLoaded){
+    // Sprint 18.1: Use cached map canvas for performance
+    if(mapCacheDirty || !mapCacheCanvas){
+      if(!mapCacheCanvas) mapCacheCanvas = document.createElement('canvas');
+      mapCacheCanvas.width = mapImgW; mapCacheCanvas.height = mapImgH;
+      mapCacheCanvas.getContext('2d').drawImage(mapImg, 0, 0, mapImgW, mapImgH);
+      mapCacheDirty = false;
+    }
     const dx=-camX*zoom, dy=-camY*zoom;
-    cx.drawImage(mapImg, dx, dy, worldW*zoom, worldH*zoom);
+    cx.drawImage(mapCacheCanvas, dx, dy, worldW*zoom, worldH*zoom);
   } else {
-    // Fallback: dark background with message
-    cx.fillStyle='#1a1a1a';
+    // Sprint 18.2: Colored rectangle placeholder while map loads
+    cx.fillStyle='#2C5F2D';
     cx.fillRect(0,0,cv.width,cv.height);
-    cx.fillStyle='rgba(255,255,255,.5)';
+    // Draw grid pattern as placeholder
+    cx.strokeStyle='rgba(255,255,255,.05)';cx.lineWidth=1;
+    for(let gx=0;gx<cv.width;gx+=32){cx.beginPath();cx.moveTo(gx,0);cx.lineTo(gx,cv.height);cx.stroke();}
+    for(let gy=0;gy<cv.height;gy+=32){cx.beginPath();cx.moveTo(0,gy);cx.lineTo(cv.width,gy);cx.stroke();}
+    cx.fillStyle='rgba(255,255,255,.4)';
     cx.font='16px Inter, sans-serif';
     cx.textAlign='center';
-    cx.fillText('Drag & drop your map image here',cv.width/2,cv.height/2-10);
+    cx.fillText('Loading map...',cv.width/2,cv.height/2-10);
     cx.font='12px Inter, sans-serif';
     cx.fillText('or place map.png in /assets/',cv.width/2,cv.height/2+14);
   }
@@ -4509,8 +4555,8 @@ function tick(){
   updateTicker(); // Sprint 6
   if (timelineVisible) drawTimeline(); // Sprint 16
   if(selectedAgent){const a=agents.find(e=>e.id===selectedAgent);if(a)selectAgent(a);}
-  // Auto-save every 10 cycles (Sprint 3)
-  if(cycle % 10 === 0) saveGame();
+  // Auto-save every 50 cycles (Sprint 18.3: IndexedDB slot 0)
+  if(cycle % 50 === 0) saveGame();
 }
 
 function batch(n){for(let i=0;i<n;i++)tick();}
@@ -5056,42 +5102,234 @@ function updateUI(){
   document.getElementById('sM').textContent=A2A_MESSAGES.length;
 }
 
-// ═══ ANIMATION LOOP ═══
-function loop(){globalFrameCount++;render();requestAnimationFrame(loop);}
+// ═══ SPRINT 17.1: LOADING SCREEN CONTROLLER ═══
+const LOAD_MESSAGES=['Spawning citizens...','Calibrating diseases...','Building town...','Training GPs...','Stocking pharmacies...','Filing paperwork...','Configuring waiting rooms...','Scheduling appointments...'];
+const LOAD_FACTS=['Did you know? 30% of your GP\'s time goes to paperwork, not you.','The Netherlands has ~12,700 GPs for 17.8 million people.','Average wait for a specialist referral: 6–12 weeks.','Dutch healthcare costs €110 billion per year (2024).','A GP sees ~40 patients per day on average.','Mental health waiting lists exceed 20 weeks in many regions.','1 in 5 Dutch citizens has a chronic condition.','Burnout affects ~25% of healthcare workers in NL.'];
+let loadMsgIdx=0,loadFactIdx=0,loadMsgTimer=null;
+function startLoadingAnimation(){
+  const p=document.getElementById('load-progress'),f=document.getElementById('load-fact');
+  if(!p||!f)return;
+  f.textContent=LOAD_FACTS[0];
+  loadMsgTimer=setInterval(()=>{
+    loadMsgIdx=(loadMsgIdx+1)%LOAD_MESSAGES.length;
+    p.textContent=LOAD_MESSAGES[loadMsgIdx];
+    if(loadMsgIdx%2===0){loadFactIdx=(loadFactIdx+1)%LOAD_FACTS.length;f.textContent=LOAD_FACTS[loadFactIdx];}
+  },600);
+}
+function stopLoadingAnimation(){
+  if(loadMsgTimer){clearInterval(loadMsgTimer);loadMsgTimer=null;}
+  const p=document.getElementById('load-progress');if(p)p.textContent='Ready!';
+}
+
+// ═══ SPRINT 17.2: INTRO CAMERA PAN (first visit only) ═══
+function playIntroPan(onComplete){
+  try{if(localStorage.getItem('cammelot_hasVisited')){if(onComplete)onComplete();return;}}catch(e){}
+  try{localStorage.setItem('cammelot_hasVisited','1');}catch(e){}
+  const overlay=document.getElementById('intro-overlay'),textEl=document.getElementById('intro-text');
+  if(!overlay||!textEl){if(onComplete)onComplete();return;}
+  overlay.style.display='block';
+  const msgs=[{text:'This is Cammelot. Population 5,000.',duration:2500},{text:'3 GP practices. 1 Hospital.',duration:2500},{text:'And a healthcare crisis.',duration:3000}];
+  userZoomed=true;
+  const worldW=mapImgW,worldH=mapImgH;
+  const startZm=Math.max(cv.width/worldW,cv.height/worldH)*1.5;
+  const endZm=Math.min(cv.width/worldW,cv.height/worldH);
+  const panDur=8000,startT=performance.now();
+  const sCX=0,sCY=0;
+  const eCX=(worldW-cv.width/endZm)/2,eCY=(worldH-cv.height/endZm)/2;
+  function ease(t){return t<.5?2*t*t:-1+(4-2*t)*t;}
+  function animPan(now){
+    const el=now-startT,t=Math.min(el/panDur,1),e=ease(t);
+    zoom=startZm+(endZm-startZm)*e;
+    camX=sCX+(eCX-sCX)*e; camY=sCY+(eCY-sCY)*e;
+    let acc=0;
+    for(let i=0;i<msgs.length;i++){
+      const dur=msgs[i].duration;
+      if(el>=acc&&el<acc+dur){
+        const mt=el-acc;textEl.textContent=msgs[i].text;
+        if(mt<500)textEl.style.opacity=(mt/500).toString();
+        else if(mt<dur-500)textEl.style.opacity='1';
+        else textEl.style.opacity=Math.max(0,1-(mt-dur+500)/500).toString();
+        break;
+      }
+      acc+=dur;
+      if(i===msgs.length-1&&el>=acc)textEl.style.opacity='0';
+    }
+    if(t<1){requestAnimationFrame(animPan);}
+    else{userZoomed=false;textEl.style.opacity='0';setTimeout(()=>{overlay.style.display='none';if(onComplete)onComplete();},500);}
+  }
+  requestAnimationFrame(animPan);
+}
+
+// ═══ SPRINT 17.3: ATTRACT / IDLE MODE ═══
+let attractMode=false,attractTimer=null,attractPanTarget=null;
+const ATTRACT_TIMEOUT=60000;
+function resetAttractTimer(){
+  if(attractMode)exitAttractMode();
+  if(attractTimer)clearTimeout(attractTimer);
+  attractTimer=setTimeout(enterAttractMode,ATTRACT_TIMEOUT);
+}
+function enterAttractMode(){
+  if(attractMode)return; attractMode=true;
+  const ov=document.getElementById('attract-overlay');if(ov)ov.style.display='block';
+  attractAutoPan();
+}
+function exitAttractMode(){
+  attractMode=false;
+  const ov=document.getElementById('attract-overlay');if(ov)ov.style.display='none';
+  attractPanTarget=null; userZoomed=false;
+}
+function attractAutoPan(){
+  if(!attractMode)return;
+  // Find interesting agents
+  const crit=agents.filter(a=>a.hp>0&&a.hp<40&&(a.type==='patient'||a.type==='citizen'));
+  const inQ=agents.filter(a=>a.behaviorState==='in_queue'||a.behaviorState==='waiting');
+  const chat=agents.filter(a=>(a.chatTimer||0)>0);
+  const cands=[...crit,...inQ,...chat].filter(a=>a.hp>0);
+  if(!attractPanTarget&&cands.length>0)attractPanTarget=cands[Math.floor(Math.random()*cands.length)];
+  // Update attract ticker
+  const tk=document.getElementById('attract-ticker');
+  if(tk&&EVENT_LOG.length>0){const r=EVENT_LOG[EVENT_LOG.length-1];tk.textContent=typeof r==='string'?r:(r.text||r.msg||'');}
+  // Slowly pan camera
+  if(attractPanTarget&&attractPanTarget.hp>0){
+    const wW=mapImgW,wH=mapImgH;
+    const tX=attractPanTarget.x*wW-cv.width/zoom/2,tY=attractPanTarget.y*wH-cv.height/zoom/2;
+    userZoomed=true;camX+=(tX-camX)*0.02;camY+=(tY-camY)*0.02;
+  }
+  if(attractMode){
+    requestAnimationFrame(attractAutoPan);
+    if(Math.random()<0.005)attractPanTarget=null; // switch target occasionally
+  }
+}
+// Interaction listeners reset attract timer
+['click','touchstart','keydown','mousemove','wheel'].forEach(evt=>{
+  document.addEventListener(evt,resetAttractTimer,{passive:true});
+});
+
+// ═══ SPRINT 18.1: CANVAS OPTIMIZATION ═══
+let mapCacheCanvas=null,mapCacheDirty=true,tabVisible=true;
+document.addEventListener('visibilitychange',()=>{tabVisible=!document.hidden;});
+
+// ═══ SPRINT 18.3: INDEXEDDB SAVE SYSTEM ═══
+const IDB_NAME='cammelot-saves',IDB_STORE='saves',IDB_VERSION=1,MAX_SAVE_SLOTS=5;
+function openSaveDB(){
+  return new Promise((resolve,reject)=>{
+    if(!window.indexedDB){reject(new Error('No IndexedDB'));return;}
+    const req=indexedDB.open(IDB_NAME,IDB_VERSION);
+    req.onupgradeneeded=(e)=>{const db=e.target.result;if(!db.objectStoreNames.contains(IDB_STORE))db.createObjectStore(IDB_STORE,{keyPath:'slot'});};
+    req.onsuccess=()=>resolve(req.result);
+    req.onerror=()=>reject(req.error);
+  });
+}
+function idbSave(slot,state){
+  return openSaveDB().then(db=>new Promise((resolve,reject)=>{
+    const tx=db.transaction(IDB_STORE,'readwrite');
+    state.slot=slot;state.savedAt=Date.now();
+    tx.objectStore(IDB_STORE).put(state);
+    tx.oncomplete=()=>{db.close();resolve();};
+    tx.onerror=()=>{db.close();reject(tx.error);};
+  }));
+}
+function idbLoad(slot){
+  return openSaveDB().then(db=>new Promise((resolve,reject)=>{
+    const tx=db.transaction(IDB_STORE,'readonly');
+    const req=tx.objectStore(IDB_STORE).get(slot);
+    req.onsuccess=()=>{db.close();resolve(req.result||null);};
+    req.onerror=()=>{db.close();reject(req.error);};
+  }));
+}
+function idbListSlots(){
+  return openSaveDB().then(db=>new Promise((resolve,reject)=>{
+    const tx=db.transaction(IDB_STORE,'readonly');
+    const req=tx.objectStore(IDB_STORE).getAll();
+    req.onsuccess=()=>{db.close();resolve(req.result||[]);};
+    req.onerror=()=>{db.close();reject(req.error);};
+  }));
+}
+function idbDelete(slot){
+  return openSaveDB().then(db=>new Promise((resolve,reject)=>{
+    const tx=db.transaction(IDB_STORE,'readwrite');
+    tx.objectStore(IDB_STORE).delete(slot);
+    tx.oncomplete=()=>{db.close();resolve();};
+    tx.onerror=()=>{db.close();reject(tx.error);};
+  }));
+}
+function buildSaveState(){
+  return{version:2,cycle,mode,
+    stats:{res:S.res,msgs:S.msgs,waste:S.waste},
+    agents:agents.map(a=>({
+      id:a.id,x:a.x,y:a.y,tx:a.tx,ty:a.ty,hp:a.hp,conditions:a.conditions,
+      behaviorState:a.behaviorState,state:a.state,waitWeeks:a.waitWeeks,stateTimer:a.stateTimer,
+      healingTicksLeft:a.healingTicksLeft,insideBuilding:a.insideBuilding,
+      hpHistory:a.hpHistory?a.hpHistory.slice(-200):[],
+      patientsSeenToday:a.patientsSeenToday,referralsMade:a.referralsMade,
+      burnoutLevel:a.burnoutLevel,totalPatientsSeen:a.totalPatientsSeen,
+      actionHistory:a.actionHistory?a.actionHistory.slice(-50):[],
+      queue:a.queue,causeOfDeath:a.causeOfDeath,
+      age:a.age,name:a.name,type:a.type,gender:a.gender,
+      gpName:a.gpName,color:a.color,role:a.role,
+      thoughts:a.thoughts,specialty:a.specialty,
+      lastGPCycle:a.lastGPCycle,referredToHospital:a.referredToHospital,
+      pathComplete:a.pathComplete
+    })),
+    eventLog:EVENT_LOG.slice(-500),
+    graveMarkers:GRAVE_MARKERS.slice(-200)
+  };
+}
+// Save to both localStorage + IndexedDB slot 0 (auto-save)
+function saveGameIDB(slot){
+  const state=buildSaveState();
+  try{localStorage.setItem('cammelot_save',JSON.stringify(state));}catch(e){}
+  try{idbSave(slot||0,JSON.parse(JSON.stringify(state))).catch(()=>{});}catch(e){}
+}
+// Show save slot picker UI
+function showSaveSlotPicker(actionType,onSelect){
+  const gw=document.getElementById('game-wrap');
+  const overlay=document.createElement('div');overlay.className='save-slots-overlay';
+  const box=document.createElement('div');box.className='save-slots-box';
+  const h3=document.createElement('h3');
+  h3.textContent=actionType==='save'?'💾 SAVE GAME':'📂 LOAD GAME';
+  box.appendChild(h3);
+  idbListSlots().then(slots=>{
+    const map={};slots.forEach(s=>{map[s.slot]=s;});
+    for(let i=0;i<MAX_SAVE_SLOTS;i++){
+      const slot=document.createElement('div');slot.className='save-slot';
+      const num=document.createElement('div');num.className='slot-num';
+      num.textContent=i===0?'A':i.toString();slot.appendChild(num);
+      const info=document.createElement('div');info.className='slot-info';
+      if(map[i]){
+        const s=map[i];
+        const alive=s.agents?s.agents.filter(a=>a.hp>0&&(a.type==='patient'||a.type==='citizen')).length:'?';
+        const dead=s.agents?s.agents.filter(a=>a.hp<=0&&(a.type==='patient'||a.type==='citizen')).length:'?';
+        const b=document.createElement('b');b.textContent='Cycle '+s.cycle+' — '+s.mode;
+        info.appendChild(b);info.appendChild(document.createElement('br'));
+        info.appendChild(document.createTextNode(alive+' alive, '+dead+' deaths'));
+        if(s.savedAt){info.appendChild(document.createElement('br'));const dt=document.createElement('small');dt.textContent=new Date(s.savedAt).toLocaleString();dt.style.opacity='0.6';info.appendChild(dt);}
+      }else{
+        const em=document.createElement('span');em.className='slot-empty';
+        em.textContent=i===0?'Auto-save slot':'Empty slot';info.appendChild(em);
+      }
+      slot.appendChild(info);
+      const idx=i;slot.addEventListener('click',()=>{overlay.remove();if(onSelect)onSelect(idx);});
+      box.appendChild(slot);
+    }
+    const btns=document.createElement('div');btns.className='save-slots-btns';
+    const cancelBtn=document.createElement('button');cancelBtn.textContent='✕ Cancel';
+    cancelBtn.addEventListener('click',()=>overlay.remove());
+    btns.appendChild(cancelBtn);box.appendChild(btns);
+    overlay.appendChild(box);gw.appendChild(overlay);
+  }).catch(()=>{if(onSelect)onSelect(0);});
+}
+
+// ═══ ANIMATION LOOP (Sprint 18.1: visibility-aware) ═══
+function loop(){globalFrameCount++;if(tabVisible||globalFrameCount%4===0)render();requestAnimationFrame(loop);}
 
 // ═══ LOCALSTORAGE PERSISTENCE (Sprint 3 — Epic 4.4) ═══
 function saveGame(){
   try{
-    const saveState={
-      version:2,
-      cycle,
-      mode,
-      stats:{res:S.res,msgs:S.msgs,waste:S.waste},
-      agents:agents.map(a=>({
-        id:a.id, x:a.x, y:a.y, tx:a.tx, ty:a.ty,
-        hp:a.hp, conditions:a.conditions,
-        behaviorState:a.behaviorState, state:a.state,
-        waitWeeks:a.waitWeeks, stateTimer:a.stateTimer,
-        healingTicksLeft:a.healingTicksLeft,
-        insideBuilding:a.insideBuilding,
-        hpHistory:a.hpHistory?a.hpHistory.slice(-200):[],
-        patientsSeenToday:a.patientsSeenToday,
-        referralsMade:a.referralsMade,
-        burnoutLevel:a.burnoutLevel,
-        totalPatientsSeen:a.totalPatientsSeen,
-        actionHistory:a.actionHistory?a.actionHistory.slice(-50):[],
-        queue:a.queue,
-        causeOfDeath:a.causeOfDeath,
-        age:a.age, name:a.name, type:a.type, gender:a.gender,
-        gpName:a.gpName, color:a.color, role:a.role,
-        thoughts:a.thoughts, specialty:a.specialty,
-        lastGPCycle:a.lastGPCycle, referredToHospital:a.referredToHospital,
-        pathComplete:a.pathComplete
-      })),
-      eventLog:EVENT_LOG.slice(-500),
-      graveMarkers:GRAVE_MARKERS.slice(-200)
-    };
+    const saveState=buildSaveState();
     localStorage.setItem('cammelot_save',JSON.stringify(saveState));
+    // Sprint 18.3: Also write to IndexedDB slot 0 (auto-save)
+    try{idbSave(0,JSON.parse(JSON.stringify(saveState))).catch(()=>{});}catch(e){}
   }catch(e){console.warn('Save failed:',e);}
 }
 
@@ -5504,7 +5742,8 @@ function closeWizard() {
   }
 }
 
-// ═══ STARTUP (Sprint 3 — Save-aware) ═══
+// ═══ STARTUP (Sprint 3 — Save-aware, Sprint 17 — Loading Screen) ═══
+startLoadingAnimation();
 const hasSave=localStorage.getItem('cammelot_save');
 if(hasSave){
   // Start render loop but show save prompt
@@ -5515,13 +5754,27 @@ if(hasSave){
 } else {
   startNewGame();
 }
-setTimeout(()=>document.getElementById('load').classList.add('go'),1400);
-// Sprint 6: Show wizard for first-time visitors
-setTimeout(() => {
-  if (!localStorage.getItem('cammelot_wizard_done')) {
-    showWizard();
+// Sprint 17.1: Fade loading screen, then optionally play intro
+setTimeout(()=>{
+  stopLoadingAnimation();
+  document.getElementById('load').classList.add('go');
+  // Sprint 17.2: Intro pan for first-time visitors
+  if(!hasSave){
+    playIntroPan(()=>{
+      if(!localStorage.getItem('cammelot_wizard_done'))showWizard();
+    });
   }
-}, 1800);
+},1600);
+// Sprint 6: Show wizard for returning visitors
+if(hasSave){
+  setTimeout(() => {
+    if (!localStorage.getItem('cammelot_wizard_done')) {
+      showWizard();
+    }
+  }, 1800);
+}
+// Sprint 17.3: Start attract mode timer
+resetAttractTimer();
 window.addEventListener('resize',()=>{userZoomed=false;zoom=1;render();});
 window.addEventListener('beforeunload',saveGame);
 
@@ -5573,6 +5826,13 @@ document.getElementById('agent-detail').addEventListener('click', function(e) {
   const back = e.target.closest('[data-action="showTownFeed"]');
   if (back) showTownFeed();
 });
+
+// ═══ SPRINT 18.4: SERVICE WORKER REGISTRATION ═══
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').then(reg=>{
+    console.log('SW registered, scope:',reg.scope);
+  }).catch(err=>{console.log('SW registration skipped:',err.message);});
+}
 </script>
 </body>
 </html>
