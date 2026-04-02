@@ -320,8 +320,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a1a2e;font-family:
     <img class="top-logo" src="/assets/logo.png" alt="Cammelot">
     <span class="sub">A virtual town where healthcare agents live &amp; struggle</span>
     <div class="mode-tog">
-      <button id="bi" class="a-ist" onclick="setMode('IST')">⚠ IST</button>
-      <button id="bs" onclick="setMode('SOLL')">✦ SOLL</button>
+      <button id="bi" class="a-ist">⚠ IST</button>
+      <button id="bs">✦ SOLL</button>
     </div>
     <div class="top-stats">
       <div class="ts"><div class="n" id="hC">0</div><div class="l">Cycle</div></div>
@@ -341,12 +341,12 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a1a2e;font-family:
       </div>
       <div id="event-ticker" class="event-ticker"><div class="ticker-content" id="ticker-content"></div></div>
       <div id="cbar">
-        <button class="cb go" onclick="tick()">▶</button>
-        <button class="cb go" onclick="batch(10)">▶▶ ×10</button>
-        <button class="cb go" onclick="batch(100)">×100</button>
-        <button class="cb warn" onclick="autoRun()">⟳ Auto</button>
-        <button class="cb stop" onclick="resetSim()">↺ Reset</button>
-        <button class="cb" onclick="toggleStats()">📊 Stats</button>
+        <button class="cb go" id="btn-tick">▶</button>
+        <button class="cb go" id="btn-batch10">▶▶ ×10</button>
+        <button class="cb go" id="btn-batch100">×100</button>
+        <button class="cb warn" id="btn-auto">⟳ Auto</button>
+        <button class="cb stop" id="btn-reset">↺ Reset</button>
+        <button class="cb" id="btn-stats">📊 Stats</button>
         <div class="cinfo">FHIR <b id="sF">0</b> · A2A <b id="sM">0</b></div>
       </div>
       <!-- Sprint 6: Wizard Overlay -->
@@ -362,8 +362,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a1a2e;font-family:
           <div class="wizard-controls">
             <label class="wizard-skip-label"><input type="checkbox" id="wizard-noshow"> Don't show again</label>
             <div class="wizard-btns">
-              <button class="wizard-btn" id="wizard-skip" onclick="closeWizard()">Skip</button>
-              <button class="wizard-btn wizard-next" id="wizard-next" onclick="nextWizardStep()">Next →</button>
+              <button class="wizard-btn" id="wizard-skip">Skip</button>
+              <button class="wizard-btn wizard-next" id="wizard-next">Next →</button>
             </div>
           </div>
           <div class="wizard-dots" id="wizard-dots"></div>
@@ -620,6 +620,120 @@ const SPECIALIST_CAPACITY = {
   pulmonology: { weeklySlots:10, tickSlots:3 },
 };
 const HOSPITAL_DISCHARGED = []; // last 10 discharged patients
+
+// ═══ FHIR MEMORY STORE (Sprint 10) ═══
+const FHIR_STORE = []; // Array of FHIR-like resources
+
+function createFHIRResource(type, agentId, data) {
+  const resource = {
+    resourceType: type,
+    id: type.toLowerCase() + '-' + agentId + '-' + cycle,
+    subject: { reference: 'Patient/' + agentId },
+    effectiveDateTime: '2025-01-01T00:00:00Z',
+    cycle: cycle,
+    ...data
+  };
+  FHIR_STORE.push(resource);
+  if (FHIR_STORE.length > 2000) FHIR_STORE.shift();
+  return resource;
+}
+
+function queryFHIR(agentId, type) {
+  return FHIR_STORE.filter(r =>
+    r.subject?.reference === 'Patient/' + agentId &&
+    (!type || r.resourceType === type)
+  );
+}
+
+// ═══ A2A PROTOCOL (Sprint 10) ═══
+const A2A_MESSAGES = [];
+
+function sendA2AMessage(from, to, type, payload) {
+  const msg = {
+    id: 'msg-' + cycle + '-' + Math.random().toString(36).slice(2, 6),
+    from: from.id, fromName: from.name,
+    to: to.id, toName: to.name,
+    type,
+    payload,
+    cycle,
+    status: 'sent'
+  };
+  A2A_MESSAGES.push(msg);
+  if (A2A_MESSAGES.length > 200) A2A_MESSAGES.shift();
+  return msg;
+}
+
+// ═══ COGNITIVE LOOP (Sprint 10) ═══
+function agentReflect(agent) {
+  const reflections = [];
+  if (agent.hpHistory && agent.hpHistory.length > 5) {
+    const recent = agent.hpHistory.slice(-5);
+    const trend = recent[recent.length-1] - recent[0];
+    if (trend < -10) reflections.push('My health is declining rapidly (' + trend + ' HP in 5 cycles).');
+    else if (trend < 0) reflections.push('I feel a bit worse than last week.');
+    else if (trend > 5) reflections.push('The treatment seems to be working!');
+  }
+  if (agent.waitWeeks > 8) reflections.push('I\'ve been waiting ' + Math.round(agent.waitWeeks) + ' weeks. This is unbearable.');
+  else if (agent.waitWeeks > 4) reflections.push('The wait is getting long: ' + Math.round(agent.waitWeeks) + ' weeks now.');
+  const severe = agent.conditions?.filter(c => c.severity === 'severe' || c.severity === 'critical');
+  if (severe?.length) reflections.push('My ' + severe[0].name + ' is getting serious. I need help soon.');
+  agent.reflections = reflections;
+  return reflections;
+}
+
+function agentPlan(agent) {
+  const plans = [];
+  if (agent.reflections?.some(r => r.includes('declining rapidly'))) {
+    plans.push({ action: 'seek_gp', urgency: 'high', reason: 'Health declining fast' });
+  }
+  if (agent.reflections?.some(r => r.includes('unbearable'))) {
+    plans.push({ action: 'complain', urgency: 'medium', reason: 'Long wait frustration' });
+  }
+  if (agent.digitalTwinRisk && agent.digitalTwinRisk.riskPct > 60) {
+    plans.push({ action: 'seek_gp', urgency: 'critical', reason: 'Digital Twin: high risk (' + agent.digitalTwinRisk.riskPct + '%)' });
+  }
+  agent.plans = plans;
+  return plans;
+}
+
+// ═══ DIGITAL TWIN PREDICTIONS (Sprint 10) ═══
+function calculateDigitalTwinRisk(agent) {
+  if (!agent.conditions || agent.conditions.length === 0) return null;
+  let riskScore = 0;
+  agent.conditions.forEach(c => {
+    const db = typeof DISEASE_DB !== 'undefined' ? DISEASE_DB[c.code] : null;
+    if (!db) return;
+    const sevMult = { mild: 0.1, moderate: 0.3, severe: 0.6, critical: 0.9 }[c.severity] || 0;
+    riskScore += sevMult;
+  });
+  if (agent.age >= 80) riskScore *= 1.5;
+  else if (agent.age >= 65) riskScore *= 1.2;
+  if (agent.waitWeeks > 12) riskScore *= 1.4;
+  else if (agent.waitWeeks > 6) riskScore *= 1.2;
+  if (agent.conditions.length >= 2) riskScore *= 1.3;
+  const riskPct = Math.min(95, Math.round(riskScore * 100));
+  const prediction = riskPct > 60 ? 'Seek specialist within 2 weeks' :
+                     riskPct > 30 ? 'Monitor closely, see GP monthly' :
+                     'Continue current management';
+  return { riskPct, prediction, timeframe: '6 months' };
+}
+
+// ═══ SAVE SCHEMA VALIDATION (Sprint 9 — INTEGRITY-001) ═══
+function validateSaveSchema(save) {
+  if (!save || typeof save !== 'object') return false;
+  if (save.version !== 2) return false;
+  if (!Array.isArray(save.agents)) return false;
+  if (typeof save.stats !== 'object') return false;
+  if (typeof save.cycle !== 'number' || save.cycle < 0) return false;
+  for (const a of save.agents) {
+    if (typeof a.id !== 'string') return false;
+    if (typeof a.hp !== 'number' || a.hp < 0 || a.hp > 200) return false;
+    if (!Array.isArray(a.conditions)) return false;
+  }
+  return true;
+}
+
+let globalFrameCount = 0; // Sprint 9: global frame counter for throttled UI
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // DISEASE_DB — Comprehensive Clinical Catalog (Epic 1.1)
@@ -1521,6 +1635,13 @@ agents.forEach(e=>{
   e._initConditions = JSON.parse(JSON.stringify(e.conditions||[]));
   e._initState = e.state; e._initInsideBuilding = e.insideBuilding;
   e._initX = e.x; e._initY = e.y;
+  // Sprint 10: Create initial FHIR Patient resource
+  if(e.type==='patient'||e.type==='citizen'){
+    createFHIRResource('Patient', e.id, { name: e.name, age: e.age, gender: e.gender, conditions: (e.conditions||[]).map(c=>c.code) });
+    (e.conditions||[]).forEach(c=>{
+      createFHIRResource('Condition', e.id, { code: c.code, name: c.name, clinicalStatus: c.severity });
+    });
+  }
 });
 let lastFrameTime=performance.now();
 let selectedAgent=null;
@@ -2326,8 +2447,14 @@ function render(){
   // ── Sprint 5: Draw building status indicators (after map, before agents) ──
   drawBuildingStatus();
 
-  // Draw only agents that are NOT inside buildings
-  [...agents].filter(a=>!a.insideBuilding).sort((a,b)=>a.y-b.y).forEach(drawAgent);
+  // Draw only agents that are NOT inside buildings — Sprint 9: off-screen culling
+  const visibleAgents = agents.filter(a => {
+    if (a.insideBuilding) return false;
+    const sx = (a.x * mapImgW - camX) * zoom;
+    const sy = (a.y * mapImgH - camY) * zoom;
+    return sx > -50 && sx < cv.width + 50 && sy > -50 && sy < cv.height + 50;
+  });
+  visibleAgents.sort((a, b) => a.y - b.y).forEach(drawAgent);
 
   // ── Sprint 5: Draw grave markers (after agents) ──
   drawGraveMarkers();
@@ -2451,7 +2578,7 @@ function showMemorial(grave) {
   const d = document.getElementById('agent-detail');
   document.querySelector('.panel-header').textContent = 'MEMORIAL';
   const isSystem = grave.cause === 'system_failure';
-  let html = `<div class="panel-back" onclick="showTownFeed()">← Town Feed</div>`;
+  let html = `<div class="panel-back" data-action="showTownFeed">← Town Feed</div>`;
   html += `<div class="agent-card">
     <div class="ac-name" style="color:${isSystem ? 'var(--red)' : 'var(--ink2)'}">In Memory of ${grave.name}</div>
     <div class="ac-role">Age ${grave.age}</div>
@@ -2494,7 +2621,7 @@ function selectAgent(a){
   // Get agent events from EVENT_LOG
   const agentEvents=EVENT_LOG.filter(e=>e.agentId===a.id);
 
-  let html=`<div class="panel-back" onclick="showTownFeed()">← Town Feed</div>`;
+  let html=`<div class="panel-back" data-action="showTownFeed">← Town Feed</div>`;
   html+=`<div class="agent-card">
     <div class="portrait-wrap">
       <canvas class="portrait-canvas" id="portrait-cv" width="64" height="64" ${a.hp<=0?'style="filter:grayscale(100%)"':''}></canvas>
@@ -2599,6 +2726,50 @@ function selectAgent(a){
       </div>`;
     }
     html+=`<div class="thought">${thought}</div>`;
+
+    // ═══ Sprint 10: Cognitive Loop — Reflections & Plans ═══
+    if(a.reflections && a.reflections.length > 0){
+      html+=`<div class="ac-section" style="margin-top:8px"><h4>💭 Reflections</h4>`;
+      a.reflections.forEach(r=>{
+        html+=`<div class="ac-row" style="font-style:italic;color:var(--ink2)"><span class="k">💭</span><span class="v">"${r}"</span></div>`;
+      });
+      html+=`</div>`;
+    }
+    if(a.plans && a.plans.length > 0){
+      html+=`<div class="ac-section" style="margin-top:4px"><h4>📋 Plans</h4>`;
+      a.plans.forEach(pl=>{
+        const urgColor=pl.urgency==='critical'?'bad':pl.urgency==='high'?'bad':pl.urgency==='medium'?'mid':'ok';
+        html+=`<div class="ac-row"><span class="k">📋 ${pl.action.replace(/_/g,' ')}</span><span class="v ${urgColor}">${pl.urgency.toUpperCase()} — ${pl.reason}</span></div>`;
+      });
+      html+=`</div>`;
+    }
+
+    // ═══ Sprint 10: Digital Twin Risk ═══
+    if(a.digitalTwinRisk){
+      const dt=a.digitalTwinRisk;
+      const riskColor=dt.riskPct>60?'bad':dt.riskPct>30?'mid':'ok';
+      html+=`<div class="ac-section" style="margin-top:4px"><h4>🔮 Digital Twin</h4>
+        <div class="ac-row"><span class="k">Risk Score</span><span class="v ${riskColor}">${dt.riskPct}% (${dt.timeframe})</span></div>
+        <div class="ac-row"><span class="k">Recommendation</span><span class="v">${dt.prediction}</span></div>
+      </div>`;
+    }
+
+    // ═══ Sprint 10: FHIR Memory Tab ═══
+    const fhirRecords = queryFHIR(a.id);
+    if(fhirRecords.length > 0){
+      html+=`<div class="ac-section" style="margin-top:8px"><h4>🧠 Memory (FHIR)</h4><div class="history-timeline">`;
+      const recentFHIR = fhirRecords.slice(-10).reverse();
+      recentFHIR.forEach(r=>{
+        const typeIcon = {Patient:'👤',Condition:'🩺',Encounter:'🏥',Observation:'📊'}[r.resourceType]||'📄';
+        let detail = r.resourceType;
+        if(r.code) detail += ': ' + r.code;
+        if(r.clinicalStatus) detail += ' → ' + r.clinicalStatus;
+        if(r.class) detail += ' (' + r.class + ')';
+        if(r.valueQuantity) detail += ' = ' + r.valueQuantity.value + ' ' + r.valueQuantity.unit;
+        html+=`<div class="ht-entry"><span class="ht-cycle">C${r.cycle}</span><span class="ht-icon">${typeIcon}</span><span class="ht-text">${detail}</span></div>`;
+      });
+      html+=`</div></div>`;
+    }
 
     // Enhanced History Timeline from EVENT_LOG (Sprint 3)
     if(agentEvents.length>0){
@@ -2800,7 +2971,7 @@ function selectBuilding(building){
     const thought=gp.thoughts[(gp.currentThought||0)%gp.thoughts.length];
     gp.currentThought=(gp.currentThought||0)+1;
 
-    let html=`<div class="panel-back" onclick="showTownFeed()">← Town Feed</div>`;
+    let html=`<div class="panel-back" data-action="showTownFeed">← Town Feed</div>`;
     html+=`<div class="agent-card">
       <div class="ac-name">${building.label}</div>
       <div class="ac-role">${gp.name} — General Practitioner</div>
@@ -2851,7 +3022,7 @@ function selectBuilding(building){
     const treeViolated=waitList.some(a=>a.waitWeeks>treeWeeks)||inHospital.some(a=>a.waitWeeks>treeWeeks);
     const specialists=agents.filter(a=>a.type==='specialist');
 
-    let html=`<div class="panel-back" onclick="showTownFeed()">← Town Feed</div>`;
+    let html=`<div class="panel-back" data-action="showTownFeed">← Town Feed</div>`;
     html+=`<div class="agent-card">
       <div class="ac-name">${building.label}</div>
       <div class="ac-role">Regional Hospital</div>
@@ -2902,6 +3073,19 @@ function selectBuilding(building){
       const thought=s.thoughts[(s.currentThought||0)%s.thoughts.length];
       s.currentThought=(s.currentThought||0)+1;
       html+=`<div class="thought">${thought}</div>`;
+    }
+
+    // ═══ Sprint 10: A2A Message Flow ═══
+    const recentA2A = A2A_MESSAGES.slice(-8).reverse();
+    if(recentA2A.length > 0){
+      html+=`<div class="ac-section" style="margin-top:8px"><h4>📨 A2A Message Flow</h4><div class="history-timeline">`;
+      recentA2A.forEach(msg=>{
+        const typeIcon={referral:'🔄',status_query:'❓',response:'✅',alert:'🚨'}[msg.type]||'📨';
+        const urgency=msg.payload?.urgency?' ['+msg.payload.urgency.toUpperCase()+']':'';
+        const patient=msg.payload?.patientName?' — '+msg.payload.patientName:'';
+        html+=`<div class="ht-entry"><span class="ht-cycle">C${msg.cycle}</span><span class="ht-icon">${typeIcon}</span><span class="ht-text">${msg.fromName} → ${msg.toName}: ${msg.type}${urgency}${patient}</span></div>`;
+      });
+      html+=`</div></div>`;
     }
 
     html+=`</div>`;
@@ -3022,6 +3206,7 @@ function tick(){
         const newState = transitionDiseaseState(cond.code, cond.severity, a.waitWeeks, p.tree);
         if (newState !== cond.severity) {
           cond.severity = newState;
+          createFHIRResource('Condition', a.id, { code: cond.code, name: cond.name, clinicalStatus: newState, priorStatus: oldState });
           const states = ['healthy','mild','moderate','severe','critical','deceased'];
           if(states.indexOf(newState) > states.indexOf(oldState)){
             logEvent('worsened', a, cond.code + ': ' + oldState + '→' + newState);
@@ -3120,6 +3305,16 @@ function tick(){
             addHistory(a,'referred',(a.gpName||'GP')+' referred me to the hospital. Specialist care needed.');
             say(a.gpName||'GP',`Referring ${a.name} to hospital — needs specialist care.`);
             sendAgentTo(a, DESTINATIONS.hospital.entrance);
+            // Sprint 10: FHIR Encounter + A2A referral
+            createFHIRResource('Encounter', a.id, { class: 'gp_referral', serviceProvider: a.gpName||'GP', outcome: 'referred' });
+            const specialist = agents.find(s => s.type === 'specialist');
+            if(gpAgent && specialist){
+              sendA2AMessage(gpAgent, specialist, 'referral', {
+                patientId: a.id, patientName: a.name,
+                conditions: a.conditions.map(c => c.code + '(' + c.severity + ')').join(', '),
+                urgency: severe ? 'urgent' : 'routine'
+              });
+            }
             // GP tracking
             if(gpAgent){
               gpAgent.patientsSeenToday=(gpAgent.patientsSeenToday||0)+1;
@@ -3141,6 +3336,7 @@ function tick(){
             logEvent('gp_treated', a, 'Conditions treated at GP');
             addHistory(a,'gp_treated','GP prescribed medication. Should start feeling better.');
             say(a.gpName||'GP',`${a.name}: condition manageable. Prescribed treatment.`);
+            createFHIRResource('Encounter', a.id, { class: 'gp_treatment', serviceProvider: a.gpName||'GP', outcome: 'treated' });
             a.path=[]; a.pathIdx=0; a.idleUntil=performance.now()+1500;
             // GP tracking
             if(gpAgent){
@@ -3231,6 +3427,7 @@ function tick(){
           logEvent('discharged', a, 'HP: ' + Math.round(a.hp));
           addHistory(a,'treated','Treatment complete! Specialist helped. Feeling much better.');
           say('Hospital',`${a.name} treated & discharged. Recovery underway.`);
+          createFHIRResource('Encounter', a.id, { class: 'hospital_discharge', outcome: 'discharged', hpBefore: hpBefore, hpAfter: Math.round(a.hp) });
           // Track discharged patients for hospital dashboard
           HOSPITAL_DISCHARGED.push({name:a.name,codes:a.conditions.map(c=>c.code).join(','),hpBefore,hpAfter:Math.round(a.hp),cycle});
           if(HOSPITAL_DISCHARGED.length>10)HOSPITAL_DISCHARGED.shift();
@@ -3317,6 +3514,7 @@ function tick(){
         logEvent('admitted', frontAgent, 'Hospital');
         addHistory(frontAgent, 'entered_hospital', 'Arrived at hospital. Being seen by specialist.');
         say('Hospital', `${frontAgent.name} admitted. Beginning treatment.`);
+        createFHIRResource('Encounter', frontAgent.id, { class: 'hospital_admission', serviceProvider: 'Hospital' });
       }
       // Shuffle remaining
       hq.agents.forEach((aid, idx) => {
@@ -3359,6 +3557,38 @@ function tick(){
     say('Dr. Collins',`Admin load ${Math.round(p.admin*100)}%. ${p.admin>0.2?'Too much paperwork!':'Manageable.'}`);
   }
 
+  // ═══ Sprint 10: Cognitive Loop (every 8 ticks) ═══
+  if(cycle%8===0){
+    agents.forEach(a=>{
+      if(a.type!=='patient'&&a.type!=='citizen') return;
+      if(a.hp<=0) return;
+      agentReflect(a);
+      agentPlan(a);
+      // Digital Twin risk assessment
+      a.digitalTwinRisk = calculateDigitalTwinRisk(a);
+      // High risk from Digital Twin speeds up GP seeking
+      if(a.digitalTwinRisk && a.digitalTwinRisk.riskPct > 60 && a.behaviorState === 'roaming' && a.conditions.length > 0){
+        const timeSinceGP = cycle - (a.lastGPCycle || -100);
+        if(timeSinceGP > 10){
+          a.behaviorState='going_to_gp'; a.pathComplete=false;
+          logEvent('feeling_sick', a, 'Digital Twin alert: ' + a.digitalTwinRisk.riskPct + '% risk');
+          addHistory(a,'feeling_sick','Digital Twin says I\'m at ' + a.digitalTwinRisk.riskPct + '% risk. Going to GP now.');
+          sendAgentTo(a, getGPDest(a.gpName).entrance);
+        }
+      }
+    });
+  }
+
+  // ═══ Sprint 10: FHIR Observations (every 10 ticks) ═══
+  if(cycle%10===0){
+    agents.forEach(a=>{
+      if(a.type!=='patient'&&a.type!=='citizen') return;
+      if(a.hp<=0) return;
+      createFHIRResource('Observation', a.id, { code: 'CAMMELOT-HP', valueQuantity: { value: Math.round(a.hp), unit: 'HP' }});
+      if(a.waitWeeks>0) createFHIRResource('Observation', a.id, { code: 'CAMMELOT-WAIT', valueQuantity: { value: Math.round(a.waitWeeks*10)/10, unit: 'weeks' }});
+    });
+  }
+
   updateUI();
   updateTicker(); // Sprint 6
   if(selectedAgent){const a=agents.find(e=>e.id===selectedAgent);if(a)selectAgent(a);}
@@ -3374,6 +3604,8 @@ function resetSim(){
   EVENT_LOG.length=0;
   HOSPITAL_DISCHARGED.length=0;
   GRAVE_MARKERS.length=0;
+  FHIR_STORE.length=0;
+  A2A_MESSAGES.length=0;
   Object.values(QUEUES).forEach(q => { q.agents = []; q.positions = []; });
   try{localStorage.removeItem('cammelot_save');}catch(e){}
   agents.forEach(a=>{
@@ -3387,6 +3619,7 @@ function resetSim(){
     a.pathComplete=false; a.lastGPCycle=-100;
     a.referredToHospital=false; a.causeOfDeath=undefined;
     a.hpHistory=[Math.round(a.hp)];
+    a.reflections=[]; a.plans=[]; a.digitalTwinRisk=null;
     a.path=[]; a.pathIdx=0;
     a.idleUntil=performance.now()+Math.random()*5000;
     // Reset GP/specialist tracking
@@ -3415,7 +3648,18 @@ function setMode(m){
 
 function say(w,t,c=''){
   const d=document.getElementById('chatlog');
-  d.innerHTML+=`<div class="cm ${c}"><span class="w">[${w}]</span> <span class="t">${t}</span></div>`;
+  const div=document.createElement('div');
+  div.className='cm ' + c;
+  const ws=document.createElement('span');
+  ws.className='w';
+  ws.textContent='[' + w + ']';
+  const ts=document.createElement('span');
+  ts.className='t';
+  ts.textContent=t;
+  div.appendChild(ws);
+  div.appendChild(document.createTextNode(' '));
+  div.appendChild(ts);
+  d.appendChild(div);
   d.scrollTop=d.scrollHeight;
   while(d.children.length>40)d.removeChild(d.firstChild);
 }
@@ -3431,9 +3675,12 @@ function toggleStats(){
   statsVisible=true;
   const overlay=document.createElement('div');
   overlay.className='stats-overlay';
-  overlay.onclick=function(e){if(e.target===overlay){overlay.remove();statsVisible=false;}};
+  overlay.addEventListener('click',function(e){if(e.target===overlay){overlay.remove();statsVisible=false;}});
   overlay.innerHTML=buildStatsHTML();
   gw.appendChild(overlay);
+  // CSP-safe: bind close button after DOM insertion
+  const closeBtn=overlay.querySelector('#stats-close-btn');
+  if(closeBtn) closeBtn.addEventListener('click',function(){this.closest('.stats-overlay').remove();statsVisible=false;});
 }
 
 function buildStatsHTML(){
@@ -3485,7 +3732,7 @@ function buildStatsHTML(){
   const totalCost=adminWaste+preventableDeathCost;
 
   return `<div class="stats-panel">
-    <div class="stats-header"><h3>📊 SIMULATION SUMMARY — Cycle ${cycle}</h3><button class="stats-close" onclick="this.closest('.stats-overlay').remove();statsVisible=false;">✕</button></div>
+    <div class="stats-header"><h3>📊 SIMULATION SUMMARY — Cycle ${cycle}</h3><button class="stats-close" id="stats-close-btn">✕</button></div>
     <div class="stats-body">
       <div class="stats-group"><h4>Population</h4>
         <div class="stats-row"><span class="sk">Total</span><span class="sv">${totalPop}</span></div>
@@ -3569,14 +3816,14 @@ function updateUI(){
   document.getElementById('hE').textContent='⚕ '+eff+'%';
   document.getElementById('hE').className='n '+(parseInt(eff)>75?'g':parseInt(eff)>50?'y':'r');
 
-  document.getElementById('oF').textContent=S.res;
+  document.getElementById('oF').textContent=FHIR_STORE.length;
   document.getElementById('oW').textContent='€'+Math.round(S.waste).toLocaleString();
-  document.getElementById('sF').textContent=S.res;
-  document.getElementById('sM').textContent=S.msgs;
+  document.getElementById('sF').textContent=FHIR_STORE.length;
+  document.getElementById('sM').textContent=A2A_MESSAGES.length;
 }
 
 // ═══ ANIMATION LOOP ═══
-function loop(){render();requestAnimationFrame(loop);}
+function loop(){globalFrameCount++;render();requestAnimationFrame(loop);}
 
 // ═══ LOCALSTORAGE PERSISTENCE (Sprint 3 — Epic 4.4) ═══
 function saveGame(){
@@ -3619,7 +3866,8 @@ function loadGame(){
     const raw=localStorage.getItem('cammelot_save');
     if(!raw) return false;
     const save=JSON.parse(raw);
-    if(save.version!==2) return false;
+    // Sprint 9 — INTEGRITY-001: Schema validation
+    if(!validateSaveSchema(save)){console.warn('Save schema invalid');return false;}
     cycle=save.cycle;
     mode=save.mode;
     if(save.stats){S.res=save.stats.res||6;S.msgs=save.stats.msgs||0;S.waste=save.stats.waste||0;}
@@ -3687,18 +3935,48 @@ function showSavePrompt(){
   const aliveCt=saveData.agents.filter(a=>a.hp>0&&(a.type==='patient'||a.type==='citizen')).length;
   const overlay=document.createElement('div');
   overlay.className='save-overlay';
-  overlay.innerHTML=`<div class="save-prompt">
-    <h3>⚔ SAVED GAME FOUND</h3>
-    <div class="sp-info">
-      Cycle <b>${saveData.cycle}</b> — <b>${saveData.mode}</b> Mode<br>
-      <b>${aliveCt}</b> citizens alive<br>
-      <b>${saveData.eventLog?saveData.eventLog.length:0}</b> events logged
-    </div>
-    <div class="save-btns">
-      <button class="save-btn continue" onclick="this.closest('.save-overlay').remove();continueGame();">▶ Continue</button>
-      <button class="save-btn newgame" onclick="this.closest('.save-overlay').remove();startNewGame();">✦ New Game</button>
-    </div>
-  </div>`;
+  // XSS-004 FIX: Build save prompt with safe textContent for user-derived data
+  const prompt=document.createElement('div');
+  prompt.className='save-prompt';
+  const h3=document.createElement('h3');
+  h3.textContent='⚔ SAVED GAME FOUND';
+  prompt.appendChild(h3);
+  const info=document.createElement('div');
+  info.className='sp-info';
+  const cycleB=document.createElement('b');
+  cycleB.textContent=saveData.cycle;
+  const modeB=document.createElement('b');
+  modeB.textContent=saveData.mode;
+  const aliveB=document.createElement('b');
+  aliveB.textContent=aliveCt;
+  const eventsB=document.createElement('b');
+  eventsB.textContent=saveData.eventLog?saveData.eventLog.length:0;
+  info.appendChild(document.createTextNode('Cycle '));
+  info.appendChild(cycleB);
+  info.appendChild(document.createTextNode(' — '));
+  info.appendChild(modeB);
+  info.appendChild(document.createTextNode(' Mode'));
+  info.appendChild(document.createElement('br'));
+  info.appendChild(aliveB);
+  info.appendChild(document.createTextNode(' citizens alive'));
+  info.appendChild(document.createElement('br'));
+  info.appendChild(eventsB);
+  info.appendChild(document.createTextNode(' events logged'));
+  prompt.appendChild(info);
+  const btns=document.createElement('div');
+  btns.className='save-btns';
+  const contBtn=document.createElement('button');
+  contBtn.className='save-btn continue';
+  contBtn.textContent='▶ Continue';
+  contBtn.addEventListener('click',function(){overlay.remove();continueGame();});
+  const newBtn=document.createElement('button');
+  newBtn.className='save-btn newgame';
+  newBtn.textContent='✦ New Game';
+  newBtn.addEventListener('click',function(){overlay.remove();startNewGame();});
+  btns.appendChild(contBtn);
+  btns.appendChild(newBtn);
+  prompt.appendChild(btns);
+  overlay.appendChild(prompt);
   gw.appendChild(overlay);
 }
 
@@ -4012,6 +4290,24 @@ setTimeout(() => {
 }, 1800);
 window.addEventListener('resize',()=>{userZoomed=false;zoom=1;render();});
 window.addEventListener('beforeunload',saveGame);
+
+// ═══ EVENT BINDING (CSP-safe — no inline handlers) ═══
+document.getElementById('bi').addEventListener('click', () => setMode('IST'));
+document.getElementById('bs').addEventListener('click', () => setMode('SOLL'));
+document.getElementById('btn-tick').addEventListener('click', () => tick());
+document.getElementById('btn-batch10').addEventListener('click', () => batch(10));
+document.getElementById('btn-batch100').addEventListener('click', () => batch(100));
+document.getElementById('btn-auto').addEventListener('click', () => autoRun());
+document.getElementById('btn-reset').addEventListener('click', () => resetSim());
+document.getElementById('btn-stats').addEventListener('click', () => toggleStats());
+document.getElementById('wizard-skip').addEventListener('click', () => closeWizard());
+document.getElementById('wizard-next').addEventListener('click', () => nextWizardStep());
+
+// Event delegation for dynamically generated panel-back buttons
+document.getElementById('agent-detail').addEventListener('click', function(e) {
+  const back = e.target.closest('[data-action="showTownFeed"]');
+  if (back) showTownFeed();
+});
 </script>
 </body>
 </html>

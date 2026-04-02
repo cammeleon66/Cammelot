@@ -33,6 +33,9 @@ export class DiseaseProgressionModel {
     const base = { ...this.baseTransitions[currentState] };
     const { treeknormWeeks } = SIMULATION_CONFIG.systemFailure;
 
+    // BUG-001 FIX: Deceased is an absorbing state — always return deceased=1.0
+    if (currentState === "deceased") return base;
+
     if (weeksWaiting <= treeknormWeeks) return base;
 
     // Acceleration factor: exponential degradation beyond Treeknorm
@@ -115,7 +118,9 @@ export class HPDrainEngine {
       deceased: 0, // already handled
     };
 
-    drain *= severityMultiplier[diseaseState] || 1.0;
+    // BUG-002 FIX: severityMultiplier["healthy"] = 0 is JS-falsy, was hitting || 1.0 fallback
+    const mult = severityMultiplier[diseaseState];
+    drain *= mult !== undefined ? mult : 1.0;
 
     // Administrative burden adds passive drain
     const adminDrain = drain * SIMULATION_CONFIG.systemFailure.administrativeBurdenFraction;

@@ -56,13 +56,10 @@ describe("DiseaseProgressionModel", () => {
       assert.deepStrictEqual(base, adjusted);
     });
 
-    it("should sum to ~1.0 after adjustment for overdue waits (non-terminal states)", () => {
-      // Note: 'deceased' is an absorbing state; the adjustment logic subtracts
-      // probability mass but has no worse states to redistribute to. This is
-      // a known edge case in the engine — deceased agents should never have
-      // their transitions adjusted. We test all non-terminal states here.
-      const nonTerminal = DiseaseProgressionModel.STATES.filter((s) => s !== "deceased");
-      for (const state of nonTerminal) {
+    it("should sum to ~1.0 after adjustment for overdue waits (all states including deceased)", () => {
+      // BUG-001 FIXED: deceased is now properly handled as absorbing state
+      // All states should sum to 1.0 after adjustment
+      for (const state of DiseaseProgressionModel.STATES) {
         const probs = model.getAdjustedTransitions(state, 20); // 8 weeks overdue
         const sum = Object.values(probs).reduce((a, b) => a + b, 0);
         assert.ok(
@@ -142,13 +139,12 @@ describe("HPDrainEngine", () => {
       assert.ok(severe.drained < critical.drained, "Critical should drain more than severe");
     });
 
-    it("should apply fallback multiplier for 'healthy' severity (JS falsy 0 → 1.0)", () => {
-      // Known behavior: severityMultiplier[healthy]=0 is falsy in JS,
-      // so `|| 1.0` fallback applies. 'healthy' patients still experience
-      // drain when overdue. This is a documented edge case.
+    it("should NOT apply fallback for 'healthy' severity — zero drain is correct (BUG-002 fixed)", () => {
+      // BUG-002 FIXED: severityMultiplier["healthy"]=0 no longer triggers || 1.0 fallback.
+      // Healthy patients should NOT experience drain since their severity multiplier is 0.
       const result = engine.calculateDrain(100, 20, "healthy");
-      assert.ok(result.drained > 0, "Drain occurs due to JS falsy fallback on 0");
-      assert.ok(result.hp < 100, "HP should decrease");
+      assert.strictEqual(result.drained, 0, "No drain for healthy severity (multiplier is 0)");
+      assert.strictEqual(result.hp, 100, "HP should remain 100 for healthy patients");
     });
 
     it("should keep HP in [0, 100] range", () => {
