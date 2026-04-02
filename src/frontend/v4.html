@@ -172,6 +172,19 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a1a2e;font-family:
 .ldbar{width:200px;height:6px;background:#2a1508;border-radius:3px;margin-top:20px;overflow:hidden;border:1px solid var(--frame)}
 .ldf{height:100%;background:var(--gold);border-radius:3px;animation:ld 1.4s ease-out forwards}
 @keyframes ld{0%{width:0}60%{width:80%}100%{width:100%}}
+
+/* ── Sprint 4: Vivid Characters ── */
+/* Biography section */
+.bio-section { padding: 8px 0; border-bottom: 1px solid rgba(107,66,38,.15); }
+.bio-occupation { font-size: 12px; color: var(--ink2); display: flex; align-items: center; gap: 6px; }
+.bio-occupation .occ-icon { font-size: 14px; }
+.bio-family { font-size: 11px; color: var(--ink2); margin: 4px 0; opacity: 0.8; }
+.bio-personality { display: inline-block; font-size: 9px; padding: 2px 8px; border-radius: 10px; background: rgba(255,179,0,.15); color: #b8860b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+.bio-backstory { font-size: 11px; color: var(--ink2); font-style: italic; margin-top: 6px; line-height: 1.4; opacity: 0.75; }
+/* Portrait */
+.portrait-wrap { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.portrait-canvas { width: 56px; height: 56px; border: 2px solid var(--frame); border-radius: 4px; image-rendering: pixelated; image-rendering: crisp-edges; background: var(--parchment2); }
+.portrait-info { flex: 1; }
 </style>
 </head>
 <body>
@@ -799,6 +812,270 @@ function seededRandom(seed) {
   return () => { s = (s * 16807 + 0) % 2147483647; return s / 2147483647; };
 }
 
+// ═══ SPRINT 4: VIVID CHARACTERS — Bio, Portraits, Social, Emotional ═══
+
+// ── Agent Biography Data ──
+const BIO_OCCUPATIONS = [
+  'Teacher','Nurse','Bus driver','Baker','Retired factory worker','Student',
+  'Shop owner','Postal worker','Farmer','Accountant','Mechanic','Hairdresser',
+  'Social worker','Police officer','Carpenter','Fisherman','Librarian','Pharmacist',
+  'Restaurant owner','IT worker','Painter','Electrician','Plumber','Cleaner',
+  'Taxi driver','Care worker','Physiotherapist','Architect','Journalist','Chef',
+  'Florist','Veterinarian','Musician','Receptionist','Security guard'
+];
+const BIO_OCC_ICONS = {
+  'Teacher':'📚','Nurse':'💉','Bus driver':'🚌','Baker':'🍞','Retired factory worker':'🏭',
+  'Student':'🎓','Shop owner':'🏪','Postal worker':'📮','Farmer':'🌾','Accountant':'📊',
+  'Mechanic':'🔧','Hairdresser':'💇','Social worker':'🤝','Police officer':'👮','Carpenter':'🪚',
+  'Fisherman':'🎣','Librarian':'📖','Pharmacist':'💊','Restaurant owner':'🍽️','IT worker':'💻',
+  'Painter':'🎨','Electrician':'⚡','Plumber':'🔩','Cleaner':'🧹','Taxi driver':'🚕',
+  'Care worker':'❤️','Physiotherapist':'🦴','Architect':'📐','Journalist':'📰','Chef':'👨‍🍳',
+  'Florist':'🌸','Veterinarian':'🐾','Musician':'🎵','Receptionist':'📞','Security guard':'🛡️'
+};
+const BIO_FAMILY_TEMPLATES = [
+  'Married to {spouse}, {children} children',
+  'Lives alone since partner passed',
+  'Single parent of {children}',
+  'Widowed. Grandchildren visit on Sundays',
+  'Married for {years} years. Dog named {pet}',
+  'Lives with elderly mother',
+  'Recently divorced',
+  'Never married. Devoted to {hobby}',
+  'Partner lives abroad',
+  'Shares a house with brother/sister'
+];
+const BIO_PERSONALITIES = ['Stoic','Anxious','Optimistic','Stubborn','Social','Quiet','Cheerful','Grumpy','Caring','Skeptical','Resilient','Impatient'];
+const BIO_BACKSTORY_TEMPLATES = [
+  'Worked at the {place} for {years} years. {bodypart} gave out first.',
+  'Moved to Cammelot in {year}. Never looked back.',
+  'Third generation in this town. Knows everyone.',
+  'Used to {hobby} every weekend until the diagnosis.',
+  'Volunteers at the {place} on Thursdays.',
+  'Dreams of visiting {country} one day.',
+  'The kind of person who always has {thing} in their pocket.',
+  'Neighbors say {pronoun} is the first to help when someone is ill.',
+  'Has a collection of {thing} that fills an entire room.',
+  'Once ran the town {event}. Still talks about it.'
+];
+const BIO_FILL = {
+  spouse:['Jan','Piet','Kees','Henk','Maria','Anna','Bep','Griet','Dirk','Cor','Roos','Lies'],
+  children:['1','2','3','2','1','4','2','3'],
+  years:['12','18','25','30','35','8','22','40','15','27'],
+  pet:['Max','Luna','Bella','Bram','Pip','Toby','Snoet','Ollie'],
+  hobby:['cycling','fishing','gardening','painting','reading','knitting','woodworking','birdwatching'],
+  place:['bakery','post office','library','town hall','school','harbour','church','market'],
+  bodypart:['back','knees','hip','shoulder','heart','lungs'],
+  year:['1978','1985','1992','1967','2001','1973','1989','1995','2005','1981'],
+  country:['Italy','Spain','Norway','Japan','Portugal','Greece','New Zealand','Iceland'],
+  thing:['a handkerchief','peppermints','a pen','a photo of the grandchildren','reading glasses','a small notebook'],
+  pronoun:['he','she','they'],
+  event:['marathon','flower show','cheese market','fishing derby','folk festival','pie contest']
+};
+
+function generateBio(id, age, gender) {
+  const rng = seededRandom(hashCode(id) + 7);
+  // Age-appropriate occupation
+  let occ;
+  if (age < 22) { occ = 'Student'; }
+  else if (age >= 67) {
+    const retiredIdx = Math.floor(rng() * BIO_OCCUPATIONS.length);
+    const base = BIO_OCCUPATIONS[retiredIdx];
+    occ = (base === 'Student' || base === 'Retired factory worker') ? 'Retired factory worker' : 'Retired ' + base.toLowerCase();
+  } else {
+    // Filter out age-inappropriate
+    const pool = BIO_OCCUPATIONS.filter(o => o !== 'Retired factory worker');
+    occ = pool[Math.floor(rng() * pool.length)];
+  }
+  // Family
+  const famTpl = BIO_FAMILY_TEMPLATES[Math.floor(rng() * BIO_FAMILY_TEMPLATES.length)];
+  const family = famTpl.replace(/\{(\w+)\}/g, (_, key) => {
+    const arr = BIO_FILL[key];
+    return arr ? arr[Math.floor(rng() * arr.length)] : key;
+  });
+  // Personality
+  const personality = BIO_PERSONALITIES[Math.floor(rng() * BIO_PERSONALITIES.length)];
+  // Backstory
+  const bsTpl = BIO_BACKSTORY_TEMPLATES[Math.floor(rng() * BIO_BACKSTORY_TEMPLATES.length)];
+  const backstory = bsTpl.replace(/\{(\w+)\}/g, (_, key) => {
+    const arr = BIO_FILL[key];
+    return arr ? arr[Math.floor(rng() * arr.length)] : key;
+  });
+  return { occupation: occ, family, personality, backstory };
+}
+
+// ── Social Interaction Dialogues ──
+const SOCIAL_DIALOGUES = {
+  healthy_healthy: [
+    "Lovely weather today!","Have you tried the new bakery?","How are the grandchildren?",
+    "Heading to the park?","Did you see the match last night?"
+  ],
+  healthy_sick: [
+    "You don't look well. Have you seen the doctor?","Take care of yourself!",
+    "I hope you feel better soon.","My neighbor had the same thing. It took weeks..."
+  ],
+  sick_sick: [
+    "How long have you been waiting?","The queue at the hospital is terrible.",
+    "I've been waiting weeks...","My GP says there's nothing more they can do.",
+    "At least we're not alone in this."
+  ],
+  about_death: [
+    "Did you hear? Such a shame.","Another one lost to the system...",
+    "I'm scared it could happen to me.","The town feels emptier every week."
+  ],
+  about_system: [
+    "The hospital wait is terrible now!","Dr. Collins looks exhausted.",
+    "They say the system is 'under pressure'. I say it's broken.",
+    "In SOLL mode it would be different, they say..."
+  ]
+};
+let activeChatCount = 0;
+const MAX_ACTIVE_CHATS = 3;
+
+function pickDialogue(a, b, rng) {
+  const aSick = a.conditions && a.conditions.length > 0;
+  const bSick = b.conditions && b.conditions.length > 0;
+  const recentDeaths = EVENT_LOG.filter(e => e.type === 'died' || e.type === 'natural_death').length;
+  // 20% chance death/system talk if deaths have occurred
+  if (recentDeaths > 0 && rng() < 0.2) {
+    return rng() < 0.5
+      ? SOCIAL_DIALOGUES.about_death[Math.floor(rng() * SOCIAL_DIALOGUES.about_death.length)]
+      : SOCIAL_DIALOGUES.about_system[Math.floor(rng() * SOCIAL_DIALOGUES.about_system.length)];
+  }
+  let pool;
+  if (aSick && bSick) pool = SOCIAL_DIALOGUES.sick_sick;
+  else if (aSick || bSick) pool = SOCIAL_DIALOGUES.healthy_sick;
+  else pool = SOCIAL_DIALOGUES.healthy_healthy;
+  return pool[Math.floor(rng() * pool.length)];
+}
+
+// ── Agent Portrait System ──
+const PORTRAITS = {};
+
+function generatePortrait(id, looks, age, gender, hp) {
+  const c = document.createElement('canvas');
+  c.width = 64; c.height = 64;
+  const g = c.getContext('2d');
+  const isDead = hp <= 0;
+  const isCritical = hp > 0 && hp < 20;
+  const isSick = hp >= 20 && hp < 50;
+
+  // Parse skin color to RGB for manipulation
+  function hexToRgb(hex) {
+    const r = parseInt(hex.slice(1,3),16), gr = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+    return [r, gr, b];
+  }
+  function rgbToHex(r, gr, b) {
+    return '#' + [r,gr,b].map(v => Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,'0')).join('');
+  }
+
+  let skinRgb = hexToRgb(looks.skin);
+  let skinColor = looks.skin;
+  if (isSick) {
+    // Paler skin
+    skinRgb = skinRgb.map(v => Math.min(255, v + 30));
+    skinColor = rgbToHex(...skinRgb);
+  } else if (isCritical) {
+    // Very pale
+    skinRgb = skinRgb.map(v => Math.min(255, v + 55));
+    skinColor = rgbToHex(...skinRgb);
+  }
+
+  const px = (x, y, w, h, col) => { g.fillStyle = col; g.fillRect(x, y, w, h); };
+
+  // Face shape — rounded
+  px(16, 8, 32, 40, skinColor);  // main face
+  px(12, 12, 40, 32, skinColor); // wider middle
+  px(20, 6, 24, 4, skinColor);   // forehead
+  px(14, 44, 36, 8, skinColor);  // chin area
+  // Round corners
+  px(14, 10, 4, 4, skinColor);
+  px(46, 10, 4, 4, skinColor);
+  px(14, 42, 4, 4, skinColor);
+  px(46, 42, 4, 4, skinColor);
+
+  // Eyes — 3x3 with white + pupil
+  // Left eye
+  px(18, 22, 10, 8, '#FFFFFF');
+  px(22, 24, 4, 4, '#1A1A2A');  // pupil
+  px(24, 24, 2, 2, '#FFFFFF');  // highlight
+  // Right eye
+  px(36, 22, 10, 8, '#FFFFFF');
+  px(40, 24, 4, 4, '#1A1A2A');  // pupil
+  px(42, 24, 2, 2, '#FFFFFF');  // highlight
+  // Eyelids
+  px(18, 22, 10, 2, '#1A1A2A');
+  px(36, 22, 10, 2, '#1A1A2A');
+
+  // Mouth
+  if (isSick || isCritical) {
+    // Droopy mouth
+    px(26, 40, 12, 2, '#C08070');
+    px(24, 38, 4, 2, '#C08070');
+  } else {
+    // Normal/smile
+    px(26, 38, 12, 2, '#C08070');
+    px(28, 40, 8, 2, '#C08070');
+  }
+
+  // Critical: reddish cheeks
+  if (isCritical) {
+    g.fillStyle = 'rgba(229, 57, 53, 0.3)';
+    g.fillRect(12, 32, 10, 6);
+    g.fillRect(42, 32, 10, 6);
+  }
+
+  // Elderly: wrinkle lines + glasses chance
+  if (age >= 65) {
+    const wrinkleColor = rgbToHex(skinRgb[0] - 25, skinRgb[1] - 25, skinRgb[2] - 20);
+    px(18, 30, 8, 1, wrinkleColor); // under left eye
+    px(38, 30, 8, 1, wrinkleColor); // under right eye
+    px(22, 44, 4, 1, wrinkleColor); // laugh line left
+    px(38, 44, 4, 1, wrinkleColor); // laugh line right
+    // Glasses for some elderly (deterministic from ID)
+    const rng = seededRandom(hashCode(id) + 99);
+    if (rng() < 0.4) {
+      g.strokeStyle = '#3A3A5A';
+      g.lineWidth = 2;
+      g.strokeRect(16, 20, 14, 12);
+      g.strokeRect(34, 20, 14, 12);
+      g.beginPath(); g.moveTo(30, 26); g.lineTo(34, 26); g.stroke(); // bridge
+    }
+  }
+
+  // Hair — mapped from hType
+  const hc = looks.hair;
+  switch(looks.hType) {
+    case 0: px(12,2,40,12,hc); px(10,6,6,18,hc); px(48,6,6,18,hc); break;
+    case 1: px(10,0,44,14,hc); px(8,6,8,20,hc); px(48,6,8,20,hc); px(18,-2,28,6,hc); break;
+    case 2: px(12,2,40,12,hc); px(10,4,6,20,hc); px(48,4,6,20,hc); break;
+    case 3: px(10,0,44,10,hc); px(6,4,8,30,hc); px(50,4,8,30,hc); px(8,34,8,10,hc); px(48,34,8,10,hc); break;
+    case 4: px(8,-2,48,10,hc); px(14,0,36,14,hc); px(10,6,6,18,hc); px(48,6,6,18,hc); break;
+    case 5: px(10,0,44,14,hc); px(6,4,10,22,hc); px(48,4,10,22,hc); break;
+    case 6: px(8,0,48,12,hc); px(4,6,10,24,hc); px(50,6,10,24,hc); px(8,0,48,4,'#C83030'); break;
+    case 7: px(12,2,40,12,hc); px(10,4,6,18,hc); px(48,4,6,18,hc); px(18,-2,6,6,hc); px(30,-2,6,6,hc); px(42,-2,6,6,hc); break;
+    case 8: px(8,-2,48,16,hc); px(4,2,10,24,hc); px(50,2,10,24,hc); px(12,-4,40,6,hc); break;
+    case 9: px(8,0,48,10,'#FFF'); px(4,4,10,26,'#FFF'); px(50,4,10,26,'#FFF'); px(8,0,48,4,'#C83030'); px(8,10,48,4,'#C83030'); break;
+    case 10: px(12,2,40,12,hc); px(8,4,10,20,hc); px(46,4,10,20,hc); px(6,24,8,18,hc); px(50,24,8,18,hc); break;
+    case 11: px(12,2,40,12,hc); px(10,4,6,18,hc); px(48,4,6,18,hc); px(18,-4,28,8,hc); break;
+  }
+
+  // Dead: apply greyscale
+  if (isDead) {
+    const imgData = g.getImageData(0, 0, 64, 64);
+    const d = imgData.data;
+    for (let i = 0; i < d.length; i += 4) {
+      const avg = d[i] * 0.3 + d[i+1] * 0.59 + d[i+2] * 0.11;
+      d[i] = d[i+1] = d[i+2] = avg;
+    }
+    g.putImageData(imgData, 0, 0);
+  }
+
+  PORTRAITS[id] = c;
+  return c;
+}
+
+// ═══ END SPRINT 4 DATA ═══
+
 // ── Procedural LOOKS generator ──
 function generateLooks(id, age, gender) {
   const seed = hashCode(id);
@@ -930,7 +1207,10 @@ function spawnPopulation(count) {
       referredToHospital,
       thoughts: generateThoughts(conditions, hp, age, waitWeeks),
       color: '#808080',
-      hpHistory: [hp]
+      hpHistory: [hp],
+      bio: generateBio(id, age, gender),
+      chatPartner: null, chatTimer: 0, chatBubbleText: '',
+      grievingTimer: 0
     };
     spawned.push(agent);
     logEvent('spawned', agent, 'Age ' + agent.age);
@@ -1432,7 +1712,7 @@ function renderCharToCanvas(id, walkFrame) {
 
 // Ghost versions are now generated in initCharSprites()
 
-// Init all characters — 3 walk frames + ghost versions
+// Init all characters — 3 walk frames + ghost versions + portraits
 function initCharSprites() {
   for(const id in LOOKS) {
     charCanvases[id+'_0'] = renderCharToCanvas(id, 0); // stand
@@ -1451,6 +1731,12 @@ function initCharSprites() {
       charCanvases[id+'_ghost_'+f] = c;
     }
   }
+  // Generate portraits for all citizen/patient agents
+  agents.forEach(a => {
+    if ((a.type === 'patient' || a.type === 'citizen') && LOOKS[a.id]) {
+      generatePortrait(a.id, LOOKS[a.id], a.age, a.gender, a.hp);
+    }
+  });
 }
 
 // ═══ CHARACTER DRAWING ═══
@@ -1467,9 +1753,26 @@ function drawAgent(e){
   
   cx.save();
   const charSize = 28 * s;
-  const drawX = sx - charSize/2;
-  const drawY = sy - charSize;
+  let drawX = sx - charSize/2;
+  let drawY = sy - charSize;
   
+  // ── Sprint 4: Emotional visual effects ──
+  const hasConditions = e.conditions && e.conditions.length > 0;
+  const isHappy = !isG && e.hp > 80 && !hasConditions;
+  const isWorried = !isG && e.hp > 50 && e.hp <= 80 && hasConditions;
+  const isInPain = !isG && e.hp > 20 && e.hp <= 50;
+  const isCritical = !isG && e.hp > 0 && e.hp <= 20;
+  const isGrieving = !isG && (e.grievingTimer || 0) > 0;
+
+  // Happy bounce
+  if (isHappy && isMoving) {
+    drawY += Math.sin(Date.now() / 300) * 1.5 * s;
+  }
+  // Pain hobble
+  if (isInPain && isMoving) {
+    drawX += Math.sin(Date.now() / 200) * 2 * s;
+  }
+
   // Shadow on ground
   cx.fillStyle = 'rgba(0,0,0,.22)';
   cx.beginPath(); cx.ellipse(sx, sy, charSize*.32, charSize*.07, 0, 0, 6.28); cx.fill();
@@ -1481,6 +1784,12 @@ function drawAgent(e){
     cx.drawImage(sprite, drawX, drawY, charSize, charSize);
   }
   
+  // Critical: red tint overlay
+  if (isCritical && sprite) {
+    cx.fillStyle = 'rgba(229, 57, 53, 0.2)';
+    cx.fillRect(drawX, drawY, charSize, charSize);
+  }
+
   // Selected ring
   if(selectedAgent===e.id){
     cx.strokeStyle='#FFB300'; cx.lineWidth=2*s; cx.setLineDash([3*s,2*s]);
@@ -1508,14 +1817,67 @@ function drawAgent(e){
     cx.fillText(e.name, sx, drawY - 7*s);
   }
   
-  // Speech/thought bubble
-  e.bubbleTimer--;
-  if(e.bubbleTimer > 0 || e.state==='critical' || e.state==='overloaded'){
-    const icon = e.state==='critical' ? '❗' : e.state==='overloaded' ? '⚠' : e.waitWeeks>10 ? '❓' : '💬';
-    cx.font = `${Math.max(10,12*s)}px sans-serif`; cx.textAlign = 'center';
-    cx.fillText(icon, sx + charSize*.4, drawY - 2*s);
+  // ── Sprint 4: Social chat speech bubble ──
+  if ((e.chatTimer || 0) > 0 && e.chatBubbleText) {
+    const bubbleText = e.chatBubbleText;
+    const bFontSize = Math.max(7, 8 * s);
+    cx.font = `500 ${bFontSize}px Inter,sans-serif`;
+    cx.textAlign = 'center';
+    const tw = cx.measureText(bubbleText).width;
+    const bw2 = tw + 10 * s;
+    const bh2 = 14 * s;
+    const bx = sx - bw2 / 2;
+    const by = drawY - 18 * s;
+    // Bubble background
+    cx.fillStyle = 'rgba(255,255,255,0.92)';
+    cx.beginPath();
+    cx.roundRect(bx, by, bw2, bh2, 4 * s);
+    cx.fill();
+    cx.strokeStyle = 'rgba(61,43,31,0.6)';
+    cx.lineWidth = 1 * s;
+    cx.stroke();
+    // Triangle pointer
+    cx.fillStyle = 'rgba(255,255,255,0.92)';
+    cx.beginPath();
+    cx.moveTo(sx - 3 * s, by + bh2);
+    cx.lineTo(sx, by + bh2 + 4 * s);
+    cx.lineTo(sx + 3 * s, by + bh2);
+    cx.fill();
+    // Text
+    cx.fillStyle = '#3D2B1F';
+    cx.fillText(bubbleText, sx, by + bh2 - 4 * s);
+    e.chatTimer--;
+  } else {
+    // Original speech/thought bubble
+    e.bubbleTimer--;
+    if(e.bubbleTimer > 0 || e.state==='critical' || e.state==='overloaded'){
+      const icon = e.state==='critical' ? '❗' : e.state==='overloaded' ? '⚠' : e.waitWeeks>10 ? '❓' : '💬';
+      cx.font = `${Math.max(10,12*s)}px sans-serif`; cx.textAlign = 'center';
+      cx.fillText(icon, sx + charSize*.4, drawY - 2*s);
+    }
   }
-  
+
+  // ── Sprint 4: Emotional emoji indicators ──
+  const frameCount = e.frame || 0;
+  let emojiToShow = null;
+  if (isGrieving) {
+    emojiToShow = '💔';
+    e.grievingTimer--;
+  } else if (isCritical) {
+    // ❗ already shown by state bubble above
+  } else if (isInPain && frameCount % 150 < 30) {
+    emojiToShow = '😣';
+  } else if (isWorried && frameCount % 300 < 30) {
+    emojiToShow = '😟';
+  } else if (isHappy && frameCount % 200 < 30) {
+    emojiToShow = '😊';
+  }
+  if (emojiToShow && !(e.chatTimer > 0)) {
+    cx.font = `${Math.max(10, 12 * s)}px sans-serif`;
+    cx.textAlign = 'center';
+    cx.fillText(emojiToShow, sx - charSize * 0.3, drawY - 2 * s);
+  }
+
   cx.restore();
   e.frame++;
 }
@@ -1618,9 +1980,44 @@ function render(){
   lastFrameTime = now;
 
   // Agent movement — state-driven pathfinding
+  // ── Sprint 4: Social interaction check ──
+  activeChatCount = 0;
+  const movableAgents = agents.filter(a => !a.insideBuilding && a.hp > 0 && a.type !== 'specialist' && a.type !== 'gp');
+  // Count active chats
+  movableAgents.forEach(a => { if ((a.chatTimer || 0) > 0) activeChatCount++; });
+  activeChatCount = Math.floor(activeChatCount / 2); // pairs
+  // Check for new conversations
+  if (activeChatCount < MAX_ACTIVE_CHATS) {
+    for (let i = 0; i < movableAgents.length && activeChatCount < MAX_ACTIVE_CHATS; i++) {
+      const a = movableAgents[i];
+      if ((a.chatTimer || 0) > 0 || a.hp <= 0) continue;
+      for (let j = i + 1; j < movableAgents.length; j++) {
+        const b = movableAgents[j];
+        if ((b.chatTimer || 0) > 0 || b.hp <= 0) continue;
+        const cdx = a.x - b.x, cdy = a.y - b.y;
+        const cdist = Math.sqrt(cdx * cdx + cdy * cdy);
+        if (cdist < 0.03 && Math.random() < 0.003) {
+          const chatRng = seededRandom(hashCode(a.id + b.id + Math.floor(Date.now() / 1000)));
+          const line = pickDialogue(a, b, chatRng);
+          a.chatPartner = b.id; a.chatTimer = 120; a.chatBubbleText = line;
+          b.chatPartner = a.id; b.chatTimer = 120; b.chatBubbleText = line;
+          logEvent('social_chat', a, 'Chatted with ' + b.name);
+          activeChatCount++;
+          break;
+        }
+      }
+    }
+  }
+
   agents.forEach(e=>{
     if(e.insideBuilding) return;
     if(e.type==='specialist' || e.type==='gp') return;
+
+    // ── Sprint 4: Chat pause — don't move while chatting ──
+    if ((e.chatTimer || 0) > 0) return;
+
+    // ── Sprint 4: Grieving pause ──
+    if ((e.grievingTimer || 0) > 0 && Math.random() < 0.5) return;
 
     // Idle pause — stand still between walks
     if(e.idleUntil && now < e.idleUntil) return;
@@ -1656,7 +2053,15 @@ function render(){
     const dx = e.tx - e.x, dy = e.ty - e.y;
     const dist = Math.sqrt(dx*dx + dy*dy);
     if(dist > .002) {
-      const speed = (e.hp <= 0 ? 0.010 : 0.025) * dt;
+      // ── Sprint 4: Emotional speed modifiers ──
+      let speedMult = 1.0;
+      const eHasConditions = e.conditions && e.conditions.length > 0;
+      if (e.hp > 80 && !eHasConditions) speedMult = 1.0; // happy
+      else if (e.hp > 50) speedMult = 0.8; // worried
+      else if (e.hp > 20) speedMult = 0.6; // in pain
+      else speedMult = 0.3; // critical
+      if ((e.grievingTimer || 0) > 0) speedMult *= 0.5;
+      const speed = (e.hp <= 0 ? 0.010 : 0.025) * dt * speedMult;
       const step = Math.min(speed, dist);
       e.x += (dx/dist) * step;
       e.y += (dy/dist) * step;
@@ -1744,8 +2149,25 @@ function selectAgent(a){
   const agentEvents=EVENT_LOG.filter(e=>e.agentId===a.id);
 
   let html=`<div class="agent-card">
-    <div class="ac-name">${a.name}</div>
-    <div class="ac-role">${a.type==='gp'?'General Practitioner':a.type==='specialist'?a.role:a.gender==='M'?'Male':'Female'}, Age ${a.age}</div>`;
+    <div class="portrait-wrap">
+      <canvas class="portrait-canvas" id="portrait-cv" width="64" height="64" ${a.hp<=0?'style="filter:grayscale(100%)"':''}></canvas>
+      <div class="portrait-info">
+        <div class="ac-name">${a.name}</div>
+        <div class="ac-role">${a.type==='gp'?'General Practitioner':a.type==='specialist'?a.role:a.gender==='M'?'Male':'Female'}, Age ${a.age}</div>
+      </div>
+    </div>`;
+
+  // Sprint 4: Biography section for citizens/patients
+  if(isPatient && a.bio){
+    const bio=a.bio;
+    const occIcon=BIO_OCC_ICONS[bio.occupation.replace(/^Retired /,'')] || BIO_OCC_ICONS[bio.occupation] || '👤';
+    html+=`<div class="bio-section">
+      <div class="bio-occupation"><span class="occ-icon">${occIcon}</span> ${bio.occupation}</div>
+      <div class="bio-family">${bio.family}</div>
+      <span class="bio-personality">${bio.personality}</span>
+      <div class="bio-backstory">${bio.backstory}</div>
+    </div>`;
+  }
 
   if(isPatient){
     const hp=Math.max(0,Math.round(a.hp));
@@ -1854,6 +2276,20 @@ function selectAgent(a){
 
   html+=`</div>`;
   d.innerHTML=html;
+
+  // Sprint 4: Draw portrait on canvas
+  const portraitCv = document.getElementById('portrait-cv');
+  if (portraitCv) {
+    const pctx = portraitCv.getContext('2d');
+    // Regenerate portrait if needed (HP may have changed appearance)
+    if ((a.type === 'patient' || a.type === 'citizen') && LOOKS[a.id]) {
+      generatePortrait(a.id, LOOKS[a.id], a.age, a.gender, a.hp);
+    }
+    if (PORTRAITS[a.id]) {
+      pctx.clearRect(0, 0, 64, 64);
+      pctx.drawImage(PORTRAITS[a.id], 0, 0);
+    }
+  }
 
   // Draw HP Sparkline on canvas (Sprint 3)
   const sparkCanvas=document.getElementById('hp-spark');
@@ -2110,6 +2546,14 @@ function tick(){
           say(a.name,`I waited too long... ${Math.round(a.waitWeeks)} weeks. The system failed me.`,'ghost');
           say('SYSTEM',`MORTALITY: ${a.name} (${a.age}) — after ${Math.round(a.waitWeeks)} weeks.`,'alert');
         }
+        // ── Sprint 4: Grieving — nearby agents react ──
+        agents.forEach(nb => {
+          if (nb.id === a.id || nb.hp <= 0 || nb.insideBuilding) return;
+          const gdx = nb.x - a.x, gdy = nb.y - a.y;
+          if (Math.sqrt(gdx * gdx + gdy * gdy) < 0.05) {
+            nb.grievingTimer = 120;
+          }
+        });
       }
       return;
     }
@@ -2656,6 +3100,15 @@ function loadGame(){
       if(!LOOKS[a.id] && (a.type==='patient'||a.type==='citizen')){
         LOOKS[a.id]=generateLooks(a.id,a.age,a.gender);
       }
+      // Sprint 4: Regenerate deterministic bio from ID
+      if((a.type==='patient'||a.type==='citizen') && !a.bio){
+        a.bio = generateBio(a.id, a.age, a.gender);
+      }
+      // Sprint 4: Initialize social/emotional state
+      a.chatPartner = a.chatPartner || null;
+      a.chatTimer = 0;
+      a.chatBubbleText = '';
+      a.grievingTimer = 0;
     });
     initCharSprites();
     setMode(mode);
