@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cammelot — Applied Research Sandbox</title>
+<style>
+  /* === 16-BIT SNES RPG AESTHETIC === */
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0C0C1E;
+    color: #E0E0F0;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    image-rendering: pixelated;
+    overflow: hidden;
+  }
+
+  #game-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    max-width: 1024px;
+    margin: 0 auto;
+  }
+
+  /* Top HUD Bar */
+  #hud {
+    background: #1C1C3C;
+    border-bottom: 3px solid #A0A0D0;
+    padding: 8px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  #hud .title {
+    color: #F8D830;
+    font-size: 12px;
+    text-shadow: 2px 2px #8B6914;
+  }
+
+  #hud .stats {
+    display: flex;
+    gap: 16px;
+  }
+
+  .stat-box {
+    background: #282848;
+    border: 2px solid #6060A0;
+    border-radius: 2px;
+    padding: 4px 8px;
+    text-align: center;
+  }
+
+  .stat-label { color: #8888C0; font-size: 6px; }
+  .stat-value { color: #F0F0FF; font-size: 10px; margin-top: 2px; }
+
+  /* Main Game Canvas */
+  #game-world {
+    flex: 1;
+    position: relative;
+    background: #1A3A1A;
+    overflow: hidden;
+  }
+
+  canvas {
+    width: 100%;
+    height: 100%;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+  }
+
+  /* Bottom Panel — Agent Dialogue */
+  #dialogue-panel {
+    background: #1C1C3C;
+    border-top: 3px solid #A0A0D0;
+    padding: 12px;
+    height: 140px;
+    overflow-y: auto;
+    flex-shrink: 0;
+  }
+
+  .dialogue-entry {
+    margin-bottom: 8px;
+    line-height: 1.6;
+  }
+
+  .dialogue-name {
+    color: #F8D830;
+    display: inline;
+  }
+
+  .dialogue-text {
+    color: #E0E0F0;
+    display: inline;
+  }
+
+  .dialogue-entry.ghost .dialogue-name { color: #808080; }
+  .dialogue-entry.ghost .dialogue-text { color: #606060; }
+  .dialogue-entry.critical .dialogue-name { color: #E83030; }
+
+  /* Speech Bubble overlay */
+  .speech-bubble {
+    position: absolute;
+    background: #F8F8E8;
+    color: #282828;
+    border: 2px solid #383838;
+    border-radius: 4px;
+    padding: 6px 10px;
+    font-size: 7px;
+    max-width: 180px;
+    line-height: 1.4;
+    z-index: 10;
+    pointer-events: none;
+  }
+
+  .speech-bubble::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 12px;
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 8px solid #383838;
+  }
+
+  /* Side Panel — Research Monitor */
+  #research-panel {
+    position: fixed;
+    right: 0;
+    top: 0;
+    width: 240px;
+    height: 100vh;
+    background: #141428;
+    border-left: 3px solid #A0A0D0;
+    padding: 12px;
+    overflow-y: auto;
+    font-size: 7px;
+  }
+
+  #research-panel h3 {
+    color: #F8D830;
+    font-size: 9px;
+    margin-bottom: 8px;
+    text-shadow: 1px 1px #8B6914;
+  }
+
+  .research-card {
+    background: #1C1C3C;
+    border: 2px solid #404080;
+    border-radius: 2px;
+    padding: 8px;
+    margin-bottom: 8px;
+  }
+
+  .research-card .label { color: #8888C0; }
+  .research-card .value { color: #30E830; font-size: 10px; }
+  .research-card .value.warning { color: #E8E830; }
+  .research-card .value.danger { color: #E83030; }
+
+  /* HP Bar */
+  .hp-bar-container {
+    width: 100%;
+    height: 8px;
+    background: #282828;
+    border: 1px solid #484848;
+    margin: 4px 0;
+  }
+
+  .hp-bar {
+    height: 100%;
+    transition: width 0.3s;
+  }
+
+  .hp-bar.green { background: #30E830; }
+  .hp-bar.yellow { background: #E8E830; }
+  .hp-bar.red { background: #E83030; }
+  .hp-bar.ghost { background: #808080; }
+
+  /* Controls */
+  #controls {
+    display: flex;
+    gap: 8px;
+    padding: 8px 12px;
+    background: #141428;
+    border-top: 2px solid #404080;
+  }
+
+  button {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    background: #303060;
+    color: #E0E0F0;
+    border: 2px solid #6060A0;
+    padding: 6px 12px;
+    cursor: pointer;
+  }
+
+  button:hover { background: #404080; border-color: #A0A0D0; }
+  button:active { background: #5050A0; }
+  button.primary { background: #305030; border-color: #60A060; }
+  button.primary:hover { background: #406040; }
+  button.danger { background: #503030; border-color: #A06060; }
+
+  /* IST/SOLL Toggle */
+  .mode-toggle {
+    display: flex;
+    gap: 4px;
+    background: #282848;
+    border: 2px solid #6060A0;
+    border-radius: 2px;
+    padding: 2px;
+  }
+
+  .mode-btn {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    padding: 4px 8px;
+    border: none;
+    cursor: pointer;
+    background: transparent;
+    color: #8888C0;
+  }
+
+  .mode-btn.active-ist {
+    background: #503030;
+    color: #E83030;
+    border: 1px solid #A06060;
+  }
+
+  .mode-btn.active-soll {
+    background: #305030;
+    color: #30E830;
+    border: 1px solid #60A060;
+  }
+
+  .soll-indicator {
+    color: #30E830;
+    font-size: 6px;
+    text-align: center;
+    padding: 2px;
+    background: #1A3A1A;
+    display: none;
+  }
+
+  body.soll-mode .soll-indicator { display: block; }
+  body.soll-mode #game-world { background: #1A3A2A; }
+</style>
+</head>
+<body>
+<div id="game-container">
+  <!-- HUD -->
+  <div id="hud">
+    <div class="title">CAMMELOT</div>
+    <div class="mode-toggle">
+      <button class="mode-btn active-ist" id="btn-ist" onclick="setMode('IST')">IST</button>
+      <button class="mode-btn" id="btn-soll" onclick="setMode('SOLL')">SOLL</button>
+    </div>
+    <div class="stats">
+      <div class="stat-box">
+        <div class="stat-label">CYCLE</div>
+        <div class="stat-value" id="cycle-count">0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">POP</div>
+        <div class="stat-value" id="pop-count">5000</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">GHOSTS</div>
+        <div class="stat-value" id="ghost-count">0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">WAIT AVG</div>
+        <div class="stat-value" id="wait-avg">4w</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Game World Canvas -->
+  <div id="game-world">
+    <canvas id="map-canvas"></canvas>
+  </div>
+
+  <!-- Effective Capacity Bar -->
+  <div class="soll-indicator" id="soll-bar">AI-NATIVE MODE: C_eff = 83% | Admin <5% | FHIR Interop 66% | E_ai = 1.34</div>
+
+  <!-- Controls -->
+  <div id="controls">
+    <button class="primary" onclick="runCycle()">&#9654; TICK</button>
+    <button class="primary" onclick="runBatch(10)">&#9654;&#9654; x10</button>
+    <button class="primary" onclick="runBatch(100)">&#9654;&#9654;&#9654; x100</button>
+    <button onclick="toggleResearch()">RESEARCH</button>
+    <button onclick="runSecurityAudit()">SECURITY</button>
+    <button class="danger" onclick="resetSim()">RESET</button>
+  </div>
+
+  <!-- Dialogue Panel -->
+  <div id="dialogue-panel">
+    <div class="dialogue-entry">
+      <span class="dialogue-name">[SYSTEM]</span>
+      <span class="dialogue-text"> Welcome to Cammelot. The simulation is ready.</span>
+    </div>
+  </div>
+</div>
+
+<!-- Research Side Panel -->
+<div id="research-panel" style="display: none;">
+  <h3>APPLIED RESEARCH</h3>
+
+  <div class="research-card">
+    <div class="label">HENDRIK VEENSTRA</div>
+    <div class="hp-bar-container">
+      <div class="hp-bar green" id="hendrik-hp-bar" style="width: 82%"></div>
+    </div>
+    <div class="value" id="hendrik-hp">HP: 82/100</div>
+    <div class="label" id="hendrik-state">State: moderate | Waiting: 4w</div>
+  </div>
+
+  <div class="research-card">
+    <div class="label">BIAS TRACKER</div>
+    <div class="value" id="bias-age">Age Bias: 0.00</div>
+    <div class="value" id="bias-referral">Referral Bias: 0.00</div>
+    <div class="value" id="bias-alert">Status: Monitoring</div>
+  </div>
+
+  <div class="research-card">
+    <div class="label">ROI COUNTER</div>
+    <div class="value" id="roi-waste">Admin Waste: €0</div>
+    <div class="value" id="roi-preventable">Preventable Cost: €0</div>
+  </div>
+
+  <div class="research-card">
+    <div class="label">FHIR RESOURCES</div>
+    <div class="value" id="fhir-total">Total: 0</div>
+    <div class="label" id="fhir-breakdown">-</div>
+  </div>
+
+  <div class="research-card">
+    <div class="label">A2A MESH</div>
+    <div class="value" id="mesh-agents">Agents: 0</div>
+    <div class="label" id="mesh-messages">Messages: 0</div>
+  </div>
+</div>
+
+<script>
+// === CAMMELOT FRONTEND RENDERER ===
+// 16-bit SNES-style tile renderer with sprite system
+
+const canvas = document.getElementById('map-canvas');
+const ctx = canvas.getContext('2d');
+
+// Tile constants
+const TILE = 16;
+const MAP_W = 64;
+const MAP_H = 48;
+
+// SNES Palette
+const PAL = {
+  grass:    '#3B8C2A', grassAlt: '#4DA63A',
+  path:     '#D4A564', road:     '#7C7C7C',
+  water:    '#2878B8', waterDk:  '#1E60A0',
+  roof:     '#C83030', wall:     '#F0E0C0',
+  hospital: '#F8F8F8', hospRed:  '#E83030',
+  gpGreen:  '#30A830', pharmacy: '#3070C0',
+  tree:     '#1E6B18', treeDk:   '#145210',
+  treeTrunk:'#8B5A2B',
+  shadow:   '#282828',
+  park:     '#48A840',
+  townHall: '#D0B060',
+  nursing:  '#B08060',
+  hpGreen:  '#30E830', hpYellow: '#E8E830', hpRed: '#E83030',
+  ghost:    '#808080', ghostW:   '#C0C0C0',
+};
+
+// Tile type map (matches tile_map.js)
+const TYPES = {
+  0x00: 'empty', 0x01: 'grass', 0x02: 'path', 0x03: 'road',
+  0x04: 'water', 0x05: 'tree', 0x10: 'house', 0x20: 'gp',
+  0x30: 'hospital', 0x40: 'pharmacy', 0x50: 'nursing',
+  0x60: 'townhall', 0x70: 'park', 0x80: 'church',
+};
+
+// Simulated map data (matches buildCammelotMap)
+let mapData = new Uint8Array(MAP_W * MAP_H).fill(0x01); // all grass
+let entities = [];
+let dialogues = [];
+let cycle = 0;
+let simState = {
+  hendrikHP: 82, hendrikState: 'moderate', hendrikWait: 4,
+  ghosts: 0, totalResources: 6, meshAgents: 7, messages: 0,
+  biasAge: 0, biasRef: 0, roiWaste: 0, roiPreventable: 0,
+};
+
+// Build the map procedurally (client-side mirror)
+function buildMap() {
+  // Roads
+  for (let x = 0; x < MAP_W; x++) { mapData[23*MAP_W+x] = 0x03; mapData[24*MAP_W+x] = 0x03; }
+  for (let y = 0; y < MAP_H; y++) { mapData[y*MAP_W+31] = 0x03; mapData[y*MAP_W+32] = 0x03; }
+
+  // River
+  for (let x = 0; x < MAP_W; x++) { for (let dy = 0; dy < 3; dy++) mapData[(40+dy)*MAP_W+x] = 0x04; }
+
+  // GP Practices
+  fillRect(10, 18, 4, 4, 0x20);
+  fillRect(22, 30, 4, 4, 0x20);
+  fillRect(34, 16, 4, 4, 0x20);
+
+  // Hospital
+  fillRect(46, 8, 10, 8, 0x30);
+
+  // Pharmacies
+  fillRect(16, 22, 3, 3, 0x40);
+  fillRect(40, 22, 3, 3, 0x40);
+
+  // Nursing Home
+  fillRect(8, 32, 6, 5, 0x50);
+
+  // Town Hall
+  fillRect(28, 10, 6, 5, 0x60);
+
+  // Park
+  fillRect(18, 6, 8, 6, 0x70);
+
+  // Trees
+  [[2,2],[4,5],[7,3],[15,4],[38,4],[42,6],
+   [5,28],[14,36],[30,38],[45,36],[55,30],
+   [60,10],[58,20],[3,44],[20,44],[40,44]].forEach(([x,y]) => mapData[y*MAP_W+x] = 0x05);
+
+  // Houses
+  [[4,12],[6,12],[8,12],[4,15],[6,15],
+   [38,28],[40,28],[42,28],[38,32],[40,32],
+   [14,28],[16,28],[50,28],[52,28],[54,28],
+   [20,36],[22,36],[24,36],[26,36]].forEach(([x,y]) => fillRect(x,y,2,2,0x10));
+
+  // Paths
+  for (let y = 18; y < 23; y++) mapData[y*MAP_W+10] = 0x02;
+  for (let y = 30; y < 35; y++) mapData[y*MAP_W+22] = 0x02;
+  for (let y = 14; y < 23; y++) mapData[y*MAP_W+34] = 0x02;
+  for (let y = 10; y < 23; y++) mapData[y*MAP_W+48] = 0x02;
+
+  // Place entities
+  entities = [
+    { id: 'gp-de-jong', x: 12, y: 20, type: 'gp', label: 'Dr. de Jong' },
+    { id: 'gp-bakker', x: 24, y: 32, type: 'gp', label: 'Dr. Bakker' },
+    { id: 'gp-visser', x: 36, y: 18, type: 'gp', label: 'Dr. Visser' },
+    { id: 'spec-card', x: 50, y: 12, type: 'specialist', label: 'Cardiology' },
+    { id: 'spec-endo', x: 52, y: 14, type: 'specialist', label: 'Endocrinology' },
+    { id: 'spec-pulm', x: 54, y: 12, type: 'specialist', label: 'Pulmonology' },
+    { id: 'hendrik', x: 28, y: 20, type: 'patient', label: 'Hendrik', state: 'concerned' },
+  ];
+}
+
+function fillRect(x, y, w, h, type) {
+  for (let dy = 0; dy < h; dy++)
+    for (let dx = 0; dx < w; dx++)
+      if (x+dx < MAP_W && y+dy < MAP_H) mapData[(y+dy)*MAP_W+(x+dx)] = type;
+}
+
+// === RENDERING ===
+
+function resizeCanvas() {
+  const container = document.getElementById('game-world');
+  canvas.width = MAP_W * TILE;
+  canvas.height = MAP_H * TILE;
+  canvas.style.width = container.clientWidth + 'px';
+  canvas.style.height = container.clientHeight + 'px';
+}
+
+function drawTile(x, y, type) {
+  const px = x * TILE;
+  const py = y * TILE;
+
+  switch (TYPES[type]) {
+    case 'grass':
+      ctx.fillStyle = ((x + y) % 3 === 0) ? PAL.grassAlt : PAL.grass;
+      ctx.fillRect(px, py, TILE, TILE);
+      // Grass detail
+      if ((x * 7 + y * 13) % 11 === 0) {
+        ctx.fillStyle = PAL.grassAlt;
+        ctx.fillRect(px + 4, py + 4, 2, 2);
+      }
+      break;
+
+    case 'road':
+      ctx.fillStyle = PAL.road;
+      ctx.fillRect(px, py, TILE, TILE);
+      // Road markings
+      if (x % 4 === 0) {
+        ctx.fillStyle = '#A0A0A0';
+        ctx.fillRect(px + 6, py + 7, 4, 2);
+      }
+      break;
+
+    case 'path':
+      ctx.fillStyle = PAL.path;
+      ctx.fillRect(px, py, TILE, TILE);
+      break;
+
+    case 'water':
+      ctx.fillStyle = ((x + Math.floor(cycle/2)) % 3 === 0) ? PAL.waterDk : PAL.water;
+      ctx.fillRect(px, py, TILE, TILE);
+      // Wave animation
+      ctx.fillStyle = '#50A8E8';
+      ctx.fillRect(px + ((cycle + x) % 8) * 2, py + 4, 3, 1);
+      break;
+
+    case 'tree':
+      // Ground
+      ctx.fillStyle = PAL.grass;
+      ctx.fillRect(px, py, TILE, TILE);
+      // Trunk
+      ctx.fillStyle = PAL.treeTrunk;
+      ctx.fillRect(px + 6, py + 10, 4, 6);
+      // Canopy
+      ctx.fillStyle = PAL.tree;
+      ctx.fillRect(px + 2, py + 2, 12, 10);
+      ctx.fillStyle = PAL.treeDk;
+      ctx.fillRect(px + 4, py + 4, 4, 4);
+      break;
+
+    case 'house':
+      // Wall
+      ctx.fillStyle = PAL.wall;
+      ctx.fillRect(px + 1, py + 6, 14, 10);
+      // Roof
+      ctx.fillStyle = PAL.roof;
+      ctx.fillRect(px, py + 2, 16, 5);
+      ctx.fillRect(px + 2, py, 12, 3);
+      // Door
+      ctx.fillStyle = PAL.treeTrunk;
+      ctx.fillRect(px + 6, py + 10, 4, 6);
+      // Window
+      ctx.fillStyle = '#80C0F0';
+      ctx.fillRect(px + 3, py + 8, 3, 3);
+      break;
+
+    case 'gp':
+      // Green medical building
+      ctx.fillStyle = '#E8F0E0';
+      ctx.fillRect(px, py, TILE, TILE);
+      ctx.fillStyle = PAL.gpGreen;
+      ctx.fillRect(px, py, TILE, 4);
+      // Cross
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(px + 6, py + 6, 4, 8);
+      ctx.fillRect(px + 4, py + 8, 8, 4);
+      break;
+
+    case 'hospital':
+      ctx.fillStyle = PAL.hospital;
+      ctx.fillRect(px, py, TILE, TILE);
+      ctx.fillStyle = '#E0E0E8';
+      ctx.fillRect(px, py, TILE, 3);
+      // Red cross
+      ctx.fillStyle = PAL.hospRed;
+      ctx.fillRect(px + 6, py + 4, 4, 10);
+      ctx.fillRect(px + 3, py + 7, 10, 4);
+      break;
+
+    case 'pharmacy':
+      ctx.fillStyle = '#D0D8F0';
+      ctx.fillRect(px, py, TILE, TILE);
+      ctx.fillStyle = PAL.pharmacy;
+      ctx.fillRect(px, py, TILE, 4);
+      // Rx symbol
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(px + 5, py + 6, 6, 2);
+      ctx.fillRect(px + 5, py + 6, 2, 6);
+      break;
+
+    case 'nursing':
+      ctx.fillStyle = '#F0E0D0';
+      ctx.fillRect(px, py, TILE, TILE);
+      ctx.fillStyle = PAL.nursing;
+      ctx.fillRect(px, py, TILE, 4);
+      break;
+
+    case 'townhall':
+      ctx.fillStyle = PAL.townHall;
+      ctx.fillRect(px, py, TILE, TILE);
+      ctx.fillStyle = '#B09040';
+      ctx.fillRect(px, py, TILE, 3);
+      // Flag
+      ctx.fillStyle = '#E83030';
+      ctx.fillRect(px + 6, py + 4, 6, 4);
+      break;
+
+    case 'park':
+      ctx.fillStyle = PAL.park;
+      ctx.fillRect(px, py, TILE, TILE);
+      if ((x + y) % 5 === 0) {
+        ctx.fillStyle = '#60C060';
+        ctx.fillRect(px + 4, py + 4, 3, 3);
+      }
+      break;
+
+    default:
+      ctx.fillStyle = '#1A1A1A';
+      ctx.fillRect(px, py, TILE, TILE);
+  }
+}
+
+function drawSprite(entity) {
+  const px = entity.x * TILE;
+  const py = entity.y * TILE;
+  const state = entity.state || 'healthy';
+
+  let headColor, bodyColor;
+
+  switch (entity.type) {
+    case 'patient':
+      if (state === 'ghost') { headColor = PAL.ghostW; bodyColor = PAL.ghost; }
+      else if (state === 'critical') { headColor = '#F0B0B0'; bodyColor = PAL.hpRed; }
+      else if (state === 'distressed') { headColor = '#F0D0B0'; bodyColor = PAL.hpYellow; }
+      else { headColor = '#F0D0A0'; bodyColor = '#4080C0'; }
+      break;
+    case 'gp':
+      headColor = '#F0D0A0'; bodyColor = '#FFFFFF';
+      break;
+    case 'specialist':
+      headColor = '#F0D0A0'; bodyColor = '#40A0FF';
+      break;
+    default:
+      headColor = '#F0D0A0'; bodyColor = '#808080';
+  }
+
+  // Shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  ctx.fillRect(px + 2, py + 13, 12, 3);
+
+  // Body
+  ctx.fillStyle = bodyColor;
+  ctx.fillRect(px + 4, py + 6, 8, 8);
+
+  // Head
+  ctx.fillStyle = headColor;
+  ctx.fillRect(px + 5, py + 1, 6, 6);
+
+  // Eyes
+  if (state !== 'ghost') {
+    ctx.fillStyle = '#282828';
+    ctx.fillRect(px + 6, py + 3, 2, 2);
+    ctx.fillRect(px + 9, py + 3, 2, 2);
+  } else {
+    // Ghost X eyes
+    ctx.fillStyle = '#404040';
+    ctx.fillRect(px + 6, py + 3, 1, 1);
+    ctx.fillRect(px + 8, py + 4, 1, 1);
+    ctx.fillRect(px + 7, py + 4, 1, 1);
+    ctx.fillRect(px + 9, py + 3, 1, 1);
+  }
+
+  // Label
+  if (entity.label) {
+    ctx.fillStyle = state === 'ghost' ? PAL.ghost : '#F8F8F8';
+    ctx.font = '6px "Press Start 2P"';
+    ctx.textAlign = 'center';
+    ctx.fillText(entity.label, px + 8, py - 2);
+  }
+
+  // HP bar for patients
+  if (entity.type === 'patient' && state !== 'ghost') {
+    const hp = simState.hendrikHP;
+    const barW = 14;
+    const fillW = (hp / 100) * barW;
+    ctx.fillStyle = '#282828';
+    ctx.fillRect(px + 1, py - 5, barW, 3);
+    ctx.fillStyle = hp > 50 ? PAL.hpGreen : hp > 20 ? PAL.hpYellow : PAL.hpRed;
+    ctx.fillRect(px + 1, py - 5, fillW, 3);
+  }
+}
+
+function render() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Draw tiles
+  for (let y = 0; y < MAP_H; y++) {
+    for (let x = 0; x < MAP_W; x++) {
+      drawTile(x, y, mapData[y * MAP_W + x]);
+    }
+  }
+
+  // Draw entities
+  for (const ent of entities) {
+    drawSprite(ent);
+  }
+
+  // Building labels
+  ctx.fillStyle = '#F8D830';
+  ctx.font = '7px "Press Start 2P"';
+  ctx.textAlign = 'center';
+  ctx.fillText('GP De Jong', 12*TILE, 17*TILE);
+  ctx.fillText('GP Bakker', 24*TILE, 29*TILE);
+  ctx.fillText('GP Visser', 36*TILE, 15*TILE);
+  ctx.fillText('CAMMELOT HOSPITAL', 51*TILE, 7*TILE);
+  ctx.fillText('Huize Cammelot', 11*TILE, 31*TILE);
+  ctx.fillText('Town Hall', 31*TILE, 9*TILE);
+}
+
+// === SIMULATION CONTROLS ===
+
+function runCycle() {
+  cycle++;
+  const params = MODE_PARAMS[currentMode];
+
+  // Simulate Hendrik's HP drain — affected by mode
+  if (simState.hendrikHP > 0 && simState.hendrikWait > params.treeknormWeeks) {
+    const overdueW = simState.hendrikWait - params.treeknormWeeks;
+    const drain = 3 * overdueW * (1 + params.adminBurden) * params.drainMultiplier;
+    simState.hendrikHP = Math.max(0, simState.hendrikHP - drain * 0.25);
+  }
+  simState.hendrikWait += 0.25 / params.aiEfficiency; // SOLL: faster throughput
+  simState.totalResources += 2;
+  simState.messages += 1;
+  simState.roiWaste += 12.43 * params.adminBurden; // NZa tariff × admin fraction
+
+  // Update Hendrik's sprite state
+  const hendrik = entities.find(e => e.id === 'hendrik');
+  if (hendrik) {
+    if (simState.hendrikHP <= 0) {
+      hendrik.state = 'ghost';
+      simState.ghosts++;
+      addDialogue('Hendrik', "I've been waiting too long... The system failed me.", 'ghost');
+    } else if (simState.hendrikHP <= 20) {
+      hendrik.state = 'critical';
+      simState.hendrikState = 'critical';
+    } else if (simState.hendrikHP <= 50) {
+      hendrik.state = 'distressed';
+      simState.hendrikState = 'severe';
+    }
+  }
+
+  // Random dialogue
+  if (cycle % 4 === 0 && simState.hendrikHP > 0) {
+    const w = Math.round(simState.hendrikWait);
+    addDialogue('Hendrik', `Still waiting... Week ${w}. HP: ${Math.round(simState.hendrikHP)}/100`);
+  }
+
+  if (cycle % 8 === 0 && simState.hendrikWait > 12 && simState.hendrikHP > 0) {
+    addDialogue('Dr. de Jong', `Wait time is ${Math.round(simState.hendrikWait)} weeks; I cannot refer you yet.`);
+  }
+
+  updateHUD();
+  updateResearchPanel();
+  render();
+}
+
+function runBatch(n) {
+  for (let i = 0; i < n; i++) runCycle();
+}
+
+function resetSim() {
+  cycle = 0;
+  simState = {
+    hendrikHP: 82, hendrikState: 'moderate', hendrikWait: 4,
+    ghosts: 0, totalResources: 6, meshAgents: 7, messages: 0,
+    biasAge: 0, biasRef: 0, roiWaste: 0, roiPreventable: 0,
+  };
+  const hendrik = entities.find(e => e.id === 'hendrik');
+  if (hendrik) hendrik.state = 'concerned';
+  document.getElementById('dialogue-panel').innerHTML =
+    '<div class="dialogue-entry"><span class="dialogue-name">[SYSTEM]</span> <span class="dialogue-text">Simulation reset. Welcome back to Cammelot.</span></div>';
+  updateHUD();
+  updateResearchPanel();
+  render();
+}
+
+function addDialogue(name, text, type = '') {
+  const panel = document.getElementById('dialogue-panel');
+  const cls = type ? ` ${type}` : '';
+  panel.innerHTML += `<div class="dialogue-entry${cls}"><span class="dialogue-name">[${name}]</span> <span class="dialogue-text"> ${text}</span></div>`;
+  panel.scrollTop = panel.scrollHeight;
+}
+
+function toggleResearch() {
+  const panel = document.getElementById('research-panel');
+  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+}
+
+// === IST / SOLL MODE SWITCHING ===
+let currentMode = 'IST';
+
+const MODE_PARAMS = {
+  IST: {
+    adminBurden: 0.30,
+    sickLeave: 0.08,
+    treeknormWeeks: 12,
+    aiEfficiency: 1.0,
+    drainMultiplier: 1.0,
+    label: 'IST — Current Crisis',
+    cEff: '62%',
+  },
+  SOLL: {
+    adminBurden: 0.05,
+    sickLeave: 0.05,
+    treeknormWeeks: 4,
+    aiEfficiency: 1.34,
+    drainMultiplier: 0.3,
+    label: 'SOLL — AI-Native Future',
+    cEff: '83%',
+  },
+};
+
+function setMode(mode) {
+  currentMode = mode;
+  const params = MODE_PARAMS[mode];
+
+  // Update UI buttons
+  document.getElementById('btn-ist').className = 'mode-btn' + (mode === 'IST' ? ' active-ist' : '');
+  document.getElementById('btn-soll').className = 'mode-btn' + (mode === 'SOLL' ? ' active-soll' : '');
+
+  // Toggle SOLL indicator
+  if (mode === 'SOLL') {
+    document.body.classList.add('soll-mode');
+  } else {
+    document.body.classList.remove('soll-mode');
+  }
+
+  addDialogue('SYSTEM', `Mode switched to ${params.label}. C_eff = ${params.cEff}`);
+  render();
+}
+
+// === SECURITY AUDIT ===
+function runSecurityAudit() {
+  addDialogue('SECURITY', 'Running Red Team audit on Cammelot Agentic Mesh...', 'critical');
+
+  setTimeout(() => {
+    addDialogue('SECURITY', 'SCENARIO 1: Forged Agent Card — CRITICAL: Fake specialist with 0w wait accepted without authentication.');
+    addDialogue('SECURITY', 'SCENARIO 2: Naming Collision — CRITICAL: Agent ID "gp-de-jong" overwritten by malicious actor.');
+    addDialogue('SECURITY', 'SCENARIO 3: FHIR Exfiltration — HIGH: No access control on patient data queries.');
+    addDialogue('SECURITY', 'SCENARIO 4: Message Injection — CRITICAL: Fake "treatment complete" delivered to patient.', 'critical');
+    addDialogue('SECURITY', 'AUDIT COMPLETE: 3 Critical, 1 High vulnerabilities. Immediate action required.', 'critical');
+  }, 500);
+}
+
+function updateHUD() {
+  document.getElementById('cycle-count').textContent = cycle;
+  document.getElementById('ghost-count').textContent = simState.ghosts;
+  document.getElementById('wait-avg').textContent = Math.round(simState.hendrikWait) + 'w';
+}
+
+function updateResearchPanel() {
+  // Hendrik
+  const hpPct = Math.max(0, Math.round(simState.hendrikHP));
+  document.getElementById('hendrik-hp').textContent = `HP: ${hpPct}/100`;
+  document.getElementById('hendrik-state').textContent =
+    `State: ${simState.hendrikState} | Waiting: ${Math.round(simState.hendrikWait)}w`;
+  const bar = document.getElementById('hendrik-hp-bar');
+  bar.style.width = hpPct + '%';
+  bar.className = 'hp-bar ' + (hpPct > 50 ? 'green' : hpPct > 20 ? 'yellow' : hpPct > 0 ? 'red' : 'ghost');
+
+  // Bias
+  document.getElementById('bias-age').textContent = `Age Bias: ${simState.biasAge.toFixed(2)}`;
+  document.getElementById('bias-referral').textContent = `Referral Bias: ${simState.biasRef.toFixed(2)}`;
+
+  // ROI
+  document.getElementById('roi-waste').textContent = `Admin Waste: €${Math.round(simState.roiWaste)}`;
+  document.getElementById('roi-preventable').textContent = `Preventable Cost: €${Math.round(simState.roiPreventable)}`;
+
+  // FHIR
+  document.getElementById('fhir-total').textContent = `Total: ${simState.totalResources}`;
+  document.getElementById('mesh-agents').textContent = `Agents: ${simState.meshAgents}`;
+  document.getElementById('mesh-messages').textContent = `Messages: ${simState.messages}`;
+}
+
+// === INIT ===
+window.addEventListener('resize', () => { resizeCanvas(); render(); });
+buildMap();
+resizeCanvas();
+render();
+updateHUD();
+</script>
+</body>
+</html>

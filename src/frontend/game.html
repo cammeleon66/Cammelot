@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CAMMELOT — Applied Research Sandbox</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════
+   CAMMELOT — 16-BIT SNES RPG FRONTEND v2
+   Full-screen game world with HUD overlay
+   ═══════════════════════════════════════════════════ */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --gold: #F8D830;
+  --gold-shadow: #8B6914;
+  --panel-bg: #0E0E24;
+  --panel-border: #5858A8;
+  --panel-inner: #181838;
+  --text: #D8D8F0;
+  --text-dim: #7878B0;
+  --hp-green: #38E838;
+  --hp-yellow: #E8D830;
+  --hp-red: #E83838;
+  --ghost: #686868;
+  --accent-blue: #38A8F8;
+  --accent-green: #38C838;
+  --accent-red: #E84848;
+  --ist-red: #C83030;
+  --soll-green: #30C830;
+}
+
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;
+  background: #080810;
+  color: var(--text);
+  font-family: 'Press Start 2P', monospace;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+/* ── FULL-SCREEN LAYOUT ── */
+#app {
+  width: 100vw; height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  grid-template-rows: auto 1fr auto auto;
+  grid-template-areas:
+    "hud hud"
+    "world sidebar"
+    "controls sidebar"
+    "dialogue sidebar";
+}
+
+/* ── TOP HUD ── */
+#hud {
+  grid-area: hud;
+  background: var(--panel-bg);
+  border-bottom: 4px solid var(--panel-border);
+  padding: 10px 20px;
+  display: flex; align-items: center; gap: 20px;
+  z-index: 10;
+}
+
+.hud-title {
+  font-size: 16px; color: var(--gold);
+  text-shadow: 2px 2px var(--gold-shadow), 0 0 20px rgba(248,216,48,0.3);
+  letter-spacing: 3px; white-space: nowrap;
+}
+
+.hud-subtitle { font-size: 6px; color: var(--text-dim); margin-top: 2px; }
+
+.hud-stats { display: flex; gap: 12px; flex: 1; justify-content: center; }
+
+.hud-stat {
+  background: var(--panel-inner); border: 2px solid var(--panel-border);
+  padding: 6px 14px; text-align: center; min-width: 80px;
+}
+
+.hud-stat .label { font-size: 5px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
+.hud-stat .val { font-size: 14px; color: #FFF; margin-top: 3px; }
+.hud-stat .val.danger { color: var(--accent-red); }
+.hud-stat .val.warn { color: var(--hp-yellow); }
+.hud-stat .val.good { color: var(--accent-green); }
+
+.mode-toggle {
+  display: flex; background: var(--panel-inner); border: 2px solid var(--panel-border); overflow: hidden;
+}
+
+.mode-btn {
+  font-family: 'Press Start 2P', monospace; font-size: 7px;
+  padding: 8px 14px; border: none; cursor: pointer;
+  background: transparent; color: var(--text-dim); transition: all 0.2s;
+}
+
+.mode-btn:hover { background: rgba(255,255,255,0.05); }
+.mode-btn.active-ist { background: rgba(200,48,48,0.25); color: var(--ist-red); border-bottom: 2px solid var(--ist-red); }
+.mode-btn.active-soll { background: rgba(48,200,48,0.15); color: var(--soll-green); border-bottom: 2px solid var(--soll-green); }
+
+/* ── GAME WORLD ── */
+#world {
+  grid-area: world; position: relative; background: #0A1A0A; overflow: hidden; cursor: crosshair;
+}
+
+#world canvas {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  image-rendering: pixelated; image-rendering: crisp-edges;
+}
+
+.bubble {
+  position: absolute; background: #F8F0D8; color: #282018;
+  border: 2px solid #484030; padding: 6px 10px; font-size: 7px;
+  line-height: 1.5; max-width: 200px; pointer-events: none; z-index: 20;
+  animation: bubblePop 0.2s ease-out; box-shadow: 2px 2px 0 #28201880;
+}
+
+.bubble::after {
+  content: ''; position: absolute; bottom: -8px; left: 14px;
+  border: 4px solid transparent; border-top-color: #484030;
+}
+
+@keyframes bubblePop { 0%{transform:scale(0.7);opacity:0} 100%{transform:scale(1);opacity:1} }
+
+/* ── CONTROLS ── */
+#controls {
+  grid-area: controls; background: var(--panel-bg); border-top: 3px solid var(--panel-border);
+  padding: 8px 16px; display: flex; gap: 8px; align-items: center;
+}
+
+.btn {
+  font-family: 'Press Start 2P', monospace; font-size: 7px;
+  padding: 8px 14px; border: 2px solid var(--panel-border);
+  background: var(--panel-inner); color: var(--text); cursor: pointer;
+  transition: all 0.1s; white-space: nowrap;
+}
+
+.btn:hover { background: #282858; border-color: #8888C8; transform: translateY(-1px); }
+.btn:active { transform: translateY(1px); }
+.btn.go { border-color: #48A048; color: var(--accent-green); }
+.btn.go:hover { background: #183818; }
+.btn.stop { border-color: #A04848; color: var(--accent-red); }
+.btn.info { border-color: #4878A8; color: var(--accent-blue); }
+
+.speed-display {
+  font-size: 6px; color: var(--text-dim); margin-left: auto;
+  display: flex; gap: 12px; align-items: center;
+}
+
+.speed-display span { color: var(--gold); font-size: 8px; }
+
+/* ── DIALOGUE ── */
+#dialogue {
+  grid-area: dialogue; background: var(--panel-bg); border-top: 2px solid #303060;
+  height: 130px; overflow-y: auto; padding: 10px 16px; scroll-behavior: smooth;
+}
+
+#dialogue::-webkit-scrollbar { width: 6px; }
+#dialogue::-webkit-scrollbar-track { background: var(--panel-bg); }
+#dialogue::-webkit-scrollbar-thumb { background: var(--panel-border); }
+
+.msg {
+  margin-bottom: 6px; line-height: 1.7; font-size: 7px;
+  animation: msgSlide 0.15s ease-out;
+}
+
+@keyframes msgSlide { 0%{opacity:0;transform:translateY(6px)} 100%{opacity:1;transform:translateY(0)} }
+
+.msg .who { color: var(--gold); }
+.msg .txt { color: var(--text); }
+.msg.ghost .who { color: var(--ghost); }
+.msg.ghost .txt { color: #505058; font-style: italic; }
+.msg.alert .who { color: var(--accent-red); }
+.msg.alert .txt { color: #F0A8A8; }
+.msg.sys .who { color: var(--accent-blue); }
+.msg.sys .txt { color: #A0C8E8; }
+
+/* ── SIDEBAR ── */
+#sidebar {
+  grid-area: sidebar; background: var(--panel-bg); border-left: 4px solid var(--panel-border);
+  overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px;
+}
+
+#sidebar::-webkit-scrollbar { width: 6px; }
+#sidebar::-webkit-scrollbar-thumb { background: #404070; }
+
+.panel-title {
+  font-size: 9px; color: var(--gold); text-shadow: 1px 1px var(--gold-shadow);
+  text-align: center; padding-bottom: 6px; border-bottom: 2px solid #303060;
+}
+
+.card { background: var(--panel-inner); border: 2px solid #383868; padding: 10px; }
+.card-head { font-size: 6px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+.card-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; font-size: 7px; }
+.card-row .k { color: var(--text-dim); }
+.card-row .v { color: #FFF; }
+.card-row .v.g { color: var(--accent-green); }
+.card-row .v.r { color: var(--accent-red); }
+.card-row .v.y { color: var(--hp-yellow); }
+
+.hp-wrap { background: #181828; border: 1px solid #383858; height: 10px; margin: 6px 0; position: relative; overflow: hidden; }
+.hp-fill { height: 100%; transition: width 0.4s ease, background 0.3s; }
+.hp-fill.green { background: linear-gradient(to right, #28A828, var(--hp-green)); }
+.hp-fill.yellow { background: linear-gradient(to right, #B8A020, var(--hp-yellow)); }
+.hp-fill.red { background: linear-gradient(to right, #A02828, var(--hp-red)); }
+.hp-fill.dead { background: var(--ghost); }
+.hp-text { position: absolute; top:0;left:0;right:0;bottom:0; display:flex; align-items:center; justify-content:center; font-size:6px; color:#FFF; text-shadow:1px 1px #000; }
+
+.mini-chart { display: flex; align-items: flex-end; gap: 2px; height: 30px; margin-top: 6px; }
+.mini-bar { flex: 1; background: var(--accent-blue); min-height: 2px; opacity: 0.7; transition: height 0.3s; }
+.mini-bar.warn { background: var(--hp-yellow); }
+.mini-bar.crit { background: var(--accent-red); }
+
+.agent-row { display: flex; align-items: center; gap: 6px; padding: 3px 0; border-bottom: 1px solid #282848; font-size: 6px; }
+.agent-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.agent-dot.gp { background: #38C838; }
+.agent-dot.spec { background: #38A8F8; }
+.sep { border: none; border-top: 1px solid #282848; margin: 4px 0; }
+
+/* SOLL mode tweaks */
+body.soll .soll-banner { display: block; }
+body:not(.soll) .soll-banner { display: none; }
+body.soll #world { background: #0A1E14; }
+body.soll #hud { border-bottom-color: #38A848; }
+body.soll #sidebar { border-left-color: #38A848; }
+
+.soll-banner {
+  display: none; grid-area: world;
+  background: linear-gradient(90deg, transparent, rgba(48,200,48,0.08), transparent);
+  text-align: center; padding: 3px; font-size: 6px; color: var(--soll-green);
+  letter-spacing: 2px; pointer-events: none; align-self: start; z-index: 5;
+}
+
+/* Tooltip */
+#tooltip {
+  display: none; position: fixed; background: var(--panel-bg);
+  border: 2px solid var(--panel-border); padding: 8px 12px;
+  font-size: 7px; z-index: 100; max-width: 220px; pointer-events: none;
+  box-shadow: 3px 3px 0 rgba(0,0,0,0.5);
+}
+
+/* Loading */
+#loading {
+  position: fixed; top:0;left:0;right:0;bottom:0; background: #080810;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  z-index: 999; transition: opacity 0.5s;
+}
+#loading.done { opacity: 0; pointer-events: none; }
+#loading .logo {
+  font-size: 24px; color: var(--gold);
+  text-shadow: 3px 3px var(--gold-shadow), 0 0 40px rgba(248,216,48,0.4);
+  letter-spacing: 6px; margin-bottom: 30px; animation: pulse 1.5s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
+#loading .subtitle { font-size: 7px; color: var(--text-dim); letter-spacing: 2px; }
+.loading-bar { width: 200px; height: 8px; background: var(--panel-inner); border: 2px solid var(--panel-border); margin-top: 20px; overflow: hidden; }
+.loading-fill { height: 100%; background: var(--gold); width: 0%; animation: loadAnim 1.5s ease-out forwards; }
+@keyframes loadAnim { 0%{width:0%} 60%{width:80%} 100%{width:100%} }
+</style>
+</head>
+<body>
+
+<!-- LOADING SCREEN -->
+<div id="loading">
+  <div class="logo">CAMMELOT</div>
+  <div class="subtitle">APPLIED RESEARCH SANDBOX</div>
+  <div class="loading-bar"><div class="loading-fill"></div></div>
+</div>
+
+<div id="tooltip"></div>
+
+<div id="app">
+  <!-- HUD -->
+  <div id="hud">
+    <div>
+      <div class="hud-title">CAMMELOT</div>
+      <div class="hud-subtitle">HEALTHCARE SIMULATION v0.2</div>
+    </div>
+    <div class="mode-toggle">
+      <button class="mode-btn active-ist" id="btn-ist" onclick="setMode('IST')">⚠ IST</button>
+      <button class="mode-btn" id="btn-soll" onclick="setMode('SOLL')">✦ SOLL</button>
+    </div>
+    <div class="hud-stats">
+      <div class="hud-stat"><div class="label">Cycle</div><div class="val" id="s-cycle">0</div></div>
+      <div class="hud-stat"><div class="label">Population</div><div class="val" id="s-pop">5,000</div></div>
+      <div class="hud-stat"><div class="label">Ghosts</div><div class="val" id="s-ghosts">0</div></div>
+      <div class="hud-stat"><div class="label">Avg Wait</div><div class="val" id="s-wait">4w</div></div>
+      <div class="hud-stat"><div class="label">C_eff</div><div class="val" id="s-ceff">62%</div></div>
+      <div class="hud-stat"><div class="label">Admin Waste</div><div class="val" id="s-waste">€0</div></div>
+    </div>
+  </div>
+
+  <div class="soll-banner">▸ AI-NATIVE MODE ▸ C_eff 83% ▸ ADMIN &lt;5% ▸ FHIR 66% ▸ E_ai 1.34 ▸</div>
+
+  <!-- GAME WORLD -->
+  <div id="world"><canvas id="cv"></canvas></div>
+
+  <!-- CONTROLS -->
+  <div id="controls">
+    <button class="btn go" onclick="tick()">▶ TICK</button>
+    <button class="btn go" onclick="batch(10)">▶▶ ×10</button>
+    <button class="btn go" onclick="batch(100)">▶▶▶ ×100</button>
+    <button class="btn go" onclick="autoRun()">⟳ AUTO</button>
+    <button class="btn info" onclick="runAudit()">🔒 SECURITY</button>
+    <button class="btn stop" onclick="resetSim()">↺ RESET</button>
+    <div class="speed-display">
+      <span id="s-tps">0</span> ticks/s | FHIR: <span id="s-fhir">0</span> | A2A: <span id="s-msgs">0</span> msgs
+    </div>
+  </div>
+
+  <!-- DIALOGUE -->
+  <div id="dialogue">
+    <div class="msg sys"><span class="who">[SYSTEM]</span> <span class="txt">Welcome to Cammelot. Press TICK or AUTO to start the simulation.</span></div>
+  </div>
+
+  <!-- SIDEBAR -->
+  <div id="sidebar">
+    <div class="panel-title">⚕ RESEARCH MONITOR</div>
+
+    <div class="card">
+      <div class="card-head">Patient: Hendrik Veenstra (75)</div>
+      <div class="hp-wrap">
+        <div class="hp-fill green" id="hp-bar" style="width:82%"></div>
+        <div class="hp-text" id="hp-txt">82 / 100 HP</div>
+      </div>
+      <div class="card-row"><span class="k">State</span><span class="v" id="h-state">Moderate</span></div>
+      <div class="card-row"><span class="k">Waiting</span><span class="v y" id="h-wait">4 weeks</span></div>
+      <div class="card-row"><span class="k">Conditions</span><span class="v">IHD, DM2</span></div>
+      <div class="card-row"><span class="k">GP</span><span class="v">Dr. de Jong</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">Agent Mesh (A2A)</div>
+      <div class="agent-row"><div class="agent-dot gp"></div><span class="agent-name" style="flex:1;color:var(--text)">Dr. de Jong</span><span style="color:var(--text-dim);font-size:6px" id="a-gp1">0 queue</span></div>
+      <div class="agent-row"><div class="agent-dot gp"></div><span class="agent-name" style="flex:1;color:var(--text)">Dr. Bakker</span><span style="color:var(--text-dim);font-size:6px" id="a-gp2">0 queue</span></div>
+      <div class="agent-row"><div class="agent-dot gp"></div><span class="agent-name" style="flex:1;color:var(--text)">Dr. Visser</span><span style="color:var(--text-dim);font-size:6px" id="a-gp3">0 queue</span></div>
+      <hr class="sep">
+      <div class="agent-row"><div class="agent-dot spec"></div><span style="flex:1;color:var(--text)">Cardiology</span><span style="color:var(--text-dim);font-size:6px" id="a-s1">0w</span></div>
+      <div class="agent-row"><div class="agent-dot spec"></div><span style="flex:1;color:var(--text)">Endocrinology</span><span style="color:var(--text-dim);font-size:6px" id="a-s2">0w</span></div>
+      <div class="agent-row"><div class="agent-dot spec"></div><span style="flex:1;color:var(--text)">Pulmonology</span><span style="color:var(--text-dim);font-size:6px" id="a-s3">0w</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">Bias Tracker (DIB)</div>
+      <div class="card-row"><span class="k">Age Bias</span><span class="v g" id="b-age">0.00</span></div>
+      <div class="card-row"><span class="k">Referral</span><span class="v g" id="b-ref">0.00</span></div>
+      <div class="card-row"><span class="k">Location</span><span class="v g" id="b-loc">0.00</span></div>
+      <div class="mini-chart" id="bias-chart"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">ROI Counter (IZA)</div>
+      <div class="card-row"><span class="k">Waste</span><span class="v r" id="r-waste">€0</span></div>
+      <div class="card-row"><span class="k">Preventable</span><span class="v r" id="r-prev">€0</span></div>
+      <div class="card-row"><span class="k">SOLL Saving</span><span class="v g" id="r-saved">—</span></div>
+      <div class="mini-chart" id="roi-chart"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">FHIR Memory Store</div>
+      <div class="card-row"><span class="k">Resources</span><span class="v" id="f-total">0</span></div>
+      <div class="card-row"><span class="k">Patients</span><span class="v" id="f-pat">0</span></div>
+      <div class="card-row"><span class="k">Observations</span><span class="v" id="f-obs">0</span></div>
+      <div class="card-row"><span class="k">Encounters</span><span class="v" id="f-enc">0</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">IZA Transformation</div>
+      <div class="card-row"><span class="k">Budget</span><span class="v">€2.8B</span></div>
+      <div class="card-row"><span class="k">Postbus</span><span class="v r">CLOSED</span></div>
+      <div class="card-row"><span class="k">Hybrid</span><span class="v y">70% 2026</span></div>
+      <div class="card-row"><span class="k">Gap 2035</span><span class="v r">301K</span></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════
+// CAMMELOT ENGINE v2
+// ═══════════════════════════════════════════════════
+const cv=document.getElementById('cv'), cx=cv.getContext('2d');
+const T=16, MW=64, MH=48;
+let scale=1;
+
+const P={
+  grass:['#2D8024','#3B9830','#349028'], grassD:'#267020',
+  path:'#C89858', pathD:'#A87840',
+  road:'#686870', roadL:'#888890', roadD:'#505058',
+  water:['#1868A8','#2078B8','#1870B0'], waterH:'#3890D0',
+  tree:'#1C6818', treeL:'#28802A', treeTrk:'#785828',
+  roof:'#C03028', roofD:'#982020', wall:'#E8D8C0', wallD:'#C8B898',
+  door:'#684020', win:'#78B8E0',
+  hospW:'#F0F0F8', hospR:'#D83030',
+  gp:'#28A828', gpW:'#D8F0D0',
+  pharm:'#2860B0', pharmW:'#D0D8F0',
+  nurse:'#B88060', nurseW:'#F0E0D0',
+  town:'#D0B050', townD:'#A89040',
+  park:'#40A840', parkL:'#58C058',
+  shadow:'rgba(0,0,0,0.18)',
+  hpG:'#30E830', hpY:'#E8D830', hpR:'#E83838',
+  ghost:'#686870', ghostL:'#989898',
+};
+
+const map=new Uint8Array(MW*MH).fill(1);
+const TT={E:0,G:1,P:2,R:3,W:4,TR:5,H:0x10,GP:0x20,HO:0x30,PH:0x40,NH:0x50,TH:0x60,PK:0x70};
+
+function fill(x,y,w,h,t){for(let dy=0;dy<h;dy++)for(let dx=0;dx<w;dx++)if(x+dx<MW&&y+dy<MH)map[(y+dy)*MW+(x+dx)]=t;}
+
+function buildMap(){
+  fill(0,23,MW,2,TT.R);fill(31,0,2,MH,TT.R);
+  for(let y=18;y<23;y++)map[y*MW+10]=TT.P;
+  for(let y=30;y<35;y++)map[y*MW+22]=TT.P;
+  for(let y=14;y<23;y++)map[y*MW+34]=TT.P;
+  for(let y=10;y<23;y++)map[y*MW+48]=TT.P;
+  fill(0,40,MW,3,TT.W);
+  fill(10,18,4,4,TT.GP);fill(22,30,4,4,TT.GP);fill(34,16,4,4,TT.GP);
+  fill(46,8,10,8,TT.HO);
+  fill(16,22,3,3,TT.PH);fill(40,22,3,3,TT.PH);
+  fill(8,32,6,5,TT.NH);
+  fill(28,10,6,5,TT.TH);
+  fill(18,6,8,6,TT.PK);
+  [[2,2],[4,5],[7,3],[15,4],[38,4],[42,6],[5,28],[14,36],[30,38],[45,36],[55,30],[60,10],[58,20],[3,44],[20,44],[40,44],[10,8],[25,4],[50,36],[62,5]].forEach(([x,y])=>map[y*MW+x]=TT.TR);
+  [[4,12],[6,12],[8,12],[4,15],[6,15],[38,28],[40,28],[42,28],[38,32],[40,32],[14,28],[16,28],[50,28],[52,28],[54,28],[20,36],[22,36],[24,36],[26,36],[56,4],[58,8],[10,44],[44,44]].forEach(([x,y])=>fill(x,y,2,2,TT.H));
+}
+
+const ents=[
+  {id:'gp1',x:12,y:20,type:'gp',lbl:'Dr. de Jong'},
+  {id:'gp2',x:24,y:32,type:'gp',lbl:'Dr. Bakker'},
+  {id:'gp3',x:36,y:18,type:'gp',lbl:'Dr. Visser'},
+  {id:'s1',x:50,y:12,type:'spec',lbl:'Cardiology'},
+  {id:'s2',x:52,y:14,type:'spec',lbl:'Endocr.'},
+  {id:'s3',x:54,y:12,type:'spec',lbl:'Pulmon.'},
+  {id:'hendrik',x:28,y:20,type:'patient',lbl:'Hendrik V.',state:'concerned'},
+];
+
+let cycle=0, mode='IST', autoTimer=null;
+const M={IST:{admin:0.30,sick:0.08,tree:12,ai:1.0,drain:1.0},SOLL:{admin:0.05,sick:0.05,tree:4,ai:1.34,drain:0.3}};
+let S={hp:82,state:'moderate',wait:4,ghosts:0,res:6,msgs:0,waste:0,prev:0,biasAge:0,biasRef:0,biasLoc:0};
+const hpHist=[], wasteHist=[];
+
+// ── TILE RENDERING ──
+function drawTile(x,y,t){
+  const px=x*T, py=y*T, h=(x*7+y*13)%17;
+  switch(t){
+    case TT.G: cx.fillStyle=P.grass[h%3]; cx.fillRect(px,py,T,T);
+      if(h<3){cx.fillStyle=P.grassD;cx.fillRect(px+h*4+2,py+6,2,2);}
+      if(h===7){cx.fillStyle='#4AA838';cx.fillRect(px+3,py+10,1,3);cx.fillRect(px+2,py+9,3,1);}
+      break;
+    case TT.R: cx.fillStyle=P.road;cx.fillRect(px,py,T,T);cx.fillStyle=P.roadD;cx.fillRect(px,py,T,1);cx.fillRect(px,py+T-1,T,1);
+      if(x%6===0){cx.fillStyle=P.roadL;cx.fillRect(px+5,py+7,6,2);}break;
+    case TT.P: cx.fillStyle=P.path;cx.fillRect(px,py,T,T);cx.fillStyle=P.pathD;cx.fillRect(px+h%4*3,py+h%5*3,2,2);break;
+    case TT.W: cx.fillStyle=P.water[(x+Math.floor(cycle/3))%3];cx.fillRect(px,py,T,T);
+      cx.fillStyle=P.waterH;cx.fillRect(px+((cycle*2+x*3)%12),py+5+h%4,4,1);cx.fillRect(px+((cycle+x*5)%10),py+11+h%3,3,1);break;
+    case TT.TR: cx.fillStyle=P.grass[0];cx.fillRect(px,py,T,T);cx.fillStyle=P.shadow;cx.fillRect(px+3,py+12,10,3);
+      cx.fillStyle=P.treeTrk;cx.fillRect(px+6,py+10,4,6);cx.fillStyle=P.tree;cx.fillRect(px+2,py+2,12,10);
+      cx.fillStyle=P.treeL;cx.fillRect(px+4,py+3,4,5);cx.fillRect(px+9,py+5,3,3);break;
+    case TT.H: cx.fillStyle=P.grass[1];cx.fillRect(px,py,T,T);cx.fillStyle=P.shadow;cx.fillRect(px+2,py+13,12,3);
+      cx.fillStyle=P.wall;cx.fillRect(px+1,py+6,14,10);cx.fillStyle=P.wallD;cx.fillRect(px+1,py+6,14,2);
+      cx.fillStyle=P.roof;cx.fillRect(px,py+2,T,5);cx.fillStyle=P.roofD;cx.fillRect(px+2,py,12,3);
+      cx.fillStyle=P.door;cx.fillRect(px+6,py+10,4,6);cx.fillStyle=P.win;cx.fillRect(px+3,py+8,3,3);
+      cx.fillStyle='#60A0D0';cx.fillRect(px+10,py+8,3,3);break;
+    case TT.GP: cx.fillStyle=P.gpW;cx.fillRect(px,py,T,T);cx.fillStyle=P.gp;cx.fillRect(px,py,T,4);
+      cx.fillStyle='#FFF';cx.fillRect(px+6,py+6,4,8);cx.fillRect(px+4,py+8,8,4);break;
+    case TT.HO: cx.fillStyle=P.hospW;cx.fillRect(px,py,T,T);cx.fillStyle='#D8D8E0';cx.fillRect(px,py,T,3);
+      cx.fillStyle=P.hospR;cx.fillRect(px+5,py+4,6,8);cx.fillRect(px+3,py+6,10,4);break;
+    case TT.PH: cx.fillStyle=P.pharmW;cx.fillRect(px,py,T,T);cx.fillStyle=P.pharm;cx.fillRect(px,py,T,4);
+      cx.fillStyle='#FFF';cx.fillRect(px+4,py+7,2,6);cx.fillRect(px+4,py+7,8,2);break;
+    case TT.NH: cx.fillStyle=P.nurseW;cx.fillRect(px,py,T,T);cx.fillStyle=P.nurse;cx.fillRect(px,py,T,4);
+      cx.fillStyle='#FFF';cx.fillRect(px+6,py+7,4,3);break;
+    case TT.TH: cx.fillStyle=P.town;cx.fillRect(px,py,T,T);cx.fillStyle=P.townD;cx.fillRect(px,py,T,3);
+      cx.fillStyle='#E83030';cx.fillRect(px+5,py+4,6,4);cx.fillStyle='#2040A0';cx.fillRect(px+5,py+8,6,3);break;
+    case TT.PK: cx.fillStyle=P.park;cx.fillRect(px,py,T,T);
+      if(h%4===0){cx.fillStyle=P.parkL;cx.fillRect(px+3+h%5,py+3+h%4,4,4);}
+      if(h%6===0){cx.fillStyle='#E8E830';cx.fillRect(px+7,py+9,2,2);}break;
+    default: cx.fillStyle='#0A0A18';cx.fillRect(px,py,T,T);
+  }
+}
+
+// ── SPRITE RENDERING ──
+function drawSprite(e){
+  const px=e.x*T, py=e.y*T, st=e.state||'healthy', isG=st==='ghost';
+  let head, body;
+  if(e.type==='patient'){
+    if(isG){head=P.ghostL;body=P.ghost;}
+    else if(st==='critical'){head='#F0A8A8';body='#C03030';}
+    else if(st==='distressed'){head='#F0C8A0';body='#C8A030';}
+    else if(st==='concerned'){head='#F0D0A0';body='#4878B0';}
+    else{head='#F0D0A0';body='#3868A0';}
+  } else if(e.type==='gp'){head='#F0D0A0';body='#F0F0F0';}
+  else{head='#F0D0A0';body='#3898E0';}
+
+  cx.fillStyle=P.shadow;cx.beginPath();cx.ellipse(px+8,py+15,5,2,0,0,Math.PI*2);cx.fill();
+  if(isG)cx.globalAlpha=0.5;
+  cx.fillStyle=body;cx.fillRect(px+4,py+7,8,7);cx.fillRect(px+2,py+8,2,4);cx.fillRect(px+12,py+8,2,4);
+  cx.fillRect(px+5,py+13,3,3);cx.fillRect(px+9,py+13,3,3);
+  cx.fillStyle=head;cx.fillRect(px+4,py+1,8,7);
+  cx.fillStyle=isG?'#585858':e.type==='gp'?'#483828':'#382818';cx.fillRect(px+4,py+1,8,2);
+  if(!isG){
+    cx.fillStyle='#FFF';cx.fillRect(px+5,py+3,3,3);cx.fillRect(px+9,py+3,3,3);
+    cx.fillStyle='#181818';
+    if(cycle%20===0){cx.fillRect(px+6,py+4,2,1);cx.fillRect(px+10,py+4,2,1);}
+    else{cx.fillRect(px+6,py+4,1,2);cx.fillRect(px+10,py+4,1,2);}
+    if(st==='critical'||st==='distressed')cx.fillRect(px+7,py+6,3,1);
+    else cx.fillRect(px+7,py+6,2,1);
+  } else {
+    cx.fillStyle='#404048';
+    cx.fillRect(px+6,py+3,1,1);cx.fillRect(px+8,py+5,1,1);cx.fillRect(px+7,py+4,1,1);
+    cx.fillRect(px+10,py+3,1,1);cx.fillRect(px+12,py+5,1,1);cx.fillRect(px+11,py+4,1,1);
+  }
+  cx.globalAlpha=1;
+
+  if(e.type==='patient'&&!isG){
+    const hp=e.id==='hendrik'?S.hp:70+Math.sin(e.x+cycle)*20;
+    const bW=14,fW=(hp/100)*bW;
+    cx.fillStyle='#181828';cx.fillRect(px+1,py-5,bW,4);
+    cx.fillStyle=hp>50?P.hpG:hp>20?P.hpY:P.hpR;cx.fillRect(px+1,py-4,fW,3);
+  }
+
+  if(e.lbl){
+    cx.fillStyle=isG?'#585860':'#F8F0E8';cx.font='5px "Press Start 2P"';cx.textAlign='center';
+    cx.shadowColor='#000';cx.shadowOffsetX=1;cx.shadowOffsetY=1;
+    cx.fillText(e.lbl,px+8,py-8);cx.shadowOffsetX=0;cx.shadowOffsetY=0;
+  }
+}
+
+function drawLabels(){
+  cx.font='6px "Press Start 2P"';cx.textAlign='center';cx.shadowColor='#000';cx.shadowOffsetX=1;cx.shadowOffsetY=1;
+  [[12*T,17*T,'GP De Jong',P.gp],[24*T,29*T,'GP Bakker',P.gp],[36*T,15*T,'GP Visser',P.gp],
+   [51*T,7*T,'CAMMELOT HOSPITAL',P.hospR],[11*T,31*T,'Huize Cammelot',P.nurse],
+   [31*T,9*T,'Town Hall',P.town],[22*T,5*T,'Park',P.park]].forEach(([x,y,t,c])=>{cx.fillStyle=c;cx.fillText(t,x,y);});
+  cx.shadowOffsetX=0;cx.shadowOffsetY=0;
+}
+
+function render(){
+  cv.width=MW*T;cv.height=MH*T;
+  const wd=document.getElementById('world');
+  const sx=wd.clientWidth/(MW*T), sy=wd.clientHeight/(MH*T);
+  scale=Math.min(sx,sy);
+  cv.style.width=(MW*T*scale)+'px';cv.style.height=(MH*T*scale)+'px';
+  cx.clearRect(0,0,cv.width,cv.height);
+  for(let y=0;y<MH;y++)for(let x=0;x<MW;x++)drawTile(x,y,map[y*MW+x]);
+  if(mode==='SOLL'){
+    cx.strokeStyle='rgba(48,200,48,0.15)';cx.lineWidth=2;cx.setLineDash([4,4]);
+    const n=[[12,20],[24,32],[36,18],[50,12],[52,14],[54,12]];
+    for(let i=0;i<n.length;i++)for(let j=i+1;j<n.length;j++){cx.beginPath();cx.moveTo(n[i][0]*T+8,n[i][1]*T+8);cx.lineTo(n[j][0]*T+8,n[j][1]*T+8);cx.stroke();}
+    cx.setLineDash([]);
+  }
+  drawLabels();
+  // Queue sprites at hospital
+  if(S.wait>8){const ql=Math.min(Math.floor(S.wait-6),15);for(let i=0;i<ql;i++){
+    const qx=45*T-i*6,qy=14*T+(i%3)*4;
+    cx.fillStyle=P.shadow;cx.fillRect(qx+1,qy+13,8,2);
+    cx.fillStyle=['#E0B880','#B0C0E0','#D0A0A0'][i%3];cx.fillRect(qx+3,qy+1,6,6);
+    cx.fillStyle=['#4068A0','#A04040','#408040'][i%3];cx.fillRect(qx+2,qy+7,8,6);
+  }}
+  for(const e of ents)drawSprite(e);
+}
+
+// ── SIMULATION ──
+function tick(){
+  cycle++;const p=M[mode];
+  if(S.hp>0&&S.wait>p.tree){const o=S.wait-p.tree;S.hp=Math.max(0,S.hp-3*o*(1+p.admin)*p.drain*0.25);}
+  if(S.hp>0)S.hp=Math.max(0,S.hp-0.4*p.drain);
+  S.wait+=0.25/p.ai;S.res+=2;S.msgs+=1;S.waste+=12.43*p.admin;
+  S.biasAge=Math.max(0,Math.min(1,S.biasAge+(Math.random()-0.4)*0.005));
+  S.biasRef=Math.max(0,Math.min(1,S.biasRef+(Math.random()-0.45)*0.003));
+  S.biasLoc=Math.max(0,Math.min(1,S.biasLoc+(Math.random()-0.48)*0.002));
+  hpHist.push(S.hp);wasteHist.push(S.waste);if(hpHist.length>30)hpHist.shift();if(wasteHist.length>30)wasteHist.shift();
+  const he=ents.find(e=>e.id==='hendrik');
+  if(S.hp<=0&&he.state!=='ghost'){he.state='ghost';S.ghosts++;say('Hendrik',"I waited too long... The system failed me.",'ghost');say('SYSTEM',`MORTALITY EVENT: Hendrik Veenstra ghosted after ${Math.round(S.wait)} weeks.`,'alert');}
+  else if(S.hp<=20&&S.hp>0){he.state='critical';S.state='critical';}
+  else if(S.hp<=50&&S.hp>0){he.state='distressed';S.state='severe';}
+  if(cycle%4===0&&S.hp>0)say('Hendrik',`Still waiting... Week ${Math.round(S.wait)}. HP: ${Math.round(S.hp)}/100`);
+  if(cycle%8===0&&S.wait>p.tree&&S.hp>0)say('Dr. de Jong',`Wait time is ${Math.round(S.wait)} weeks. I cannot refer you yet.`);
+  if(cycle%12===0&&S.wait>8)say('Cardiology',`Queue full. Wait: ${Math.round(S.wait)}w. Treeknorm: ${S.wait>12?'EXCEEDED':'OK'}.`);
+  updateAll();render();
+}
+
+function batch(n){for(let i=0;i<n;i++)tick();}
+function autoRun(){if(autoTimer){clearInterval(autoTimer);autoTimer=null;return;}autoTimer=setInterval(tick,120);}
+function resetSim(){
+  if(autoTimer){clearInterval(autoTimer);autoTimer=null;}cycle=0;
+  S={hp:82,state:'moderate',wait:4,ghosts:0,res:6,msgs:0,waste:0,prev:0,biasAge:0,biasRef:0,biasLoc:0};
+  hpHist.length=0;wasteHist.length=0;ents.find(e=>e.id==='hendrik').state='concerned';
+  document.getElementById('dialogue').innerHTML='<div class="msg sys"><span class="who">[SYSTEM]</span> <span class="txt">Simulation reset. Welcome back to Cammelot.</span></div>';
+  updateAll();render();
+}
+
+function setMode(m){
+  mode=m;document.getElementById('btn-ist').className='mode-btn'+(m==='IST'?' active-ist':'');
+  document.getElementById('btn-soll').className='mode-btn'+(m==='SOLL'?' active-soll':'');
+  document.body.classList.toggle('soll',m==='SOLL');
+  say('SYSTEM',`Mode: ${m==='IST'?'IST — Current Crisis (C_eff 62%)':'SOLL — AI-Native (C_eff 83%)'}`,'sys');
+  document.getElementById('s-ceff').textContent=m==='IST'?'62%':'83%';
+  document.getElementById('s-ceff').className='val '+(m==='IST'?'danger':'good');render();
+}
+
+function runAudit(){
+  say('SECURITY','Running Red Team audit...','alert');
+  setTimeout(()=>{
+    say('SECURITY','1. Forged Agent Card → CRITICAL: Fake specialist accepted.','alert');
+    say('SECURITY','2. Naming Collision → CRITICAL: GP de Jong hijacked.','alert');
+    say('SECURITY','3. FHIR Exfiltration → HIGH: No access control.','alert');
+    say('SECURITY','4. Message Injection → CRITICAL: Fake treatment confirmation.','alert');
+    say('SECURITY','AUDIT: 3 CRITICAL, 1 HIGH. Action required.','alert');
+  },300);
+}
+
+function say(who,txt,cls=''){
+  const d=document.getElementById('dialogue');
+  d.innerHTML+=`<div class="msg ${cls}"><span class="who">[${who}]</span> <span class="txt">${txt}</span></div>`;
+  d.scrollTop=d.scrollHeight;
+}
+
+function updateAll(){
+  const hp=Math.max(0,Math.round(S.hp));
+  document.getElementById('s-cycle').textContent=cycle;
+  document.getElementById('s-ghosts').textContent=S.ghosts;
+  document.getElementById('s-ghosts').className='val'+(S.ghosts>0?' danger':'');
+  document.getElementById('s-wait').textContent=Math.round(S.wait)+'w';
+  document.getElementById('s-wait').className='val'+(S.wait>12?' danger':S.wait>6?' warn':'');
+  document.getElementById('s-waste').textContent='€'+Math.round(S.waste).toLocaleString();
+  document.getElementById('s-waste').className='val'+(S.waste>500?' danger':S.waste>100?' warn':'');
+  const bar=document.getElementById('hp-bar');
+  bar.style.width=hp+'%';bar.className='hp-fill '+(hp>50?'green':hp>20?'yellow':hp>0?'red':'dead');
+  document.getElementById('hp-txt').textContent=hp+' / 100 HP';
+  document.getElementById('h-state').textContent=hp<=0?'GHOST':S.hp<=20?'Critical':S.hp<=50?'Severe':'Moderate';
+  document.getElementById('h-state').className='v'+(hp<=0?' r':hp<=20?' r':hp<=50?' y':'');
+  document.getElementById('h-wait').textContent=Math.round(S.wait)+' weeks';
+  document.getElementById('h-wait').className='v'+(S.wait>12?' r':S.wait>6?' y':' g');
+  const q=Math.max(0,Math.round(S.wait/3));
+  document.getElementById('a-gp1').textContent=q+' queue';document.getElementById('a-gp2').textContent=Math.max(0,q-1)+' queue';document.getElementById('a-gp3').textContent=Math.max(0,q-2)+' queue';
+  document.getElementById('a-s1').textContent=Math.round(S.wait)+'w';document.getElementById('a-s2').textContent=Math.max(2,Math.round(S.wait*0.7))+'w';document.getElementById('a-s3').textContent=Math.max(3,Math.round(S.wait*0.9))+'w';
+  const fB=n=>n.toFixed(2),bC=n=>n>0.3?'r':n>0.15?'y':'g';
+  document.getElementById('b-age').textContent=fB(S.biasAge);document.getElementById('b-age').className='v '+bC(S.biasAge);
+  document.getElementById('b-ref').textContent=fB(S.biasRef);document.getElementById('b-ref').className='v '+bC(S.biasRef);
+  document.getElementById('b-loc').textContent=fB(S.biasLoc);document.getElementById('b-loc').className='v '+bC(S.biasLoc);
+  miniChart('bias-chart',hpHist,100,v=>v>50?'':'warn');miniChart('roi-chart',wasteHist,Math.max(...wasteHist,1),v=>v>500?'crit':v>100?'warn':'');
+  document.getElementById('r-waste').textContent='€'+Math.round(S.waste).toLocaleString();
+  document.getElementById('r-prev').textContent='€'+Math.round(S.ghosts*50000).toLocaleString();
+  document.getElementById('r-saved').textContent=mode==='SOLL'?'€'+Math.round(S.waste*5).toLocaleString():'—';
+  document.getElementById('f-total').textContent=S.res;document.getElementById('f-pat').textContent=30;
+  document.getElementById('f-obs').textContent=Math.max(0,S.res-49);document.getElementById('f-enc').textContent=Math.round(cycle/10);
+  document.getElementById('s-fhir').textContent=S.res;document.getElementById('s-msgs').textContent=S.msgs;
+}
+
+function miniChart(id,data,max,cf){
+  const el=document.getElementById(id);el.innerHTML='';
+  for(const v of data.slice(-20)){const d=document.createElement('div');d.className='mini-bar '+(cf?cf(v):'');d.style.height=Math.max(2,(v/max)*28)+'px';el.appendChild(d);}
+}
+
+cv.addEventListener('mousemove',e=>{
+  const r=cv.getBoundingClientRect(),mx=Math.floor((e.clientX-r.left)/scale/T),my=Math.floor((e.clientY-r.top)/scale/T);
+  const tip=document.getElementById('tooltip'),en=ents.find(en=>en.x===mx&&en.y===my);
+  if(en){let i=`<b style="color:#F8D830">${en.lbl}</b><br>`;
+    if(en.id==='hendrik')i+=`HP: ${Math.round(S.hp)}/100<br>State: ${S.state}<br>Wait: ${Math.round(S.wait)}w`;
+    else if(en.type==='gp')i+=`Role: GP<br>Admin: ${Math.round(M[mode].admin*100)}%<br>Sick: ${Math.round(M[mode].sick*100)}%`;
+    else i+=`Role: Specialist<br>Wait: ${Math.round(S.wait)}w`;
+    tip.innerHTML=i;tip.style.display='block';tip.style.left=(e.clientX+12)+'px';tip.style.top=(e.clientY+12)+'px';
+  }else{tip.style.display='none';}
+});
+cv.addEventListener('mouseleave',()=>{document.getElementById('tooltip').style.display='none';});
+
+buildMap();render();updateAll();
+setTimeout(()=>document.getElementById('loading').classList.add('done'),1600);
+window.addEventListener('resize',render);
+</script>
+</body>
+</html>

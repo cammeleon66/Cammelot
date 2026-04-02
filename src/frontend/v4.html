@@ -1,0 +1,1454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cammelot — Healthcare Simulation</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Playfair+Display:wght@700;800;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --frame:#6B4226;--frame2:#8B5E3C;--frame-in:#3D2415;
+  --parchment:#F5E6C8;--parchment2:#EDD9B5;--ink:#3D2B1F;--ink2:#6B4F3A;
+  --green:#4CAF50;--red:#E53935;--gold:#FFB300;--blue:#42A5F5;
+  --bg:#2C5F2D;
+}
+html,body{width:100%;height:100%;overflow:hidden;background:#1a1a2e;font-family:'Inter',sans-serif}
+
+/* LAYOUT: Game left, Panel right (like AI Town) */
+#app{display:flex;width:100vw;height:100vh;flex-direction:column}
+#top{background:linear-gradient(180deg,#4a2c17 0%,#3a2010 100%);padding:8px 20px;display:flex;align-items:center;gap:16px;border-bottom:3px solid var(--frame)}
+#top h1{display:none}
+#top .top-logo{height:32px;filter:drop-shadow(0 1px 3px rgba(0,0,0,.4));image-rendering:auto}
+#top .sub{font-size:11px;color:#c4a882;font-style:italic}
+.top-stats{display:flex;gap:10px;margin-left:auto}
+.ts{background:rgba(0,0,0,.3);border:1px solid rgba(255,179,0,.2);border-radius:6px;padding:4px 12px;text-align:center}
+.ts .n{font-size:14px;font-weight:700;color:#fff;font-family:'JetBrains Mono',monospace}
+.ts .n.r{color:var(--red)}.ts .n.g{color:var(--green)}.ts .n.y{color:var(--gold)}
+.ts .l{font-size:8px;color:#a08060;text-transform:uppercase;margin-top:1px}
+.mode-tog{display:flex;border:2px solid var(--frame);border-radius:6px;overflow:hidden;background:#2a1508}
+.mode-tog button{font:600 11px Inter,sans-serif;padding:6px 14px;border:0;cursor:pointer;background:transparent;color:#a08060;transition:.2s}
+.mode-tog .a-ist{background:rgba(229,57,53,.2);color:var(--red)}
+.mode-tog .a-soll{background:rgba(76,175,80,.2);color:var(--green)}
+
+#main{display:flex;flex:1;overflow:hidden}
+
+/* ── GAME AREA with wooden frame ── */
+#game-wrap{flex:1;position:relative;background:var(--bg);overflow:hidden;border:6px solid var(--frame);border-top:0;box-shadow:inset 0 0 30px rgba(0,0,0,.3)}
+#game-wrap canvas{position:absolute;top:0;left:0;image-rendering:pixelated;image-rendering:crisp-edges;cursor:grab}
+#game-wrap canvas:active{cursor:grabbing}
+
+/* Controls bar at bottom of game */
+#cbar{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:6px;background:rgba(61,36,21,.92);border:2px solid var(--frame2);border-radius:10px;padding:6px 12px;z-index:5}
+.cb{font:500 11px 'JetBrains Mono',monospace;padding:5px 12px;border:1px solid var(--frame2);background:rgba(255,255,255,.05);color:var(--parchment);cursor:pointer;border-radius:5px;transition:.15s}
+.cb:hover{background:rgba(255,255,255,.12)}
+.cb.go{color:var(--green);border-color:rgba(76,175,80,.4)}
+.cb.stop{color:var(--red);border-color:rgba(229,57,53,.3)}
+.cb.warn{color:var(--gold);border-color:rgba(255,179,0,.3)}
+.cinfo{font-size:10px;color:#a08060;display:flex;align-items:center;gap:8px;font-family:'JetBrains Mono',monospace}
+.cinfo b{color:var(--parchment)}
+
+/* Chat log overlaid bottom-left */
+#chatlog{position:absolute;bottom:50px;left:10px;width:320px;max-height:160px;overflow-y:auto;background:rgba(61,36,21,.85);border:2px solid var(--frame2);border-radius:8px;padding:8px 12px;z-index:5;font-size:11px;line-height:1.5;color:var(--parchment)}
+#chatlog::-webkit-scrollbar{width:4px}#chatlog::-webkit-scrollbar-thumb{background:var(--frame2);border-radius:2px}
+.cm{margin-bottom:3px;animation:fu .2s ease}
+.cm .w{font-weight:700;color:var(--gold)}
+.cm.ghost .w{color:#888}.cm.ghost .t{color:#777;font-style:italic}
+.cm.alert .w{color:var(--red)}.cm.alert .t{color:#f99}
+.cm.sys .w{color:var(--blue)}.cm.sys .t{color:#9cf}
+@keyframes fu{0%{opacity:0;transform:translateY(4px)}100%{opacity:1;transform:translateY(0)}}
+
+/* Zoom indicator */
+#zoom-ind{position:absolute;top:10px;left:10px;background:rgba(61,36,21,.8);border:1px solid var(--frame2);border-radius:6px;padding:4px 10px;color:var(--parchment);font:500 10px 'JetBrains Mono',monospace;z-index:5}
+
+/* ── RIGHT PANEL (parchment style like AI Town) ── */
+#panel{width:320px;background:linear-gradient(180deg,var(--parchment) 0%,var(--parchment2) 100%);border-left:6px solid var(--frame);overflow-y:auto;padding:0;display:flex;flex-direction:column}
+#panel::-webkit-scrollbar{width:5px}#panel::-webkit-scrollbar-thumb{background:var(--ink2);border-radius:3px}
+
+.panel-header{background:var(--frame);color:var(--parchment);padding:10px 16px;font-size:12px;font-weight:700;letter-spacing:1px;text-align:center}
+
+#agent-detail{padding:16px;flex:1;overflow-y:auto}
+.ad-empty{text-align:center;color:var(--ink2);font-size:12px;padding:40px 20px;line-height:1.8}
+.ad-empty .hint{font-size:18px;margin-bottom:8px}
+
+/* Agent detail card */
+.agent-card{color:var(--ink)}
+.ac-name{font-size:16px;font-weight:700;color:var(--ink);margin-bottom:2px}
+.ac-role{font-size:11px;color:var(--ink2);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px}
+.ac-section{margin-bottom:14px}
+.ac-section h4{font-size:10px;color:var(--ink2);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid rgba(61,43,31,.15)}
+.ac-row{display:flex;justify-content:space-between;font-size:12px;padding:3px 0}
+.ac-row .k{color:var(--ink2)}.ac-row .v{font-weight:600;font-family:'JetBrains Mono',monospace}
+.ac-row .v.bad{color:var(--red)}.ac-row .v.ok{color:var(--green)}.ac-row .v.mid{color:#c67700}
+.hp-outer{background:rgba(0,0,0,.1);border-radius:4px;height:16px;margin:6px 0;position:relative;overflow:hidden;border:1px solid rgba(0,0,0,.15)}
+.hp-inner{height:100%;border-radius:3px;transition:.4s}
+.hp-inner.g{background:linear-gradient(90deg,#388E3C,#66BB6A)}.hp-inner.y{background:linear-gradient(90deg,#F57F17,#FFB300)}.hp-inner.r{background:linear-gradient(90deg,#C62828,#EF5350)}.hp-inner.d{background:#999}
+.hp-label{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:700 10px 'JetBrains Mono',monospace;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.4)}
+
+/* Thought bubble */
+.thought{background:#fff;border:2px solid var(--ink);border-radius:12px;padding:10px 14px;font-size:11px;color:var(--ink);line-height:1.5;margin-top:10px;position:relative;font-style:italic}
+.thought::before{content:'💭';position:absolute;top:-14px;left:10px;font-size:16px}
+
+/* Condition tag */
+.cond-tag{display:inline-block;background:rgba(229,57,53,.1);color:var(--red);border:1px solid rgba(229,57,53,.2);border-radius:4px;padding:2px 8px;font-size:10px;margin:2px 4px 2px 0;font-weight:600}
+.cond-tag.mild{background:rgba(255,179,0,.1);color:#b87a00;border-color:rgba(255,179,0,.2)}
+
+/* History timeline */
+.history-timeline{max-height:220px;overflow-y:auto;margin-top:4px}
+.history-timeline::-webkit-scrollbar{width:4px}.history-timeline::-webkit-scrollbar-thumb{background:var(--ink2);border-radius:2px}
+.ht-entry{display:flex;align-items:flex-start;gap:5px;padding:4px 0;border-bottom:1px solid rgba(0,0,0,.06);font-size:11px}
+.ht-cycle{color:var(--ink2);font-family:'JetBrains Mono',monospace;font-size:9px;min-width:30px;flex-shrink:0;padding-top:1px}
+.ht-icon{font-size:12px;flex-shrink:0}
+.ht-text{flex:1;color:var(--ink);line-height:1.4}
+.ht-hp{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--ink2);flex-shrink:0;padding-top:1px}
+/* Behavior state badge */
+.state-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;letter-spacing:.5px}
+.state-badge.roaming{background:rgba(76,175,80,.12);color:#2e7d32}
+.state-badge.going_to_gp,.state-badge.at_gp{background:rgba(33,150,243,.12);color:#1565c0}
+.state-badge.going_to_hospital,.state-badge.at_hospital{background:rgba(255,152,0,.12);color:#e65100}
+.state-badge.recovering{background:rgba(156,39,176,.12);color:#7b1fa2}
+.state-badge.dead{background:rgba(0,0,0,.08);color:#666}
+
+/* Sim overview section at bottom of panel */
+#sim-overview{background:var(--frame-in);color:var(--parchment);padding:12px 16px}
+#sim-overview h4{font-size:10px;color:#a08060;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.so-row{display:flex;justify-content:space-between;font-size:11px;padding:2px 0}
+.so-row .k{color:#a08060}.so-row .v{font-family:'JetBrains Mono',monospace;font-weight:600}
+.so-row .v.r{color:var(--red)}.so-row .v.g{color:var(--green)}.so-row .v.y{color:var(--gold)}
+
+/* Loading */
+#load{position:fixed;inset:0;background:#1a0e05;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;transition:opacity .5s}
+#load.go{opacity:0;pointer-events:none}
+#load img.logo{max-width:240px;max-height:180px;margin-bottom:16px;image-rendering:auto;filter:drop-shadow(0 4px 12px rgba(0,0,0,.5))}
+#load h1{font-size:28px;color:var(--gold);letter-spacing:6px;text-shadow:2px 2px 0 #2a1508;margin-bottom:8px}
+#load p{font-size:11px;color:#a08060;letter-spacing:3px;font-style:italic}
+.ldbar{width:200px;height:6px;background:#2a1508;border-radius:3px;margin-top:20px;overflow:hidden;border:1px solid var(--frame)}
+.ldf{height:100%;background:var(--gold);border-radius:3px;animation:ld 1.4s ease-out forwards}
+@keyframes ld{0%{width:0}60%{width:80%}100%{width:100%}}
+</style>
+</head>
+<body>
+<div id="load"><img class="logo" src="/assets/logo.png" alt="Cammelot"><h1>CAMMELOT</h1><p>A virtual town where healthcare meets AI</p><div class="ldbar"><div class="ldf"></div></div></div>
+
+<div id="app">
+  <div id="top">
+    <img class="top-logo" src="/assets/logo.png" alt="Cammelot">
+    <span class="sub">A virtual town where healthcare agents live &amp; struggle</span>
+    <div class="mode-tog">
+      <button id="bi" class="a-ist" onclick="setMode('IST')">⚠ IST</button>
+      <button id="bs" onclick="setMode('SOLL')">✦ SOLL</button>
+    </div>
+    <div class="top-stats">
+      <div class="ts"><div class="n" id="hC">0</div><div class="l">Cycle</div></div>
+      <div class="ts"><div class="n">5,000</div><div class="l">Pop</div></div>
+      <div class="ts"><div class="n" id="hG">0</div><div class="l">Ghosts</div></div>
+      <div class="ts"><div class="n y" id="hW">4w</div><div class="l">Wait</div></div>
+      <div class="ts"><div class="n" id="hE">62%</div><div class="l">C_eff</div></div>
+    </div>
+  </div>
+
+  <div id="main">
+    <div id="game-wrap">
+      <canvas id="cv"></canvas>
+      <div id="zoom-ind">Zoom: 100%</div>
+      <div id="chatlog">
+        <div class="cm sys"><span class="w">[SYSTEM]</span> <span class="t">Welcome to Cammelot. Click on a citizen to see their story.</span></div>
+      </div>
+      <div id="cbar">
+        <button class="cb go" onclick="tick()">▶</button>
+        <button class="cb go" onclick="batch(10)">▶▶ ×10</button>
+        <button class="cb go" onclick="batch(100)">×100</button>
+        <button class="cb warn" onclick="autoRun()">⟳ Auto</button>
+        <button class="cb stop" onclick="resetSim()">↺ Reset</button>
+        <div class="cinfo">FHIR <b id="sF">0</b> · A2A <b id="sM">0</b></div>
+      </div>
+    </div>
+
+    <div id="panel">
+      <div class="panel-header">CITIZEN DOSSIER</div>
+      <div id="agent-detail">
+        <div class="ad-empty">
+          <div class="hint">👆</div>
+          Click on a citizen in the town<br>to view their medical dossier,<br>current thoughts, and care pathway.
+        </div>
+      </div>
+      <div id="sim-overview">
+        <h4>Simulation Overview</h4>
+        <div class="so-row"><span class="k">Admin Burden</span><span class="v r" id="oA">30%</span></div>
+        <div class="so-row"><span class="k">Staff Sick Leave</span><span class="v r" id="oS">8%</span></div>
+        <div class="so-row"><span class="k">Treeknorm Limit</span><span class="v y" id="oT">12 weeks</span></div>
+        <div class="so-row"><span class="k">FHIR Resources</span><span class="v" id="oF">0</span></div>
+        <div class="so-row"><span class="k">Waste (Admin)</span><span class="v r" id="oW">€0</span></div>
+        <div class="so-row"><span class="k">IZA Postbus</span><span class="v r">CLOSED Jul '25</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════
+// CAMMELOT v0.4 — Warm palette, zoom, click-to-inspect
+// ════════════════════════════════════════
+
+const cv=document.getElementById('cv'),cx=cv.getContext('2d');
+const T=32,MW=40,MH=30;
+let camX=0,camY=0,zoom=1.0,dragStart=null,dragCam=null,userZoomed=false;
+
+// ── Noise ──
+function ns(x,y){return((Math.sin(x*12.9898+y*78.233)*43758.5453)%1+1)%1;}
+
+// ── Background map image ──
+// The map image is loaded from /assets/map.png or via drag-drop
+let mapImg = new Image();
+let mapLoaded = false;
+const MAP_W = 1280; // image pixel width (will be measured from loaded image)
+const MAP_H = 720;  // image pixel height
+
+// Try loading from assets
+mapImg.onload = () => { mapLoaded = true; mapImgW = mapImg.naturalWidth; mapImgH = mapImg.naturalHeight; };
+mapImg.onerror = () => {
+  // Try alternate extensions
+  const alt = new Image();
+  alt.onload = () => { mapImg = alt; mapLoaded = true; mapImgW = alt.naturalWidth; mapImgH = alt.naturalHeight; };
+  alt.onerror = () => { console.log('No map image found — drag and drop one onto the game area.'); };
+  alt.src = '/assets/map.jpg';
+};
+mapImg.src = '/assets/map2.jpeg';
+
+let mapImgW = MAP_W, mapImgH = MAP_H;
+
+// Drag-and-drop support for loading map images
+const gameWrap = document.getElementById('game-wrap');
+gameWrap.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; gameWrap.style.outline = '3px dashed #FFB300'; });
+gameWrap.addEventListener('dragleave', () => { gameWrap.style.outline = 'none'; });
+gameWrap.addEventListener('drop', e => {
+  e.preventDefault();
+  gameWrap.style.outline = 'none';
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      mapImg = new Image();
+      mapImg.onload = () => { mapLoaded = true; mapImgW = mapImg.naturalWidth; mapImgH = mapImg.naturalHeight; say('SYSTEM', `Map loaded: ${mapImgW}×${mapImgH}px`, 'sys'); };
+      mapImg.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+});
+
+// ── Agents with proper healthcare data ──
+// Agents use positions as fraction of map (0-1 range)
+// Positions mapped to roads/paths on the actual map image:
+//   Roads (vertical): ~x=0.22, ~x=0.48, ~x=0.72
+//   Roads (horizontal): ~y=0.30, ~y=0.55, ~y=0.80
+//   Hospital: x=0.30-0.42, y=0.05-0.22
+//   GP: x=0.58-0.65, y=0.10-0.22
+//   Park: x=0.38-0.55, y=0.40-0.65
+//   Bridges: where roads cross rivers
+
+// Zones where agents should NOT walk (water + buildings + forest)
+// These must match the actual map2 image layout
+const NO_WALK_ZONES = [
+  // Rivers — map2 has rivers running through the map
+  { x1:.00, y1:.20, x2:.22, y2:.38 },  // river upper-left
+  { x1:.00, y1:.50, x2:.20, y2:.70 },  // river lower-left
+  { x1:.50, y1:.22, x2:.72, y2:.34 },  // river upper-right
+  { x1:.50, y1:.55, x2:.72, y2:.70 },  // river lower-right
+  { x1:.72, y1:.62, x2:.98, y2:.78 },  // river far-right bottom
+  { x1:.22, y1:.28, x2:.50, y2:.32 },  // river crossing top
+  { x1:.22, y1:.58, x2:.50, y2:.62 },  // river crossing bottom
+  // Forest/dense areas
+  { x1:.24, y1:.35, x2:.42, y2:.50 },  // dense forest center
+  // Buildings (don't walk through them)
+  { x1:.26, y1:.02, x2:.48, y2:.22 },  // hospital
+  { x1:.56, y1:.06, x2:.68, y2:.22 },  // GP clinic
+  { x1:.72, y1:.26, x2:.96, y2:.50 },  // farm fields right
+  { x1:.38, y1:.45, x2:.58, y2:.58 },  // park/cemetery center
+];
+
+// Building zones — agents inside are hidden on map
+const BUILDINGS = [
+  { id:'hospital', x1:.26, y1:.03, x2:.46, y2:.22, label:'Cammelot Hospital' },
+  { id:'gp1_bldg', x1:.56, y1:.08, x2:.66, y2:.22, label:'GP Collins' },
+  { id:'gp2_bldg', x1:.18, y1:.38, x2:.26, y2:.46, label:'GP Bennett' },
+];
+
+// Key destinations for agent pathfinding
+const DESTINATIONS = {
+  gp_collins:  { entrance:{x:.62,y:.23}, building:'gp1_bldg' },
+  gp_bennett:  { entrance:{x:.22,y:.42}, building:'gp2_bldg' },
+  hospital:    { entrance:{x:.38,y:.23}, building:'hospital' },
+};
+function getGPDest(gpName){
+  if(gpName && gpName.includes('Bennett')) return DESTINATIONS.gp_bennett;
+  if(gpName && gpName.includes('Hayes')) return DESTINATIONS.gp_bennett;
+  return DESTINATIONS.gp_collins;
+}
+
+function isInWater(fx, fy) {
+  return NO_WALK_ZONES.some(z => fx>=z.x1 && fx<=z.x2 && fy>=z.y1 && fy<=z.y2);
+}
+
+function isInBuilding(fx, fy) {
+  return BUILDINGS.find(b => fx>=b.x1 && fx<=b.x2 && fy>=b.y1 && fy<=b.y2);
+}
+
+// Safe walkable positions — ONLY on visible roads/paths in the map2 image
+// Roads form a grid pattern with bridges over rivers
+const ROAD_WAYPOINTS = [
+  // === Horizontal road TOP (y ≈ 0.28) ===
+  {x:.22,y:.27},{x:.28,y:.27},{x:.35,y:.27},{x:.50,y:.27},{x:.56,y:.27},{x:.72,y:.27},
+  // === Horizontal road MIDDLE (y ≈ 0.55) ===
+  {x:.22,y:.54},{x:.30,y:.54},{x:.42,y:.54},{x:.50,y:.54},{x:.60,y:.54},{x:.72,y:.54},{x:.80,y:.54},
+  // === Horizontal road BOTTOM (y ≈ 0.80) ===
+  {x:.12,y:.80},{x:.22,y:.80},{x:.35,y:.80},{x:.50,y:.80},{x:.60,y:.80},{x:.72,y:.80},{x:.85,y:.80},
+  // === Vertical road LEFT (x ≈ 0.22) ===
+  {x:.22,y:.08},{x:.22,y:.15},{x:.22,y:.22},{x:.22,y:.35},{x:.22,y:.42},{x:.22,y:.50},{x:.22,y:.65},{x:.22,y:.72},{x:.22,y:.88},
+  // === Vertical road CENTER (x ≈ 0.50) ===
+  {x:.50,y:.08},{x:.50,y:.15},{x:.50,y:.22},{x:.50,y:.35},{x:.50,y:.42},{x:.50,y:.50},{x:.50,y:.65},{x:.50,y:.72},{x:.50,y:.88},
+  // === Vertical road RIGHT (x ≈ 0.72) ===
+  {x:.72,y:.08},{x:.72,y:.15},{x:.72,y:.22},{x:.72,y:.35},{x:.72,y:.42},{x:.72,y:.50},{x:.72,y:.65},{x:.72,y:.72},{x:.72,y:.88},
+  // Near hospital entrance
+  {x:.35,y:.23},{x:.38,y:.23},{x:.42,y:.23},
+  // Near GP entrance 
+  {x:.58,y:.23},{x:.62,y:.23},
+  // Side streets
+  {x:.08,y:.27},{x:.12,y:.27},{x:.85,y:.27},
+  {x:.08,y:.54},{x:.12,y:.54},{x:.88,y:.54},
+  // Bottom area
+  {x:.08,y:.90},{x:.35,y:.90},{x:.50,y:.90},{x:.72,y:.90},{x:.90,y:.90},
+];
+
+function randomRoadPoint() {
+  return ROAD_WAYPOINTS[Math.floor(Math.random() * ROAD_WAYPOINTS.length)];
+}
+
+// Waypoint adjacency graph — only connect waypoints on the SAME road axis
+const WAYPOINT_ADJ = [];
+function buildWaypointGraph() {
+  const AXIS_SNAP = 0.03; // tolerance: same road if x or y within this
+  const MAX_DIST = 0.12;  // max gap between adjacent waypoints
+  for(let i = 0; i < ROAD_WAYPOINTS.length; i++) {
+    WAYPOINT_ADJ[i] = [];
+    for(let j = 0; j < ROAD_WAYPOINTS.length; j++) {
+      if(i === j) continue;
+      const a = ROAD_WAYPOINTS[i], b = ROAD_WAYPOINTS[j];
+      const adx = Math.abs(a.x - b.x), ady = Math.abs(a.y - b.y);
+      const d = Math.sqrt(adx*adx + ady*ady);
+      if(d > MAX_DIST) continue;
+      // Only connect if they share an axis (same road) — no diagonals
+      const sameRow = ady < AXIS_SNAP;
+      const sameCol = adx < AXIS_SNAP;
+      if(!sameRow && !sameCol) continue;
+      // Check midpoint isn't in a no-walk zone
+      const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+      if(!isInWater(mx, my)) WAYPOINT_ADJ[i].push(j);
+    }
+  }
+}
+
+function nearestWaypointIdx(fx, fy) {
+  let best = 0, bestD = Infinity;
+  for(let i = 0; i < ROAD_WAYPOINTS.length; i++) {
+    const dx = ROAD_WAYPOINTS[i].x - fx, dy = ROAD_WAYPOINTS[i].y - fy;
+    const d = dx*dx + dy*dy;
+    if(d < bestD) { bestD = d; best = i; }
+  }
+  return best;
+}
+
+function findWaypointPath(fromIdx, toIdx) {
+  if(fromIdx === toIdx) return [toIdx];
+  const visited = new Set([fromIdx]);
+  const queue = [[fromIdx]];
+  while(queue.length > 0) {
+    const path = queue.shift();
+    const cur = path[path.length - 1];
+    for(const nb of (WAYPOINT_ADJ[cur]||[])) {
+      if(nb === toIdx) return path.concat(nb);
+      if(!visited.has(nb)) {
+        visited.add(nb);
+        queue.push(path.concat(nb));
+      }
+    }
+  }
+  return null;
+}
+
+const agents=[
+  // Patients — on roads
+  // Agents start on roads only
+  {id:'hendrik',x:.35,y:.27,type:'patient',name:'Henry Ward',age:75,gender:'M',
+   conditions:[{name:'Chronic Heart Disease',code:'I25',severity:'moderate'},{name:'Diabetes Type 2',code:'E11',severity:'mild'}],
+   hp:82,state:'waiting',waitWeeks:4,gpName:'Dr. Collins',insideBuilding:null,
+   thoughts:['My chest feels heavy again today...','The wait for cardiology is so long.','I hope Dr. Collins can help me soon.'],
+   color:'#e07040'},
+  {id:'maria',x:.50,y:.23,type:'patient',name:'Margaret Ellis',age:82,gender:'F',
+   conditions:[{name:'Dementia',code:'F03',severity:'moderate'},{name:'Osteoporosis',code:'M81',severity:'mild'}],
+   hp:65,state:'waiting',waitWeeks:8,gpName:'Dr. Collins',insideBuilding:null,
+   thoughts:['Where am I? I think I had an appointment...','My hip hurts when I walk.','I keep forgetting my medication times.'],
+   color:'#c87090'},
+  {id:'jan',x:.72,y:.27,type:'patient',name:'James Cooper',age:68,gender:'M',
+   conditions:[{name:'COPD',code:'J44',severity:'severe'}],
+   hp:45,state:'waiting',waitWeeks:14,gpName:'Dr. Bennett',insideBuilding:null,
+   thoughts:['I can barely breathe going up the stairs.','14 weeks wait... this is not right.','The system is failing people like me.'],
+   color:'#6090c0'},
+  {id:'sophie',x:.22,y:.54,type:'patient',name:'Sophie Taylor',age:42,gender:'F',
+   conditions:[{name:'Depression',code:'F32',severity:'moderate'}],
+   hp:78,state:'gp_visit',waitWeeks:2,gpName:'Dr. Bennett',insideBuilding:null,
+   thoughts:['At least my GP listens, even if it takes weeks.','The paperwork seems to slow everything down.','I wish there was less waiting.'],
+   color:'#a080d0'},
+  {id:'piet',x:.38,y:.23,type:'patient',name:'Peter Shaw',age:71,gender:'M',
+   conditions:[{name:'Lung Cancer',code:'C34',severity:'severe'},{name:'Hypertension',code:'I10',severity:'moderate'}],
+   hp:28,state:'critical',waitWeeks:16,gpName:'Dr. Hayes',insideBuilding:'hospital',
+   thoughts:['The hospital is full. Where do I go?','Every week counts for me...','I feel weaker every day in this queue.'],
+   color:'#d06050'},
+  // GPs — inside their clinics (hidden on map)
+  {id:'gp1',x:.61,y:.14,type:'gp',name:'Dr. Collins',age:52,gender:'M',role:'General Practitioner',
+   conditions:[],hp:100,state:'working',waitWeeks:0,insideBuilding:'gp1_bldg',
+   thoughts:['30% of my day is paperwork. I became a doctor to help people.','My waiting room is full again.','If only I had more time per patient.'],
+   color:'#40a870'},
+  {id:'gp2',x:.22,y:.42,type:'gp',name:'Dr. Bennett',age:47,gender:'F',role:'General Practitioner',
+   conditions:[],hp:100,state:'working',waitWeeks:0,insideBuilding:null,
+   thoughts:['Another referral denied. The specialist queue is 12 weeks.','I need to finish 50 FHIR logs before lunch.','My colleagues are burning out.'],
+   color:'#40a870'},
+  // Specialists — inside hospital (hidden on map)
+  {id:'s1',x:.34,y:.12,type:'specialist',name:'Dr. Ashworth',age:55,gender:'M',role:'Cardiologist',
+   conditions:[],hp:100,state:'overloaded',waitWeeks:0,insideBuilding:'hospital',
+   thoughts:['My queue is 12 weeks deep. Patients are deteriorating while waiting.','We need more capacity, not more paperwork.'],
+   color:'#4090d0'},
+  {id:'s2',x:.40,y:.12,type:'specialist',name:'Dr. Pryce',age:48,gender:'F',role:'Pulmonologist',
+   conditions:[],hp:100,state:'overloaded',waitWeeks:0,insideBuilding:'hospital',
+   thoughts:['COPD patients like James cannot wait 14 weeks.','The Treeknorm is being violated daily.'],
+   color:'#4090d0'},
+  // Citizens — on roads
+  {id:'n1',x:.22,y:.15,type:'citizen',name:'Keith Miller',age:35,gender:'M',conditions:[],hp:100,state:'healthy',waitWeeks:0,insideBuilding:null,thoughts:['Beautiful day in Cammelot.'],color:'#c8a060'},
+  {id:'n2',x:.85,y:.27,type:'citizen',name:'Anna Parker',age:28,gender:'F',conditions:[],hp:100,state:'healthy',waitWeeks:0,insideBuilding:null,thoughts:['Walking to the pharmacy.'],color:'#e0a0b0'},
+  {id:'n3',x:.22,y:.72,type:'citizen',name:'David Harris',age:55,gender:'M',conditions:[{name:'Hypertension',code:'I10',severity:'mild'}],hp:90,state:'managed',waitWeeks:0,insideBuilding:null,thoughts:['My blood pressure medication is working.'],color:'#a0b060'},
+  {id:'n4',x:.72,y:.54,type:'citizen',name:'Lisa Brooks',age:63,gender:'F',conditions:[{name:'Arthrosis',code:'M17',severity:'moderate'}],hp:72,state:'waiting',waitWeeks:6,insideBuilding:null,thoughts:['My knee hurts more every week I wait.'],color:'#d09070'},
+  {id:'n5',x:.50,y:.42,type:'citizen',name:'Tom Richards',age:40,gender:'M',conditions:[],hp:100,state:'healthy',waitWeeks:0,insideBuilding:null,thoughts:['The park is nice this time of year.'],color:'#90a060'},
+  {id:'n6',x:.72,y:.80,type:'citizen',name:'Emma Clarke',age:31,gender:'F',conditions:[],hp:100,state:'healthy',waitWeeks:0,insideBuilding:null,thoughts:['Just picking up a prescription.'],color:'#d0a0c0'},
+  {id:'n7',x:.50,y:.80,type:'citizen',name:'Robert Green',age:78,gender:'M',conditions:[{name:'Heart Failure',code:'I50',severity:'moderate'}],hp:55,state:'waiting',waitWeeks:10,gpName:'Dr. Collins',insideBuilding:null,thoughts:['The stairs are getting harder.','I called the clinic but they said wait.'],color:'#a08050'},
+  {id:'n8',x:.85,y:.54,type:'citizen',name:'Sarah White',age:66,gender:'F',conditions:[{name:'Diabetes Type 2',code:'E11',severity:'mild'}],hp:85,state:'managed',waitWeeks:0,insideBuilding:null,thoughts:['My quarterly check-up went well.'],color:'#c0a0a0'},
+];
+
+agents.forEach(e=>{
+  e.tx=e.x; e.ty=e.y;
+  e.frame=Math.random()*100|0;
+  e.bubbleTimer=0; e.currentThought=0;
+  e.path=[]; e.pathIdx=0; e.walkDist=0;
+  e.idleUntil=performance.now()+Math.random()*5000;
+  // Behavioral state machine
+  e.behaviorState = e.insideBuilding==='hospital' ? 'at_hospital' : 'roaming';
+  e.stateTimer = e.insideBuilding==='hospital' ? 5+Math.floor(Math.random()*5) : 0;
+  e.actionHistory = [];
+  e.healingTicksLeft = 0;
+  e.pathComplete = false;
+  e.lastGPCycle = -100;
+  e.referredToHospital = false;
+  // Store initial values for reset
+  e._initHP = e.hp; e._initWaitWeeks = e.waitWeeks;
+  e._initConditions = JSON.parse(JSON.stringify(e.conditions||[]));
+  e._initState = e.state; e._initInsideBuilding = e.insideBuilding;
+  e._initX = e.x; e._initY = e.y;
+});
+let lastFrameTime=performance.now();
+let selectedAgent=null;
+
+// ── Sim ──
+let cycle=0,mode='IST',autoTimer=null;
+const M={IST:{admin:.3,sick:.08,tree:12,ai:1,drain:1},SOLL:{admin:.05,sick:.05,tree:4,ai:1.34,drain:.3}};
+let S={res:6,msgs:0,waste:0};
+
+// ═══ SVG BUILDING SPRITES ═══
+// Pre-rendered as Image objects from inline SVGs for crisp scaling         
+
+function svgToImg(svg, w, h) {
+  const img = new Image();
+  img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  return img;
+}
+
+const SPRITES = {
+  house: [],
+  gp: null,
+  hospital: null,
+  townhall: null,
+};
+
+// 4 house variants
+const houseColors = [
+  { wall:'#F5E6D0', roof:'#C0522E', door:'#6B4226', shutter:'#3B7A57' },
+  { wall:'#E8DCC8', roof:'#8B6E4E', door:'#5B3A1F', shutter:'#4A6E8C' },
+  { wall:'#FFF5E6', roof:'#BC4B3A', door:'#7B5B3A', shutter:'#B85C38' },
+  { wall:'#F0E4D4', roof:'#6B8E6B', door:'#5A3E28', shutter:'#8B6E52' },
+];
+
+houseColors.forEach((c, i) => {
+  SPRITES.house.push(svgToImg(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+    <!-- Shadow -->
+    <ellipse cx="32" cy="60" rx="28" ry="4" fill="rgba(0,0,0,.12)"/>
+    <!-- Walls -->
+    <rect x="8" y="28" width="48" height="32" rx="1" fill="${c.wall}" stroke="#A0906E" stroke-width=".7"/>
+    <!-- Roof -->
+    <polygon points="4,29 32,4 60,29" fill="${c.roof}" stroke="#7A3820" stroke-width=".8"/>
+    <polygon points="8,29 32,8 56,29" fill="${c.roof}" opacity=".7"/>
+    <!-- Chimney -->
+    <rect x="42" y="10" width="6" height="16" fill="#8B7355" rx="1"/>
+    <rect x="40" y="8" width="10" height="4" rx="1" fill="#7A6348"/>
+    <!-- Door -->
+    <rect x="25" y="40" width="14" height="20" rx="2" fill="${c.door}"/>
+    <rect x="26" y="41" width="12" height="6" rx="1" fill="${c.door}" opacity=".6"/>
+    <circle cx="36" cy="52" r="1.5" fill="#D4A84B"/>
+    <!-- Windows with shutters -->
+    <rect x="11" y="34" width="10" height="10" rx="1" fill="#A8D8EA"/>
+    <rect x="12" y="35" width="8" height="8" fill="#78B8D8"/>
+    <line x1="16" y1="35" x2="16" y2="43" stroke="#6A9AB5" stroke-width=".8"/>
+    <line x1="12" y1="39" x2="20" y2="39" stroke="#6A9AB5" stroke-width=".8"/>
+    <rect x="8" y="33" width="3" height="12" rx="1" fill="${c.shutter}"/>
+    <rect x="21" y="33" width="3" height="12" rx="1" fill="${c.shutter}"/>
+    <rect x="43" y="34" width="10" height="10" rx="1" fill="#A8D8EA"/>
+    <rect x="44" y="35" width="8" height="8" fill="#78B8D8"/>
+    <line x1="48" y1="35" x2="48" y2="43" stroke="#6A9AB5" stroke-width=".8"/>
+    <line x1="44" y1="39" x2="52" y2="39" stroke="#6A9AB5" stroke-width=".8"/>
+    <rect x="40" y="33" width="3" height="12" rx="1" fill="${c.shutter}"/>
+    <rect x="53" y="33" width="3" height="12" rx="1" fill="${c.shutter}"/>
+    <!-- Flower box -->
+    <rect x="43" y="44" width="10" height="3" rx="1" fill="#6B4226"/>
+    <circle cx="45" cy="43" r="2" fill="#FF6B8A"/>
+    <circle cx="48" cy="42" r="2" fill="#FFD700"/>
+    <circle cx="51" cy="43" r="2" fill="#FF8C94"/>
+  </svg>`, 64, 64));
+});
+
+SPRITES.gp = svgToImg(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <ellipse cx="32" cy="60" rx="28" ry="4" fill="rgba(0,0,0,.12)"/>
+  <!-- Building -->
+  <rect x="4" y="12" width="56" height="48" rx="2" fill="#F0F8F0" stroke="#2E7D32" stroke-width="1.5"/>
+  <!-- Green roof -->
+  <rect x="2" y="10" width="60" height="8" rx="2" fill="#2E7D32"/>
+  <rect x="4" y="8" width="56" height="4" rx="2" fill="#388E3C"/>
+  <!-- Sign -->
+  <rect x="14" y="2" width="36" height="10" rx="3" fill="#FFF" stroke="#2E7D32" stroke-width="1"/>
+  <text x="32" y="10" text-anchor="middle" font-size="6" font-weight="bold" fill="#2E7D32" font-family="sans-serif">GP CLINIC</text>
+  <!-- Green cross -->
+  <rect x="26" y="22" width="12" height="24" rx="1" fill="#4CAF50"/>
+  <rect x="20" y="28" width="24" height="12" rx="1" fill="#4CAF50"/>
+  <rect x="27" y="23" width="10" height="22" rx="1" fill="#66BB6A" opacity=".5"/>
+  <!-- Door -->
+  <rect x="22" y="48" width="20" height="14" rx="2" fill="#81C784"/>
+  <rect x="23" y="49" width="8" height="12" rx="1" fill="#A5D6A7" opacity=".6"/>
+  <rect x="33" y="49" width="8" height="12" rx="1" fill="#A5D6A7" opacity=".6"/>
+  <!-- Windows -->
+  <rect x="7" y="24" width="10" height="10" rx="1" fill="#C8E6C9" stroke="#388E3C" stroke-width=".5"/>
+  <rect x="47" y="24" width="10" height="10" rx="1" fill="#C8E6C9" stroke="#388E3C" stroke-width=".5"/>
+</svg>`, 64, 64);
+
+SPRITES.hospital = svgToImg(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <ellipse cx="32" cy="62" rx="30" ry="3" fill="rgba(0,0,0,.15)"/>
+  <!-- Main building -->
+  <rect x="2" y="8" width="60" height="54" rx="2" fill="#F5F5F5" stroke="#B71C1C" stroke-width="1.5"/>
+  <!-- Red roof band -->
+  <rect x="0" y="6" width="64" height="6" rx="2" fill="#C62828"/>
+  <rect x="2" y="4" width="60" height="4" rx="2" fill="#D32F2F"/>
+  <!-- Red cross on top -->
+  <rect x="26" y="0" width="12" height="10" rx="1" fill="#E53935"/>
+  <rect x="24" y="2" width="16" height="6" rx="1" fill="#E53935"/>
+  <rect x="27" y="1" width="10" height="8" fill="#EF5350" opacity=".5"/>
+  <!-- HOSPITAL text -->
+  <rect x="8" y="8" width="48" height="8" rx="1" fill="#C62828"/>
+  <text x="32" y="14.5" text-anchor="middle" font-size="5.5" font-weight="bold" fill="#FFF" font-family="sans-serif">HOSPITAL</text>
+  <!-- Windows (3 floors) -->
+  <rect x="6" y="20" width="8" height="8" rx="1" fill="#BBDEFB" stroke="#90CAF9" stroke-width=".5"/>
+  <line x1="10" y1="20" x2="10" y2="28" stroke="#90CAF9" stroke-width=".5"/>
+  <line x1="6" y1="24" x2="14" y2="24" stroke="#90CAF9" stroke-width=".5"/>
+  <rect x="18" y="20" width="8" height="8" rx="1" fill="#BBDEFB" stroke="#90CAF9" stroke-width=".5"/>
+  <rect x="38" y="20" width="8" height="8" rx="1" fill="#BBDEFB" stroke="#90CAF9" stroke-width=".5"/>
+  <rect x="50" y="20" width="8" height="8" rx="1" fill="#BBDEFB" stroke="#90CAF9" stroke-width=".5"/>
+  <rect x="6" y="32" width="8" height="8" rx="1" fill="#BBDEFB" stroke="#90CAF9" stroke-width=".5"/>
+  <rect x="18" y="32" width="8" height="8" rx="1" fill="#BBDEFB" stroke="#90CAF9" stroke-width=".5"/>
+  <rect x="38" y="32" width="8" height="8" rx="1" fill="#BBDEFB" stroke="#90CAF9" stroke-width=".5"/>
+  <rect x="50" y="32" width="8" height="8" rx="1" fill="#BBDEFB" stroke="#90CAF9" stroke-width=".5"/>
+  <!-- Glass entrance -->
+  <rect x="22" y="44" width="20" height="18" rx="2" fill="#90CAF9"/>
+  <rect x="23" y="45" width="8" height="16" rx="1" fill="#B3E5FC" opacity=".7"/>
+  <rect x="33" y="45" width="8" height="16" rx="1" fill="#B3E5FC" opacity=".7"/>
+  <line x1="32" y1="44" x2="32" y2="62" stroke="#64B5F6" stroke-width="1"/>
+  <!-- Emergency sign -->
+  <circle cx="32" cy="42" r="3" fill="#E53935"/>
+  <rect x="30.5" y="40" width="3" height="4" rx=".5" fill="#FFF"/>
+  <rect x="30" y="41" width="4" height="2" rx=".5" fill="#FFF"/>
+</svg>`, 64, 64);
+
+SPRITES.townhall = svgToImg(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <ellipse cx="32" cy="62" rx="28" ry="3" fill="rgba(0,0,0,.12)"/>
+  <!-- Building -->
+  <rect x="6" y="18" width="52" height="44" rx="1" fill="#E8D5A8" stroke="#A0886A" stroke-width="1"/>
+  <!-- Pediment (classical) -->
+  <polygon points="4,20 32,4 60,20" fill="#C4AA78" stroke="#A0886A" stroke-width=".8"/>
+  <!-- Columns -->
+  <rect x="12" y="20" width="4" height="40" rx="1" fill="#D4C4A0"/>
+  <rect x="24" y="20" width="4" height="40" rx="1" fill="#D4C4A0"/>
+  <rect x="36" y="20" width="4" height="40" rx="1" fill="#D4C4A0"/>
+  <rect x="48" y="20" width="4" height="40" rx="1" fill="#D4C4A0"/>
+  <!-- Clock -->
+  <circle cx="32" cy="12" r="5" fill="#FFF" stroke="#8B7355" stroke-width="1"/>
+  <line x1="32" y1="12" x2="32" y2="9" stroke="#333" stroke-width=".8"/>
+  <line x1="32" y1="12" x2="35" y2="13" stroke="#333" stroke-width=".6"/>
+  <!-- Dutch flag -->
+  <rect x="27" y="22" width="10" height="2" fill="#E63946"/>
+  <rect x="27" y="24" width="10" height="2" fill="#FFF"/>
+  <rect x="27" y="26" width="10" height="2" fill="#1D3557"/>
+  <!-- Door -->
+  <rect x="26" y="44" width="12" height="18" rx="2" fill="#7B5B3A"/>
+  <rect x="27" y="45" width="10" height="8" rx="1" fill="#8B6B4A" opacity=".6"/>
+  <circle cx="35" cy="54" r="1" fill="#D4A84B"/>
+  <!-- Windows -->
+  <rect x="14" y="32" width="8" height="10" rx="1" fill="#D4E6F1" stroke="#A0886A" stroke-width=".5"/>
+  <rect x="42" y="32" width="8" height="10" rx="1" fill="#D4E6F1" stroke="#A0886A" stroke-width=".5"/>
+</svg>`, 64, 64);
+
+// ═══ TILE DRAWING ═══
+const grassColors=[[62,130,50],[75,148,58],[68,140,55],[80,160,65]];
+const dirtColors=[[170,140,100],[160,130,90],[180,150,110]];
+
+function drawTile(x,y,t){
+  const n=ns(x,y),n2=ns(x+99,y+77);
+  const px=0,py=0;
+  switch(t){
+    case TT.G:{
+      const gc=grassColors[Math.floor(n*4)];
+      cx.fillStyle=`rgb(${gc[0]+n2*15|0},${gc[1]+n2*20|0},${gc[2]+n2*10|0})`;
+      cx.fillRect(px,py,T,T);
+      if(n>.55){cx.fillStyle=`rgb(${gc[0]-10|0},${gc[1]+25|0},${gc[2]-5|0})`;cx.fillRect(px+n*20,py+n2*18,2,5);cx.fillRect(px+n2*22+4,py+n*14+3,2,4);}
+      if(n2>.75){cx.fillStyle=['#ff7','#f9f','#fbb','#bef'][n*4|0];cx.beginPath();cx.arc(px+10+n*14,py+8+n2*14,2,0,6.28);cx.fill();}
+      break;}
+    case TT.D:{
+      const dc=dirtColors[n*3|0];
+      cx.fillStyle=`rgb(${dc[0]+n2*15|0},${dc[1]+n2*10|0},${dc[2]+n2*8|0})`;
+      cx.fillRect(px,py,T,T);
+      cx.fillStyle='rgba(0,0,0,.08)';cx.beginPath();cx.arc(px+8+n*16,py+12+n2*10,2+n,0,6.28);cx.fill();
+      break;}
+    case TT.R:{
+      cx.fillStyle=`rgb(${120+n*12|0},${115+n*8|0},${108+n*6|0})`;cx.fillRect(px,py,T,T);
+      cx.fillStyle='rgba(0,0,0,.08)';cx.fillRect(px,py,T,2);cx.fillRect(px,py+T-2,T,2);
+      if(x%3===0){cx.fillStyle='rgba(255,255,200,.15)';cx.fillRect(px+10,py+14,12,3);}
+      break;}
+    case TT.W:{
+      const wv=cycle*.12+x*.5+y*.3;
+      cx.fillStyle=`rgb(${40+n*10|0},${100+Math.sin(wv)*15|0},${160+Math.sin(wv+1)*20|0})`;
+      cx.fillRect(px,py,T,T);
+      cx.fillStyle=`rgba(180,220,255,${.08+Math.sin(wv*2)*.06})`;
+      cx.fillRect(px+((cycle*2+x*3)%24),py+6+Math.sin(wv)*4,8,2);
+      cx.fillRect(px+((cycle+x*5)%20),py+20+Math.cos(wv)*3,6,2);
+      break;}
+    case TT.BR:{
+      cx.fillStyle='#8B7355';cx.fillRect(px,py,T,T);cx.fillStyle='#7A6348';cx.fillRect(px,py,T,3);cx.fillRect(px,py+T-3,T,3);
+      cx.fillStyle='#6B5540';for(let i=0;i<4;i++)cx.fillRect(px+i*8+1,py+8,6,2);
+      break;}
+    case TT.TR:{
+      drawTile(x,y,TT.G);
+      cx.fillStyle='rgba(0,0,0,.12)';cx.beginPath();cx.ellipse(px+16,py+28,10,4,0,0,6.28);cx.fill();
+      cx.fillStyle=`rgb(${100+n*30|0},${70+n*20|0},${40+n*10|0})`;
+      cx.fillRect(px+13,py+18,6,12);
+      cx.fillStyle=`rgb(${35+n*15|0},${90+n*30|0},${30+n*10|0})`;
+      cx.beginPath();cx.arc(px+16,py+12,12,0,6.28);cx.fill();
+      cx.fillStyle=`rgb(${45+n*10|0},${110+n*25|0},${35+n*8|0})`;
+      cx.beginPath();cx.arc(px+11,py+9,7,0,6.28);cx.fill();
+      cx.beginPath();cx.arc(px+21,py+13,6,0,6.28);cx.fill();
+      cx.fillStyle=`rgb(${60+n*15|0},${125+n*20|0},${45+n*10|0})`;
+      cx.beginPath();cx.arc(px+15,py+7,4,0,6.28);cx.fill();
+      break;}
+    case TT.H:{
+      drawTile(x,y,TT.G);
+      const hi=SPRITES.house[(n*4|0)%4];
+      if(hi.complete) cx.drawImage(hi,px,py,T,T);
+      break;}
+    case TT.GP:{
+      drawTile(x,y,TT.G);
+      if(SPRITES.gp.complete) cx.drawImage(SPRITES.gp,px,py,T,T);
+      break;}
+    case TT.HO:{
+      drawTile(x,y,TT.G);
+      if(SPRITES.hospital.complete) cx.drawImage(SPRITES.hospital,px,py,T,T);
+      break;}
+    case TT.PK:{
+      cx.fillStyle=`rgb(${55+n*10|0},${135+n*25|0},${45+n*10|0})`;cx.fillRect(px,py,T,T);
+      if(n>.4){cx.fillStyle=`rgb(${65},${155+n*15|0},${55})`;cx.beginPath();cx.arc(px+8+n*16,py+10+n2*12,4,0,6.28);cx.fill();}
+      if(n2>.65){cx.fillStyle='#ff0';cx.beginPath();cx.arc(px+14+n*8,py+18+n2*6,2,0,6.28);cx.fill();}
+      break;}
+    case TT.TH:{
+      drawTile(x,y,TT.G);
+      if(SPRITES.townhall.complete) cx.drawImage(SPRITES.townhall,px,py,T,T);
+      break;}
+  }
+}
+
+// ═══ CHARACTER SYSTEM — Pokemon Gen3 Overworld Style ═══
+// Chibi proportions: big head (~60% of height), small body, clean pixel look
+
+const LOOKS = {
+  'hendrik': { skin:'#D4A574', hair:'#A0A0A0', hType:0, shirt:'#5A7A4A', pants:'#4A3A2A', coat:null },
+  'maria':   { skin:'#E0C0A0', hair:'#D0D0D0', hType:1, shirt:'#8A6AA8', pants:'#5A4A6A', coat:null },
+  'jan':     { skin:'#B87848', hair:'#1A1A1A', hType:2, shirt:'#3A6A8A', pants:'#2A3A4A', coat:null },
+  'sophie':  { skin:'#E0C0A0', hair:'#8B4513', hType:3, shirt:'#C06080', pants:'#4A3A5A', coat:null },
+  'piet':    { skin:'#D4A574', hair:'#B0B0B0', hType:4, shirt:'#7A5A3A', pants:'#3A2A1A', coat:null },
+  'gp1':     { skin:'#E0C0A0', hair:'#904828', hType:2, shirt:'#FFFFFF', pants:'#2A3A4A', coat:'#FFFFFF' },
+  'gp2':     { skin:'#B87848', hair:'#1A1210', hType:5, shirt:'#FFFFFF', pants:'#2A3A4A', coat:'#FFFFFF' },
+  's1':      { skin:'#D4A574', hair:'#2A2A2A', hType:2, shirt:'#4888B8', pants:'#2A3040', coat:'#4888B8' },
+  's2':      { skin:'#906838', hair:'#0A0A0A', hType:6, shirt:'#4888B8', pants:'#2A3040', coat:'#4888B8' },
+  'n1':      { skin:'#E0C0A0', hair:'#C87030', hType:7, shirt:'#4A8A4A', pants:'#5A4A3A', coat:null },
+  'n2':      { skin:'#7A4A28', hair:'#0A0A0A', hType:8, shirt:'#8A50A0', pants:'#3A2A4A', coat:null },
+  'n3':      { skin:'#C09060', hair:'#1A1A1A', hType:9, shirt:'#E0D8C8', pants:'#7A6A5A', coat:null },
+  'n4':      { skin:'#A86838', hair:'#0A0A0A', hType:3, shirt:'#C04838', pants:'#4A3A2A', coat:null },
+  'n5':      { skin:'#D4A574', hair:'#4A3020', hType:2, shirt:'#3878A0', pants:'#4A4038', coat:null },
+  'n6':      { skin:'#E0C0A0', hair:'#6A3020', hType:10,shirt:'#D05868', pants:'#3A3A5A', coat:null },
+  'n7':      { skin:'#D4A574', hair:'#E0E0E0', hType:0, shirt:'#6A5A4A', pants:'#3A2A1A', coat:null },
+  'n8':      { skin:'#B87848', hair:'#3A2A1A', hType:11,shirt:'#58A868', pants:'#4A4A4A', coat:null },
+};
+
+// Pre-render each character to offscreen canvases — 3 walk frames each
+const charCanvases = {};
+const CHAR_PX = 48; // higher res for crisp scaling
+
+function renderCharToCanvas(id, walkFrame) {
+  // walkFrame: 0=stand, 1=left step, 2=right step
+  const look = LOOKS[id];
+  if(!look) return null;
+  const c = document.createElement('canvas');
+  c.width = CHAR_PX; c.height = CHAR_PX;
+  const g = c.getContext('2d');
+  const u = CHAR_PX / 24; // unit: 24 logical units
+  
+  const px = (x,y,w,h,col) => { g.fillStyle=col; g.fillRect(Math.round(x*u),Math.round(y*u),Math.round(w*u),Math.round(h*u)); };
+  
+  // === LEGS (walk animation) ===
+  const legY = 16;
+  if(walkFrame === 0) {
+    // Standing — legs side by side
+    px(7,legY,3,4, look.pants);
+    px(12,legY,3,4, look.pants);
+    px(7,legY+4,3,1, '#2A1A0A');
+    px(12,legY+4,3,1, '#2A1A0A');
+  } else if(walkFrame === 1) {
+    // Left step — left leg forward, right leg back
+    px(7,legY,3,5, look.pants);
+    px(12,legY+1,3,3, look.pants);
+    px(7,legY+5,3,1, '#2A1A0A');
+    px(12,legY+4,3,1, '#2A1A0A');
+  } else {
+    // Right step — right leg forward, left leg back
+    px(7,legY+1,3,3, look.pants);
+    px(12,legY,3,5, look.pants);
+    px(7,legY+4,3,1, '#2A1A0A');
+    px(12,legY+5,3,1, '#2A1A0A');
+  }
+  
+  // === BODY ===
+  px(6,10,10,6, look.shirt); // torso
+  px(4,11,2,4, look.shirt); // left arm
+  px(16,11,2,4, look.shirt); // right arm
+  px(4,15,2,1, look.skin); // left hand
+  px(16,15,2,1, look.skin); // right hand
+  // Arm swing during walk
+  if(walkFrame === 1) { px(4,10,2,6, look.shirt); px(4,16,2,1, look.skin); px(16,12,2,3, look.shirt); }
+  if(walkFrame === 2) { px(4,12,2,3, look.shirt); px(16,10,2,6, look.shirt); px(16,16,2,1, look.skin); }
+  // Coat for doctors
+  if(look.coat) {
+    px(3,10,3,7, look.coat); px(16,10,3,7, look.coat);
+    px(7,10,1,6, '#D0D0D8'); px(14,10,1,6, '#D0D0D8');
+  }
+  
+  // === HEAD ===
+  px(5,2,12,10, look.skin); // main face
+  px(4,3,14,8, look.skin); // wider
+  px(7,1,8,1, look.skin); // top
+  
+  // Eyes — big Pokemon-style
+  px(6,5,4,4, '#FFFFFF'); // left white
+  px(12,5,4,4, '#FFFFFF'); // right white
+  px(8,6,2,3, '#1A1A2A'); // left pupil
+  px(14,6,2,3, '#1A1A2A'); // right pupil
+  px(6,5,4,1, '#1A1A2A'); // left eyelid
+  px(12,5,4,1, '#1A1A2A'); // right eyelid
+  px(9,6,1,1, '#FFFFFF'); // left highlight
+  px(15,6,1,1, '#FFFFFF'); // right highlight
+  
+  // Mouth
+  px(9,10,4,1, '#C08070');
+  
+  // Hair
+  switch(look.hType) {
+    case 0: px(4,0,14,4,look.hair);px(4,0,2,6,look.hair);px(16,0,2,6,look.hair);break;
+    case 1: px(4,0,14,4,look.hair);px(3,2,2,6,look.hair);px(17,2,2,6,look.hair);px(8,-1,6,2,look.hair);break;
+    case 2: px(4,0,14,4,look.hair);px(4,0,2,7,look.hair);px(16,0,2,7,look.hair);break;
+    case 3: px(4,0,14,3,look.hair);px(3,1,2,10,look.hair);px(17,1,2,10,look.hair);px(3,11,3,3,look.hair);px(16,11,3,3,look.hair);break;
+    case 4: px(3,-1,16,3,'#5A4030');px(5,-2,12,2,'#5A4030');px(4,2,14,2,look.hair);px(4,2,2,6,look.hair);px(16,2,2,6,look.hair);break;
+    case 5: px(4,0,14,4,look.hair);px(3,1,3,8,look.hair);px(16,1,3,8,look.hair);break;
+    case 6: px(3,0,16,4,look.hair);px(2,2,3,8,look.hair);px(17,2,3,8,look.hair);px(3,0,16,1,'#C83030');break;
+    case 7: px(4,0,14,4,look.hair);px(4,0,2,6,look.hair);px(16,0,2,6,look.hair);px(7,-1,2,2,look.hair);px(11,-1,2,2,look.hair);px(15,-1,2,2,look.hair);break;
+    case 8: px(3,-1,16,5,look.hair);px(2,0,3,8,look.hair);px(17,0,3,8,look.hair);px(4,-2,14,2,look.hair);break;
+    case 9: px(3,0,16,3,'#FFF');px(2,1,3,9,'#FFF');px(17,1,3,9,'#FFF');px(3,0,16,1,'#C83030');px(3,3,16,1,'#C83030');break;
+    case 10: px(4,0,14,4,look.hair);px(3,1,3,7,look.hair);px(16,1,3,7,look.hair);px(3,8,2,6,look.hair);px(17,8,2,6,look.hair);break;
+    case 11: px(4,0,14,4,look.hair);px(4,0,2,6,look.hair);px(16,0,2,6,look.hair);px(7,-2,8,3,look.hair);break;
+  }
+  
+  // 1px dark outline — use a silhouette copy to avoid self-draw artifacts
+  const outlineSrc = document.createElement('canvas');
+  outlineSrc.width = CHAR_PX; outlineSrc.height = CHAR_PX;
+  const og = outlineSrc.getContext('2d');
+  og.drawImage(c, 0, 0);
+  og.globalCompositeOperation = 'source-in';
+  og.fillStyle = 'rgba(20,10,5,.5)';
+  og.fillRect(0, 0, CHAR_PX, CHAR_PX);
+  g.globalCompositeOperation = 'destination-over';
+  g.drawImage(outlineSrc, -1, 0); g.drawImage(outlineSrc, 1, 0);
+  g.drawImage(outlineSrc, 0, -1); g.drawImage(outlineSrc, 0, 1);
+  g.globalCompositeOperation = 'source-over';
+  
+  return c;
+}
+
+// Ghost versions are now generated in initCharSprites()
+
+// Init all characters — 3 walk frames + ghost versions
+function initCharSprites() {
+  for(const id in LOOKS) {
+    charCanvases[id+'_0'] = renderCharToCanvas(id, 0); // stand
+    charCanvases[id+'_1'] = renderCharToCanvas(id, 1); // left step
+    charCanvases[id+'_2'] = renderCharToCanvas(id, 2); // right step
+    // Ghost versions
+    for(let f=0;f<3;f++){
+      const src = charCanvases[id+'_'+f];
+      if(!src) continue;
+      const c = document.createElement('canvas');
+      c.width = CHAR_PX; c.height = CHAR_PX;
+      const g = c.getContext('2d');
+      g.filter = 'grayscale(100%) brightness(1.3)';
+      g.globalAlpha = 0.4;
+      g.drawImage(src, 0, 0);
+      charCanvases[id+'_ghost_'+f] = c;
+    }
+  }
+}
+
+// ═══ CHARACTER DRAWING ═══
+function drawAgent(e){
+  const worldW=mapImgW, worldH=mapImgH;
+  const wx=e.x*worldW, wy=e.y*worldH;
+  const sx=(wx-camX)*zoom, sy=(wy-camY)*zoom;
+  const s=zoom;
+  const isG=e.hp<=0;
+  const isMoving = Math.abs(e.x - e.tx) > .002 || Math.abs(e.y - e.ty) > .002;
+  // Walk cycle synced to distance walked — slower cadence
+  const walkPhase = isMoving ? Math.floor((e.walkDist || 0) * 30) % 4 : 0;
+  const walkFrameIdx = [0,1,0,2][walkPhase];
+  
+  cx.save();
+  const charSize = 28 * s;
+  const drawX = sx - charSize/2;
+  const drawY = sy - charSize;
+  
+  // Shadow on ground
+  cx.fillStyle = 'rgba(0,0,0,.22)';
+  cx.beginPath(); cx.ellipse(sx, sy, charSize*.32, charSize*.07, 0, 0, 6.28); cx.fill();
+  
+  // Pick the right walk frame
+  const prefix = isG ? e.id+'_ghost_' : e.id+'_';
+  const sprite = charCanvases[prefix + walkFrameIdx] || charCanvases[e.id+'_0'];
+  if(sprite) {
+    cx.drawImage(sprite, drawX, drawY, charSize, charSize);
+  }
+  
+  // Selected ring
+  if(selectedAgent===e.id){
+    cx.strokeStyle='#FFB300'; cx.lineWidth=2*s; cx.setLineDash([3*s,2*s]);
+    cx.beginPath(); cx.ellipse(sx, sy-charSize*.3, charSize*.45, charSize*.55, 0, 0, 6.28); cx.stroke();
+    cx.setLineDash([]);
+  }
+  
+  // HP bar for sick agents
+  if((e.type==='patient'||e.type==='citizen') && e.conditions?.length > 0 && !isG){
+    const hp=e.hp, bw=20*s, bh=3*s;
+    cx.fillStyle='rgba(0,0,0,.6)';
+    cx.fillRect(sx-bw/2-1, drawY - 5*s, bw+2, bh+2);
+    cx.fillStyle = hp>50 ? '#4caf50' : hp>20 ? '#ff9800' : '#e53935';
+    cx.fillRect(sx-bw/2, drawY - 4*s, bw*(hp/100), bh);
+  }
+  
+  // Name
+  if(e.name && (zoom > .6 || selectedAgent===e.id)){
+    const fontSize = Math.max(7, 8*s);
+    cx.font = `600 ${fontSize}px Inter,sans-serif`;
+    cx.textAlign = 'center';
+    cx.fillStyle = 'rgba(0,0,0,.5)';
+    cx.fillText(e.name, sx+1, drawY - 7*s + 1);
+    cx.fillStyle = isG ? '#888' : '#fff';
+    cx.fillText(e.name, sx, drawY - 7*s);
+  }
+  
+  // Speech/thought bubble
+  e.bubbleTimer--;
+  if(e.bubbleTimer > 0 || e.state==='critical' || e.state==='overloaded'){
+    const icon = e.state==='critical' ? '❗' : e.state==='overloaded' ? '⚠' : e.waitWeeks>10 ? '❓' : '💬';
+    cx.font = `${Math.max(10,12*s)}px sans-serif`; cx.textAlign = 'center';
+    cx.fillText(icon, sx + charSize*.4, drawY - 2*s);
+  }
+  
+  cx.restore();
+  e.frame++;
+}
+
+// ── Building labels ──
+function drawLabels(){
+  const worldW=mapImgW, worldH=mapImgH;
+  cx.save();
+  cx.font=`600 ${Math.max(9,11*zoom)}px Inter,sans-serif`;
+  cx.textAlign='center';
+  [[.37,.04,'Cammelot Hospital','#c62828'],
+   [.62,.07,'GP Collins','#2e7d32'],
+   [.22,.50,'GP Bennett','#2e7d32'],
+   [.48,.42,'Town Park','#2e7d32']].forEach(([fx,fy,txt,col])=>{
+    const sx=(fx*worldW-camX)*zoom, sy=(fy*worldH-camY)*zoom;
+    cx.fillStyle='rgba(0,0,0,.4)';cx.fillText(txt,sx+1,sy+1);
+    cx.fillStyle=col;cx.fillText(txt,sx,sy);
+  });
+  cx.restore();
+}
+
+// ── Queue visualization ──
+function drawQueues(){
+  const worldW=mapImgW, worldH=mapImgH;
+  const maxWait=Math.max(...agents.filter(a=>a.type==='patient').map(a=>a.waitWeeks));
+  if(maxWait<=4)return;
+  const qLen=Math.min(Math.floor(maxWait-2),15);
+  // Queue appears near hospital (top-center of map)
+  for(let i=0;i<qLen;i++){
+    const fx=.30-i*.015, fy=.18+(i%3)*.012;
+    const sx=(fx*worldW-camX)*zoom, sy=(fy*worldH-camY)*zoom;
+    cx.fillStyle='rgba(0,0,0,.1)';cx.beginPath();cx.ellipse(sx,sy+10*zoom,5*zoom,2*zoom,0,0,6.28);cx.fill();
+    cx.fillStyle=['#e9c46a','#e76f51','#a8dadc','#f4a261','#c8b0d0'][i%5];
+    cx.beginPath();cx.ellipse(sx,sy,4*zoom,6*zoom,0,0,6.28);cx.fill();
+    cx.fillStyle='#fcd5b4';cx.beginPath();cx.arc(sx,sy-7*zoom,4*zoom,0,6.28);cx.fill();
+  }
+}
+
+// ═══ MAIN RENDER ═══
+function render(){
+  const gd=document.getElementById('game-wrap');
+  cv.width=gd.clientWidth;cv.height=gd.clientHeight;
+  
+  // World size = image size (or default)
+  const worldW=mapImgW, worldH=mapImgH;
+  
+  // Auto-fit camera to show full map
+  const fitZoom=Math.min(cv.width/worldW,cv.height/worldH);
+  if(!dragStart && !userZoomed){
+    zoom=fitZoom;
+  }
+  // Clamp zoom — never smaller than what fills the screen completely
+  const fillZoom = Math.max(cv.width/worldW, cv.height/worldH); // fills entire viewport, no green
+  zoom = Math.max(fillZoom, zoom);
+  
+  // Center the map, clamp camera so you NEVER see outside the map
+  if(!dragStart && !userZoomed){
+    camX = (worldW - cv.width/zoom) / 2;
+    camY = (worldH - cv.height/zoom) / 2;
+  }
+  // Hard clamp: camera can never show outside map bounds
+  const viewW = cv.width / zoom;
+  const viewH = cv.height / zoom;
+  camX = Math.max(0, Math.min(worldW - viewW, camX));
+  camY = Math.max(0, Math.min(worldH - viewH, camY));
+  
+  cx.clearRect(0,0,cv.width,cv.height);
+  
+  // Draw background — either loaded image or green fallback
+  if(mapLoaded){
+    const dx=-camX*zoom, dy=-camY*zoom;
+    cx.drawImage(mapImg, dx, dy, worldW*zoom, worldH*zoom);
+  } else {
+    // Fallback: dark background with message
+    cx.fillStyle='#1a1a1a';
+    cx.fillRect(0,0,cv.width,cv.height);
+    cx.fillStyle='rgba(255,255,255,.5)';
+    cx.font='16px Inter, sans-serif';
+    cx.textAlign='center';
+    cx.fillText('Drag & drop your map image here',cv.width/2,cv.height/2-10);
+    cx.font='12px Inter, sans-serif';
+    cx.fillText('or place map.png in /assets/',cv.width/2,cv.height/2+14);
+  }
+  
+  // SOLL green connection lines
+  if(mode==='SOLL'){
+    cx.strokeStyle='rgba(76,175,80,.25)';cx.lineWidth=2.5*zoom;cx.setLineDash([6*zoom,4*zoom]);
+    const nodes=agents.filter(a=>a.type==='gp'||a.type==='specialist');
+    for(let i=0;i<nodes.length;i++)for(let j=i+1;j<nodes.length;j++){
+      const ax=(nodes[i].x*worldW-camX)*zoom, ay=(nodes[i].y*worldH-camY)*zoom;
+      const bx=(nodes[j].x*worldW-camX)*zoom, by=(nodes[j].y*worldH-camY)*zoom;
+      cx.beginPath();cx.moveTo(ax,ay);cx.lineTo(bx,by);cx.stroke();
+    }
+    cx.setLineDash([]);
+  }
+  
+  // Frame-rate independent movement
+  const now = performance.now();
+  const dt = Math.min((now - lastFrameTime) / 1000, 0.1); // seconds, capped
+  lastFrameTime = now;
+
+  // Agent movement — state-driven pathfinding
+  agents.forEach(e=>{
+    if(e.insideBuilding) return;
+    if(e.type==='specialist' || e.type==='gp') return;
+
+    // Idle pause — stand still between walks
+    if(e.idleUntil && now < e.idleUntil) return;
+
+    const distToTarget = Math.sqrt((e.x-e.tx)**2 + (e.y-e.ty)**2);
+    if(distToTarget < .004){
+      if(e.path && e.pathIdx < e.path.length) {
+        const wp = ROAD_WAYPOINTS[e.path[e.pathIdx]];
+        e.tx = wp.x; e.ty = wp.y;
+        e.pathIdx++;
+      } else {
+        // Path complete
+        e.pathComplete = true;
+        // If going somewhere specific, wait for tick() to handle arrival
+        if(e.behaviorState==='going_to_gp'||e.behaviorState==='going_to_hospital') return;
+        // Default roaming: idle then pick new random destination
+        e.idleUntil = now + 2000 + Math.random() * 6000;
+        const fromIdx = nearestWaypointIdx(e.x, e.y);
+        const toIdx = Math.floor(Math.random() * ROAD_WAYPOINTS.length);
+        if(fromIdx !== toIdx) {
+          const p = findWaypointPath(fromIdx, toIdx);
+          if(p && p.length > 1) {
+            e.path = p; e.pathIdx = 1; e.pathComplete = false;
+            const wp = ROAD_WAYPOINTS[p[1]];
+            e.tx = wp.x; e.ty = wp.y;
+          }
+        }
+        return;
+      }
+    }
+
+    // Walk toward current waypoint
+    const dx = e.tx - e.x, dy = e.ty - e.y;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    if(dist > .002) {
+      const speed = (e.hp <= 0 ? 0.010 : 0.025) * dt;
+      const step = Math.min(speed, dist);
+      e.x += (dx/dist) * step;
+      e.y += (dy/dist) * step;
+      e.walkDist = (e.walkDist || 0) + step;
+    }
+
+    // Safety: teleport out of no-walk zones
+    if(isInWater(e.x, e.y)) {
+      const ni = nearestWaypointIdx(e.x, e.y);
+      e.x = ROAD_WAYPOINTS[ni].x; e.y = ROAD_WAYPOINTS[ni].y;
+      e.tx = e.x; e.ty = e.y; e.path = []; e.pathIdx = 0;
+    }
+
+    if(Math.random()<.001) e.bubbleTimer=60;
+  });
+  
+  // Draw only agents that are NOT inside buildings
+  [...agents].filter(a=>!a.insideBuilding).sort((a,b)=>a.y-b.y).forEach(drawAgent);
+}
+
+// ═══ INTERACTION ═══
+
+// Zoom with scroll — clamped to map bounds
+cv.addEventListener('wheel',e=>{
+  e.preventDefault();
+  userZoomed=true;
+  const oldZoom=zoom;
+  const minZoom=Math.max(cv.width/mapImgW, cv.height/mapImgH); // can't zoom out past full map coverage
+  zoom*=e.deltaY<0?1.15:.87;
+  zoom=Math.max(minZoom,Math.min(4,zoom));
+  // Zoom toward mouse
+  const rect=cv.getBoundingClientRect();
+  const mx=e.clientX-rect.left,my=e.clientY-rect.top;
+  camX+=mx/oldZoom-mx/zoom;
+  camY+=my/oldZoom-my/zoom;
+  document.getElementById('zoom-ind').textContent=`Zoom: ${Math.round(zoom*100)}%`;
+},{passive:false});
+
+// Pan with drag
+cv.addEventListener('mousedown',e=>{dragStart={x:e.clientX,y:e.clientY};dragCam={x:camX,y:camY};});
+cv.addEventListener('mousemove',e=>{if(dragStart){camX=dragCam.x-(e.clientX-dragStart.x)/zoom;camY=dragCam.y-(e.clientY-dragStart.y)/zoom;}});
+cv.addEventListener('mouseup',e=>{
+  if(dragStart&&Math.abs(e.clientX-dragStart.x)<5&&Math.abs(e.clientY-dragStart.y)<5){
+    // Click — find agent
+    const rect=cv.getBoundingClientRect();
+    const wx=(e.clientX-rect.left)/zoom+camX;
+    const wy=(e.clientY-rect.top)/zoom+camY;
+    // Convert to fractional coords
+    const fx=wx/mapImgW, fy=wy/mapImgH;
+    let found=null,bestDist=.04;
+    agents.forEach(a=>{
+      const dx=a.x-fx, dy=a.y-fy;
+      const d=Math.sqrt(dx*dx+dy*dy);
+      if(d<bestDist){bestDist=d;found=a;}
+    });
+    if(found){selectAgent(found);}else{selectedAgent=null;showEmptyPanel();}
+  }
+  dragStart=null;
+});
+
+function selectAgent(a){
+  selectedAgent=a.id;
+  const d=document.getElementById('agent-detail');
+  const isPatient=a.type==='patient'||a.type==='citizen';
+
+  // Dynamic thought based on behavioral state
+  let thought=a.thoughts[(a.currentThought||0)%a.thoughts.length];
+  if(a.behaviorState==='going_to_gp') thought="I need to see my doctor. These symptoms worry me...";
+  else if(a.behaviorState==='at_gp') thought="The doctor is examining me. I hope it's treatable.";
+  else if(a.behaviorState==='going_to_hospital') thought=`The GP referred me to a specialist. Week ${Math.round(a.waitWeeks)} of waiting...`;
+  else if(a.behaviorState==='at_hospital') thought="The specialist is treating me. Finally getting real care.";
+  else if(a.behaviorState==='recovering') thought="The treatment is working. I feel a bit stronger each day.";
+  else if(a.behaviorState==='dead') thought="...";
+  a.currentThought=(a.currentThought||0)+1;
+
+  const stateLabels={roaming:'Walking in town',going_to_gp:'Going to GP',at_gp:'At GP consultation',going_to_hospital:'Going to Hospital',at_hospital:'Receiving treatment',recovering:'Recovering',dead:'Deceased'};
+  const stateLabel=stateLabels[a.behaviorState]||a.behaviorState||'Idle';
+
+  let html=`<div class="agent-card">
+    <div class="ac-name">${a.name}</div>
+    <div class="ac-role">${a.type==='gp'?'General Practitioner':a.type==='specialist'?a.role:a.gender==='M'?'Male':'Female'}, Age ${a.age}</div>`;
+
+  if(isPatient){
+    const hp=Math.max(0,Math.round(a.hp));
+    html+=`<div class="ac-section"><h4>Health Status</h4>
+      <div class="hp-outer"><div class="hp-inner ${hp>50?'g':hp>20?'y':hp>0?'r':'d'}" style="width:${hp}%"></div><div class="hp-label">${hp} / 100 HP</div></div>
+      <div class="ac-row"><span class="k">Activity</span><span class="state-badge ${a.behaviorState||'roaming'}">${stateLabel}</span></div>
+      ${a.waitWeeks>0?`<div class="ac-row"><span class="k">Wait time</span><span class="v ${a.waitWeeks>12?'bad':a.waitWeeks>6?'mid':'ok'}">${Math.round(a.waitWeeks*10)/10} weeks</span></div>`:''}
+      ${a.gpName?`<div class="ac-row"><span class="k">GP</span><span class="v">${a.gpName}</span></div>`:''}
+      ${a.healingTicksLeft>0?`<div class="ac-row"><span class="k">Recovery</span><span class="v ok">Healing (${a.healingTicksLeft} ticks)</span></div>`:''}
+      ${a.insideBuilding?`<div class="ac-row"><span class="k">Location</span><span class="v mid">${BUILDINGS.find(b=>b.id===a.insideBuilding)?.label||a.insideBuilding}</span></div>`:''}
+    </div>`;
+    if(a.conditions.length>0){
+      html+=`<div class="ac-section"><h4>Conditions</h4>`;
+      a.conditions.forEach(c=>{
+        html+=`<span class="cond-tag ${c.severity==='mild'?'mild':''}">${c.name} (${c.code}) — ${c.severity}</span>`;
+      });
+      html+=`</div>`;
+    }
+    html+=`<div class="thought">${thought}</div>`;
+    // Action history timeline
+    if(a.actionHistory && a.actionHistory.length>0){
+      html+=`<div class="ac-section" style="margin-top:12px"><h4>History</h4><div class="history-timeline">`;
+      const icons={feeling_sick:'\uD83E\uDD12',entered_gp:'\uD83C\uDFE5',referred:'\uD83D\uDCCB',gp_treated:'\uD83D\uDC8A',entered_hospital:'\uD83C\uDFE8',treated:'\u2705',recovered:'\uD83D\uDCAA',checkup:'\uD83E\uDE7A',died:'\uD83D\uDC7B',worsened:'\u26A0\uFE0F'};
+      const history=[...a.actionHistory].reverse().slice(0,25);
+      history.forEach(h=>{
+        const icon=icons[h.type]||'\uD83D\uDCDD';
+        html+=`<div class="ht-entry"><span class="ht-cycle">C${h.cycle}</span><span class="ht-icon">${icon}</span><span class="ht-text">${h.text}</span><span class="ht-hp">${h.hp}HP</span></div>`;
+      });
+      html+=`</div></div>`;
+    }
+  }else{
+    html+=`<div class="ac-section"><h4>Workload</h4>
+      <div class="ac-row"><span class="k">Admin Burden</span><span class="v bad">${Math.round(M[mode].admin*100)}%</span></div>
+      <div class="ac-row"><span class="k">Sick Leave Rate</span><span class="v bad">${Math.round(M[mode].sick*100)}%</span></div>
+      <div class="ac-row"><span class="k">Status</span><span class="v ${a.state==='overloaded'?'bad':'ok'}">${a.state.charAt(0).toUpperCase()+a.state.slice(1)}</span></div>
+    </div>`;
+    html+=`<div class="thought">${thought}</div>`;
+  }
+
+  html+=`</div>`;
+  d.innerHTML=html;
+}
+
+function showEmptyPanel(){
+  document.getElementById('agent-detail').innerHTML=`<div class="ad-empty"><div class="hint">\uD83D\uDC46</div>Click on a citizen in the town<br>to view their medical dossier,<br>current thoughts, and care pathway.</div>`;
+}
+
+// ═══ HELPER FUNCTIONS ═══
+function addHistory(agent, type, text){
+  if(!agent.actionHistory) agent.actionHistory=[];
+  agent.actionHistory.push({cycle, type, text, hp:Math.max(0,Math.round(agent.hp))});
+  if(agent.actionHistory.length>50) agent.actionHistory.shift();
+}
+
+function sendAgentTo(agent, target){
+  const fromIdx=nearestWaypointIdx(agent.x, agent.y);
+  const toIdx=nearestWaypointIdx(target.x, target.y);
+  if(fromIdx!==toIdx){
+    const p=findWaypointPath(fromIdx, toIdx);
+    if(p && p.length>1){
+      agent.path=p; agent.pathIdx=1; agent.pathComplete=false;
+      const wp=ROAD_WAYPOINTS[p[1]];
+      agent.tx=wp.x; agent.ty=wp.y;
+    } else {
+      agent.x=target.x; agent.y=target.y;
+      agent.tx=target.x; agent.ty=target.y;
+      agent.pathComplete=true;
+    }
+  } else { agent.pathComplete=true; }
+  agent.idleUntil=0;
+}
+
+function initAgentBehaviors(){
+  agents.forEach(e=>{
+    if(e.type==='specialist'||e.type==='gp') return;
+    if(e.insideBuilding==='hospital'){
+      e.behaviorState='at_hospital'; e.stateTimer=5+Math.floor(Math.random()*5);
+    } else if(e.waitWeeks>=10 && e.conditions?.some(c=>c.severity==='severe'||c.severity==='moderate')){
+      e.behaviorState='going_to_hospital';
+      sendAgentTo(e, DESTINATIONS.hospital.entrance);
+      addHistory(e,'referred','Already referred — heading to hospital.');
+    } else if(e.waitWeeks>0 && e.conditions?.length>0 && e.hp<80){
+      e.behaviorState='going_to_gp';
+      sendAgentTo(e, getGPDest(e.gpName).entrance);
+      addHistory(e,'feeling_sick','Not feeling well, going to see the doctor.');
+    }
+  });
+}
+
+// ═══ SIMULATION ═══
+function tick(){
+  cycle++; const p=M[mode];
+  agents.forEach(a=>{
+    if(a.type!=='patient'&&a.type!=='citizen') return;
+
+    // --- DEATH CHECK ---
+    if(a.hp<=0){
+      if(a.state!=='dead'){
+        a.state='dead'; a.behaviorState='dead';
+        a.insideBuilding=null;
+        addHistory(a,'died','The system failed me. I waited too long...');
+        say(a.name,`I waited too long... ${Math.round(a.waitWeeks)} weeks. The system failed me.`,'ghost');
+        say('SYSTEM',`MORTALITY: ${a.name} (${a.age}) — after ${Math.round(a.waitWeeks)} weeks.`,'alert');
+      }
+      return;
+    }
+
+    // === BEHAVIORAL STATE MACHINE ===
+    switch(a.behaviorState){
+
+      case 'roaming': {
+        // Should this agent visit the GP?
+        const hasConds=a.conditions.length>0;
+        const timeSinceGP=cycle-(a.lastGPCycle||-100);
+        const severe=a.conditions.some(c=>c.severity==='severe'||c.severity==='critical');
+        const moderate=a.conditions.some(c=>c.severity==='moderate');
+        const needsGP=hasConds && timeSinceGP>20 && (
+          (severe && a.hp<90) || (moderate && a.hp<75) || (a.hp<60)
+        );
+        if(needsGP){
+          a.behaviorState='going_to_gp'; a.pathComplete=false;
+          addHistory(a,'feeling_sick','I don\'t feel well... I should see '+(a.gpName||'a doctor')+'.');
+          sendAgentTo(a, getGPDest(a.gpName).entrance);
+          a.bubbleTimer=80;
+        }
+        // Slow passive drain for conditions NOT being treated
+        if(hasConds && !a.healingTicksLeft){
+          a.hp=Math.max(0, a.hp - 0.05*p.drain*a.conditions.length);
+        }
+        break;
+      }
+
+      case 'going_to_gp': {
+        if(a.pathComplete){
+          const gpDest=getGPDest(a.gpName);
+          a.insideBuilding=gpDest.building||'gp1_bldg';
+          a.behaviorState='at_gp';
+          a.stateTimer=3+Math.floor(Math.random()*3);
+          a.lastGPCycle=cycle;
+          addHistory(a,'entered_gp','Visiting '+(a.gpName||'the GP')+'. Explaining my symptoms...');
+          say(a.gpName||'GP',`${a.name} has arrived for consultation.`);
+        }
+        break;
+      }
+
+      case 'at_gp': {
+        a.stateTimer--;
+        if(a.stateTimer<=0){
+          const severe=a.conditions.some(c=>c.severity==='severe'||c.severity==='critical');
+          const moderate=a.conditions.some(c=>c.severity==='moderate');
+          if(severe || (moderate && a.hp<60)){
+            // Refer to hospital
+            a.insideBuilding=null; a.behaviorState='going_to_hospital';
+            a.referredToHospital=true; a.pathComplete=false;
+            a.waitWeeks=0;
+            const gpDest=getGPDest(a.gpName);
+            a.x=gpDest.entrance.x; a.y=gpDest.entrance.y;
+            addHistory(a,'referred',(a.gpName||'GP')+' referred me to the hospital. Specialist care needed.');
+            say(a.gpName||'GP',`Referring ${a.name} to hospital — needs specialist care.`);
+            sendAgentTo(a, DESTINATIONS.hospital.entrance);
+          } else if(a.conditions.length>0){
+            // Treat at GP level
+            a.insideBuilding=null; a.behaviorState='recovering';
+            a.healingTicksLeft=12+Math.floor(Math.random()*8);
+            a.waitWeeks=0;
+            a.hp=Math.min(100, a.hp+5);
+            const gpDest=getGPDest(a.gpName);
+            a.x=gpDest.entrance.x; a.y=gpDest.entrance.y;
+            addHistory(a,'gp_treated','GP prescribed medication. Should start feeling better.');
+            say(a.gpName||'GP',`${a.name}: condition manageable. Prescribed treatment.`);
+            a.path=[]; a.pathIdx=0; a.idleUntil=performance.now()+1500;
+          } else {
+            // Healthy checkup
+            a.insideBuilding=null; a.behaviorState='roaming';
+            const gpDest=getGPDest(a.gpName);
+            a.x=gpDest.entrance.x; a.y=gpDest.entrance.y;
+            addHistory(a,'checkup','Clean bill of health!');
+            a.path=[]; a.pathIdx=0; a.idleUntil=performance.now()+1500;
+          }
+        }
+        break;
+      }
+
+      case 'going_to_hospital': {
+        // HP drain while waiting/traveling (the real killer)
+        a.waitWeeks+=0.25/p.ai;
+        if(a.waitWeeks>p.tree){
+          const over=a.waitWeeks-p.tree;
+          a.hp=Math.max(0, a.hp - 0.4*over*(1+p.admin)*p.drain*0.25);
+        }
+        // Passive condition drain
+        a.hp=Math.max(0, a.hp - 0.06*p.drain*a.conditions.length);
+        if(a.pathComplete){
+          a.insideBuilding='hospital'; a.behaviorState='at_hospital';
+          a.stateTimer=5+Math.floor(Math.random()*6);
+          addHistory(a,'entered_hospital','Arrived at hospital. Being seen by specialist.');
+          say('Hospital',`${a.name} admitted. Beginning treatment.`);
+        }
+        break;
+      }
+
+      case 'at_hospital': {
+        a.stateTimer--;
+        a.hp=Math.min(100, a.hp+2.5); // Healing while hospitalized
+        if(a.stateTimer<=0){
+          a.insideBuilding=null; a.behaviorState='recovering';
+          a.healingTicksLeft=15+Math.floor(Math.random()*10);
+          a.waitWeeks=0; a.referredToHospital=false;
+          // Improve condition severity
+          a.conditions.forEach(c=>{
+            if(c.severity==='severe') c.severity='moderate';
+            else if(c.severity==='moderate') c.severity='mild';
+          });
+          const hpGain=15+Math.floor(Math.random()*15);
+          a.hp=Math.min(100, a.hp+hpGain);
+          a.x=DESTINATIONS.hospital.entrance.x; a.y=DESTINATIONS.hospital.entrance.y;
+          addHistory(a,'treated','Treatment complete! Specialist helped. Feeling much better.');
+          say('Hospital',`${a.name} treated & discharged. Recovery underway.`);
+          a.path=[]; a.pathIdx=0; a.idleUntil=performance.now()+1500;
+        }
+        break;
+      }
+
+      case 'recovering': {
+        if(a.healingTicksLeft>0){
+          a.hp=Math.min(100, a.hp+1.2);
+          a.healingTicksLeft--;
+        }
+        if(a.hp>=85 || a.healingTicksLeft<=0){
+          a.behaviorState='roaming';
+          if(a.actionHistory?.length>0 && a.actionHistory[a.actionHistory.length-1].type!=='recovered'){
+            addHistory(a,'recovered','Feeling much better. Grateful for the care.');
+          }
+        }
+        break;
+      }
+
+      case 'dead': return;
+    }
+
+    // Update visual state
+    if(a.hp<=0) a.state='dead';
+    else if(a.hp<=20) a.state='critical';
+    else if(a.hp<=50) a.state='waiting';
+    else if(a.hp<=75) a.state='concerned';
+    else a.state='managed';
+  });
+
+  S.res+=2; S.msgs++; S.waste+=12.43*p.admin;
+
+  // Chat dialogue
+  if(cycle%8===0){
+    const traveling=agents.filter(a=>a.hp>0&&a.behaviorState==='going_to_hospital');
+    if(traveling.length){ const a=traveling[cycle%traveling.length];
+      say(a.name,`Week ${Math.round(a.waitWeeks)}. HP: ${Math.round(a.hp)}/100. Heading to hospital...`);}
+  }
+  if(cycle%10===0){
+    const recovering=agents.filter(a=>a.behaviorState==='recovering');
+    if(recovering.length){ const a=recovering[cycle%recovering.length];
+      say(a.name,`Recovery going well. HP: ${Math.round(a.hp)}/100.`);}
+  }
+  if(cycle%12===0){
+    say('Dr. Collins',`Admin load ${Math.round(p.admin*100)}%. ${p.admin>0.2?'Too much paperwork!':'Manageable.'}`);
+  }
+
+  updateUI();
+  if(selectedAgent){const a=agents.find(e=>e.id===selectedAgent);if(a)selectAgent(a);}
+}
+
+function batch(n){for(let i=0;i<n;i++)tick();}
+function autoRun(){if(autoTimer){clearInterval(autoTimer);autoTimer=null;return;}autoTimer=setInterval(tick,100);}
+function resetSim(){
+  if(autoTimer){clearInterval(autoTimer);autoTimer=null;}
+  cycle=0; S={res:6,msgs:0,waste:0};
+  agents.forEach(a=>{
+    a.hp=a._initHP; a.waitWeeks=a._initWaitWeeks;
+    a.conditions=JSON.parse(JSON.stringify(a._initConditions));
+    a.state=a._initState; a.insideBuilding=a._initInsideBuilding;
+    a.x=a._initX; a.y=a._initY; a.tx=a.x; a.ty=a.y;
+    a.behaviorState=a.insideBuilding==='hospital'?'at_hospital':'roaming';
+    a.stateTimer=a.insideBuilding==='hospital'?5:0;
+    a.actionHistory=[]; a.healingTicksLeft=0;
+    a.pathComplete=false; a.lastGPCycle=-100;
+    a.referredToHospital=false;
+    a.path=[]; a.pathIdx=0;
+    a.idleUntil=performance.now()+Math.random()*5000;
+  });
+  selectedAgent=null; showEmptyPanel();
+  document.getElementById('chatlog').innerHTML='<div class="cm sys"><span class="w">[SYSTEM]</span> <span class="t">Reset. Click a citizen to inspect.</span></div>';
+  updateUI();
+}
+
+function setMode(m){
+  mode=m;
+  document.getElementById('bi').className=m==='IST'?'a-ist':'';
+  document.getElementById('bs').className=m==='SOLL'?'a-soll':'';
+  document.body.classList.toggle('soll',m==='SOLL');
+  say('SYSTEM',m==='IST'?'IST mode — Current crisis (C_eff 62%)':'SOLL mode — AI-native future (C_eff 83%)','sys');
+  document.getElementById('hE').textContent=m==='IST'?'62%':'83%';
+  document.getElementById('hE').className='n '+(m==='IST'?'r':'g');
+  document.getElementById('oA').textContent=Math.round(M[m].admin*100)+'%';
+  document.getElementById('oS').textContent=Math.round(M[m].sick*100)+'%';
+  document.getElementById('oT').textContent=M[m].tree+' weeks';
+}
+
+function say(w,t,c=''){
+  const d=document.getElementById('chatlog');
+  d.innerHTML+=`<div class="cm ${c}"><span class="w">[${w}]</span> <span class="t">${t}</span></div>`;
+  d.scrollTop=d.scrollHeight;
+  while(d.children.length>40)d.removeChild(d.firstChild);
+}
+
+function updateUI(){
+  document.getElementById('hC').textContent=cycle;
+  const ghosts=agents.filter(a=>a.hp<=0).length;
+  document.getElementById('hG').textContent=ghosts;
+  document.getElementById('hG').className='n'+(ghosts>0?' r':'');
+  const avgWait=Math.round(agents.filter(a=>a.waitWeeks>0).reduce((s,a)=>s+a.waitWeeks,0)/Math.max(1,agents.filter(a=>a.waitWeeks>0).length));
+  document.getElementById('hW').textContent=avgWait+'w';
+  document.getElementById('hW').className='n'+(avgWait>12?' r':avgWait>6?' y':'');
+  document.getElementById('oF').textContent=S.res;
+  document.getElementById('oW').textContent='€'+Math.round(S.waste).toLocaleString();
+  document.getElementById('sF').textContent=S.res;
+  document.getElementById('sM').textContent=S.msgs;
+}
+
+// ═══ ANIMATION LOOP ═══
+function loop(){render();requestAnimationFrame(loop);}
+
+updateUI();initCharSprites();buildWaypointGraph();initAgentBehaviors();loop();
+setTimeout(()=>document.getElementById('load').classList.add('go'),1400);
+window.addEventListener('resize',()=>{userZoomed=false;zoom=1;render();});
+</script>
+</body>
+</html>

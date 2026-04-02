@@ -1,0 +1,15 @@
+{
+  "name": "cammelot",
+  "version": "0.1.0",
+  "description": "Agentic Applied Research Sandbox — A multi-agent healthcare simulation",
+  "main": "src/orchestrator/team_lead.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/orchestrator/team_lead.js",
+    "sim": "node src/orchestrator/simulation_loop.js",
+    "frontend": "node src/frontend/server.js",
+    "test": "node --test tests/"
+  },
+  "keywords": ["multi-agent", "healthcare", "simulation", "FHIR", "A2A"],
+  "license": "MIT"
+}
