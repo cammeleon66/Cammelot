@@ -380,6 +380,15 @@ let cycle=0,mode='IST',autoTimer=null;
 const M={IST:{admin:.3,sick:.08,tree:12,ai:1,drain:1},SOLL:{admin:.05,sick:.05,tree:4,ai:1.34,drain:.3}};
 let S={res:6,msgs:0,waste:0};
 
+// ── Sprint 2 Constants ──
+const MAX_GP_CONSULTS_PER_DAY = 30; // NZa standard
+const MAX_HOSPITAL_BEDS = 8;
+const SPECIALIST_CAPACITY = {
+  cardiology: { weeklySlots:12, tickSlots:3 },
+  pulmonology: { weeklySlots:10, tickSlots:3 },
+};
+const HOSPITAL_DISCHARGED = []; // last 10 discharged patients
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // DISEASE_DB — Comprehensive Clinical Catalog (Epic 1.1)
 // Sources: RIVM VTV-2024, CBS 2024, disease_engine.js baseTransitions,
@@ -962,19 +971,29 @@ const INFRASTRUCTURE_AGENTS = [
   {id:'gp1',x:.61,y:.14,type:'gp',name:'Dr. Collins',age:52,gender:'M',role:'General Practitioner',
    conditions:[],hp:100,state:'working',waitWeeks:0,insideBuilding:'gp1_bldg',
    thoughts:['30% of my day is paperwork. I became a doctor to help people.','My waiting room is full again.','If only I had more time per patient.'],
-   color:'#40a870'},
+   color:'#40a870',
+   patientsSeenToday:0,referralsMade:0,burnoutLevel:0,currentPatient:null,
+   queue:[],totalPatientsSeen:0,actionHistory:[]},
   {id:'gp2',x:.22,y:.42,type:'gp',name:'Dr. Bennett',age:47,gender:'F',role:'General Practitioner',
    conditions:[],hp:100,state:'working',waitWeeks:0,insideBuilding:null,
    thoughts:['Another referral denied. The specialist queue is 12 weeks.','I need to finish 50 FHIR logs before lunch.','My colleagues are burning out.'],
-   color:'#40a870'},
+   color:'#40a870',
+   patientsSeenToday:0,referralsMade:0,burnoutLevel:0,currentPatient:null,
+   queue:[],totalPatientsSeen:0,actionHistory:[]},
   {id:'s1',x:.34,y:.12,type:'specialist',name:'Dr. Ashworth',age:55,gender:'M',role:'Cardiologist',
+   specialty:'cardiology',
    conditions:[],hp:100,state:'overloaded',waitWeeks:0,insideBuilding:'hospital',
    thoughts:['My queue is 12 weeks deep. Patients are deteriorating while waiting.','We need more capacity, not more paperwork.'],
-   color:'#4090d0'},
+   color:'#4090d0',
+   patientsSeenToday:0,referralsMade:0,burnoutLevel:0,currentPatient:null,
+   queue:[],totalPatientsSeen:0,actionHistory:[]},
   {id:'s2',x:.40,y:.12,type:'specialist',name:'Dr. Pryce',age:48,gender:'F',role:'Pulmonologist',
+   specialty:'pulmonology',
    conditions:[],hp:100,state:'overloaded',waitWeeks:0,insideBuilding:'hospital',
    thoughts:['COPD patients like James cannot wait 14 weeks.','The Treeknorm is being violated daily.'],
-   color:'#4090d0'},
+   color:'#4090d0',
+   patientsSeenToday:0,referralsMade:0,burnoutLevel:0,currentPatient:null,
+   queue:[],totalPatientsSeen:0,actionHistory:[]},
 ];
 
 // Spawn procedural population + add infrastructure
@@ -1613,12 +1632,16 @@ cv.addEventListener('mousedown',e=>{dragStart={x:e.clientX,y:e.clientY};dragCam=
 cv.addEventListener('mousemove',e=>{if(dragStart){camX=dragCam.x-(e.clientX-dragStart.x)/zoom;camY=dragCam.y-(e.clientY-dragStart.y)/zoom;}});
 cv.addEventListener('mouseup',e=>{
   if(dragStart&&Math.abs(e.clientX-dragStart.x)<5&&Math.abs(e.clientY-dragStart.y)<5){
-    // Click — find agent
+    // Click — find agent or building
     const rect=cv.getBoundingClientRect();
     const wx=(e.clientX-rect.left)/zoom+camX;
     const wy=(e.clientY-rect.top)/zoom+camY;
     // Convert to fractional coords
     const fx=wx/mapImgW, fy=wy/mapImgH;
+    // Check buildings FIRST
+    const clickedBuilding=BUILDINGS.find(b=>fx>=b.x1&&fx<=b.x2&&fy>=b.y1&&fy<=b.y2);
+    if(clickedBuilding){selectBuilding(clickedBuilding);dragStart=null;return;}
+    // Then check agents
     let found=null,bestDist=.04;
     agents.forEach(a=>{
       const dx=a.x-fx, dy=a.y-fy;
@@ -1633,6 +1656,7 @@ cv.addEventListener('mouseup',e=>{
 function selectAgent(a){
   selectedAgent=a.id;
   const d=document.getElementById('agent-detail');
+  document.querySelector('.panel-header').textContent=a.type==='gp'||a.type==='specialist'?'STAFF DOSSIER':'CITIZEN DOSSIER';
   const isPatient=a.type==='patient'||a.type==='citizen';
 
   // Dynamic thought based on behavioral state
@@ -1642,7 +1666,7 @@ function selectAgent(a){
   else if(a.behaviorState==='going_to_hospital') thought=`The GP referred me to a specialist. Week ${Math.round(a.waitWeeks)} of waiting...`;
   else if(a.behaviorState==='at_hospital') thought="The specialist is treating me. Finally getting real care.";
   else if(a.behaviorState==='recovering') thought="The treatment is working. I feel a bit stronger each day.";
-  else if(a.behaviorState==='dead') thought="...";
+  else if(a.behaviorState==='dead') thought=a.causeOfDeath==='natural'?`Passed away peacefully at age ${a.age}.`:"The system failed me...";
   a.currentThought=(a.currentThought||0)+1;
 
   const stateLabels={roaming:'Walking in town',going_to_gp:'Going to GP',at_gp:'At GP consultation',going_to_hospital:'Going to Hospital',at_hospital:'Receiving treatment',recovering:'Recovering',dead:'Deceased'};
@@ -1664,8 +1688,23 @@ function selectAgent(a){
     </div>`;
     if(a.conditions.length>0){
       html+=`<div class="ac-section"><h4>Conditions</h4>`;
+      const comorbMult=getComorbidityMultiplier(a.conditions);
+      if(a.conditions.length>=2 && comorbMult>1.0){
+        html+=`<div class="ac-row" style="margin-bottom:6px"><span class="k" style="color:var(--red)">⚠ Comorbidity Risk: High</span><span class="v bad">×${comorbMult.toFixed(1)}</span></div>`;
+      }
+      // Find interacting pairs for highlighting
+      const interactingCodes=new Set();
       a.conditions.forEach(c=>{
-        html+=`<span class="cond-tag ${c.severity==='mild'?'mild':''}">${c.name} (${c.code}) — ${c.severity}</span>`;
+        const db=DISEASE_DB[c.code];
+        if(db&&db.interactsWith){
+          db.interactsWith.forEach(ic=>{
+            if(a.conditions.some(c2=>c2.code===ic)){interactingCodes.add(c.code);interactingCodes.add(ic);}
+          });
+        }
+      });
+      a.conditions.forEach(c=>{
+        const isInteracting=interactingCodes.has(c.code);
+        html+=`<span class="cond-tag ${c.severity==='mild'?'mild':''}" ${isInteracting?'style="border-color:var(--red);background:rgba(229,57,53,.18)"':''}>${c.name} (${c.code}) — ${c.severity}${isInteracting?' ⚡':''}</span>`;
       });
       html+=`</div>`;
     }
@@ -1696,6 +1735,148 @@ function selectAgent(a){
 
 function showEmptyPanel(){
   document.getElementById('agent-detail').innerHTML=`<div class="ad-empty"><div class="hint">\uD83D\uDC46</div>Click on a citizen in the town<br>to view their medical dossier,<br>current thoughts, and care pathway.</div>`;
+  document.querySelector('.panel-header').textContent='CITIZEN DOSSIER';
+}
+
+// ═══ BUILDING DASHBOARD (Sprint 2) ═══
+function selectBuilding(building){
+  selectedAgent=null;
+  const d=document.getElementById('agent-detail');
+  const ph=document.querySelector('.panel-header');
+  ph.textContent='BUILDING REPORT';
+
+  if(building.id.startsWith('gp')){
+    // Map building to GP agent
+    const gpMap={'gp1_bldg':'gp1','gp2_bldg':'gp2'};
+    const gpId=gpMap[building.id];
+    const gp=agents.find(a=>a.id===gpId);
+    if(!gp){d.innerHTML=`<div class="ad-empty">GP not found</div>`;return;}
+
+    const p=M[mode];
+    const adminPct=Math.round(p.admin*100);
+    const effectiveCap=Math.round(MAX_GP_CONSULTS_PER_DAY*(1-p.admin));
+    const burnout=Math.min(100,Math.round((p.admin*100)+(gp.queue?gp.queue.length*5:0)+(gp.patientsSeenToday||0)*2));
+    const burnLabel=burnout>70?'High 🔴':burnout>40?'Medium ⚠':'Low ✅';
+    const burnClass=burnout>70?'bad':burnout>40?'mid':'ok';
+
+    // Patients at this GP
+    const atGP=agents.filter(a=>a.insideBuilding===building.id&&(a.type==='patient'||a.type==='citizen'));
+    // Patients going to this GP
+    const goingToGP=agents.filter(a=>a.behaviorState==='going_to_gp'&&getGPDest(a.gpName).building===building.id);
+    const queueLen=atGP.length+goingToGP.length;
+
+    // Recent action history
+    const recentActions=(gp.actionHistory||[]).slice(-8).reverse();
+
+    // Thought
+    const thought=gp.thoughts[(gp.currentThought||0)%gp.thoughts.length];
+    gp.currentThought=(gp.currentThought||0)+1;
+
+    let html=`<div class="agent-card">
+      <div class="ac-name">${building.label}</div>
+      <div class="ac-role">${gp.name} — General Practitioner</div>
+
+      <div class="ac-section"><h4>Workload</h4>
+        <div class="ac-row"><span class="k">Admin Burden</span><span class="v bad">${adminPct}%</span></div>
+        <div class="hp-outer"><div class="hp-inner ${adminPct>20?'r':adminPct>10?'y':'g'}" style="width:${adminPct}%"></div><div class="hp-label">${adminPct}%</div></div>
+        <div class="ac-row"><span class="k">Effective Capacity</span><span class="v">${effectiveCap} / ${MAX_GP_CONSULTS_PER_DAY} daily</span></div>
+        <div class="ac-row"><span class="k">Patients Seen</span><span class="v">${gp.patientsSeenToday||0} today (${gp.totalPatientsSeen||0} total)</span></div>
+        <div class="ac-row"><span class="k">Referrals Made</span><span class="v">${gp.referralsMade||0}</span></div>
+        <div class="ac-row"><span class="k">Queue</span><span class="v ${queueLen>5?'bad':queueLen>2?'mid':'ok'}">${queueLen} waiting</span></div>
+        <div class="ac-row"><span class="k">Burnout Risk</span><span class="v ${burnClass}">${burnLabel}</span></div>
+        <div class="hp-outer"><div class="hp-inner ${burnout>70?'r':burnout>40?'y':'g'}" style="width:${burnout}%"></div><div class="hp-label">Burnout ${burnout}%</div></div>
+      </div>`;
+
+    if(atGP.length>0||goingToGP.length>0){
+      html+=`<div class="ac-section"><h4>Active Patients</h4>`;
+      atGP.forEach(pa=>{
+        const codes=pa.conditions.map(c=>c.code).join(', ')||'checkup';
+        html+=`<div class="ac-row"><span class="k">• ${pa.name}</span><span class="v">${codes}</span></div>`;
+      });
+      goingToGP.forEach(pa=>{
+        const codes=pa.conditions.map(c=>c.code).join(', ')||'—';
+        html+=`<div class="ac-row"><span class="k">• ${pa.name} (en route)</span><span class="v mid">${codes}</span></div>`;
+      });
+      html+=`</div>`;
+    }
+
+    if(recentActions.length>0){
+      html+=`<div class="ac-section"><h4>Recent Activity</h4><div class="history-timeline">`;
+      recentActions.forEach(h=>{
+        html+=`<div class="ht-entry"><span class="ht-cycle">C${h.cycle}</span><span class="ht-icon">📋</span><span class="ht-text">${h.action||h.text||h.type} ${h.patientName?'— '+h.patientName:''} ${h.detail||''}</span></div>`;
+      });
+      html+=`</div></div>`;
+    }
+
+    html+=`<div class="thought">${thought}</div></div>`;
+    d.innerHTML=html;
+
+  } else if(building.id==='hospital'){
+    // Hospital dashboard
+    const p=M[mode];
+    const inHospital=agents.filter(a=>a.insideBuilding==='hospital'&&(a.type==='patient'||a.type==='citizen'));
+    const bedsOccupied=inHospital.length;
+    const waitList=agents.filter(a=>a.behaviorState==='going_to_hospital');
+    const avgWait=waitList.length>0?Math.round(waitList.reduce((s,a)=>s+a.waitWeeks,0)/waitList.length*10)/10:0;
+    const treeWeeks=p.tree;
+    const treeViolated=waitList.some(a=>a.waitWeeks>treeWeeks)||inHospital.some(a=>a.waitWeeks>treeWeeks);
+    const specialists=agents.filter(a=>a.type==='specialist');
+
+    let html=`<div class="agent-card">
+      <div class="ac-name">${building.label}</div>
+      <div class="ac-role">Regional Hospital</div>
+
+      <div class="ac-section"><h4>Capacity</h4>
+        <div class="ac-row"><span class="k">Beds Occupied</span><span class="v ${bedsOccupied>=MAX_HOSPITAL_BEDS?'bad':bedsOccupied>MAX_HOSPITAL_BEDS/2?'mid':'ok'}">${bedsOccupied} / ${MAX_HOSPITAL_BEDS}</span></div>
+        <div class="hp-outer"><div class="hp-inner ${bedsOccupied>=MAX_HOSPITAL_BEDS?'r':bedsOccupied>MAX_HOSPITAL_BEDS/2?'y':'g'}" style="width:${Math.min(100,bedsOccupied/MAX_HOSPITAL_BEDS*100)}%"></div><div class="hp-label">${bedsOccupied}/${MAX_HOSPITAL_BEDS} beds</div></div>
+        <div class="ac-row"><span class="k">Wait List</span><span class="v ${waitList.length>5?'bad':waitList.length>2?'mid':'ok'}">${waitList.length} patients</span></div>
+        <div class="ac-row"><span class="k">Avg Wait</span><span class="v ${avgWait>treeWeeks?'bad':avgWait>treeWeeks/2?'mid':'ok'}">${avgWait} weeks</span></div>
+        <div class="ac-row"><span class="k">Treeknorm (${treeWeeks}w)</span><span class="v ${treeViolated?'bad':'ok'}">${treeViolated?'⚠ VIOLATED':'✅ Compliant'}</span></div>
+      </div>
+
+      <div class="ac-section"><h4>Specialists</h4>`;
+    specialists.forEach(s=>{
+      const spec=s.specialty||s.role;
+      const specCap=SPECIALIST_CAPACITY[s.specialty]||{weeklySlots:10,tickSlots:3};
+      const effSlots=Math.round(specCap.weeklySlots*(mode==='SOLL'?p.ai:1));
+      const specQueue=waitList.filter(a=>a.conditions.some(c=>{const db=DISEASE_DB[c.code];return db&&db.referralSpecialty===s.specialty;})).length;
+      const waitEst=specQueue>0?Math.round(specQueue/specCap.tickSlots*10)/10:0;
+      const waitColor=waitEst>=treeWeeks?'bad':waitEst>=treeWeeks/2?'mid':'ok';
+      html+=`<div class="ac-row"><span class="k">${s.name}</span><span class="v">${spec}</span></div>
+        <div class="ac-row" style="padding-left:12px"><span class="k">Queue / Wait Est</span><span class="v ${waitColor}">${specQueue} / ~${waitEst}w</span></div>
+        <div class="ac-row" style="padding-left:12px"><span class="k">Weekly Slots</span><span class="v">${effSlots}</span></div>`;
+    });
+    html+=`</div>`;
+
+    if(inHospital.length>0){
+      html+=`<div class="ac-section"><h4>Patients Inside</h4>`;
+      inHospital.forEach(pa=>{
+        const codes=pa.conditions.map(c=>c.code+'('+c.severity[0]+')').join(', ');
+        const dayIn=pa.stateTimer!==undefined?pa.stateTimer:'?';
+        html+=`<div class="ac-row"><span class="k">• ${pa.name}</span><span class="v">${codes} HP${Math.round(pa.hp)}</span></div>`;
+      });
+      html+=`</div>`;
+    }
+
+    if(HOSPITAL_DISCHARGED.length>0){
+      html+=`<div class="ac-section"><h4>Recently Discharged</h4>`;
+      [...HOSPITAL_DISCHARGED].reverse().forEach(rd=>{
+        html+=`<div class="ht-entry"><span class="ht-cycle">C${rd.cycle}</span><span class="ht-icon">✅</span><span class="ht-text">${rd.name} (${rd.codes}) HP ${rd.hpBefore}→${rd.hpAfter}</span></div>`;
+      });
+      html+=`</div>`;
+    }
+
+    // Specialist thought
+    if(specialists.length>0){
+      const s=specialists[cycle%specialists.length];
+      const thought=s.thoughts[(s.currentThought||0)%s.thoughts.length];
+      s.currentThought=(s.currentThought||0)+1;
+      html+=`<div class="thought">${thought}</div>`;
+    }
+
+    html+=`</div>`;
+    d.innerHTML=html;
+  }
 }
 
 // ═══ HELPER FUNCTIONS ═══
@@ -1751,11 +1932,31 @@ function tick(){
       if(a.state!=='dead'){
         a.state='dead'; a.behaviorState='dead';
         a.insideBuilding=null;
-        addHistory(a,'died','The system failed me. I waited too long...');
-        say(a.name,`I waited too long... ${Math.round(a.waitWeeks)} weeks. The system failed me.`,'ghost');
-        say('SYSTEM',`MORTALITY: ${a.name} (${a.age}) — after ${Math.round(a.waitWeeks)} weeks.`,'alert');
+        if(!a.causeOfDeath) a.causeOfDeath='system_failure';
+        if(a.causeOfDeath==='natural'){
+          addHistory(a,'died',`Passed away peacefully at age ${a.age}.`);
+          say(a.name,`Passed away peacefully at age ${a.age}.`,'ghost');
+          say('SYSTEM',`NATURAL DEATH: ${a.name} (${a.age}).`,'sys');
+        } else {
+          addHistory(a,'died','The system failed me. I waited too long...');
+          say(a.name,`I waited too long... ${Math.round(a.waitWeeks)} weeks. The system failed me.`,'ghost');
+          say('SYSTEM',`MORTALITY: ${a.name} (${a.age}) — after ${Math.round(a.waitWeeks)} weeks.`,'alert');
+        }
       }
       return;
+    }
+
+    // --- NATURAL MORTALITY (age-based background) ---
+    const baseMortality = 48/5000/(365*4); // 48 deaths/year in 5000 pop, 4 ticks/day
+    let ageMult = 1.0;
+    if(a.age >= 80) ageMult = 15.0;
+    else if(a.age >= 65) ageMult = 5.0;
+    else if(a.age >= 45) ageMult = 1.5;
+    if(Math.random() < baseMortality * ageMult){
+      a.hp = 0;
+      a.behaviorState = 'dead';
+      a.causeOfDeath = 'natural';
+      return; // death check above will handle messaging on next tick
     }
 
     // === DISEASE STATE PROGRESSION (every 4 ticks ≈ 1 sim week) ===
@@ -1775,10 +1976,13 @@ function tick(){
       case 'roaming': {
         // Should this agent visit the GP?
         const hasConds=a.conditions.length>0;
-        const timeSinceGP=cycle-(a.lastGPCycle||-100);
+        let timeSinceGP=cycle-(a.lastGPCycle||-100);
         const severe=a.conditions.some(c=>c.severity==='severe'||c.severity==='critical');
         const moderate=a.conditions.some(c=>c.severity==='moderate');
-        const needsGP=hasConds && timeSinceGP>20 && (
+        // Dementia (F03) care-seeking delay — takes twice as long to decide
+        const hasDementia=a.conditions.some(c=>c.code==='F03');
+        const gpThreshold=hasDementia?40:20;
+        const needsGP=hasConds && timeSinceGP>gpThreshold && (
           (severe && a.hp<90) || (moderate && a.hp<75) || (a.hp<60)
         );
         if(needsGP){
@@ -1815,6 +2019,11 @@ function tick(){
       case 'at_gp': {
         a.stateTimer--;
         if(a.stateTimer<=0){
+          // Find the GP agent for tracking
+          const gpMap={'gp1_bldg':'gp1','gp2_bldg':'gp2'};
+          const gpBldg=a.insideBuilding||getGPDest(a.gpName).building;
+          const gpAgent=agents.find(g=>g.id===(gpMap[gpBldg]||'gp1'));
+
           const severe=a.conditions.some(c=>c.severity==='severe'||c.severity==='critical');
           const moderate=a.conditions.some(c=>c.severity==='moderate');
           if(severe || (moderate && a.hp<60)){
@@ -1827,6 +2036,16 @@ function tick(){
             addHistory(a,'referred',(a.gpName||'GP')+' referred me to the hospital. Specialist care needed.');
             say(a.gpName||'GP',`Referring ${a.name} to hospital — needs specialist care.`);
             sendAgentTo(a, DESTINATIONS.hospital.entrance);
+            // GP tracking
+            if(gpAgent){
+              gpAgent.patientsSeenToday=(gpAgent.patientsSeenToday||0)+1;
+              gpAgent.totalPatientsSeen=(gpAgent.totalPatientsSeen||0)+1;
+              gpAgent.referralsMade=(gpAgent.referralsMade||0)+1;
+              if(!gpAgent.actionHistory)gpAgent.actionHistory=[];
+              gpAgent.actionHistory.push({cycle,action:'referred',patientName:a.name,detail:a.conditions.map(c=>c.code).join(',')});
+              if(gpAgent.actionHistory.length>50)gpAgent.actionHistory.shift();
+              gpAgent.burnoutLevel=Math.min(100,Math.round((p.admin*100)+(gpAgent.queue?gpAgent.queue.length:0)*5+(gpAgent.patientsSeenToday||0)*2));
+            }
           } else if(a.conditions.length>0){
             // Treat at GP level
             a.insideBuilding=null; a.behaviorState='recovering';
@@ -1838,6 +2057,15 @@ function tick(){
             addHistory(a,'gp_treated','GP prescribed medication. Should start feeling better.');
             say(a.gpName||'GP',`${a.name}: condition manageable. Prescribed treatment.`);
             a.path=[]; a.pathIdx=0; a.idleUntil=performance.now()+1500;
+            // GP tracking
+            if(gpAgent){
+              gpAgent.patientsSeenToday=(gpAgent.patientsSeenToday||0)+1;
+              gpAgent.totalPatientsSeen=(gpAgent.totalPatientsSeen||0)+1;
+              if(!gpAgent.actionHistory)gpAgent.actionHistory=[];
+              gpAgent.actionHistory.push({cycle,action:'treated',patientName:a.name,detail:a.conditions.map(c=>c.code).join(',')});
+              if(gpAgent.actionHistory.length>50)gpAgent.actionHistory.shift();
+              gpAgent.burnoutLevel=Math.min(100,Math.round((p.admin*100)+(gpAgent.queue?gpAgent.queue.length:0)*5+(gpAgent.patientsSeenToday||0)*2));
+            }
           } else {
             // Healthy checkup
             a.insideBuilding=null; a.behaviorState='roaming';
@@ -1845,6 +2073,10 @@ function tick(){
             a.x=gpDest.entrance.x; a.y=gpDest.entrance.y;
             addHistory(a,'checkup','Clean bill of health!');
             a.path=[]; a.pathIdx=0; a.idleUntil=performance.now()+1500;
+            if(gpAgent){
+              gpAgent.patientsSeenToday=(gpAgent.patientsSeenToday||0)+1;
+              gpAgent.totalPatientsSeen=(gpAgent.totalPatientsSeen||0)+1;
+            }
           }
         }
         break;
@@ -1899,11 +2131,15 @@ function tick(){
           a.conditions.forEach(c=>{
             c.severity = applyTreatmentEffect(c.code, c.severity);
           });
+          const hpBefore=Math.round(a.hp);
           const hpGain=15+Math.floor(Math.random()*15);
           a.hp=Math.min(100, a.hp+hpGain);
           a.x=DESTINATIONS.hospital.entrance.x; a.y=DESTINATIONS.hospital.entrance.y;
           addHistory(a,'treated','Treatment complete! Specialist helped. Feeling much better.');
           say('Hospital',`${a.name} treated & discharged. Recovery underway.`);
+          // Track discharged patients for hospital dashboard
+          HOSPITAL_DISCHARGED.push({name:a.name,codes:a.conditions.map(c=>c.code).join(','),hpBefore,hpAfter:Math.round(a.hp),cycle});
+          if(HOSPITAL_DISCHARGED.length>10)HOSPITAL_DISCHARGED.shift();
           a.path=[]; a.pathIdx=0; a.idleUntil=performance.now()+1500;
         }
         break;
@@ -1941,6 +2177,11 @@ function tick(){
 
   S.res+=2; S.msgs++; S.waste+=12.43*p.admin;
 
+  // Weekly GP reset (every 28 ticks ≈ 1 sim week)
+  if(cycle % 28 === 0){
+    agents.filter(g=>g.type==='gp').forEach(g=>{g.patientsSeenToday=0;});
+  }
+
   // Chat dialogue
   if(cycle%8===0){
     const traveling=agents.filter(a=>a.hp>0&&a.behaviorState==='going_to_hospital');
@@ -1965,6 +2206,7 @@ function autoRun(){if(autoTimer){clearInterval(autoTimer);autoTimer=null;return;
 function resetSim(){
   if(autoTimer){clearInterval(autoTimer);autoTimer=null;}
   cycle=0; S={res:6,msgs:0,waste:0};
+  HOSPITAL_DISCHARGED.length=0;
   agents.forEach(a=>{
     a.hp=a._initHP; a.waitWeeks=a._initWaitWeeks;
     a.conditions=JSON.parse(JSON.stringify(a._initConditions));
@@ -1974,9 +2216,14 @@ function resetSim(){
     a.stateTimer=a.insideBuilding==='hospital'?5:0;
     a.actionHistory=[]; a.healingTicksLeft=0;
     a.pathComplete=false; a.lastGPCycle=-100;
-    a.referredToHospital=false;
+    a.referredToHospital=false; a.causeOfDeath=undefined;
     a.path=[]; a.pathIdx=0;
     a.idleUntil=performance.now()+Math.random()*5000;
+    // Reset GP/specialist tracking
+    if(a.type==='gp'||a.type==='specialist'){
+      a.patientsSeenToday=0; a.referralsMade=0; a.burnoutLevel=0;
+      a.currentPatient=null; a.queue=[]; a.totalPatientsSeen=0;
+    }
   });
   selectedAgent=null; showEmptyPanel();
   document.getElementById('chatlog').innerHTML='<div class="cm sys"><span class="w">[SYSTEM]</span> <span class="t">Reset. Click a citizen to inspect.</span></div>';

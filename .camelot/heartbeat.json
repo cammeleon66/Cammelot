@@ -9,13 +9,8 @@
       "status": "active",
       "isolation": "worktree",
       "worktreePath": "C:\\Users\\Public\\camelot-qa",
-      "lastHeartbeat": "2026-04-02T05:48:54Z",
-      "lastResult": {
-        "total": 109,
-        "passed": 109,
-        "failed": 0,
-        "vetoTriggered": false
-      },
+      "lastHeartbeat": "2026-04-02T05:49:00Z",
+      "lastResult": { "total": 109, "passed": 109, "failed": 0, "vetoTriggered": false },
       "vetoActive": false
     },
     "merlin": {
@@ -23,23 +18,14 @@
       "status": "active",
       "isolation": "main",
       "worktreePath": "C:\\Users\\Public\\Cammelot",
-      "lastHeartbeat": "2026-04-02T06:00:00Z",
-      "lastResult": {
-        "strategyReady": true,
-        "readinessScore": 55,
-        "blockers": [
-          "Procedural character appearance generation (LOOKS dict is hardcoded per agent ID)",
-          "Node.js crypto dependency in population_engine.js needs browser adaptation",
-          "Monolithic v4.html will grow to 2500+ lines — accepted per ADR-001",
-          "Markov transition calibration requires iterative batch testing"
-        ]
-      },
+      "lastHeartbeat": "2026-04-02T05:49:00Z",
+      "lastResult": { "sprint1Complete": true, "featuresDelivered": 3, "testsPass": 109 },
       "pausedByVeto": false
     }
   },
   "stateLink": {
     "rule": "If Galahad detects test failure, Merlin must pause until resolved",
     "vetoProtocol": "swarm.rules.json",
-    "failureChannel": "galahad → heartbeat.json → merlin reads before acting"
+    "failureChannel": "galahad -> heartbeat.json -> merlin reads before acting"
   }
 }
