@@ -1515,3 +1515,342 @@ in 60 seconds without touching the simulation.
 | 9-10 | Security Gate + Docker + FHIR + Cognitive | `84c0dec` | +278 |
 | 11-12 | Rigor, Research, ROI, Export + Logo Fix | `4c33f76` | +304 |
 | **Total** | **55 features across 12 sprints** | **10 commits** | **~4300 lines** |
+
+---
+
+## ═══════════════════════════════════════════════════════════
+## PHASE 8: REALISM OVERHAUL 🔬 — "Make Them Real"
+## ═══════════════════════════════════════════════════════════
+
+> **Status**: STRATEGIC PLAN — Highest priority after Phase 6 completes
+> **Trigger**: User spotted a 7-year-old married with 4 children. This is the tip of
+> the iceberg — a deep audit revealed systemic realism failures across bios, behaviors,
+> naming, demographics, and daily life patterns.
+>
+> **Core Principle**: If a journalist, healthcare professional, or CBS researcher looks
+> at this simulation and spots something absurd in the first 30 seconds, we've lost all
+> credibility. The data is real (CBS/RIVM) but the *presentation* must be equally rigorous.
+>
+> **Why This Matters**: This simulation will be posted publicly. It claims to represent
+> the Dutch healthcare crisis with real data. If a 7-year-old has 4 children, nobody will
+> trust the mortality statistics. Realism isn't polish — it's **credibility**.
+
+---
+
+### Known Bugs (Found During Audit)
+
+| Bug | Severity | Root Cause |
+|-----|----------|------------|
+| 7-year-old "Married to Jan, 4 children" | 🔴 CRITICAL | `generateBio()` has NO age gating on family templates |
+| 7-year-old "Worked at the bakery for 35 years" | 🔴 CRITICAL | Backstory templates have no age validation |
+| Children can be "Widowed" or "Recently divorced" | 🔴 CRITICAL | Same: random template selection ignores age |
+| GPs named "Dr. Collins" and "Dr. Bennett" (English!) | 🟡 HIGH | CLAUDE.md says Dutch: de Jong, Bakker, Visser |
+| All citizens get same social dialogues regardless of age | 🟡 HIGH | "How are the grandchildren?" asked by a 12-year-old |
+| Children assigned as GP patients but never visit school | 🟡 HIGH | No life-stage behavioral patterns |
+| 20% of population is 0-17 but they behave identically to adults | 🟡 HIGH | No child/teen behavior model |
+| Citizens named with adult-only names (Jan, Piet, Cornelis) for children | 🟢 MEDIUM | Name pool not age-segmented |
+| No family relationships between agents | 🟢 MEDIUM | Everyone is a stranger |
+| Night/day behavior identical — nobody sleeps | 🟢 MEDIUM | No daily rhythm |
+| All agents walk at same speed regardless of age | 🟢 MEDIUM | No physical differentiation |
+
+---
+
+### Epic 30: Age-Appropriate Identity (CRITICAL — Fix First)
+
+#### 30.1 — Age-Gated Bio Generation
+Completely rewrite `generateBio()` to produce age-appropriate content:
+
+**Children (0-12):**
+- Family: "Lives with parents {parentName1} and {parentName2}", "Has {n} siblings", "Lives with mother/father"
+- Occupation: "Student at Cammelot Primary School" (6-12), "Toddler" (0-3), "Pre-schooler" (4-5)
+- Backstory: "Loves playing {childHobby}", "Best friends with {friendName}", "Wants to be a {dreamJob} when grown up"
+- Personality: "Curious", "Energetic", "Shy", "Playful", "Brave"
+
+**Teenagers (13-17):**
+- Family: "Lives with parents", "Has {n} siblings", "Lives with mother/father and stepparent"
+- Occupation: "Student at Cammelot Secondary School" (13-16), "Apprentice {trade}" (17)
+- Backstory: "Plays {sport} for the town team", "Working on school project about {topic}", "Volunteers at {place}"
+- Personality: Add "Rebellious", "Idealistic", "Studious", "Sporty"
+
+**Young Adults (18-30):**
+- Family: "Single", "Dating {partner}", "Lives with roommates", "Engaged to {partner}", "Married, no children yet"
+- Occupation: Full pool (but no "Retired ...")
+- Backstory: "Just finished {study} at {university}", "Starting career at {place}", "Saving up for first house"
+
+**Adults (31-55):**
+- Family: Full pool including children (1-3 realistic), "Married to {spouse}, {children} children", "Divorced"
+- Occupation: Full pool
+- Backstory: Full pool
+
+**Seniors (56-70):**
+- Family: "Married for {years} years", "Children have moved out", "Grandchildren visit on weekends"
+- Occupation: Later career or early retirement
+- Backstory: "Nearing retirement", "Thinking about downsizing", "More time for {hobby}"
+
+**Elderly (71+):**
+- Family: "Widowed", "Married for {years} years", "Great-grandchildren", "Spouse in care home"
+- Occupation: "Retired {profession}"
+- Backstory: "Remembers when Cammelot was just a village", "Goes to the {place} every morning", "Has {thing} in their pocket always"
+
+**Acceptance**: No citizen's bio contains anything age-inappropriate. A 7-year-old is a playful schoolkid with parents. A 70-year-old is a retired baker with grandchildren.
+
+#### 30.2 — Age-Appropriate Names
+- Children/teens: Modern Dutch names (Sem, Finn, Lotte, Emma, Daan, Mila, Lucas, Sophie, Noah, Julia)
+- Adults: Standard Dutch (Jan, Piet, Maria, Anna, Dirk, etc.)
+- Elderly: Classic Dutch (Cornelis, Wilhelmina, Gerrit, Hendrika, Geertje)
+- Separate `FIRST_NAMES_CHILD_M`, `FIRST_NAMES_CHILD_F`, `FIRST_NAMES_ELDERLY_M`, `FIRST_NAMES_ELDERLY_F` arrays
+
+**Acceptance**: Names feel generationally accurate. A 7-year-old named "Cornelis" → now "Sem".
+
+#### 30.3 — Dutch GP Names (CLAUDE.md Compliance)
+- Rename GP agents from Collins/Bennett to Dutch names per CLAUDE.md:
+  - `gp1` → "Dr. de Jong" (currently "Dr. Collins")
+  - `gp2` → "Dr. Bakker" (currently "Dr. Bennett")
+  - Add `gp3` → "Dr. Visser" (if third practice exists on map)
+- Update all references: dialogues, referrals, bias tracker, FHIR resources
+- Update `INFRASTRUCTURE_AGENTS` definitions
+- Update `getGPDest()` routing
+
+**Acceptance**: All GP names are Dutch. Dialogue says "Dr. de Jong looks exhausted" not "Dr. Collins."
+
+---
+
+### Epic 31: Life-Stage Behaviors
+
+#### 31.1 — Daily Rhythm (Day/Night Behavior)
+- **Night (cycles where timeOfDay = 'night'):**
+  - 90% of agents go to nearest "home" position (assigned at spawn) and become invisible
+  - 10% might be night workers or insomniacs (walk slowly)
+  - Hospital patients stay in hospital
+  - Queuing patients stay in queue (making it even more poignant)
+- **Morning:**
+  - Agents emerge from homes, walk to daily destination
+  - Children head toward school area
+  - Workers head toward buildings
+- **Evening:**
+  - Agents walk home, some stop at park for social chat
+  - GPs close (no new patients accepted)
+
+**Acceptance**: The town has a rhythm. Night is quiet. Morning is busy. It feels alive.
+
+#### 31.2 — Child Behavior
+- Children (0-12):
+  - Walk to "school" area during day (assign a building or map region)
+  - Play in park after school (cluster near park, faster movement)
+  - Always walk with a parent (paired movement with an adult agent)
+  - Cannot visit GP alone — parent accompanies
+  - Social dialogues: "Want to play?", "I got a sticker at school!", "My tummy hurts"
+  - Do NOT get adult diseases (ageMin already handles this, but verify)
+- Teenagers (13-17):
+  - Walk independently but cluster in groups of 2-3
+  - Dialogues: "School was boring", "Did you see the match?", "I want to work at {place}"
+  - Can visit GP alone (with anxiety dialogue: "My parent said I should come...")
+
+**Acceptance**: Children behave like children. They go to school, play, and walk with parents.
+
+#### 31.3 — Elderly Behavior
+- Seniors (65+):
+  - Walk 30% slower than adults
+  - Visit GP more frequently (even when healthy — routine checkups)
+  - Sit in park more often (if bench mechanic exists)
+  - Dialogues: "My knees aren't what they used to be", "I remember when...", "The doctor says I need more exercise"
+- Elderly (80+):
+  - Walk 50% slower
+  - Rarely leave home area (smaller wandering radius)
+  - Need assistance: occasionally paired with a "care worker" agent
+  - Dialogues: "Could someone help me to the doctor?", "I've lived here 60 years", "Where did I put my...?"
+
+**Acceptance**: Elderly agents move and speak realistically. The burden of aging is visible.
+
+#### 31.4 — Worker/Commuter Behavior
+- Working-age adults (18-67):
+  - Assigned a "workplace" (random building or building zone) at spawn
+  - Walk to workplace in morning, return in evening
+  - During work hours: inside building (invisible) or walking between buildings
+  - Lunch break: emerge for 10 ticks, walk to park or other building
+  - Admin workers at GP: visible doing paperwork (ties into admin burden visualization)
+
+**Acceptance**: Adults have purpose. They're not just wandering — they're commuting, working, living.
+
+---
+
+### Epic 32: Family & Relationships
+
+#### 32.1 — Family Units
+- At spawn, generate family clusters:
+  - Couple (2 adults, similar age ±5 years, same surname)
+  - Family (couple + 1-3 children, same surname, realistic ages)
+  - Single parent + children
+  - Elderly couple
+  - Solo adults
+- Family members reference each other: "Married to {partner.name}", children show "Parent: {parent.name}"
+- Click a family member → see "Family" section listing related agents (clickable)
+- Family members grieve when a relative dies (extended grief, not just proximity)
+
+**Acceptance**: Clicking "Sem de Jong (7)" shows "Parents: Jan de Jong, Maria de Jong. Sibling: Lotte de Jong (10)." When Jan dies, the whole family grieves.
+
+#### 32.2 — Social Networks
+- Agents form 2-3 "friend" relationships at spawn (nearby agents, similar age)
+- Friends chat more often and with deeper dialogue
+- Friends visit each other (walk to friend's position)
+- When a friend gets sick: "I heard {friend} is in hospital. I'm worried."
+- When a friend dies: brief grieving period with dialogue
+
+**Acceptance**: The social web is visible. Death has ripple effects through relationships.
+
+---
+
+### Epic 33: Dialogue & Speech Realism
+
+#### 33.1 — Age-Appropriate Dialogue Pools
+Completely separate dialogue by life stage:
+
+**Children (0-12):**
+- "Can we go to the park?", "I don't want to go to the doctor!", "My friend {name} is sick today",
+  "School was fun!", "I want ice cream", "Are we there yet?"
+
+**Teenagers (13-17):**
+- "School is so boring", "Did you hear about {name}?", "I want to study {subject}",
+  "My parent is making me go to the doctor", "Can I go to {friend}'s house?"
+
+**Young Adults (18-30):**
+- "I can't afford a house in this town", "Work is stressful", "Have you tried that new place?",
+  "I need to find a better GP", "Student loans are killing me"
+
+**Adults (31-55):**
+- "The kids are growing up so fast", "Work-life balance? What's that?",
+  "I should get that checked out", "Did you see the news?", "The school needs renovation"
+
+**Seniors (56-70):**
+- "Retirement is busier than I expected", "My grandchildren are visiting this weekend",
+  "The GP wait times are getting worse", "I volunteer at the {place} now"
+
+**Elderly (71+):**
+- "I remember when this town had only one doctor", "Could you slow down a bit?",
+  "My hip isn't what it used to be", "The care worker comes on Tuesdays",
+  "Have you seen my reading glasses?"
+
+**Acceptance**: Every conversation sounds natural for the speakers' ages.
+
+#### 33.2 — Context-Aware Dialogue
+- Agents near the hospital discuss wait times: "Look at that queue..."
+- Agents near a ghost marker discuss the death: "That poor soul..."
+- Agents in good health are upbeat; agents in pain are irritable
+- Agents who just got treated are relieved: "Finally saw the specialist!"
+- Agents who just lost someone grieve: "I can't believe {name} is gone..."
+- Weather-influenced: "This rain makes my joints ache" (elderly in rain)
+
+**Acceptance**: Dialogue is situational, not random. It reflects what's happening.
+
+---
+
+### Epic 34: Physical & Visual Realism
+
+#### 34.1 — Age-Based Appearance
+- Children: smaller sprites (70% of adult size)
+- Teenagers: 85% of adult size
+- Elderly: slightly hunched posture (sprite variant)
+- Walking speed varies: children=fast, adults=normal, seniors=slow, elderly=very slow
+- Hair color: children=varied, elderly=grey/white
+- Clothing colors: children=bright, elderly=muted
+
+**Acceptance**: You can tell approximate age by looking at the sprite.
+
+#### 34.2 — Movement Realism
+- Children: zigzag paths, occasional running bursts, stopping to look at things
+- Teenagers: straight paths, walking in pairs/groups
+- Adults: purposeful straight-line walking
+- Elderly: slow, straight, with occasional pauses (catch breath)
+- Critical patients: limping animation (slower + slight wobble)
+- Parents with young children: slower pace, child sprite follows closely
+
+**Acceptance**: Movement communicates age and health without any UI.
+
+#### 34.3 — Seasonal Clothing
+- Winter: agents have slightly different color tones (coats)
+- Summer: brighter clothing
+- Rain: agents walk faster, seek building cover
+- No complex sprite changes needed — just subtle color shifts and speed adjustments
+
+**Acceptance**: Agents respond to weather like real people.
+
+---
+
+### Epic 35: System Realism
+
+#### 35.1 — Triage Priority (Not FIFO)
+- Currently: hospital processes patients in queue order (first in, first out)
+- Reality: triage by urgency
+  - Critical patients jump the queue
+  - Moderate patients wait normally
+  - Mild patients wait longest
+- Visible in queue: critical patients have red border, pushed toward front
+- Sometimes unfair: connections/bias affect triage (research scenario)
+
+**Acceptance**: The queue behaves like a real hospital triage system.
+
+#### 35.2 — Routine Care Visits
+- Healthy seniors visit GP every ~200 cycles for checkups
+- Diabetic patients visit every ~150 cycles for monitoring
+- COPD patients visit for inhaler refills
+- These routine visits add to GP queue load (making the system MORE realistic)
+- Preventive care can catch conditions early (reduce severity)
+
+**Acceptance**: The GP isn't only visited by sick people. Routine care adds realistic load.
+
+#### 35.3 — Emergency Pathway
+- Some conditions trigger emergency admission (bypass GP, straight to hospital):
+  - Heart attack (I25 critical), stroke, severe pneumonia
+  - Ambulance animation: flashing red lights moving across map
+  - Emergency patients skip the queue but consume specialist capacity
+- "🚑" icon appears in event log for emergencies
+
+**Acceptance**: Not everyone follows the GP→referral→specialist path. Emergencies are dramatic and visible.
+
+#### 35.4 — Medication & Treatment Realism
+- Treated patients receive named medications:
+  - Diabetes: Metformine, insuline
+  - COPD: Salbutamol, Fostair
+  - Heart disease: Metoprolol, aspirine
+  - Show in agent detail: "💊 Metformine 500mg (since cycle 340)"
+- Treatment has side effects: some medications cause fatigue (slight HP cost)
+- Non-compliance: stubborn patients sometimes skip medication (HP drain continues)
+
+**Acceptance**: Treatment isn't abstract. Citizens take real Dutch medications.
+
+---
+
+## Phase 8 Sprint Schedule
+
+### Sprint 25 — Critical Fixes (DO FIRST)
+| # | Task | Epic | Priority |
+|---|------|------|----------|
+| 1 | Age-gated bio generation | 30.1 | 🔴 CRITICAL |
+| 2 | Age-appropriate names | 30.2 | 🔴 CRITICAL |
+| 3 | Dutch GP names | 30.3 | 🔴 CRITICAL |
+| 4 | Age-appropriate dialogues | 33.1 | 🔴 CRITICAL |
+
+### Sprint 26 — Life Stages
+| # | Task | Epic | Priority |
+|---|------|------|----------|
+| 5 | Daily rhythm (day/night behavior) | 31.1 | 🟡 High |
+| 6 | Child behavior (school, play, parents) | 31.2 | 🟡 High |
+| 7 | Elderly behavior (slow, checkups, care) | 31.3 | 🟡 High |
+| 8 | Worker/commuter patterns | 31.4 | 🟡 High |
+
+### Sprint 27 — Relationships & Social
+| # | Task | Epic | Priority |
+|---|------|------|----------|
+| 9 | Family units (spawn linked agents) | 32.1 | 🟡 High |
+| 10 | Social networks (friends, visits) | 32.2 | 🟢 Medium |
+| 11 | Context-aware dialogue | 33.2 | 🟡 High |
+
+### Sprint 28 — Physical & System Realism
+| # | Task | Epic | Priority |
+|---|------|------|----------|
+| 12 | Age-based appearance (size, speed, color) | 34.1 | 🟡 High |
+| 13 | Movement realism (patterns by age) | 34.2 | 🟡 High |
+| 14 | Triage priority (not FIFO) | 35.1 | 🟡 High |
+| 15 | Routine care visits | 35.2 | 🟢 Medium |
+| 16 | Emergency pathway + ambulance | 35.3 | 🟢 Medium |
+| 17 | Medication names & treatment detail | 35.4 | 🟢 Medium |
