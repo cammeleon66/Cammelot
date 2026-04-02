@@ -2093,14 +2093,41 @@ function drawAgent(e){
     drawX += Math.sin(Date.now() / 200) * 2 * s;
   }
 
-  // Shadow on ground
-  cx.fillStyle = 'rgba(0,0,0,.22)';
-  cx.beginPath(); cx.ellipse(sx, sy, charSize*.32, charSize*.07, 0, 0, 6.28); cx.fill();
+  // ── Sprint 14: Dynamic shadow based on time of day ──
+  const tod = getTimeOfDay();
+  let shadowAlpha = 0.22;
+  let shadowStretchX = 1.0;
+  let shadowOffsetX = 0;
+  if (tod.phase === 'dawn') {
+    shadowAlpha = 0.3; shadowStretchX = 2.0; shadowOffsetX = -charSize * 0.4;
+  } else if (tod.phase === 'dusk') {
+    shadowAlpha = 0.3; shadowStretchX = 2.0; shadowOffsetX = charSize * 0.4;
+  } else if (tod.phase === 'night') {
+    shadowAlpha = 0.08;
+  }
+  cx.fillStyle = 'rgba(0,0,0,' + shadowAlpha + ')';
+  cx.beginPath(); cx.ellipse(sx + shadowOffsetX, sy, charSize*.32*shadowStretchX, charSize*.07, 0, 0, 6.28); cx.fill();
   
+  // ── Sprint 14: Idle breathing animation ──
+  if (!isMoving && !(e.chatTimer > 0) && !e.insideBuilding && e.hp > 0) {
+    e.breathOffset = Math.sin(Date.now() / 2000 + hashCode(e.id)) * 0.5;
+  } else {
+    e.breathOffset = 0;
+  }
+  const breathY = e.breathOffset || 0;
+  drawY -= breathY * s;
+
   // Pick the right walk frame
   const prefix = isG ? e.id+'_ghost_' : e.id+'_';
   const sprite = charCanvases[prefix + walkFrameIdx] || charCanvases[e.id+'_0'];
-  if(sprite) {
+  // ── Sprint 14: Flip sprite based on facing direction ──
+  if (e.facingRight === false && sprite) {
+    cx.save();
+    cx.translate(sx, 0);
+    cx.scale(-1, 1);
+    cx.drawImage(sprite, -drawX - charSize, drawY, charSize, charSize);
+    cx.restore();
+  } else if(sprite) {
     cx.drawImage(sprite, drawX, drawY, charSize, charSize);
   }
   
@@ -2198,6 +2225,45 @@ function drawAgent(e){
     cx.fillText(emojiToShow, sx - charSize * 0.3, drawY - 2 * s);
   }
 
+  // ── Sprint 14: Status visual effects ──
+  // Healing particles (green + floating up)
+  if (e.behaviorState === 'recovering' && e.healingTicksLeft > 0) {
+    const healPhase = (Date.now() / 500) % 1;
+    cx.fillStyle = 'rgba(76, 175, 80, 0.6)';
+    cx.font = `${8 * s}px sans-serif`;
+    const py = drawY - 10 * s - healPhase * 15 * s;
+    cx.globalAlpha = 1 - healPhase;
+    cx.fillText('+', sx + 5 * s, py);
+    cx.globalAlpha = 1;
+  }
+  // Damage flash (red - on recent HP drop)
+  if (e._lastDrawHP !== undefined && e.hp < e._lastDrawHP - 1) {
+    cx.fillStyle = 'rgba(229, 57, 53, 0.3)';
+    cx.fillRect(drawX, drawY, charSize, charSize);
+    cx.fillStyle = 'rgba(229, 57, 53, 0.7)';
+    cx.font = `${8 * s}px sans-serif`;
+    cx.textAlign = 'center';
+    cx.fillText('-', sx - 8 * s, drawY - 5 * s);
+  }
+  e._lastDrawHP = e.hp;
+  // ECG-style blip for critical agents
+  if (e.hp > 0 && e.hp < 20) {
+    const ecgX = sx - 12 * s;
+    const ecgY = drawY - 12 * s;
+    cx.strokeStyle = 'rgba(229, 57, 53, 0.6)';
+    cx.lineWidth = 1;
+    cx.beginPath();
+    const phase = (Date.now() / 200) % 20;
+    for (let ei = 0; ei < 20; ei++) {
+      const ex = ecgX + ei * 1.2 * s;
+      let ey = ecgY;
+      if (Math.abs(ei - phase) < 2) ey -= 4 * s;
+      if (Math.abs(ei - phase) < 1) ey -= 3 * s;
+      if (ei === 0) cx.moveTo(ex, ey); else cx.lineTo(ex, ey);
+    }
+    cx.stroke();
+  }
+
   cx.restore();
   e.frame++;
 }
@@ -2276,6 +2342,251 @@ function drawBuildingStatus() {
       cx.textBaseline = 'alphabetic';
     }
   });
+}
+
+// ═══ DAY/NIGHT CYCLE (Sprint 13) ═══
+function getTimeOfDay() {
+  const dayProgress = (cycle % 100) / 100;
+  if (dayProgress < 0.2 || dayProgress >= 0.8) return { phase: 'night', t: dayProgress };
+  if (dayProgress < 0.3) return { phase: 'dawn', t: (dayProgress - 0.2) / 0.1 };
+  if (dayProgress < 0.7) return { phase: 'day', t: (dayProgress - 0.3) / 0.4 };
+  return { phase: 'dusk', t: (dayProgress - 0.7) / 0.1 };
+}
+
+function drawDayNightOverlay() {
+  const tod = getTimeOfDay();
+  let overlayColor, overlayAlpha;
+  switch(tod.phase) {
+    case 'night':
+      overlayColor = '20, 20, 60';
+      overlayAlpha = 0.45;
+      break;
+    case 'dawn':
+      overlayColor = Math.round(255 - tod.t * 200) + ', ' + Math.round(180 - tod.t * 100) + ', 80';
+      overlayAlpha = 0.3 * (1 - tod.t);
+      break;
+    case 'day':
+      overlayAlpha = 0;
+      break;
+    case 'dusk':
+      overlayColor = Math.round(200 + tod.t * 55) + ', ' + Math.round(120 - tod.t * 60) + ', 40';
+      overlayAlpha = tod.t * 0.3;
+      break;
+  }
+  if (overlayAlpha > 0) {
+    cx.fillStyle = 'rgba(' + overlayColor + ', ' + overlayAlpha + ')';
+    cx.fillRect(0, 0, cv.width, cv.height);
+  }
+  if (tod.phase === 'night') drawStars();
+  if (tod.phase === 'night' || tod.phase === 'dusk') drawWindowGlow();
+}
+
+function drawStars() {
+  const rng = seededRandom(42);
+  cx.fillStyle = 'rgba(255, 255, 230, 0.7)';
+  for (let i = 0; i < 40; i++) {
+    const sx = rng() * cv.width;
+    const sy = rng() * cv.height * 0.4;
+    const size = rng() * 1.5 + 0.5;
+    const twinkle = Math.sin(Date.now() / (300 + i * 50) + i) * 0.4 + 0.6;
+    cx.globalAlpha = twinkle * 0.7;
+    cx.fillRect(sx, sy, size, size);
+  }
+  cx.globalAlpha = 1;
+  // Moon
+  const moonPhase = Math.floor((cycle / 400) % 4);
+  const moonX = cv.width * 0.8;
+  const moonY = cv.height * 0.08;
+  const moonR = 12;
+  cx.fillStyle = '#FFFDE7';
+  cx.beginPath(); cx.arc(moonX, moonY, moonR, 0, 6.28); cx.fill();
+  if (moonPhase > 0) {
+    cx.fillStyle = 'rgba(20, 20, 60, 0.8)';
+    cx.beginPath();
+    cx.arc(moonX + (moonPhase - 2) * 6, moonY, moonR, 0, 6.28);
+    cx.fill();
+  }
+}
+
+function drawWindowGlow() {
+  BUILDINGS.forEach(b => {
+    const bx1 = (b.x1 * mapImgW - camX) * zoom;
+    const by1 = (b.y1 * mapImgH - camY) * zoom;
+    const bw = (b.x2 - b.x1) * mapImgW * zoom;
+    const bh = (b.y2 - b.y1) * mapImgH * zoom;
+    const windowCount = b.id === 'hospital' ? 6 : 3;
+    for (let i = 0; i < windowCount; i++) {
+      const wx = bx1 + bw * (0.2 + (i % 3) * 0.3);
+      const wy = by1 + bh * (0.3 + Math.floor(i / 3) * 0.3);
+      const ww = 4 * zoom, wh = 5 * zoom;
+      cx.fillStyle = 'rgba(255, 220, 100, 0.6)';
+      cx.fillRect(wx, wy, ww, wh);
+      cx.fillStyle = 'rgba(255, 200, 80, 0.15)';
+      cx.beginPath(); cx.arc(wx + ww/2, wy + wh/2, 12 * zoom, 0, 6.28); cx.fill();
+    }
+  });
+}
+
+// ═══ WEATHER SYSTEM (Sprint 13) ═══
+const WEATHER = { current: 'sunny', timer: 0, particles: [] };
+const WEATHER_TYPES = ['sunny', 'cloudy', 'rain', 'snow', 'fog'];
+
+function updateWeather() {
+  WEATHER.timer--;
+  if (WEATHER.timer <= 0) {
+    const weights = [0.35, 0.25, 0.20, 0.10, 0.10];
+    let r = Math.random(), cum = 0;
+    for (let i = 0; i < WEATHER_TYPES.length; i++) {
+      cum += weights[i];
+      if (r <= cum) { WEATHER.current = WEATHER_TYPES[i]; break; }
+    }
+    WEATHER.timer = 50 + Math.floor(Math.random() * 100);
+    WEATHER.particles = [];
+  }
+}
+
+function drawWeather() {
+  const w = WEATHER.current;
+  if (w === 'sunny') return;
+  if (w === 'rain') {
+    cx.strokeStyle = 'rgba(100, 150, 220, 0.4)';
+    cx.lineWidth = 1;
+    for (let i = 0; i < 60; i++) {
+      const x = (Date.now() * 0.1 + i * 37) % cv.width;
+      const y = (Date.now() * 0.3 + i * 53) % cv.height;
+      cx.beginPath();
+      cx.moveTo(x, y);
+      cx.lineTo(x - 2, y + 12);
+      cx.stroke();
+    }
+    cx.fillStyle = 'rgba(40, 50, 70, 0.15)';
+    cx.fillRect(0, 0, cv.width, cv.height);
+  }
+  if (w === 'snow') {
+    cx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+    for (let i = 0; i < 40; i++) {
+      const x = (Date.now() * 0.02 + i * 47 + Math.sin(Date.now()/1000 + i) * 20) % cv.width;
+      const y = (Date.now() * 0.05 + i * 31) % cv.height;
+      const size = 1.5 + Math.sin(i) * 1;
+      cx.beginPath(); cx.arc(x, y, size, 0, 6.28); cx.fill();
+    }
+  }
+  if (w === 'fog') {
+    cx.fillStyle = 'rgba(200, 210, 220, 0.25)';
+    cx.fillRect(0, 0, cv.width, cv.height);
+    for (let i = 0; i < 5; i++) {
+      const fx = (Date.now() * 0.01 + i * 200) % (cv.width + 200) - 100;
+      const fy = cv.height * (0.4 + i * 0.1);
+      cx.fillStyle = 'rgba(220, 225, 235, 0.12)';
+      cx.beginPath(); cx.ellipse(fx, fy, 100, 20, 0, 0, 6.28); cx.fill();
+    }
+  }
+  if (w === 'cloudy') {
+    cx.fillStyle = 'rgba(120, 130, 150, 0.1)';
+    cx.fillRect(0, 0, cv.width, cv.height);
+  }
+}
+
+// ═══ SEASONS (Sprint 13) ═══
+function getSeason() {
+  return ['spring', 'summer', 'autumn', 'winter'][Math.floor(cycle / 250) % 4];
+}
+
+function drawSeasonalEffects() {
+  const season = getSeason();
+  if (season === 'autumn') {
+    cx.save();
+    const leafColors = ['#D4763A', '#C0392B', '#F39C12', '#E67E22', '#8B4513'];
+    for (let i = 0; i < 12; i++) {
+      const lx = (Date.now() * 0.015 + i * 97 + Math.sin(Date.now()/800 + i) * 30) % cv.width;
+      const ly = (Date.now() * 0.025 + i * 67) % cv.height;
+      cx.fillStyle = leafColors[i % leafColors.length];
+      cx.globalAlpha = 0.6;
+      cx.save();
+      cx.translate(lx, ly);
+      cx.rotate(Date.now() / 500 + i);
+      cx.fillRect(-2, -1, 4, 2);
+      cx.restore();
+    }
+    cx.restore();
+  }
+  if (season === 'winter') {
+    BUILDINGS.forEach(b => {
+      const bx = (b.x1 * mapImgW - camX) * zoom;
+      const by = (b.y1 * mapImgH - camY) * zoom;
+      const bw = (b.x2 - b.x1) * mapImgW * zoom;
+      cx.fillStyle = 'rgba(240, 245, 255, 0.7)';
+      cx.fillRect(bx, by - 2 * zoom, bw, 3 * zoom);
+    });
+  }
+  if (season === 'spring') {
+    cx.save();
+    const flowerColors = ['#FF69B4', '#FFD700', '#FF6347', '#9370DB', '#FFA07A'];
+    BUILDINGS.forEach((b, bi) => {
+      for (let i = 0; i < 4; i++) {
+        const fx = (b.x1 + (b.x2-b.x1) * (0.1 + i * 0.25)) * mapImgW;
+        const fy = (b.y2 + 0.01) * mapImgH;
+        const sxf = (fx - camX) * zoom;
+        const syf = (fy - camY) * zoom;
+        cx.fillStyle = flowerColors[(bi * 4 + i) % flowerColors.length];
+        cx.globalAlpha = 0.7;
+        cx.beginPath(); cx.arc(sxf, syf, 2 * zoom, 0, 6.28); cx.fill();
+      }
+    });
+    cx.restore();
+  }
+}
+
+// ═══ AMBIENT PARTICLES (Sprint 13) ═══
+function drawAmbientParticles() {
+  const tod = getTimeOfDay();
+  if (tod.phase === 'day') {
+    cx.fillStyle = 'rgba(255, 220, 120, 0.3)';
+    for (let i = 0; i < 15; i++) {
+      const x = (Math.sin(Date.now() / 3000 + i * 2.1) * 0.5 + 0.5) * cv.width;
+      const y = (Math.cos(Date.now() / 4000 + i * 1.7) * 0.5 + 0.5) * cv.height;
+      cx.beginPath(); cx.arc(x, y, 1.5, 0, 6.28); cx.fill();
+    }
+  }
+  if (tod.phase === 'night') {
+    for (let i = 0; i < 8; i++) {
+      const blink = Math.sin(Date.now() / (400 + i * 100) + i * 3) > 0.3;
+      if (!blink) continue;
+      const x = (Math.sin(Date.now() / 5000 + i * 1.5) * 0.3 + 0.5) * cv.width;
+      const y = (Math.cos(Date.now() / 6000 + i * 2.3) * 0.2 + 0.6) * cv.height;
+      cx.fillStyle = 'rgba(180, 255, 80, 0.7)';
+      cx.beginPath(); cx.arc(x, y, 2, 0, 6.28); cx.fill();
+      cx.fillStyle = 'rgba(180, 255, 80, 0.15)';
+      cx.beginPath(); cx.arc(x, y, 8, 0, 6.28); cx.fill();
+    }
+  }
+  if (tod.phase === 'day' || tod.phase === 'dawn') {
+    cx.strokeStyle = 'rgba(40, 40, 40, 0.4)';
+    cx.lineWidth = 1;
+    for (let i = 0; i < 3; i++) {
+      const bx = (Date.now() * 0.008 + i * 300) % (cv.width + 200) - 100;
+      const by = 20 + i * 25 + Math.sin(Date.now() / 1000 + i) * 5;
+      cx.beginPath();
+      cx.moveTo(bx - 4, by + 2);
+      cx.lineTo(bx, by);
+      cx.lineTo(bx + 4, by + 2);
+      cx.stroke();
+    }
+  }
+  if (getSeason() === 'winter') {
+    cx.fillStyle = 'rgba(180, 180, 190, 0.25)';
+    BUILDINGS.forEach((b, i) => {
+      if (i > 2) return;
+      const smX = ((b.x1 + (b.x2-b.x1)*0.7) * mapImgW - camX) * zoom;
+      const baseY = (b.y1 * mapImgH - camY) * zoom;
+      for (let p = 0; p < 4; p++) {
+        const py = baseY - p * 8 * zoom - (Date.now() * 0.01 + i * 100) % 40;
+        const px = smX + Math.sin(Date.now() / 1000 + p + i) * 3 * zoom;
+        const pr = (3 + p * 1.5) * zoom;
+        cx.beginPath(); cx.arc(px, py, pr, 0, 6.28); cx.fill();
+      }
+    });
+  }
 }
 
 // ── Sprint 5: Ghost trail / grave markers ──
@@ -2428,7 +2739,7 @@ function render(){
       }
     }
 
-    // Walk toward current waypoint
+    // Walk toward current waypoint — Sprint 14: Smooth eased movement
     const dx = e.tx - e.x, dy = e.ty - e.y;
     const dist = Math.sqrt(dx*dx + dy*dy);
     if(dist > .002) {
@@ -2440,11 +2751,18 @@ function render(){
       else if (e.hp > 20) speedMult = 0.6; // in pain
       else speedMult = 0.3; // critical
       if ((e.grievingTimer || 0) > 0) speedMult *= 0.5;
-      const speed = (e.hp <= 0 ? 0.010 : 0.025) * dt * speedMult;
+      const baseSpeed = (e.hp <= 0 ? 0.010 : 0.025) * dt * speedMult;
+      // Ease-out near destination (slow down approaching)
+      const easeFactor = Math.min(1, dist / 0.03);
+      const speed = baseSpeed * (0.3 + 0.7 * easeFactor);
       const step = Math.min(speed, dist);
       e.x += (dx/dist) * step;
       e.y += (dy/dist) * step;
       e.walkDist = (e.walkDist || 0) + step;
+      // Face direction of movement (Sprint 14)
+      if (Math.abs(dx) > 0.001) {
+        e.facingRight = dx > 0;
+      }
     }
 
     // Safety: teleport out of no-walk zones
@@ -2472,8 +2790,17 @@ function render(){
     }
   });
   
+  // ── Sprint 13: Seasonal effects (snow on roofs, flowers) ──
+  drawSeasonalEffects();
+
   // ── Sprint 5: Draw building status indicators (after map, before agents) ──
   drawBuildingStatus();
+
+  // ── Sprint 13: Day/night overlay ──
+  drawDayNightOverlay();
+
+  // ── Sprint 13: Labels (after overlay, before agents) ──
+  drawLabels();
 
   // Draw only agents that are NOT inside buildings — Sprint 9: off-screen culling
   const visibleAgents = agents.filter(a => {
@@ -2486,6 +2813,12 @@ function render(){
 
   // ── Sprint 5: Draw grave markers (after agents) ──
   drawGraveMarkers();
+
+  // ── Sprint 13: Weather effects (rain/snow/fog on top of everything) ──
+  drawWeather();
+
+  // ── Sprint 13: Ambient particles (dust, fireflies, birds, smoke) ──
+  drawAmbientParticles();
 }
 
 // ═══ INTERACTION ═══
@@ -3620,6 +3953,9 @@ function tick(){
   // ═══ Sprint 11: Bias tracking (every 50 cycles) ═══
   if(cycle%50===0) trackBiasData();
 
+  // ═══ Sprint 13: Update weather each tick ═══
+  updateWeather();
+
   // ═══ Sprint 11: QA auto-run (every 100 cycles) ═══
   if(cycle%100===0) runQAChecks();
 
@@ -4130,6 +4466,14 @@ function buildStatsHTML(){
 
 function updateUI(){
   document.getElementById('hC').textContent=cycle;
+  // Sprint 13: Time-of-day & season indicator
+  var todPhases = {night: '🌙', dawn: '🌅', day: '☀️', dusk: '🌇'};
+  var seasonIcons = {spring: '🌸', summer: '☀️', autumn: '🍂', winter: '❄️'};
+  var tod = getTimeOfDay();
+  var season = getSeason();
+  var weatherIcons = {sunny:'☀️',cloudy:'☁️',rain:'🌧️',snow:'🌨️',fog:'🌫️'};
+  var timeEl = document.getElementById('hC');
+  if(timeEl) timeEl.textContent = cycle + ' ' + (todPhases[tod.phase]||'') + ' ' + (seasonIcons[season]||'') + ' ' + (weatherIcons[WEATHER.current]||'');
   // Sprint 7: Human-readable stats
   var pop=agents.filter(function(a){return a.type==='patient'||a.type==='citizen';});
   var alive=pop.filter(function(a){return a.hp>0;}).length;
