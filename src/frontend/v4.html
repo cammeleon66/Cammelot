@@ -160,6 +160,22 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a1a2e;font-family:
 .stats-row .sk{color:var(--ink2)}.stats-row .sv{font-family:'JetBrains Mono',monospace;font-weight:600}
 .stats-row .sv.sr{color:var(--red)}.stats-row .sv.sg{color:var(--green)}.stats-row .sv.sy{color:var(--gold)}
 .stats-divider{border:none;border-top:1px dashed rgba(61,43,31,.15);margin:10px 0}
+.stats-footer{display:flex;gap:8px;padding:10px 16px;border-top:1px solid rgba(61,43,31,.12);justify-content:center}
+.compare-table{width:100%;border-collapse:collapse;font-size:11px;margin-top:8px}
+.compare-table th{text-align:left;padding:4px 8px;border-bottom:1px solid rgba(255,179,0,0.2);color:var(--gold);font-size:10px}
+.compare-table td{padding:4px 8px;border-bottom:1px solid rgba(0,0,0,0.05)}
+.compare-table .sr{color:#E53935}
+.compare-table .sg{color:#4CAF50}
+.top-title{font-family:'Playfair Display',serif;font-size:22px;font-weight:900;background:linear-gradient(135deg,#FFB300,#FF6F00);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-shadow:none;letter-spacing:1px}
+.qa-overlay{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:linear-gradient(180deg,var(--parchment) 0%,var(--parchment2) 100%);border:4px solid var(--frame);border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,.5);max-width:420px;width:90%;z-index:12;padding:0;animation:fadeIn .2s ease}
+.qa-header{background:var(--frame);color:var(--parchment);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;border-radius:6px 6px 0 0}
+.qa-header h3{font:700 13px 'Playfair Display',serif;letter-spacing:1px;margin:0}
+.qa-body{padding:12px 16px}
+.qa-check{display:flex;align-items:center;gap:8px;font-size:11px;padding:4px 0;color:var(--ink);border-bottom:1px solid rgba(61,43,31,.08)}
+.qa-check .qa-icon{font-size:14px;width:20px;text-align:center}
+.qa-check .qa-name{flex:1;font-weight:600}
+.qa-check .qa-val{font-family:'JetBrains Mono',monospace;font-size:10px}
+.qa-check .qa-exp{font-size:9px;color:var(--ink2)}
 @keyframes fadeIn{0%{opacity:0}100%{opacity:1}}
 
 /* Save Prompt (Sprint 3 — RPG Style) */
@@ -317,8 +333,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a1a2e;font-family:
 
 <div id="app">
   <div id="top">
-    <img class="top-logo" src="/assets/logo.png" alt="Cammelot">
-    <span class="sub">A virtual town where healthcare agents live &amp; struggle</span>
+    <span class="top-title">🏰 Cammelot</span>
+    <span class="sub">Healthcare Crisis Simulation</span>
     <div class="mode-tog">
       <button id="bi" class="a-ist">⚠ IST</button>
       <button id="bs">✦ SOLL</button>
@@ -347,6 +363,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a1a2e;font-family:
         <button class="cb warn" id="btn-auto">⟳ Auto</button>
         <button class="cb stop" id="btn-reset">↺ Reset</button>
         <button class="cb" id="btn-stats">📊 Stats</button>
+        <button class="cb" id="btn-qa">🔬 QA</button>
         <div class="cinfo">FHIR <b id="sF">0</b> · A2A <b id="sM">0</b></div>
       </div>
       <!-- Sprint 6: Wizard Overlay -->
@@ -611,6 +628,17 @@ const GRAVE_MARKERS = []; // {x, y, name, age, cause, waitWeeks, cycle, conditio
 let cycle=0,mode='IST',autoTimer=null;
 const M={IST:{admin:.3,sick:.08,tree:12,ai:1,drain:1},SOLL:{admin:.05,sick:.05,tree:4,ai:1.34,drain:.3}};
 let S={res:6,msgs:0,waste:0};
+
+// ═══ AGENTIC QA PANEL (Sprint 11) ═══
+const QA_CHECKS = [];
+
+// ═══ BIAS TRACKER (Sprint 11) ═══
+const BIAS_DATA = {
+  ageBins: {},
+  conditionBins: {},
+  gpBins: {},
+  genderBins: { M: {totalWait:0, count:0, deaths:0}, F: {totalWait:0, count:0, deaths:0} }
+};
 
 // ── Sprint 2 Constants ──
 const MAX_GP_CONSULTS_PER_DAY = 30; // NZa standard
@@ -3589,6 +3617,12 @@ function tick(){
     });
   }
 
+  // ═══ Sprint 11: Bias tracking (every 50 cycles) ═══
+  if(cycle%50===0) trackBiasData();
+
+  // ═══ Sprint 11: QA auto-run (every 100 cycles) ═══
+  if(cycle%100===0) runQAChecks();
+
   updateUI();
   updateTicker(); // Sprint 6
   if(selectedAgent){const a=agents.find(e=>e.id===selectedAgent);if(a)selectAgent(a);}
@@ -3664,6 +3698,298 @@ function say(w,t,c=''){
   while(d.children.length>40)d.removeChild(d.firstChild);
 }
 
+// ═══ AGENTIC QA CHECKS (Sprint 11) ═══
+function runQAChecks() {
+  const pop = agents.filter(a => a.type === 'patient' || a.type === 'citizen');
+  const alive = pop.filter(a => a.hp > 0);
+  const dead = pop.filter(a => a.hp <= 0);
+  const checks = [];
+
+  // 1. Mortality rate bounds
+  const mortalityRate = dead.length / (pop.length || 1);
+  const bounds = mode === 'IST' ? [0.0, 0.50] : [0.0, 0.20];
+  checks.push({
+    name: 'Mortality Rate',
+    value: (mortalityRate * 100).toFixed(1) + '%',
+    pass: mortalityRate >= bounds[0] && mortalityRate <= bounds[1],
+    expected: bounds[0]*100 + '-' + bounds[1]*100 + '%'
+  });
+
+  // 2. Queue realism (avg wait under 30 weeks)
+  const waiting = agents.filter(a => a.waitWeeks > 0 && a.hp > 0);
+  const avgWait = waiting.length > 0 ? waiting.reduce((s,a) => s + a.waitWeeks, 0) / waiting.length : 0;
+  checks.push({
+    name: 'Avg Wait Time',
+    value: avgWait.toFixed(1) + ' weeks',
+    pass: avgWait < 30,
+    expected: '<30 weeks'
+  });
+
+  // 3. Condition distribution in deaths (no single > 60%)
+  const deathCondCounts = {};
+  dead.forEach(a => {
+    if(a.conditions) a.conditions.forEach(c => {
+      deathCondCounts[c.code] = (deathCondCounts[c.code] || 0) + 1;
+    });
+  });
+  const totalDeathConds = Object.values(deathCondCounts).reduce((s,v) => s+v, 0) || 1;
+  const maxCondPct = Math.max(...Object.values(deathCondCounts).map(v => v/totalDeathConds), 0);
+  checks.push({
+    name: 'Death Condition Spread',
+    value: 'max ' + (maxCondPct*100).toFixed(0) + '%',
+    pass: maxCondPct < 0.60 || dead.length < 3,
+    expected: 'No condition >60%'
+  });
+
+  // 4. Age distribution of deaths
+  const elderlyDeaths = dead.filter(a => a.age >= 65).length;
+  const youngDeaths = dead.filter(a => a.age < 65).length;
+  checks.push({
+    name: 'Age Distribution',
+    value: '65+: ' + elderlyDeaths + ', <65: ' + youngDeaths,
+    pass: dead.length < 5 || elderlyDeaths >= youngDeaths,
+    expected: 'Elderly ≥ Young'
+  });
+
+  // 5. Living agents have valid HP
+  const invalidHP = alive.filter(a => a.hp < 0 || a.hp > 100 || isNaN(a.hp));
+  checks.push({
+    name: 'HP Validity',
+    value: invalidHP.length + ' invalid',
+    pass: invalidHP.length === 0,
+    expected: '0 invalid'
+  });
+
+  // 6. FHIR store bounded
+  checks.push({
+    name: 'FHIR Store Size',
+    value: FHIR_STORE.length + ' resources',
+    pass: FHIR_STORE.length <= 2500,
+    expected: '≤2500'
+  });
+
+  QA_CHECKS.length = 0;
+  QA_CHECKS.push(...checks);
+  return checks;
+}
+
+function showQAPanel() {
+  const gw = document.getElementById('game-wrap');
+  const existing = gw.querySelector('.qa-overlay');
+  if (existing) { existing.remove(); return; }
+  const checks = runQAChecks();
+  const overlay = document.createElement('div');
+  overlay.className = 'qa-overlay';
+  overlay.innerHTML = '<div class="qa-header"><h3>🔬 QA Report — Cycle ' + cycle + '</h3><button class="stats-close" id="qa-close-btn">✕</button></div>' +
+    '<div class="qa-body">' + checks.map(function(c) {
+      return '<div class="qa-check"><span class="qa-icon">' + (c.pass ? '✅' : '❌') + '</span>' +
+        '<span class="qa-name">' + c.name + '</span>' +
+        '<span class="qa-val">' + c.value + '</span>' +
+        '<span class="qa-exp">(expected: ' + c.expected + ')</span></div>';
+    }).join('') + '</div>';
+  gw.appendChild(overlay);
+  var closeBtn = overlay.querySelector('#qa-close-btn');
+  if (closeBtn) closeBtn.addEventListener('click', function() { overlay.remove(); });
+}
+
+// ═══ BIAS TRACKER FUNCTIONS (Sprint 11) ═══
+function trackBiasData() {
+  // Reset bins each tracking cycle to get current snapshot
+  BIAS_DATA.ageBins = {};
+  BIAS_DATA.conditionBins = {};
+  BIAS_DATA.gpBins = {};
+  BIAS_DATA.genderBins = { M: {totalWait:0, count:0, deaths:0}, F: {totalWait:0, count:0, deaths:0} };
+
+  agents.filter(a => a.type === 'patient' || a.type === 'citizen').forEach(function(a) {
+    // Age bin
+    var ageBin = a.age >= 80 ? '80+' : a.age >= 65 ? '65-79' : a.age >= 45 ? '45-64' : '0-44';
+    if (!BIAS_DATA.ageBins[ageBin]) BIAS_DATA.ageBins[ageBin] = {totalWait:0, count:0, deaths:0};
+    BIAS_DATA.ageBins[ageBin].count++;
+    if (a.waitWeeks > 0) BIAS_DATA.ageBins[ageBin].totalWait += a.waitWeeks;
+    if (a.hp <= 0) BIAS_DATA.ageBins[ageBin].deaths++;
+
+    // Condition bins
+    if (a.conditions) a.conditions.forEach(function(c) {
+      if (!BIAS_DATA.conditionBins[c.code]) BIAS_DATA.conditionBins[c.code] = {totalWait:0, count:0, deaths:0};
+      BIAS_DATA.conditionBins[c.code].count++;
+      if (a.waitWeeks > 0) BIAS_DATA.conditionBins[c.code].totalWait += a.waitWeeks;
+      if (a.hp <= 0) BIAS_DATA.conditionBins[c.code].deaths++;
+    });
+
+    // GP bin
+    if (a.gpName) {
+      if (!BIAS_DATA.gpBins[a.gpName]) BIAS_DATA.gpBins[a.gpName] = {totalWait:0, count:0, deaths:0};
+      BIAS_DATA.gpBins[a.gpName].count++;
+      if (a.waitWeeks > 0) BIAS_DATA.gpBins[a.gpName].totalWait += a.waitWeeks;
+      if (a.hp <= 0) BIAS_DATA.gpBins[a.gpName].deaths++;
+    }
+
+    // Gender
+    if (a.gender && BIAS_DATA.genderBins[a.gender]) {
+      BIAS_DATA.genderBins[a.gender].count++;
+      if (a.waitWeeks > 0) BIAS_DATA.genderBins[a.gender].totalWait += a.waitWeeks;
+      if (a.hp <= 0) BIAS_DATA.genderBins[a.gender].deaths++;
+    }
+  });
+}
+
+function buildBiasHTML() {
+  var html = '<hr class="stats-divider"><div class="stats-group"><h4>📊 Bias Analysis (DIB Method)</h4>';
+  // Calculate global avg wait
+  var allWait = 0, allCount = 0;
+  Object.values(BIAS_DATA.ageBins).forEach(function(b) { allWait += b.totalWait; allCount += b.count; });
+  var globalAvgWait = allCount > 0 ? allWait / allCount : 0;
+
+  // Age bins
+  html += '<div style="margin-top:6px;font-size:10px;font-weight:700;color:var(--ink2)">By Age Group</div>';
+  Object.keys(BIAS_DATA.ageBins).sort().forEach(function(k) {
+    var b = BIAS_DATA.ageBins[k];
+    var avg = b.count > 0 ? b.totalWait / b.count : 0;
+    var deathRate = b.count > 0 ? (b.deaths / b.count * 100).toFixed(1) : '0';
+    var disparity = globalAvgWait > 0 && avg > globalAvgWait * 1.5;
+    html += '<div class="stats-row"><span class="sk">' + k + '</span><span class="sv ' + (disparity ? 'sr' : '') + '">Wait: ' + avg.toFixed(1) + 'w · Deaths: ' + deathRate + '%' + (disparity ? ' ⚠' : '') + '</span></div>';
+  });
+
+  // Gender
+  html += '<div style="margin-top:6px;font-size:10px;font-weight:700;color:var(--ink2)">By Gender</div>';
+  ['M', 'F'].forEach(function(g) {
+    var b = BIAS_DATA.genderBins[g];
+    var avg = b.count > 0 ? b.totalWait / b.count : 0;
+    var deathRate = b.count > 0 ? (b.deaths / b.count * 100).toFixed(1) : '0';
+    var disparity = globalAvgWait > 0 && avg > globalAvgWait * 1.5;
+    html += '<div class="stats-row"><span class="sk">' + (g === 'M' ? 'Male' : 'Female') + '</span><span class="sv ' + (disparity ? 'sr' : '') + '">Wait: ' + avg.toFixed(1) + 'w · Deaths: ' + deathRate + '%' + (disparity ? ' ⚠' : '') + '</span></div>';
+  });
+
+  // Condition bins (top 5)
+  var condKeys = Object.keys(BIAS_DATA.conditionBins).sort(function(a,b) { return BIAS_DATA.conditionBins[b].count - BIAS_DATA.conditionBins[a].count; }).slice(0, 5);
+  if (condKeys.length > 0) {
+    html += '<div style="margin-top:6px;font-size:10px;font-weight:700;color:var(--ink2)">By Condition (top 5)</div>';
+    condKeys.forEach(function(k) {
+      var b = BIAS_DATA.conditionBins[k];
+      var avg = b.count > 0 ? b.totalWait / b.count : 0;
+      var deathRate = b.count > 0 ? (b.deaths / b.count * 100).toFixed(1) : '0';
+      var disparity = globalAvgWait > 0 && avg > globalAvgWait * 1.5;
+      html += '<div class="stats-row"><span class="sk">' + k + '</span><span class="sv ' + (disparity ? 'sr' : '') + '">Wait: ' + avg.toFixed(1) + 'w · Deaths: ' + deathRate + '%' + (disparity ? ' ⚠' : '') + '</span></div>';
+    });
+  }
+
+  // GP bins
+  var gpKeys = Object.keys(BIAS_DATA.gpBins);
+  if (gpKeys.length > 0) {
+    html += '<div style="margin-top:6px;font-size:10px;font-weight:700;color:var(--ink2)">By GP</div>';
+    gpKeys.forEach(function(k) {
+      var b = BIAS_DATA.gpBins[k];
+      var avg = b.count > 0 ? b.totalWait / b.count : 0;
+      var deathRate = b.count > 0 ? (b.deaths / b.count * 100).toFixed(1) : '0';
+      var disparity = globalAvgWait > 0 && avg > globalAvgWait * 1.5;
+      html += '<div class="stats-row"><span class="sk">' + k + '</span><span class="sv ' + (disparity ? 'sr' : '') + '">Wait: ' + avg.toFixed(1) + 'w · Deaths: ' + deathRate + '%' + (disparity ? ' ⚠' : '') + '</span></div>';
+    });
+  }
+
+  html += '</div>';
+  return html;
+}
+
+// ═══ ROI DASHBOARD (Sprint 12) ═══
+function buildROIHTML() {
+  var p = M[mode];
+  var gps = agents.filter(function(a) { return a.type === 'gp'; });
+
+  // Admin waste: GP hours × rate × admin%
+  var gpHoursPerCycle = gps.length * 0.25;
+  var adminWasteEUR = Math.round(gpHoursPerCycle * p.admin * 12.43 * cycle);
+
+  // Preventable deaths cost
+  var sysDeaths = EVENT_LOG.filter(function(e) { return e.type === 'died'; }).length;
+  var preventableDeathCostEUR = sysDeaths * 5845;
+
+  // Treeknorm violation cost
+  var treeViolationWeeks = agents.filter(function(a) { return a.waitWeeks > p.tree && a.hp > 0; })
+    .reduce(function(s, a) { return s + (a.waitWeeks - p.tree); }, 0);
+  var treeViolationCostEUR = Math.round(treeViolationWeeks * 150);
+
+  // Total system cost
+  var totalCostEUR = adminWasteEUR + preventableDeathCostEUR + treeViolationCostEUR;
+
+  // SOLL comparison
+  var sollAdmin = Math.round(gpHoursPerCycle * 0.05 * 12.43 * cycle);
+  var savings = adminWasteEUR - sollAdmin;
+
+  return '<hr class="stats-divider">' +
+    '<div class="stats-group"><h4>💰 ROI Analysis</h4>' +
+      '<div class="stats-row"><span class="sk">Admin Waste</span><span class="sv sr">€' + adminWasteEUR.toLocaleString() + '</span></div>' +
+      '<div class="stats-row"><span class="sk">Preventable Death Cost</span><span class="sv sr">€' + preventableDeathCostEUR.toLocaleString() + ' (' + sysDeaths + ' × €5,845)</span></div>' +
+      '<div class="stats-row"><span class="sk">Treeknorm Violation Cost</span><span class="sv ' + (treeViolationCostEUR > 0 ? 'sr' : '') + '">€' + treeViolationCostEUR.toLocaleString() + '</span></div>' +
+      '<div class="stats-row"><span class="sk"><b>Total System Cost</b></span><span class="sv sr"><b>€' + totalCostEUR.toLocaleString() + '</b></span></div>' +
+      '<div class="stats-row"><span class="sk">SOLL Savings (admin alone)</span><span class="sv sg">€' + savings.toLocaleString() + '</span></div>' +
+    '</div>';
+}
+
+// ═══ SCENARIO COMPARISON (Sprint 12) ═══
+function buildComparisonHTML() {
+  var ist = M.IST, soll = M.SOLL;
+  return '<hr class="stats-divider">' +
+    '<div class="stats-group"><h4>📊 IST vs SOLL Comparison</h4>' +
+      '<table class="compare-table">' +
+        '<tr><th>Parameter</th><th>IST (Current)</th><th>SOLL (AI-Native)</th><th>Impact</th></tr>' +
+        '<tr><td>Admin Burden</td><td class="sr">' + (ist.admin*100) + '%</td><td class="sg">' + (soll.admin*100) + '%</td><td class="sg">-' + ((ist.admin-soll.admin)*100).toFixed(0) + '%</td></tr>' +
+        '<tr><td>Sick Leave</td><td class="sr">' + (ist.sick*100) + '%</td><td class="sg">' + (soll.sick*100) + '%</td><td class="sg">-' + ((ist.sick-soll.sick)*100).toFixed(0) + '%</td></tr>' +
+        '<tr><td>Treeknorm (weeks)</td><td class="sr">' + ist.tree + 'w</td><td class="sg">' + soll.tree + 'w</td><td class="sg">-' + (ist.tree-soll.tree) + 'w</td></tr>' +
+        '<tr><td>AI Multiplier</td><td>' + ist.ai + '×</td><td class="sg">' + soll.ai + '×</td><td class="sg">+' + ((soll.ai-ist.ai)*100).toFixed(0) + '%</td></tr>' +
+        '<tr><td>HP Drain Rate</td><td class="sr">' + ist.drain + '×</td><td class="sg">' + soll.drain + '×</td><td class="sg">-' + ((ist.drain-soll.drain)*100).toFixed(0) + '%</td></tr>' +
+        '<tr><td>Effective Capacity</td><td class="sr">62%</td><td class="sg">83%</td><td class="sg">+21%</td></tr>' +
+      '</table>' +
+    '</div>';
+}
+
+// ═══ DATA EXPORT (Sprint 12) ═══
+function exportSimData(format) {
+  var data = {
+    meta: { exported: new Date().toISOString(), cycle: cycle, mode: mode, version: 2 },
+    parameters: M[mode],
+    population: agents.filter(function(a) { return a.type === 'patient' || a.type === 'citizen'; }).map(function(a) {
+      return {
+        id: a.id, age: a.age, gender: a.gender, hp: Math.round(a.hp),
+        conditions: a.conditions ? a.conditions.map(function(c) { return {code: c.code, severity: c.severity}; }) : [],
+        waitWeeks: Math.round(a.waitWeeks * 10) / 10,
+        behaviorState: a.behaviorState,
+        causeOfDeath: a.causeOfDeath || null
+      };
+    }),
+    events: EVENT_LOG.slice(-500),
+    stats: {
+      alive: agents.filter(function(a) { return a.hp > 0 && (a.type === 'patient' || a.type === 'citizen'); }).length,
+      dead: agents.filter(function(a) { return a.hp <= 0 && (a.type === 'patient' || a.type === 'citizen'); }).length,
+      systemDeaths: EVENT_LOG.filter(function(e) { return e.type === 'died'; }).length,
+      naturalDeaths: EVENT_LOG.filter(function(e) { return e.type === 'natural_death'; }).length,
+      adminWaste: Math.round(S.waste),
+      totalCycles: cycle
+    },
+    biasData: BIAS_DATA,
+    qaChecks: QA_CHECKS
+  };
+
+  var blob, filename;
+  if (format === 'csv') {
+    var headers = 'id,age,gender,hp,conditions,waitWeeks,state,causeOfDeath\n';
+    var rows = data.population.map(function(a) {
+      return a.id + ',' + a.age + ',' + a.gender + ',' + a.hp + ',"' + (a.conditions ? a.conditions.map(function(c){return c.code;}).join(';') : '') + '",' + a.waitWeeks + ',' + a.behaviorState + ',' + (a.causeOfDeath || '');
+    }).join('\n');
+    blob = new Blob([headers + rows], {type: 'text/csv'});
+    filename = 'cammelot-export-c' + cycle + '.csv';
+  } else {
+    blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+    filename = 'cammelot-export-c' + cycle + '.json';
+  }
+
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 // ═══ STATS DASHBOARD (Sprint 3 — Epic 4.3) ═══
 let statsVisible=false;
 
@@ -3681,6 +4007,11 @@ function toggleStats(){
   // CSP-safe: bind close button after DOM insertion
   const closeBtn=overlay.querySelector('#stats-close-btn');
   if(closeBtn) closeBtn.addEventListener('click',function(){this.closest('.stats-overlay').remove();statsVisible=false;});
+  // Sprint 12: Wire export buttons
+  const exportJsonBtn=overlay.querySelector('#export-json');
+  if(exportJsonBtn) exportJsonBtn.addEventListener('click',function(){exportSimData('json');});
+  const exportCsvBtn=overlay.querySelector('#export-csv');
+  if(exportCsvBtn) exportCsvBtn.addEventListener('click',function(){exportSimData('csv');});
 }
 
 function buildStatsHTML(){
@@ -3783,6 +4114,15 @@ function buildStatsHTML(){
       </div>
 
       <div style="text-align:center;padding:8px 0 4px;font-size:9px;color:var(--ink2)">Mode: ${mode} · C_eff: ${mode==='IST'?'62':'83'}% · Admin: ${Math.round(p.admin*100)}%</div>
+
+      ${buildROIHTML()}
+      ${buildComparisonHTML()}
+      ${buildBiasHTML()}
+
+      <div class="stats-footer">
+        <button class="cb" id="export-json">📥 Export JSON</button>
+        <button class="cb" id="export-csv">📥 Export CSV</button>
+      </div>
     </div>
   </div>`;
 }
@@ -4300,6 +4640,7 @@ document.getElementById('btn-batch100').addEventListener('click', () => batch(10
 document.getElementById('btn-auto').addEventListener('click', () => autoRun());
 document.getElementById('btn-reset').addEventListener('click', () => resetSim());
 document.getElementById('btn-stats').addEventListener('click', () => toggleStats());
+document.getElementById('btn-qa').addEventListener('click', () => showQAPanel());
 document.getElementById('wizard-skip').addEventListener('click', () => closeWizard());
 document.getElementById('wizard-next').addEventListener('click', () => nextWizardStep());
 
