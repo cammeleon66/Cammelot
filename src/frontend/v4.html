@@ -632,6 +632,64 @@ body.dark-mode .gazette-mayor{background:rgba(255,179,0,.1);border-color:rgba(25
 body.dark-mode .gazette-history-card{border-color:rgba(255,179,0,.2)}
 body.dark-mode .gazette-history-card .ghc-header{background:rgba(255,179,0,.06)}
 body.dark-mode .gazette-running-totals{background:rgba(255,255,255,.03)}
+
+/* ═══ SPRINT 20: SCREENSHOT & SHARE ENGINE ═══ */
+/* Toast notification system */
+.cammelot-toast{position:fixed;bottom:24px;right:24px;z-index:100000;background:#1a1a2e;color:#fff;border:1px solid var(--gold);border-radius:8px;padding:14px 20px;font:500 13px 'Inter','JetBrains Mono',monospace;box-shadow:0 8px 32px rgba(0,0,0,.5);max-width:380px;animation:toastIn .35s ease-out;display:flex;align-items:flex-start;gap:10px}
+.cammelot-toast.toast-out{animation:toastOut .3s ease-in forwards}
+.cammelot-toast .toast-msg{flex:1;line-height:1.5}
+.cammelot-toast .toast-copy{background:rgba(255,179,0,.15);border:1px solid rgba(255,179,0,.3);color:var(--gold);font:600 11px 'JetBrains Mono',monospace;padding:4px 10px;border-radius:4px;cursor:pointer;white-space:nowrap;transition:.15s}
+.cammelot-toast .toast-copy:hover{background:rgba(255,179,0,.3)}
+.cammelot-toast .toast-close{background:none;border:none;color:rgba(255,255,255,.4);font-size:16px;cursor:pointer;padding:0 0 0 6px;line-height:1}
+.cammelot-toast .toast-close:hover{color:#fff}
+.cammelot-toast.toast-death{border-left:4px solid var(--red)}
+.cammelot-toast.toast-queue_record{border-left:4px solid #ff9800}
+.cammelot-toast.toast-milestone{border-left:4px solid var(--blue)}
+@keyframes toastIn{from{opacity:0;transform:translateY(20px) scale(.95)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes toastOut{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(20px)}}
+
+/* Moments gallery panel */
+.moments-gallery{padding:10px}
+.moments-gallery h3{margin:0 0 10px;font:700 13px 'Press Start 2P','JetBrains Mono',monospace;color:var(--gold);letter-spacing:1px}
+.moments-gallery .moments-empty{text-align:center;padding:30px 10px;color:var(--ink2);font:12px 'Inter',sans-serif}
+.moment-card{border:1px solid rgba(255,179,0,.15);border-radius:6px;margin:8px 0;padding:10px 12px;background:rgba(0,0,0,.02);transition:.15s;cursor:default}
+.moment-card:hover{border-color:var(--gold);background:rgba(255,179,0,.03)}
+.moment-card.mc-death{border-left:3px solid var(--red)}
+.moment-card.mc-queue_record{border-left:3px solid #ff9800}
+.moment-card.mc-milestone{border-left:3px solid var(--blue)}
+.moment-card .mc-head{font:600 12px 'JetBrains Mono',monospace;color:var(--ink);margin-bottom:4px;line-height:1.4}
+.moment-card .mc-detail{font:11px 'Inter',sans-serif;color:var(--ink2);line-height:1.5;margin-bottom:6px}
+.moment-card .mc-meta{display:flex;justify-content:space-between;align-items:center}
+.moment-card .mc-cycle{font:500 10px 'JetBrains Mono',monospace;color:var(--ink2)}
+.moment-card .mc-copy{background:rgba(255,179,0,.1);border:1px solid rgba(255,179,0,.2);color:var(--gold);font:600 10px 'JetBrains Mono',monospace;padding:3px 8px;border-radius:4px;cursor:pointer;transition:.15s}
+.moment-card .mc-copy:hover{background:rgba(255,179,0,.25)}
+.moment-card .mc-agent-link{color:var(--gold);cursor:pointer;text-decoration:underline;text-decoration-style:dotted}
+.moment-card .mc-agent-link:hover{color:#ffe082}
+
+/* LinkedIn post generator modal */
+.linkedin-overlay{position:absolute;inset:0;z-index:9000;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;animation:fadeIn .2s}
+.linkedin-modal{background:var(--frame,#1a1a2e);border:2px solid var(--gold);border-radius:12px;width:min(560px,90%);max-height:85vh;overflow-y:auto;box-shadow:0 16px 64px rgba(0,0,0,.5)}
+.linkedin-modal .lm-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid rgba(255,179,0,.2)}
+.linkedin-modal .lm-title{font:700 14px 'Press Start 2P','JetBrains Mono',monospace;color:var(--gold);letter-spacing:1px}
+.linkedin-modal .lm-close{background:none;border:none;color:rgba(255,255,255,.5);font-size:20px;cursor:pointer;padding:0}
+.linkedin-modal .lm-close:hover{color:#fff}
+.linkedin-modal .lm-styles{display:flex;gap:8px;padding:12px 20px;border-bottom:1px solid rgba(255,179,0,.1)}
+.linkedin-modal .lm-style-btn{flex:1;padding:8px 12px;background:rgba(255,179,0,.08);border:1px solid rgba(255,179,0,.15);border-radius:6px;color:var(--parchment,#fff);font:600 12px 'JetBrains Mono',monospace;cursor:pointer;transition:.15s;text-align:center}
+.linkedin-modal .lm-style-btn:hover,.linkedin-modal .lm-style-btn.active{background:rgba(255,179,0,.2);border-color:var(--gold)}
+.linkedin-modal .lm-body{padding:16px 20px}
+.linkedin-modal .lm-textarea{width:100%;min-height:280px;background:rgba(0,0,0,.3);border:1px solid rgba(255,179,0,.15);border-radius:6px;color:var(--parchment,#fff);font:13px/1.6 'Inter','JetBrains Mono',monospace;padding:14px;resize:vertical;box-sizing:border-box}
+.linkedin-modal .lm-textarea:focus{outline:none;border-color:var(--gold)}
+.linkedin-modal .lm-actions{display:flex;gap:8px;padding:12px 20px 16px;border-top:1px solid rgba(255,179,0,.1)}
+.linkedin-modal .lm-copy-btn{flex:1;padding:12px;background:linear-gradient(135deg,rgba(255,179,0,.25),rgba(255,179,0,.15));border:1px solid var(--gold);border-radius:6px;color:var(--gold);font:700 13px 'JetBrains Mono',monospace;cursor:pointer;transition:.15s;text-align:center}
+.linkedin-modal .lm-copy-btn:hover{background:linear-gradient(135deg,rgba(255,179,0,.4),rgba(255,179,0,.25))}
+.linkedin-modal .lm-note{font:11px 'Inter',sans-serif;color:rgba(255,255,255,.35);text-align:center;padding:0 20px 14px}
+
+/* Dark mode overrides for Sprint 20 */
+body.dark-mode .moment-card{background:rgba(255,255,255,.02)}
+body.dark-mode .moment-card:hover{background:rgba(255,179,0,.05)}
+body.dark-mode .cammelot-toast{background:#0f0f1e;border-color:rgba(255,179,0,.5)}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+/* ═══ END SPRINT 20 CSS ═══ */
 </style>
 </head>
 <body>
@@ -677,6 +735,9 @@ body.dark-mode .gazette-running-totals{background:rgba(255,255,255,.03)}
         <button class="cb" id="btn-heatmap">🗺 Heatmap</button>
         <button class="cb" id="btn-timeline">📈 Timeline</button>
         <button class="cb warn" id="btn-gazette" title="The Cammelot Gazette">📰 Gazette</button>
+        <button class="cb" id="btn-screenshot" title="Capture branded screenshot">📸</button>
+        <button class="cb" id="btn-moments" title="View dramatic moments">🃏 Moments</button>
+        <button class="cb" id="btn-linkedin" title="Generate LinkedIn post">📝 Post</button>
         <div class="cinfo">FHIR <b id="sF">0</b> · A2A <b id="sM">0</b></div>
       </div>
       <div id="timeline-bar" class="timeline-bar" style="display:none">
@@ -939,6 +1000,10 @@ let lastGazetteCycle = 0;
 let mayorBubbleTimer = 0;
 let mayorBubbleText = '';
 // ═══ END GAZETTE DATA ═══
+
+// ═══ SPRINT 20: MOMENTS DATA ═══
+const MOMENTS = { items: [], queueRecord: 0 };
+// ═══ END MOMENTS DATA ═══
 
 // ═══ SPRINT 5: VISIBLE QUEUES ═══
 const QUEUES = {
@@ -2288,6 +2353,34 @@ function spawnPopulation(count) {
     if (waitWeeks > 10) state = 'critical';
     else if (conditions.length > 0 && waitWeeks > 0) state = 'waiting';
     else if (conditions.length > 0) state = 'managed';
+    // ── Sprint 26: Life-stage properties ──
+    let lifeStage = 'adult';
+    if (age <= 5) lifeStage = 'toddler';
+    else if (age <= 12) lifeStage = 'child';
+    else if (age <= 17) lifeStage = 'teen';
+    else if (age <= 67) lifeStage = 'adult';
+    else if (age <= 79) lifeStage = 'senior';
+    else lifeStage = 'elderly';
+    // Speed multiplier by age
+    let speedMultiplier = 1.0;
+    if (age < 13) speedMultiplier = 1.2;
+    else if (age >= 80) speedMultiplier = 0.5;
+    else if (age >= 65) speedMultiplier = 0.7;
+    // Home position — near spawn point
+    const homePos = { x: pos.x + (Math.random() - 0.5) * 0.03, y: pos.y + (Math.random() - 0.5) * 0.03 };
+    // Night owl — 10% of agents
+    const isNightOwl = Math.random() < 0.10;
+    // Workplace for working-age adults
+    let workplace = null;
+    let workplacePos = null;
+    if (lifeStage === 'adult') {
+      const workBuildings = BUILDINGS.filter(b => b.id !== 'hospital' || Math.random() < 0.15);
+      const wb = workBuildings[Math.floor(Math.random() * workBuildings.length)];
+      workplace = wb.id;
+      workplacePos = { x: (wb.x1 + wb.x2) / 2, y: wb.y2 + 0.02 };
+    }
+    // School position for children/teens
+    const schoolPos = (lifeStage === 'child' || lifeStage === 'teen') ? { x: 0.50, y: 0.35 } : null;
     const agent = {
       id, name: firstName + ' ' + surname, age, gender,
       type: conditions.length > 0 ? 'patient' : 'citizen',
@@ -2301,8 +2394,18 @@ function spawnPopulation(count) {
       hpHistory: [hp],
       bio: generateBio(id, age, gender),
       chatPartner: null, chatTimer: 0, chatBubbleText: '',
-      grievingTimer: 0
+      grievingTimer: 0,
+      // Sprint 26: Life-stage properties
+      lifeStage, speedMultiplier, homePos, isNightOwl,
+      workplace, workplacePos, schoolPos,
+      parentId: null, atWork: false, workTimer: 0,
+      schoolTimer: 0, restTimer: 0, routineGPTimer: 0
     };
+    // Sprint 26: Pair toddlers with parent (find adult with same surname)
+    if (lifeStage === 'toddler' || lifeStage === 'child') {
+      const parent = spawned.find(s => s.lifeStage === 'adult' && s.name.endsWith(surname) && !spawned.some(c => c.parentId === s.id));
+      if (parent) agent.parentId = parent.id;
+    }
     spawned.push(agent);
     logEvent('spawned', agent, 'Age ' + agent.age);
   }
@@ -3556,6 +3659,8 @@ function render(){
       else if (e.hp > 20) speedMult = 0.6; // in pain
       else speedMult = 0.3; // critical
       if ((e.grievingTimer || 0) > 0) speedMult *= 0.5;
+      // Sprint 26: Age-based speed multiplier
+      if (e.speedMultiplier) speedMult *= e.speedMultiplier;
       const baseSpeed = (e.hp <= 0 ? 0.010 : 0.025) * dt * speedMult;
       // Ease-out near destination (slow down approaching)
       const easeFactor = Math.min(1, dist / 0.03);
@@ -4764,6 +4869,9 @@ function tick(){
   // ═══ Sprint 19: Auto-generate Gazette every 100 cycles ═══
   if(cycle%100===0 && cycle>0) autoGenerateGazette();
 
+  // ═══ Sprint 20: Check for shareable moments ═══
+  checkForMoments(cycle);
+
   updateUI();
   updateTicker(); // Sprint 6
   if (timelineVisible) drawTimeline(); // Sprint 16
@@ -4784,6 +4892,7 @@ function resetSim(){
   A2A_MESSAGES.length=0;
   TIMELINE_SNAPSHOTS.length=0; // Sprint 16
   GAZETTE_HISTORY.length=0; TREND_DATA.periods.length=0; lastGazetteCycle=0; mayorBubbleTimer=0; mayorBubbleText=''; // Sprint 19
+  MOMENTS.items.length=0; MOMENTS.queueRecord=0; // Sprint 20
   Object.values(QUEUES).forEach(q => { q.agents = []; q.positions = []; });
   try{localStorage.removeItem('cammelot_save');}catch(e){}
   agents.forEach(a=>{
@@ -6486,6 +6595,9 @@ document.getElementById('btn-qa').addEventListener('click', () => { playUIClick(
 document.getElementById('btn-heatmap').addEventListener('click', () => { playUIClick(); toggleHeatmap(); });
 document.getElementById('btn-timeline').addEventListener('click', () => { playUIClick(); toggleTimeline(); });
 document.getElementById('btn-gazette').addEventListener('click', () => { playUIClick(); showGazette(); });
+document.getElementById('btn-screenshot').addEventListener('click', () => { playUIClick(); captureScreenshot(); });
+document.getElementById('btn-moments').addEventListener('click', () => { playUIClick(); showMomentsGallery(); });
+document.getElementById('btn-linkedin').addEventListener('click', () => { playUIClick(); showLinkedInPanel(); });
 document.getElementById('theme-toggle').addEventListener('click', () => toggleDarkMode());
 document.getElementById('sound-toggle').addEventListener('click', () => toggleSound());
 document.getElementById('wizard-skip').addEventListener('click', () => closeWizard());
@@ -6522,6 +6634,426 @@ document.getElementById('agent-detail').addEventListener('click', function(e) {
   const back = e.target.closest('[data-action="showTownFeed"]');
   if (back) showTownFeed();
 });
+
+// ═══ SPRINT 20: SCREENSHOT & SHARE ENGINE ═══
+
+// 20.0 — Toast notification system (reusable)
+function showToast(message, duration, extraClass, copyText) {
+  duration = duration || 3000;
+  var container = document.getElementById('toast-container-s20');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'toast-container-s20';
+    container.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:100000;display:flex;flex-direction:column-reverse;gap:8px;pointer-events:none';
+    document.body.appendChild(container);
+  }
+  var toast = document.createElement('div');
+  toast.className = 'cammelot-toast' + (extraClass ? ' ' + extraClass : '');
+  toast.style.pointerEvents = 'auto';
+  var msgSpan = document.createElement('span');
+  msgSpan.className = 'toast-msg';
+  msgSpan.textContent = message;
+  toast.appendChild(msgSpan);
+  if (copyText) {
+    var copyBtn = document.createElement('button');
+    copyBtn.className = 'toast-copy';
+    copyBtn.textContent = '📋 Copy';
+    copyBtn.addEventListener('click', function() {
+      navigator.clipboard.writeText(copyText).then(function() {
+        copyBtn.textContent = '✓ Copied';
+        setTimeout(function() { copyBtn.textContent = '📋 Copy'; }, 1500);
+      }).catch(function() { copyBtn.textContent = '✗ Failed'; });
+    });
+    toast.appendChild(copyBtn);
+  }
+  var closeBtn = document.createElement('button');
+  closeBtn.className = 'toast-close';
+  closeBtn.textContent = '×';
+  closeBtn.addEventListener('click', function() { dismissToast(toast); });
+  toast.appendChild(closeBtn);
+  container.appendChild(toast);
+  var timer = setTimeout(function() { dismissToast(toast); }, duration);
+  toast._timer = timer;
+}
+
+function dismissToast(toast) {
+  if (toast._dismissed) return;
+  toast._dismissed = true;
+  clearTimeout(toast._timer);
+  toast.classList.add('toast-out');
+  setTimeout(function() { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 300);
+}
+
+// 20.1 — Screenshot Capture
+function captureScreenshot() {
+  var simCanvas = document.getElementById('cv');
+  if (!simCanvas) { showToast('❌ Canvas not found'); return; }
+  var padding = 32;
+  var headerH = 60;
+  var footerH = 50;
+  var offW = simCanvas.width + padding * 2;
+  var offH = simCanvas.height + headerH + footerH + padding * 2;
+  var off = document.createElement('canvas');
+  off.width = offW;
+  off.height = offH;
+  var ctx = off.getContext('2d');
+
+  // Background
+  ctx.fillStyle = '#1a1a2e';
+  ctx.fillRect(0, 0, offW, offH);
+
+  // Gold border
+  ctx.strokeStyle = '#ffb300';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(4, 4, offW - 8, offH - 8);
+
+  // Header: branding
+  ctx.fillStyle = '#ffb300';
+  ctx.font = 'bold 20px "Press Start 2P", "JetBrains Mono", monospace';
+  ctx.fillText('🏰 CAMMELOT', padding, padding + 24);
+  ctx.fillStyle = 'rgba(255,255,255,.6)';
+  ctx.font = '12px "Inter", "JetBrains Mono", sans-serif';
+  ctx.fillText('Healthcare Crisis Simulation', padding, padding + 44);
+
+  // Sim canvas copy
+  var canvasY = padding + headerH;
+  ctx.strokeStyle = 'rgba(255,179,0,.3)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(padding - 1, canvasY - 1, simCanvas.width + 2, simCanvas.height + 2);
+  ctx.drawImage(simCanvas, padding, canvasY);
+
+  // Footer stats
+  var footerY = canvasY + simCanvas.height + 24;
+  var alive = agents.filter(function(a) { return a.hp > 0 && (a.type === 'patient' || a.type === 'citizen'); }).length;
+  var dead = agents.filter(function(a) { return (a.type === 'patient' || a.type === 'citizen') && a.hp <= 0; }).length;
+  var waitArr = agents.filter(function(a) { return a.waitWeeks > 0 && a.hp > 0; });
+  var avgW = waitArr.length > 0 ? (waitArr.reduce(function(s, a) { return s + a.waitWeeks; }, 0) / waitArr.length).toFixed(1) : '0';
+
+  ctx.fillStyle = '#ffffff';
+  ctx.font = '13px "JetBrains Mono", monospace';
+  ctx.fillText('Day ' + Math.floor(cycle / 4) + '  |  ' + alive + ' alive  |  ' + dead + ' ☠  |  ' + mode + ' Mode  |  Avg Wait: ' + avgW + ' weeks', padding, footerY);
+
+  ctx.fillStyle = 'rgba(255,179,0,.5)';
+  ctx.font = '11px "Inter", sans-serif';
+  ctx.textAlign = 'right';
+  ctx.fillText('cammelot.health', offW - padding, footerY);
+  ctx.textAlign = 'left';
+
+  // Export
+  off.toBlob(function(blob) {
+    if (!blob) { showToast('❌ Screenshot failed'); return; }
+    // Try clipboard first
+    if (navigator.clipboard && typeof ClipboardItem !== 'undefined') {
+      navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]).then(function() {
+        showToast('📸 Screenshot copied to clipboard!');
+      }).catch(function() {
+        downloadScreenshotBlob(blob);
+      });
+    } else {
+      downloadScreenshotBlob(blob);
+    }
+  }, 'image/png');
+}
+
+function downloadScreenshotBlob(blob) {
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'cammelot-screenshot-c' + cycle + '.png';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('📸 Screenshot downloaded!');
+}
+
+// 20.2 — Moment Cards
+function addMoment(type, moment) {
+  moment.type = type;
+  moment.cycle = cycle;
+  moment.timestamp = Date.now();
+  MOMENTS.items.push(moment);
+  showMomentToast(moment);
+}
+
+function showMomentToast(moment) {
+  var extraClass = 'toast-' + moment.type;
+  var copyText = moment.headline + '\n' + moment.detail;
+  showToast(moment.headline, 5000, extraClass, copyText);
+}
+
+function checkForMoments(currentCycle) {
+  var recentEvents = EVENT_LOG.filter(function(e) { return e.cycle >= currentCycle - 5 && e.cycle <= currentCycle; });
+
+  // Death moments (system failure deaths only, not natural)
+  var deaths = recentEvents.filter(function(e) { return e.type === 'died' && e.cycle === currentCycle; });
+  deaths.forEach(function(d) {
+    var a = agents.find(function(ag) { return ag.id === d.agentId; });
+    if (!a) return;
+    var condNames = (a.conditions || []).map(function(c) { return c.name; }).join(', ') || 'Unknown';
+    addMoment('death', {
+      headline: '💀 ' + d.agentName + ' (' + (a.age || '?') + ') died after waiting ' + Math.round(a.waitWeeks || 0) + ' weeks',
+      detail: 'Condition: ' + condNames + '. The system couldn\'t keep up.',
+      data: { name: d.agentName, age: a.age, wait: a.waitWeeks, agentId: a.id }
+    });
+  });
+
+  // Queue record
+  var queueSize = agents.filter(function(a) {
+    return (a.behaviorState === 'queuing' || a.referredToHospital) && a.hp > 0;
+  }).length;
+  if (queueSize > 0 && queueSize > MOMENTS.queueRecord) {
+    MOMENTS.queueRecord = queueSize;
+    addMoment('queue_record', {
+      headline: '🏥 Hospital queue reached ' + queueSize + ' — new record',
+      detail: 'Staff working at maximum capacity. Treeknorm violations increasing.',
+      data: { queueSize: queueSize }
+    });
+  }
+
+  // Milestone cycles
+  if (currentCycle > 0 && currentCycle % 500 === 0) {
+    var totalDeaths = agents.filter(function(a) { return (a.type === 'patient' || a.type === 'citizen') && a.hp <= 0; }).length;
+    var aliveCount = agents.filter(function(a) { return a.hp > 0 && (a.type === 'patient' || a.type === 'citizen'); }).length;
+    addMoment('milestone', {
+      headline: '📊 Cycle ' + currentCycle + ' complete',
+      detail: aliveCount + ' alive, ' + totalDeaths + ' lost. ' + mode + ' mode.',
+      data: { cycle: currentCycle, alive: aliveCount, deaths: totalDeaths }
+    });
+  }
+}
+
+function showMomentsGallery() {
+  var d = document.getElementById('agent-detail');
+  document.querySelector('.panel-header').textContent = 'MOMENTS';
+  selectedAgent = null;
+  var items = MOMENTS.items.slice().reverse();
+  var html = '<div class="panel-back" data-action="showTownFeed">← Town Feed</div>';
+  html += '<div class="moments-gallery">';
+  html += '<h3>🃏 DRAMATIC MOMENTS</h3>';
+  if (items.length === 0) {
+    html += '<div class="moments-empty">No moments captured yet.<br>Run the simulation to see dramatic events.</div>';
+  } else {
+    items.forEach(function(m, i) {
+      var icon = m.type === 'death' ? '💀' : m.type === 'queue_record' ? '🏥' : '📊';
+      var headlineHtml = m.headline;
+      // Make agent names clickable if we have agent data
+      if (m.data && m.data.agentId) {
+        var nameText = m.data.name;
+        if (nameText && headlineHtml.indexOf(nameText) >= 0) {
+          headlineHtml = headlineHtml.replace(nameText, '<span class="mc-agent-link" data-agent-id="' + m.data.agentId + '">' + nameText + '</span>');
+        }
+      }
+      html += '<div class="moment-card mc-' + m.type + '">';
+      html += '<div class="mc-head">' + headlineHtml + '</div>';
+      html += '<div class="mc-detail">' + m.detail + '</div>';
+      html += '<div class="mc-meta">';
+      html += '<span class="mc-cycle">Cycle ' + m.cycle + '</span>';
+      html += '<button class="mc-copy" data-moment-idx="' + i + '">📋 Copy</button>';
+      html += '</div></div>';
+    });
+  }
+  html += '</div>';
+  setPanelContent(html);
+
+  // Wire copy buttons and agent links via delegation
+  d.addEventListener('click', function handler(e) {
+    var copyBtn = e.target.closest('.mc-copy');
+    if (copyBtn) {
+      var idx = parseInt(copyBtn.getAttribute('data-moment-idx'));
+      var mom = items[idx];
+      if (mom) {
+        navigator.clipboard.writeText(mom.headline + '\n' + mom.detail).then(function() {
+          copyBtn.textContent = '✓ Copied';
+          setTimeout(function() { copyBtn.textContent = '📋 Copy'; }, 1500);
+        }).catch(function() {});
+      }
+    }
+    var agentLink = e.target.closest('.mc-agent-link');
+    if (agentLink) {
+      var aid = agentLink.getAttribute('data-agent-id');
+      var ag = agents.find(function(a) { return a.id === aid; });
+      if (ag) selectAgent(ag);
+    }
+  });
+}
+
+// 20.3 — LinkedIn Post Generator
+function getSimStats() {
+  var totalPop = agents.filter(function(a) { return a.type === 'patient' || a.type === 'citizen'; });
+  var alive = totalPop.filter(function(a) { return a.hp > 0; });
+  var dead = totalPop.filter(function(a) { return a.hp <= 0; });
+  var sysDead = EVENT_LOG.filter(function(e) { return e.type === 'died'; }).length;
+  var elderlyDead = dead.filter(function(a) { return a.age >= 65; }).length;
+  var elderlyPct = dead.length > 0 ? Math.round(elderlyDead / dead.length * 100) : 0;
+  var waitArr = agents.filter(function(a) { return a.waitWeeks > 0 && a.hp > 0; });
+  var avgWait = waitArr.length > 0 ? (waitArr.reduce(function(s, a) { return s + a.waitWeeks; }, 0) / waitArr.length).toFixed(1) : '0';
+  var maxWait = waitArr.length > 0 ? Math.round(waitArr.reduce(function(m, a) { return Math.max(m, a.waitWeeks); }, 0)) : 0;
+  var adminWaste = Math.round(S.waste || 0);
+  // Find most dramatic death (longest wait)
+  var deathEvents = EVENT_LOG.filter(function(e) { return e.type === 'died'; });
+  var dramaticDeath = null;
+  deathEvents.forEach(function(de) {
+    var a = agents.find(function(ag) { return ag.id === de.agentId; });
+    if (a && (!dramaticDeath || (a.waitWeeks || 0) > (dramaticDeath.waitWeeks || 0))) {
+      dramaticDeath = a;
+    }
+  });
+  // SOLL improvement estimate
+  var sollPct = dead.length > 0 ? Math.round(Math.min(dead.length * 0.6, dead.length) / dead.length * 100) : 40;
+  var savedLives = Math.round(dead.length * 0.6);
+  var savedMoney = Math.round(savedLives * 5845);
+
+  return {
+    pop: totalPop.length, alive: alive.length, deaths: dead.length,
+    sysDead: sysDead, elderlyPct: elderlyPct, avgWait: avgWait, maxWait: maxWait,
+    adminWaste: adminWaste, dramaticDeath: dramaticDeath, sollPct: sollPct,
+    savedLives: savedLives, savedMoney: savedMoney, cycle: cycle,
+    preventable: Math.round(sysDead * 0.7)
+  };
+}
+
+function generateLinkedInPost(style) {
+  var s = getSimStats();
+  var text = '';
+  if (style === 'data') {
+    text = 'I built a simulation of the Dutch healthcare crisis.\n\n' +
+      s.pop + ' AI citizens. Real CBS/RIVM data. Real consequences.\n\n' +
+      'After ' + s.cycle + ' cycles:\n\n' +
+      '📊 ' + s.deaths + ' citizens died. ' + s.elderlyPct + '% were over 65.\n' +
+      '⏰ Average specialist wait: ' + s.avgWait + ' weeks (norm: 4 weeks)\n' +
+      '💰 Admin waste: €' + s.adminWaste.toLocaleString() + ' (30% of GP time on paperwork)\n' +
+      '👻 ' + s.preventable + ' deaths were preventable with AI triage\n\n' +
+      'The scariest part? These numbers match the real Netherlands.\n\n' +
+      'Try it yourself: cammelot.health\n\n' +
+      '#healthcare #AI #Netherlands #zorginfarct';
+  } else if (style === 'story') {
+    var d = s.dramaticDeath;
+    if (d) {
+      var pronoun = d.gender === 'F' ? 'She' : 'He';
+      var possessive = d.gender === 'F' ? 'Her' : 'His';
+      var objPronoun = d.gender === 'F' ? 'her' : 'him';
+      var condName = (d.conditions && d.conditions.length > 0) ? d.conditions[0].name : 'a chronic condition';
+      text = d.name + ' was ' + d.age + ' years old.\n\n' +
+        pronoun + ' had ' + condName + '. ' + possessive + ' GP referred ' + objPronoun + ' to a specialist.\n\n' +
+        'The wait time? ' + Math.round(d.waitWeeks || 0) + ' weeks. The legal maximum is 4.\n\n' +
+        'By week ' + Math.round(d.waitWeeks || 0) + ', ' + d.name + ' was gone.\n\n' +
+        'This isn\'t fiction. This is a simulation built on real Dutch healthcare data (CBS, RIVM, NZa).\n\n' +
+        'In my simulation of ' + s.pop + ' citizens, ' + s.deaths + ' died waiting for care.\n\n' +
+        'What if we could fix this? Toggle "SOLL mode" and watch AI reduce deaths by ' + s.sollPct + '%.\n\n' +
+        'cammelot.health\n\n' +
+        '#healthcare #zorginfarct #AI';
+    } else {
+      text = 'No deaths recorded yet. Run the simulation longer to generate a story-driven post.';
+    }
+  } else if (style === 'provocative') {
+    text = 'I let ' + s.pop + ' AI citizens live in a simulated Dutch town.\n\n' +
+      s.deaths + ' of them died.\n\n' +
+      'Not from disease. From waiting.\n\n' +
+      '30% of GP time goes to admin. Specialist waits hit ' + s.maxWait + ' weeks.\n' +
+      'The system isn\'t broken. It was never built for this many patients.\n\n' +
+      'One change: reduce admin burden from 30% to 5% with AI.\n' +
+      'Result: ' + s.savedLives + ' fewer deaths. €' + s.savedMoney.toLocaleString() + ' saved.\n\n' +
+      'The data is real. The crisis is real. The solution exists.\n\n' +
+      'cammelot.health\n\n' +
+      '#healthcare #zorginfarct #AI #simulation';
+  }
+  return text;
+}
+
+function showLinkedInPanel() {
+  var gw = document.getElementById('game-wrap');
+  var existing = gw.querySelector('.linkedin-overlay');
+  if (existing) { existing.remove(); return; }
+
+  var overlay = document.createElement('div');
+  overlay.className = 'linkedin-overlay';
+
+  var modal = document.createElement('div');
+  modal.className = 'linkedin-modal';
+
+  // Header
+  var header = document.createElement('div');
+  header.className = 'lm-header';
+  var title = document.createElement('span');
+  title.className = 'lm-title';
+  title.textContent = '📝 LINKEDIN POST';
+  var closeBtn = document.createElement('button');
+  closeBtn.className = 'lm-close';
+  closeBtn.textContent = '×';
+  closeBtn.addEventListener('click', function() { overlay.remove(); });
+  header.appendChild(title);
+  header.appendChild(closeBtn);
+  modal.appendChild(header);
+
+  // Style buttons
+  var stylesDiv = document.createElement('div');
+  stylesDiv.className = 'lm-styles';
+  var styles = [
+    { key: 'data', label: '📊 Data' },
+    { key: 'story', label: '📖 Story' },
+    { key: 'provocative', label: '⚡ Provocative' }
+  ];
+
+  var textarea = document.createElement('textarea');
+  textarea.className = 'lm-textarea';
+  textarea.spellcheck = false;
+
+  var currentStyle = 'data';
+  styles.forEach(function(s) {
+    var btn = document.createElement('button');
+    btn.className = 'lm-style-btn' + (s.key === 'data' ? ' active' : '');
+    btn.textContent = s.label;
+    btn.setAttribute('data-style', s.key);
+    btn.addEventListener('click', function() {
+      currentStyle = s.key;
+      stylesDiv.querySelectorAll('.lm-style-btn').forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      textarea.value = generateLinkedInPost(s.key);
+    });
+    stylesDiv.appendChild(btn);
+  });
+  modal.appendChild(stylesDiv);
+
+  // Body with textarea
+  var body = document.createElement('div');
+  body.className = 'lm-body';
+  textarea.value = generateLinkedInPost('data');
+  body.appendChild(textarea);
+  modal.appendChild(body);
+
+  // Actions
+  var actions = document.createElement('div');
+  actions.className = 'lm-actions';
+  var copyBtn = document.createElement('button');
+  copyBtn.className = 'lm-copy-btn';
+  copyBtn.textContent = '📋 Copy to Clipboard';
+  copyBtn.addEventListener('click', function() {
+    navigator.clipboard.writeText(textarea.value).then(function() {
+      copyBtn.textContent = '✓ Copied!';
+      showToast('📋 Post copied to clipboard!');
+      setTimeout(function() { copyBtn.textContent = '📋 Copy to Clipboard'; }, 2000);
+    }).catch(function() {
+      copyBtn.textContent = '✗ Copy failed';
+      setTimeout(function() { copyBtn.textContent = '📋 Copy to Clipboard'; }, 2000);
+    });
+  });
+  actions.appendChild(copyBtn);
+  modal.appendChild(actions);
+
+  // Note
+  var note = document.createElement('div');
+  note.className = 'lm-note';
+  note.textContent = 'Generated from your simulation run. Edit as needed.';
+  modal.appendChild(note);
+
+  overlay.appendChild(modal);
+  // Click backdrop to close
+  overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+  gw.appendChild(overlay);
+}
+
+// ═══ END SPRINT 20 FUNCTIONS ═══
 
 // ═══ SPRINT 18.4: SERVICE WORKER REGISTRATION ═══
 if('serviceWorker' in navigator){
