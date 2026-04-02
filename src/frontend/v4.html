@@ -3,6 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Social Sharing Meta (Sprint 8) -->
+<meta property="og:title" content="Cammelot — Healthcare Crisis Simulation">
+<meta property="og:description" content="Watch a simulation of the Dutch healthcare crisis. 5,000 citizens, real medical data, real consequences. 30% GP time lost to admin. 12-week specialist waits. See who survives.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://cammelot.health">
+<meta property="og:image" content="https://cammelot.health/assets/og-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Cammelot — Healthcare Crisis Simulation">
+<meta name="twitter:description" content="A simulation of the Dutch healthcare crisis. Real data. Real consequences.">
+<meta name="twitter:image" content="https://cammelot.health/assets/og-preview.png">
+<meta name="description" content="Cammelot: An interactive simulation of the Dutch healthcare crisis. Watch 5,000 citizens navigate a system under pressure — 30% admin burden, 12-week waits, and preventable deaths.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏰</text></svg>">
 <title>Cammelot — Healthcare Simulation</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Playfair+Display:wght@700;800;900&display=swap');
@@ -224,6 +236,80 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a1a2e;font-family:
 .ticker-item.gp{color:#4CAF50}
 .ticker-item.social{color:#42A5F5}
 @keyframes ticker-scroll{from{transform:translateX(100%)}to{transform:translateX(-100%)}}
+
+/* ═══ SPRINT 7: Town Feed + Panel Back Button ═══ */
+.feed-filters { display:flex; gap:4px; padding:8px 0; flex-wrap:wrap; }
+.feed-btn { font:500 10px 'JetBrains Mono',monospace; padding:4px 8px; border:1px solid rgba(107,66,38,.2); background:rgba(0,0,0,.05); color:var(--ink2); cursor:pointer; border-radius:4px; transition:.15s; }
+.feed-btn:hover { background:rgba(255,179,0,.1); }
+.feed-btn.active { background:rgba(255,179,0,.15); color:#b8860b; border-color:rgba(255,179,0,.3); }
+.feed-list { max-height: calc(100vh - 200px); overflow-y:auto; }
+.feed-entry { display:flex; align-items:center; gap:6px; padding:6px 8px; border-bottom:1px solid rgba(107,66,38,.08); cursor:pointer; font-size:11px; transition:.1s; }
+.feed-entry:hover { background:rgba(255,179,0,.08); }
+.fe-icon { font-size:13px; flex-shrink:0; }
+.fe-name { font-weight:600; color:var(--ink); min-width:80px; flex-shrink:0; }
+.fe-text { color:var(--ink2); flex:1; }
+.fe-cycle { font-size:9px; color:#a08060; font-family:'JetBrains Mono',monospace; flex-shrink:0; }
+.feed-death { border-left:3px solid #E53935; }
+.feed-hospital { border-left:3px solid #FF9800; }
+.feed-gp { border-left:3px solid #4CAF50; }
+.feed-social { border-left:3px solid #42A5F5; }
+.feed-warn { border-left:3px solid #FF9800; }
+.panel-back { font-size:11px; color:var(--gold); cursor:pointer; padding:4px 0 8px; }
+.panel-back:hover { text-decoration:underline; }
+
+/* ═══ SPRINT 8: Responsive Layout ═══ */
+@media (max-width: 1024px) {
+  #main { flex-direction: column; }
+  #panel {
+    width: 100%; height: 40vh;
+    border-left: none; border-top: 3px solid var(--frame);
+    overflow-y: auto;
+  }
+  #game-wrap { height: 60vh; }
+}
+
+@media (max-width: 768px) {
+  #top { padding: 6px 10px; gap: 8px; flex-wrap: wrap; }
+  #top .sub { display: none; }
+  .top-stats { gap: 4px; }
+  .ts { padding: 3px 6px; }
+  .ts .n { font-size: 11px; }
+  .ts .l { font-size: 7px; }
+  #sim-overview { display: none; }
+
+  #main { flex-direction: column; }
+  #panel {
+    width: 100%;
+    height: 45vh;
+    border-left: none;
+    border-top: 3px solid var(--frame);
+    position: relative;
+  }
+  #game-wrap { height: 55vh; }
+
+  /* Control bar */
+  #cbar { padding: 4px 8px; gap: 4px; }
+  .cb { font-size: 9px; padding: 4px 8px; }
+
+  /* Event ticker */
+  .event-ticker { bottom: 40px; height: 24px; }
+
+  /* Wizard responsive */
+  .wizard-box { width: 95%; margin: 10px; padding: 16px; }
+  .wizard-portrait { display: none; }
+
+  /* Stats overlay */
+  .stats-panel { width: 95%; max-height: 80vh; }
+
+  /* Feed adjustments */
+  .feed-list { max-height: calc(45vh - 120px); }
+}
+
+@media (max-width: 480px) {
+  .mode-tog button { padding: 4px 8px; font-size: 10px; }
+  #panel { height: 50vh; }
+  #game-wrap { height: 50vh; }
+}
 </style>
 </head>
 <body>
@@ -239,10 +325,10 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a1a2e;font-family:
     </div>
     <div class="top-stats">
       <div class="ts"><div class="n" id="hC">0</div><div class="l">Cycle</div></div>
-      <div class="ts"><div class="n">5,000</div><div class="l">Pop</div></div>
-      <div class="ts"><div class="n" id="hG">0</div><div class="l">Ghosts</div></div>
-      <div class="ts"><div class="n y" id="hW">4w</div><div class="l">Wait</div></div>
-      <div class="ts"><div class="n" id="hE">62%</div><div class="l">C_eff</div></div>
+      <div class="ts"><div class="n" id="hP">5,000</div><div class="l">Alive</div></div>
+      <div class="ts"><div class="n" id="hG">0</div><div class="l">Deaths</div></div>
+      <div class="ts"><div class="n y" id="hW">4w</div><div class="l">Avg Wait</div></div>
+      <div class="ts"><div class="n" id="hE">62%</div><div class="l">Capacity</div></div>
     </div>
   </div>
 
@@ -2293,9 +2379,70 @@ cv.addEventListener('mouseup',e=>{
       const d=Math.sqrt(dx*dx+dy*dy);
       if(d<bestDist){bestDist=d;found=a;}
     });
-    if(found){selectAgent(found);}else{selectedAgent=null;showEmptyPanel();}
+    if(found){selectAgent(found);}else{selectedAgent=null;showTownFeed();}
   }
   dragStart=null;
+});
+
+// ═══ SPRINT 8: Touch Support ═══
+var lastPinchDist = 0;
+
+cv.addEventListener('touchstart', function(e) {
+  e.preventDefault();
+  var t = e.touches[0];
+  dragStart = { x: t.clientX, y: t.clientY };
+  dragCam = { x: camX, y: camY };
+}, { passive: false });
+
+cv.addEventListener('touchmove', function(e) {
+  e.preventDefault();
+  if (e.touches.length === 2) {
+    // Pinch-to-zoom
+    var dx = e.touches[0].clientX - e.touches[1].clientX;
+    var dy = e.touches[0].clientY - e.touches[1].clientY;
+    var dist = Math.sqrt(dx * dx + dy * dy);
+    if (lastPinchDist > 0) {
+      var scale = dist / lastPinchDist;
+      var minZoom = Math.max(cv.width / mapImgW, cv.height / mapImgH);
+      zoom = Math.max(minZoom, Math.min(4, zoom * scale));
+      userZoomed = true;
+    }
+    lastPinchDist = dist;
+  } else if (dragStart && e.touches.length === 1) {
+    var t = e.touches[0];
+    camX = dragCam.x - (t.clientX - dragStart.x) / zoom;
+    camY = dragCam.y - (t.clientY - dragStart.y) / zoom;
+  }
+}, { passive: false });
+
+cv.addEventListener('touchend', function(e) {
+  lastPinchDist = 0;
+  if (dragStart && e.changedTouches.length > 0) {
+    var t = e.changedTouches[0];
+    if (Math.abs(t.clientX - dragStart.x) < 10 && Math.abs(t.clientY - dragStart.y) < 10) {
+      // Tap — treat as click
+      var rect = cv.getBoundingClientRect();
+      var wx = (t.clientX - rect.left) / zoom + camX;
+      var wy = (t.clientY - rect.top) / zoom + camY;
+      var fx = wx / mapImgW, fy = wy / mapImgH;
+      var clickedBuilding = BUILDINGS.find(function(b) { return fx >= b.x1 && fx <= b.x2 && fy >= b.y1 && fy <= b.y2; });
+      if (clickedBuilding) { selectBuilding(clickedBuilding); }
+      else {
+        var clickedGrave = null;
+        GRAVE_MARKERS.forEach(function(m) {
+          var gdx = m.x - fx, gdy = m.y - fy;
+          if (Math.sqrt(gdx * gdx + gdy * gdy) < 0.02) clickedGrave = m;
+        });
+        if (clickedGrave) { showMemorial(clickedGrave); }
+        else {
+          var found = null, bestDist = 0.04;
+          agents.forEach(function(a) { var d = Math.sqrt((a.x - fx) * (a.x - fx) + (a.y - fy) * (a.y - fy)); if (d < bestDist) { bestDist = d; found = a; } });
+          if (found) selectAgent(found); else showTownFeed();
+        }
+      }
+    }
+  }
+  dragStart = null;
 });
 
 // Sprint 5: Memorial panel for grave markers
@@ -2304,7 +2451,8 @@ function showMemorial(grave) {
   const d = document.getElementById('agent-detail');
   document.querySelector('.panel-header').textContent = 'MEMORIAL';
   const isSystem = grave.cause === 'system_failure';
-  let html = `<div class="agent-card">
+  let html = `<div class="panel-back" onclick="showTownFeed()">← Town Feed</div>`;
+  html += `<div class="agent-card">
     <div class="ac-name" style="color:${isSystem ? 'var(--red)' : 'var(--ink2)'}">In Memory of ${grave.name}</div>
     <div class="ac-role">Age ${grave.age}</div>
     <div class="ac-section"><h4>Cause of Death</h4>
@@ -2346,7 +2494,8 @@ function selectAgent(a){
   // Get agent events from EVENT_LOG
   const agentEvents=EVENT_LOG.filter(e=>e.agentId===a.id);
 
-  let html=`<div class="agent-card">
+  let html=`<div class="panel-back" onclick="showTownFeed()">← Town Feed</div>`;
+  html+=`<div class="agent-card">
     <div class="portrait-wrap">
       <canvas class="portrait-canvas" id="portrait-cv" width="64" height="64" ${a.hp<=0?'style="filter:grayscale(100%)"':''}></canvas>
       <div class="portrait-info">
@@ -2528,9 +2677,93 @@ function selectAgent(a){
   }
 }
 
-function showEmptyPanel(){
-  document.getElementById('agent-detail').innerHTML=`<div class="ad-empty"><div class="hint">\uD83D\uDC46</div>Click on a citizen in the town<br>to view their medical dossier,<br>current thoughts, and care pathway.</div>`;
-  document.querySelector('.panel-header').textContent='CITIZEN DOSSIER';
+function showEmptyPanel(){showTownFeed();}
+
+function formatEventText(e) {
+  switch(e.type) {
+    case 'died': return 'died after ' + (e.detail || 'system failure');
+    case 'natural_death': return 'passed peacefully (' + (e.detail || '') + ')';
+    case 'admitted': return 'admitted to hospital';
+    case 'referred': return 'referred — ' + (e.detail || '');
+    case 'treated': return 'treatment complete';
+    case 'discharged': return 'discharged (' + (e.detail || '') + ')';
+    case 'recovered': return 'recovered (' + (e.detail || '') + ')';
+    case 'worsened': return e.detail || 'condition worsened';
+    case 'social_chat': return e.detail || 'chatted';
+    case 'feeling_sick': return 'feeling unwell (' + (e.detail || '') + ')';
+    case 'visited_gp': return 'visited ' + (e.detail || 'GP');
+    case 'gp_treated': return 'treated at GP';
+    case 'checkup': return 'routine checkup';
+    default: return e.detail || e.type;
+  }
+}
+
+function showTownFeed() {
+  selectedAgent = null;
+  const d = document.getElementById('agent-detail');
+  document.querySelector('.panel-header').textContent = 'TOWN FEED';
+
+  const significant = EVENT_LOG.filter(function(e) {
+    return ['died','natural_death','admitted','referred','treated','discharged','recovered','worsened','social_chat','feeling_sick','visited_gp','gp_treated','checkup'].indexOf(e.type) !== -1;
+  }).slice(-50).reverse();
+
+  let html = '';
+
+  if (significant.length === 0) {
+    html = '<div class="ad-empty"><div class="hint">🏘</div>Welcome to Cammelot!<br>Run the simulation to see<br>events appear here.</div>';
+    d.innerHTML = html;
+    return;
+  }
+
+  html += '<div class="feed-filters">';
+  html += '<button class="feed-btn active" data-filter="all">All</button>';
+  html += '<button class="feed-btn" data-filter="died,natural_death">💀 Deaths</button>';
+  html += '<button class="feed-btn" data-filter="admitted,treated,discharged">🏥 Hospital</button>';
+  html += '<button class="feed-btn" data-filter="referred,visited_gp,gp_treated,checkup">⚕ GP</button>';
+  html += '<button class="feed-btn" data-filter="social_chat">💬 Social</button>';
+  html += '</div>';
+
+  html += '<div class="feed-list" id="feed-list">';
+  significant.forEach(function(e) {
+    var icons = {died:'💀',natural_death:'🕊',admitted:'🏥',referred:'🔄',treated:'💊',discharged:'🏠',recovered:'✅',worsened:'⚠',social_chat:'💬',feeling_sick:'🤒',visited_gp:'⚕',gp_treated:'💊',checkup:'📋'};
+    var icon = icons[e.type] || '📝';
+    var colorClass = ['died','natural_death'].indexOf(e.type) !== -1 ? 'feed-death' :
+                     ['admitted','treated','discharged'].indexOf(e.type) !== -1 ? 'feed-hospital' :
+                     ['referred','visited_gp','gp_treated','checkup'].indexOf(e.type) !== -1 ? 'feed-gp' :
+                     e.type === 'social_chat' ? 'feed-social' : 'feed-warn';
+
+    html += '<div class="feed-entry ' + colorClass + '" data-type="' + e.type + '" data-agent="' + (e.agentId||'') + '">';
+    html += '<span class="fe-icon">' + icon + '</span>';
+    html += '<span class="fe-name">' + (e.agentName||'Unknown') + '</span>';
+    html += '<span class="fe-text">' + formatEventText(e) + '</span>';
+    html += '<span class="fe-cycle">C' + e.cycle + '</span>';
+    html += '</div>';
+  });
+  html += '</div>';
+
+  d.innerHTML = html;
+
+  // Wire up filter buttons
+  d.querySelectorAll('.feed-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      d.querySelectorAll('.feed-btn').forEach(function(b) { b.classList.remove('active'); });
+      this.classList.add('active');
+      var filter = this.dataset.filter;
+      d.querySelectorAll('.feed-entry').forEach(function(entry) {
+        if (filter === 'all') { entry.style.display = ''; }
+        else { entry.style.display = filter.split(',').indexOf(entry.dataset.type) !== -1 ? '' : 'none'; }
+      });
+    });
+  });
+
+  // Wire up clicking agent names
+  d.querySelectorAll('.feed-entry').forEach(function(entry) {
+    entry.addEventListener('click', function() {
+      var agId = this.dataset.agent;
+      var a = agents.find(function(ag) { return ag.id === agId; });
+      if (a) selectAgent(a);
+    });
+  });
 }
 
 // ═══ BUILDING DASHBOARD (Sprint 2) ═══
@@ -2567,7 +2800,8 @@ function selectBuilding(building){
     const thought=gp.thoughts[(gp.currentThought||0)%gp.thoughts.length];
     gp.currentThought=(gp.currentThought||0)+1;
 
-    let html=`<div class="agent-card">
+    let html=`<div class="panel-back" onclick="showTownFeed()">← Town Feed</div>`;
+    html+=`<div class="agent-card">
       <div class="ac-name">${building.label}</div>
       <div class="ac-role">${gp.name} — General Practitioner</div>
 
@@ -2617,7 +2851,8 @@ function selectBuilding(building){
     const treeViolated=waitList.some(a=>a.waitWeeks>treeWeeks)||inHospital.some(a=>a.waitWeeks>treeWeeks);
     const specialists=agents.filter(a=>a.type==='specialist');
 
-    let html=`<div class="agent-card">
+    let html=`<div class="panel-back" onclick="showTownFeed()">← Town Feed</div>`;
+    html+=`<div class="agent-card">
       <div class="ac-name">${building.label}</div>
       <div class="ac-role">Regional Hospital</div>
 
@@ -3160,7 +3395,7 @@ function resetSim(){
       a.currentPatient=null; a.queue=[]; a.totalPatientsSeen=0;
     }
   });
-  selectedAgent=null; showEmptyPanel();
+  selectedAgent=null; showTownFeed();
   document.getElementById('chatlog').innerHTML='<div class="cm sys"><span class="w">[SYSTEM]</span> <span class="t">Reset. Click a citizen to inspect.</span></div>';
   updateUI();
 }
@@ -3171,7 +3406,7 @@ function setMode(m){
   document.getElementById('bs').className=m==='SOLL'?'a-soll':'';
   document.body.classList.toggle('soll',m==='SOLL');
   say('SYSTEM',m==='IST'?'IST mode — Current crisis (C_eff 62%)':'SOLL mode — AI-native future (C_eff 83%)','sys');
-  document.getElementById('hE').textContent=m==='IST'?'62%':'83%';
+  document.getElementById('hE').textContent=m==='IST'?'⚕ 62%':'⚕ 83%';
   document.getElementById('hE').className='n '+(m==='IST'?'r':'g');
   document.getElementById('oA').textContent=Math.round(M[m].admin*100)+'%';
   document.getElementById('oS').textContent=Math.round(M[m].sick*100)+'%';
@@ -3308,12 +3543,32 @@ function buildStatsHTML(){
 
 function updateUI(){
   document.getElementById('hC').textContent=cycle;
-  const ghosts=agents.filter(a=>a.hp<=0).length;
-  document.getElementById('hG').textContent=ghosts;
-  document.getElementById('hG').className='n'+(ghosts>0?' r':'');
-  const avgWait=Math.round(agents.filter(a=>a.waitWeeks>0).reduce((s,a)=>s+a.waitWeeks,0)/Math.max(1,agents.filter(a=>a.waitWeeks>0).length));
-  document.getElementById('hW').textContent=avgWait+'w';
-  document.getElementById('hW').className='n'+(avgWait>12?' r':avgWait>6?' y':'');
+  // Sprint 7: Human-readable stats
+  var pop=agents.filter(function(a){return a.type==='patient'||a.type==='citizen';});
+  var alive=pop.filter(function(a){return a.hp>0;}).length;
+  var dead=pop.filter(function(a){return a.hp<=0;}).length;
+  var sysDeath=EVENT_LOG.filter(function(e){return e.type==='died';}).length;
+  var inHosp=agents.filter(function(a){return a.insideBuilding==='hospital';}).length;
+  var waiting=agents.filter(function(a){return a.waitWeeks>0&&a.hp>0;});
+  var avgWait=waiting.length>0?(waiting.reduce(function(s,a){return s+a.waitWeeks;},0)/waiting.length).toFixed(1):'0';
+  var eff=mode==='IST'?'62':'83';
+
+  // Population
+  var hpEl=document.getElementById('hP');
+  if(hpEl){hpEl.textContent='👥 '+alive+(inHosp>0?' (🏥'+inHosp+')':'');hpEl.className='n g';}
+
+  // Deaths
+  document.getElementById('hG').textContent=dead>0?'💀 '+dead+(sysDeath>0?' ('+sysDeath+' preventable)':''):'💀 0';
+  document.getElementById('hG').className='n'+(dead>0?' r':' g');
+
+  // Wait
+  document.getElementById('hW').textContent='⏱ '+avgWait+'w';
+  document.getElementById('hW').className='n'+(parseFloat(avgWait)>12?' r':parseFloat(avgWait)>4?' y':' g');
+
+  // Efficiency
+  document.getElementById('hE').textContent='⚕ '+eff+'%';
+  document.getElementById('hE').className='n '+(parseInt(eff)>75?'g':parseInt(eff)>50?'y':'r');
+
   document.getElementById('oF').textContent=S.res;
   document.getElementById('oW').textContent='€'+Math.round(S.waste).toLocaleString();
   document.getElementById('sF').textContent=S.res;
@@ -3501,6 +3756,7 @@ document.getElementById('ticker-content')?.addEventListener('click', function(ev
 // ═══ SPRINT 6: CONTEXTUAL TOOLTIPS ═══
 const METRIC_TOOLTIPS = {
   'hC': 'Cycle — Each tick represents roughly 1/4 of a simulated week.',
+  'hP': 'Alive — Current living population. Number in parentheses shows citizens in hospital.',
   'hG': 'Deaths — Citizens who have died. System failures are preventable; natural deaths are age-based.',
   'hW': 'Average Wait — How long patients wait for specialist care. The Treeknorm says under 4 weeks.',
   'hE': 'Clinical Efficiency — Only this percentage of doctor time goes to actual patients. The rest is paperwork.',
@@ -3513,10 +3769,14 @@ const METRIC_TOOLTIPS = {
   'sM': 'A2A — Agent-to-Agent protocol messages exchanged between healthcare providers.'
 };
 const LABEL_TOOLTIPS = {
+  'Alive': 'Population — Total citizens alive in the simulation, based on CBS demographic data.',
   'Pop': 'Population — Total citizens in the simulation, based on CBS demographic data.',
   'Cycle': 'Cycle — Each tick represents roughly 1/4 of a simulated week.',
+  'Deaths': 'Deaths — Citizens who have died. System failures are preventable; natural deaths are age-based.',
   'Ghosts': 'Deaths — Citizens who have died. Hover the Stats panel to see system vs natural breakdown.',
+  'Avg Wait': 'Average Wait — How long patients wait for specialist care. The Treeknorm says under 4 weeks.',
   'Wait': 'Average Wait — How long patients wait for specialist care. The Treeknorm says under 4 weeks.',
+  'Capacity': 'Clinical Efficiency — Effective capacity = Total × (1 - Admin - Sick) × AI factor.',
   'C_eff': 'Clinical Efficiency — Effective capacity = Total × (1 - Admin - Sick) × AI factor.'
 };
 
