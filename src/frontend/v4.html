@@ -146,8 +146,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a1a2e;font-family:
 .so-row .v.r{color:var(--red)}.so-row .v.g{color:var(--green)}.so-row .v.y{color:var(--gold)}
 
 /* Stats Overlay (Sprint 3) */
-.stats-overlay{position:absolute;inset:0;background:rgba(0,0,0,.55);z-index:10;display:flex;align-items:center;justify-content:center;animation:fadeIn .2s ease}
-.stats-panel{background:linear-gradient(180deg,var(--parchment) 0%,var(--parchment2) 100%);border:4px solid var(--frame);border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.3);max-width:480px;width:92%;max-height:85vh;overflow-y:auto;padding:0}
+.stats-overlay{position:absolute;inset:0;background:rgba(0,0,0,.55);z-index:10;display:flex;align-items:center;justify-content:center;animation:overlayFadeIn .25s ease-out}
+.stats-panel{background:linear-gradient(180deg,var(--parchment) 0%,var(--parchment2) 100%);border:4px solid var(--frame);border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.3);max-width:480px;width:92%;max-height:85vh;overflow-y:auto;padding:0;animation:panelSlideUp .3s ease-out}
 .stats-panel::-webkit-scrollbar{width:5px}.stats-panel::-webkit-scrollbar-thumb{background:var(--ink2);border-radius:3px}
 .stats-header{background:var(--frame);color:var(--parchment);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;border-radius:6px 6px 0 0}
 .stats-header h3{font:700 13px 'Playfair Display',serif;letter-spacing:1px;margin:0}
@@ -326,6 +326,225 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a1a2e;font-family:
   #panel { height: 50vh; }
   #game-wrap { height: 50vh; }
 }
+
+/* ═══ SPRINT 15: UI POLISH — Micro-animations ═══ */
+
+/* Panel content fade-in */
+#agent-detail {
+  transition: opacity 0.2s ease;
+}
+#agent-detail.panel-fade {
+  opacity: 0;
+}
+
+/* HP bar smooth transition (already has transition:.4s on .hp-inner) */
+
+/* Stat numbers count-up effect */
+.stat-animate {
+  transition: opacity 0.15s ease;
+}
+
+/* Feed entries slide in */
+.feed-entry {
+  animation: feedSlideIn 0.3s ease-out backwards;
+}
+.feed-entry:nth-child(1) { animation-delay: 0s; }
+.feed-entry:nth-child(2) { animation-delay: 0.03s; }
+.feed-entry:nth-child(3) { animation-delay: 0.03s; }
+.feed-entry:nth-child(4) { animation-delay: 0.06s; }
+.feed-entry:nth-child(5) { animation-delay: 0.09s; }
+.feed-entry:nth-child(6) { animation-delay: 0.12s; }
+.feed-entry:nth-child(7) { animation-delay: 0.15s; }
+.feed-entry:nth-child(8) { animation-delay: 0.18s; }
+.feed-entry:nth-child(9) { animation-delay: 0.21s; }
+.feed-entry:nth-child(10) { animation-delay: 0.24s; }
+@keyframes feedSlideIn {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* Care pathway sequential reveal */
+.cp-badge {
+  animation: badgePop 0.25s ease-out backwards;
+}
+.cp-badge:nth-child(1) { animation-delay: 0.1s; }
+.cp-badge:nth-child(2) { animation-delay: 0.15s; }
+.cp-badge:nth-child(3) { animation-delay: 0.2s; }
+.cp-badge:nth-child(4) { animation-delay: 0.25s; }
+.cp-badge:nth-child(5) { animation-delay: 0.3s; }
+.cp-badge:nth-child(6) { animation-delay: 0.35s; }
+.cp-badge:nth-child(7) { animation-delay: 0.4s; }
+.cp-badge:nth-child(8) { animation-delay: 0.45s; }
+@keyframes badgePop {
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Stats overlay entrance */
+@keyframes overlayFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes panelSlideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ═══ SPRINT 15: Typography & Hierarchy ═══ */
+
+/* Enhanced agent card name */
+.ac-name {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  margin-bottom: 2px;
+}
+
+/* Section headers with decorative line */
+.ac-section h4 {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--ink2);
+  padding-bottom: 6px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid rgba(107,66,38,.12);
+  position: relative;
+}
+.ac-section h4::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 30px;
+  height: 2px;
+  background: var(--gold);
+  border-radius: 1px;
+}
+
+/* Pill-shaped condition tags with subtle gradient */
+.cond-tag {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 10px;
+  margin: 2px 4px 2px 0;
+  background: linear-gradient(135deg, rgba(107,66,38,.08), rgba(107,66,38,.04));
+  border: 1px solid rgba(107,66,38,.15);
+  transition: background 0.2s;
+}
+.cond-tag:hover {
+  background: linear-gradient(135deg, rgba(255,179,0,.12), rgba(255,179,0,.06));
+}
+.cond-tag.mild {
+  background: linear-gradient(135deg, rgba(76,175,80,.1), rgba(76,175,80,.04));
+  border-color: rgba(76,175,80,.2);
+}
+
+/* Thought bubble styling */
+.thought {
+  font-style: italic;
+  color: var(--ink2);
+  padding: 10px 14px;
+  margin-top: 12px;
+  background: rgba(255,179,0,.06);
+  border-left: 3px solid var(--gold);
+  border-radius: 0 6px 6px 0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* Consistent spacing rhythm */
+.ac-section {
+  padding: 10px 0;
+  margin: 0;
+}
+.ac-section + .ac-section {
+  border-top: 1px solid rgba(107,66,38,.06);
+}
+
+/* ═══ SPRINT 15: Dark Mode ═══ */
+body.dark-mode {
+  --parchment: #1a1e2e;
+  --parchment2: #232838;
+  --ink: #e0d8c8;
+  --ink2: #a09888;
+  --frame: #2a3040;
+  --frame2: #3a4050;
+  --frame-in: #151820;
+}
+body.dark-mode #panel {
+  background: linear-gradient(180deg, #1a1e2e, #151820);
+}
+body.dark-mode #top {
+  background: linear-gradient(180deg, #1a1e2e 0%, #151820 100%);
+}
+body.dark-mode .ts {
+  background: rgba(255,255,255,.05);
+  border-color: rgba(255,179,0,.15);
+}
+body.dark-mode .panel-header {
+  background: rgba(255,255,255,.03);
+  color: var(--gold);
+}
+body.dark-mode .feed-entry {
+  border-bottom-color: rgba(255,255,255,.05);
+}
+body.dark-mode .feed-entry:hover {
+  background: rgba(255,179,0,.05);
+}
+body.dark-mode .ac-section h4 {
+  color: #a09888;
+  border-bottom-color: rgba(255,255,255,.08);
+}
+body.dark-mode .thought {
+  background: rgba(255,179,0,.04);
+}
+body.dark-mode .wizard-box {
+  background: #1a1e2e;
+  border-color: rgba(255,179,0,.3);
+}
+body.dark-mode .stats-panel {
+  background: #1a1e2e;
+  border-color: rgba(255,179,0,.2);
+}
+body.dark-mode .metric-tooltip {
+  background: rgba(10,12,20,0.95);
+}
+body.dark-mode #cbar {
+  background: rgba(20,24,36,.92);
+}
+body.dark-mode .event-ticker {
+  background: rgba(20,24,36,.85);
+}
+
+/* ═══ SPRINT 16: Timeline Scrubber ═══ */
+.timeline-bar {
+  position: absolute;
+  bottom: 78px;
+  left: 10px; right: 10px;
+  height: 36px;
+  background: rgba(26,26,46,0.85);
+  border: 1px solid rgba(255,179,0,0.2);
+  border-radius: 6px;
+  padding: 2px 8px;
+  z-index: 4;
+}
+.timeline-bar canvas {
+  width: 100%;
+  cursor: pointer;
+}
+.timeline-label {
+  position: absolute;
+  top: -24px;
+  font: 500 10px 'JetBrains Mono', monospace;
+  color: var(--parchment);
+  background: rgba(26,26,46,0.9);
+  padding: 2px 8px;
+  border-radius: 4px;
+  pointer-events: none;
+  display: none;
+}
 </style>
 </head>
 <body>
@@ -342,10 +561,12 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a1a2e;font-family:
     <div class="top-stats">
       <div class="ts"><div class="n" id="hC">0</div><div class="l">Cycle</div></div>
       <div class="ts"><div class="n" id="hP">5,000</div><div class="l">Alive</div></div>
-      <div class="ts"><div class="n" id="hG">0</div><div class="l">Deaths</div></div>
+      <div class="ts"><div class="n" id="hG" data-value="0" data-prefix="💀 ">0</div><div class="l">Deaths</div></div>
       <div class="ts"><div class="n y" id="hW">4w</div><div class="l">Avg Wait</div></div>
       <div class="ts"><div class="n" id="hE">62%</div><div class="l">Capacity</div></div>
     </div>
+    <button class="cb" id="theme-toggle" title="Toggle dark mode" style="margin-left:4px;padding:4px 8px;font-size:14px;border:1px solid rgba(255,179,0,.2);background:rgba(0,0,0,.3);border-radius:5px;cursor:pointer;color:var(--parchment)">🌙</button>
+    <button class="cb" id="sound-toggle" title="Toggle sound" style="padding:4px 8px;font-size:14px;border:1px solid rgba(255,179,0,.2);background:rgba(0,0,0,.3);border-radius:5px;cursor:pointer;color:var(--parchment)">🔇</button>
   </div>
 
   <div id="main">
@@ -364,7 +585,13 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a1a2e;font-family:
         <button class="cb stop" id="btn-reset">↺ Reset</button>
         <button class="cb" id="btn-stats">📊 Stats</button>
         <button class="cb" id="btn-qa">🔬 QA</button>
+        <button class="cb" id="btn-heatmap">🗺 Heatmap</button>
+        <button class="cb" id="btn-timeline">📈 Timeline</button>
         <div class="cinfo">FHIR <b id="sF">0</b> · A2A <b id="sM">0</b></div>
+      </div>
+      <div id="timeline-bar" class="timeline-bar" style="display:none">
+        <canvas id="timeline-canvas" height="32"></canvas>
+        <div class="timeline-label" id="timeline-label"></div>
       </div>
       <!-- Sprint 6: Wizard Overlay -->
       <div id="wizard-overlay" class="wizard-overlay" style="display:none">
@@ -628,6 +855,331 @@ const GRAVE_MARKERS = []; // {x, y, name, age, cause, waitWeeks, cycle, conditio
 let cycle=0,mode='IST',autoTimer=null;
 const M={IST:{admin:.3,sick:.08,tree:12,ai:1,drain:1},SOLL:{admin:.05,sick:.05,tree:4,ai:1.34,drain:.3}};
 let S={res:6,msgs:0,waste:0};
+
+// ═══ SPRINT 15: DARK MODE ═══
+let darkMode = localStorage.getItem('cammelot_darkmode') === 'true';
+
+function toggleDarkMode() {
+  darkMode = !darkMode;
+  document.body.classList.toggle('dark-mode', darkMode);
+  localStorage.setItem('cammelot_darkmode', darkMode.toString());
+  const btn = document.getElementById('theme-toggle');
+  if (btn) btn.textContent = darkMode ? '☀️' : '🌙';
+}
+
+// Apply on load
+if (darkMode) {
+  document.body.classList.add('dark-mode');
+  var thBtn = document.getElementById('theme-toggle');
+  if (thBtn) thBtn.textContent = '☀️';
+}
+
+// ═══ SPRINT 15: SOUND DESIGN ═══
+let soundEnabled = false;
+let audioCtx = null;
+
+function initAudio() {
+  if (audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+}
+
+function playTone(freq, duration, volume, type) {
+  if (!soundEnabled || !audioCtx) return;
+  try {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type || 'sine';
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(volume || 0.05, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + (duration || 0.3));
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + (duration || 0.3));
+  } catch(e) { /* ignore audio errors */ }
+}
+
+function playUIClick() { playTone(800, 0.05, 0.03, 'square'); }
+function playDeathChime() { playTone(220, 0.8, 0.04, 'sine'); setTimeout(function(){ playTone(180, 0.6, 0.03, 'sine'); }, 300); }
+function playRecoveryChime() { playTone(523, 0.15, 0.04, 'sine'); setTimeout(function(){ playTone(659, 0.15, 0.04, 'sine'); }, 100); setTimeout(function(){ playTone(784, 0.2, 0.04, 'sine'); }, 200); }
+function playAdmitSound() { playTone(440, 0.2, 0.03, 'triangle'); }
+
+function toggleSound() {
+  soundEnabled = !soundEnabled;
+  if (soundEnabled) initAudio();
+  var btn = document.getElementById('sound-toggle');
+  if (btn) btn.textContent = soundEnabled ? '🔊' : '🔇';
+}
+
+// ═══ SPRINT 15: Panel Fade Transition ═══
+function setPanelContent(htmlOrFn) {
+  var d = document.getElementById('agent-detail');
+  d.classList.add('panel-fade');
+  setTimeout(function() {
+    if (typeof htmlOrFn === 'function') htmlOrFn();
+    else d.innerHTML = htmlOrFn;
+    d.classList.remove('panel-fade');
+  }, 150);
+}
+
+// ═══ SPRINT 16: Animated Sparkline ═══
+function animateSparkline(canvas, data) {
+  var ctx = canvas.getContext('2d');
+  var w = canvas.width, h = canvas.height;
+  var progress = 0;
+  var totalPoints = data.length;
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+    var visiblePoints = Math.floor(progress * totalPoints);
+    if (visiblePoints < 2) { progress += 0.05; requestAnimationFrame(draw); return; }
+
+    var step = w / (totalPoints - 1);
+    var curHP = data[Math.min(visiblePoints - 1, data.length - 1)];
+    var lineColor = curHP > 50 ? '#4CAF50' : curHP > 20 ? '#FF9800' : '#E53935';
+
+    // Draw gradient fill
+    ctx.beginPath();
+    ctx.moveTo(0, h - (data[0] / 100) * h);
+    for (var i = 1; i < visiblePoints; i++) {
+      ctx.lineTo(i * step, h - (data[i] / 100) * h);
+    }
+    ctx.strokeStyle = lineColor;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Fill below
+    ctx.lineTo((visiblePoints - 1) * step, h);
+    ctx.lineTo(0, h);
+    ctx.closePath();
+    ctx.fillStyle = curHP > 50 ? 'rgba(76,175,80,0.12)' : curHP > 20 ? 'rgba(255,152,0,0.12)' : 'rgba(229,57,53,0.12)';
+    ctx.fill();
+
+    // Threshold lines
+    ctx.setLineDash([2, 3]);
+    ctx.strokeStyle = 'rgba(229,57,53,0.3)'; ctx.lineWidth = 0.5;
+    ctx.beginPath(); ctx.moveTo(0, h * 0.8); ctx.lineTo(w, h * 0.8); ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,179,0,0.3)';
+    ctx.beginPath(); ctx.moveTo(0, h * 0.5); ctx.lineTo(w, h * 0.5); ctx.stroke();
+    ctx.setLineDash([]);
+
+    if (progress < 1) { progress += 0.05; requestAnimationFrame(draw); }
+  }
+  draw();
+}
+
+// ═══ SPRINT 16: Animated Number Counter ═══
+function animateNumber(elementId, newValue) {
+  var el = document.getElementById(elementId);
+  if (!el) return;
+  var current = parseInt(el.dataset.value || '0');
+  if (current === newValue) return;
+  el.dataset.value = newValue;
+
+  var diff = newValue - current;
+  var steps = Math.min(Math.abs(diff), 10);
+  var step = 0;
+  var interval = setInterval(function() {
+    step++;
+    var val = current + Math.round((diff * step) / steps);
+    el.textContent = (el.dataset.prefix || '') + val + (el.dataset.suffix || '');
+    if (step >= steps) clearInterval(interval);
+  }, 30);
+}
+
+// ═══ SPRINT 16: Heatmap Overlay ═══
+let heatmapVisible = false;
+
+function toggleHeatmap() {
+  heatmapVisible = !heatmapVisible;
+}
+
+function drawHeatmap() {
+  if (!heatmapVisible) return;
+
+  var gridSize = 20;
+  var grid = [];
+  for (var gy = 0; gy < gridSize; gy++) {
+    grid[gy] = [];
+    for (var gx = 0; gx < gridSize; gx++) grid[gy][gx] = 0;
+  }
+
+  // Death markers increase heat
+  GRAVE_MARKERS.forEach(function(m) {
+    var gx = Math.floor(m.x * gridSize);
+    var gy2 = Math.floor(m.y * gridSize);
+    if (gx >= 0 && gx < gridSize && gy2 >= 0 && gy2 < gridSize) {
+      grid[gy2][gx] += m.cause === 'system_failure' ? 5 : 2;
+    }
+  });
+
+  // Agent density
+  agents.forEach(function(a) {
+    if (a.insideBuilding || a.hp <= 0) return;
+    var gx = Math.floor(a.x * gridSize);
+    var gy2 = Math.floor(a.y * gridSize);
+    if (gx >= 0 && gx < gridSize && gy2 >= 0 && gy2 < gridSize) {
+      grid[gy2][gx] += 1;
+      if (a.waitWeeks > 8) grid[gy2][gx] += 2;
+    }
+  });
+
+  // Queue hotspots
+  Object.values(QUEUES).forEach(function(q) {
+    if (q.agents && q.agents.length > 0) {
+      q.agents.forEach(function(aid) {
+        var a = agents.find(function(ag) { return ag.id === aid; });
+        if (a) {
+          var gx = Math.floor(a.x * gridSize);
+          var gy2 = Math.floor(a.y * gridSize);
+          if (gx >= 0 && gx < gridSize && gy2 >= 0 && gy2 < gridSize) {
+            grid[gy2][gx] += 3;
+          }
+        }
+      });
+    }
+  });
+
+  // Normalize
+  var maxVal = 1;
+  grid.forEach(function(row) { row.forEach(function(v) { if (v > maxVal) maxVal = v; }); });
+
+  // Draw
+  var cellW = cv.width / gridSize;
+  var cellH = cv.height / gridSize;
+
+  for (var y = 0; y < gridSize; y++) {
+    for (var x = 0; x < gridSize; x++) {
+      var val = grid[y][x];
+      if (val === 0) continue;
+      var intensity = val / maxVal;
+      var r = Math.floor(intensity > 0.5 ? 229 : 229 * intensity * 2);
+      var g = Math.floor(intensity > 0.5 ? 175 * (1 - (intensity - 0.5) * 2) : 175);
+      var b = 50;
+      cx.fillStyle = 'rgba(' + r + ', ' + g + ', ' + b + ', ' + (0.15 + intensity * 0.25) + ')';
+      cx.fillRect(x * cellW, y * cellH, cellW, cellH);
+    }
+  }
+}
+
+// ═══ SPRINT 16: Timeline Scrubber ═══
+const TIMELINE_SNAPSHOTS = [];
+let timelineVisible = false;
+
+function captureSnapshot() {
+  var pop = agents.filter(function(a) { return a.type === 'patient' || a.type === 'citizen'; });
+  TIMELINE_SNAPSHOTS.push({
+    cycle: cycle,
+    alive: pop.filter(function(a) { return a.hp > 0; }).length,
+    dead: pop.filter(function(a) { return a.hp <= 0; }).length,
+    avgWait: (function() { var w = agents.filter(function(a) { return a.waitWeeks > 0 && a.hp > 0; }); return w.length ? w.reduce(function(s,a) { return s + a.waitWeeks; }, 0) / w.length : 0; })()
+  });
+  if (TIMELINE_SNAPSHOTS.length > 200) TIMELINE_SNAPSHOTS.shift();
+}
+
+function drawTimeline() {
+  var canvas = document.getElementById('timeline-canvas');
+  if (!canvas || TIMELINE_SNAPSHOTS.length < 2) return;
+  canvas.width = canvas.parentElement.clientWidth - 16;
+  var ctx = canvas.getContext('2d');
+  var w = canvas.width, h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+
+  var maxCycle = TIMELINE_SNAPSHOTS[TIMELINE_SNAPSHOTS.length - 1].cycle;
+  if (maxCycle === 0) return;
+
+  // Draw death event markers
+  EVENT_LOG.forEach(function(e) {
+    if (e.type !== 'died' && e.type !== 'natural_death') return;
+    var x = (e.cycle / maxCycle) * w;
+    ctx.fillStyle = e.type === 'died' ? 'rgba(229,57,53,0.7)' : 'rgba(150,150,150,0.5)';
+    ctx.fillRect(x - 1, 0, 2, h);
+  });
+
+  // Draw alive count line
+  ctx.beginPath();
+  ctx.strokeStyle = '#4CAF50';
+  ctx.lineWidth = 1.5;
+  var maxAlive = Math.max.apply(null, TIMELINE_SNAPSHOTS.map(function(s) { return s.alive; }));
+  if (maxAlive === 0) maxAlive = 1;
+  TIMELINE_SNAPSHOTS.forEach(function(s, i) {
+    var x = (s.cycle / maxCycle) * w;
+    var y = h - (s.alive / maxAlive) * h * 0.8 - h * 0.1;
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+
+  // Current position indicator
+  var curX = (cycle / maxCycle) * w;
+  ctx.fillStyle = '#FFB300';
+  ctx.fillRect(curX - 1, 0, 2, h);
+}
+
+function toggleTimeline() {
+  timelineVisible = !timelineVisible;
+  var bar = document.getElementById('timeline-bar');
+  if (bar) bar.style.display = timelineVisible ? 'block' : 'none';
+  if (timelineVisible) drawTimeline();
+}
+
+// ═══ SPRINT 16: Connection Lines ═══
+function drawConnectionLines() {
+  if (!selectedAgent) return;
+  var a = agents.find(function(e) { return e.id === selectedAgent; });
+  if (!a || a.insideBuilding) return;
+
+  var worldW = mapImgW, worldH = mapImgH;
+  var ax = (a.x * worldW - camX) * zoom;
+  var ay = (a.y * worldH - camY) * zoom;
+
+  // Line to assigned GP
+  if (a.gpName) {
+    var gpDest = getGPDest(a.gpName);
+    if (gpDest) {
+      var gx = (gpDest.entrance.x * worldW - camX) * zoom;
+      var gy2 = (gpDest.entrance.y * worldH - camY) * zoom;
+      cx.strokeStyle = 'rgba(76, 175, 80, 0.4)';
+      cx.lineWidth = 1.5;
+      cx.setLineDash([4, 4]);
+      cx.beginPath(); cx.moveTo(ax, ay); cx.lineTo(gx, gy2); cx.stroke();
+      cx.setLineDash([]);
+      cx.fillStyle = 'rgba(76,175,80,0.7)';
+      cx.font = (8 * zoom) + 'px Inter';
+      cx.fillText('GP', (ax + gx) / 2, (ay + gy2) / 2 - 5);
+    }
+  }
+
+  // Line to hospital if referred
+  if (a.behaviorState === 'going_to_hospital' || a.referredToHospital) {
+    var hx = (DESTINATIONS.hospital.entrance.x * worldW - camX) * zoom;
+    var hy = (DESTINATIONS.hospital.entrance.y * worldH - camY) * zoom;
+    var pulse = Math.sin(Date.now() / 300) * 0.3 + 0.5;
+    cx.strokeStyle = 'rgba(229, 57, 53, ' + pulse + ')';
+    cx.lineWidth = 2;
+    cx.setLineDash([6, 3]);
+    cx.beginPath(); cx.moveTo(ax, ay); cx.lineTo(hx, hy); cx.stroke();
+    cx.setLineDash([]);
+    cx.fillStyle = 'rgba(229,57,53,' + pulse + ')';
+    cx.font = (8 * zoom) + 'px Inter';
+    cx.fillText('🏥', (ax + hx) / 2, (ay + hy) / 2 - 5);
+  }
+
+  // Lines to recent chat partners
+  var recentChats = EVENT_LOG.filter(function(e) { return e.type === 'social_chat' && e.agentId === a.id; }).slice(-3);
+  recentChats.forEach(function(chat) {
+    var partnerName = (chat.detail || '').replace('Chatted with ', '');
+    var partner = agents.find(function(p) { return p.name === partnerName; });
+    if (partner && !partner.insideBuilding && partner.hp > 0) {
+      var px = (partner.x * worldW - camX) * zoom;
+      var py = (partner.y * worldH - camY) * zoom;
+      cx.strokeStyle = 'rgba(66, 165, 245, 0.3)';
+      cx.lineWidth = 1;
+      cx.setLineDash([3, 5]);
+      cx.beginPath(); cx.moveTo(ax, ay); cx.lineTo(px, py); cx.stroke();
+      cx.setLineDash([]);
+    }
+  });
+}
 
 // ═══ AGENTIC QA PANEL (Sprint 11) ═══
 const QA_CHECKS = [];
@@ -2811,6 +3363,12 @@ function render(){
   });
   visibleAgents.sort((a, b) => a.y - b.y).forEach(drawAgent);
 
+  // ── Sprint 16: Heatmap overlay (after agents, before grave markers) ──
+  drawHeatmap();
+
+  // ── Sprint 16: Connection lines for selected agent ──
+  drawConnectionLines();
+
   // ── Sprint 5: Draw grave markers (after agents) ──
   drawGraveMarkers();
 
@@ -2960,6 +3518,8 @@ function showMemorial(grave) {
 }
 
 function selectAgent(a){
+  // Sprint 15: Track if agent changed for panel fade
+  const agentChanged = selectedAgent !== a.id;
   selectedAgent=a.id;
   const d=document.getElementById('agent-detail');
   document.querySelector('.panel-header').textContent=a.type==='gp'||a.type==='specialist'?'STAFF DOSSIER':'CITIZEN DOSSIER';
@@ -3154,58 +3714,35 @@ function selectAgent(a){
   }
 
   html+=`</div>`;
-  d.innerHTML=html;
 
-  // Sprint 4: Draw portrait on canvas
-  const portraitCv = document.getElementById('portrait-cv');
-  if (portraitCv) {
-    const pctx = portraitCv.getContext('2d');
-    // Regenerate portrait if needed (HP may have changed appearance)
-    if ((a.type === 'patient' || a.type === 'citizen') && LOOKS[a.id]) {
-      generatePortrait(a.id, LOOKS[a.id], a.age, a.gender, a.hp);
+  // Sprint 15: Panel fade on agent change
+  function applyContent() {
+    d.innerHTML=html;
+    // Sprint 4: Draw portrait on canvas
+    const portraitCv = document.getElementById('portrait-cv');
+    if (portraitCv) {
+      const pctx = portraitCv.getContext('2d');
+      if ((a.type === 'patient' || a.type === 'citizen') && LOOKS[a.id]) {
+        generatePortrait(a.id, LOOKS[a.id], a.age, a.gender, a.hp);
+      }
+      if (PORTRAITS[a.id]) {
+        pctx.clearRect(0, 0, 64, 64);
+        pctx.drawImage(PORTRAITS[a.id], 0, 0);
+      }
     }
-    if (PORTRAITS[a.id]) {
-      pctx.clearRect(0, 0, 64, 64);
-      pctx.drawImage(PORTRAITS[a.id], 0, 0);
+    // Draw HP Sparkline on canvas (Sprint 3) — Sprint 16: Animated
+    const sparkCanvas=document.getElementById('hp-spark');
+    if(sparkCanvas && a.hpHistory && a.hpHistory.length>1){
+      const data=a.hpHistory.slice(-200);
+      animateSparkline(sparkCanvas, data);
     }
   }
 
-  // Draw HP Sparkline on canvas (Sprint 3)
-  const sparkCanvas=document.getElementById('hp-spark');
-  if(sparkCanvas && a.hpHistory && a.hpHistory.length>1){
-    const ctx=sparkCanvas.getContext('2d');
-    const w=sparkCanvas.width, h=sparkCanvas.height;
-    ctx.clearRect(0,0,w,h);
-    const data=a.hpHistory.slice(-200);
-    const step=w/(data.length-1);
-    // Draw gradient fill
-    ctx.beginPath();
-    ctx.moveTo(0, h-(data[0]/100)*h);
-    for(let i=1;i<data.length;i++){
-      const x=i*step;
-      const y=h-(data[i]/100)*h;
-      ctx.lineTo(x,y);
-    }
-    // Stroke with color based on current HP
-    const curHP=data[data.length-1];
-    const lineColor=curHP>50?'#4CAF50':curHP>20?'#FF9800':'#E53935';
-    ctx.strokeStyle=lineColor;
-    ctx.lineWidth=1.5;
-    ctx.stroke();
-    // Fill below
-    ctx.lineTo(w,h);
-    ctx.lineTo(0,h);
-    ctx.closePath();
-    const fillColor=curHP>50?'rgba(76,175,80,0.12)':curHP>20?'rgba(255,152,0,0.12)':'rgba(229,57,53,0.12)';
-    ctx.fillStyle=fillColor;
-    ctx.fill();
-    // HP threshold lines
-    ctx.setLineDash([2,3]);
-    ctx.strokeStyle='rgba(229,57,53,0.3)';ctx.lineWidth=0.5;
-    ctx.beginPath();ctx.moveTo(0,h-0.2*h);ctx.lineTo(w,h-0.2*h);ctx.stroke(); // 20 HP
-    ctx.strokeStyle='rgba(255,179,0,0.3)';
-    ctx.beginPath();ctx.moveTo(0,h-0.5*h);ctx.lineTo(w,h-0.5*h);ctx.stroke(); // 50 HP
-    ctx.setLineDash([]);
+  if (agentChanged) {
+    d.classList.add('panel-fade');
+    setTimeout(function() { applyContent(); d.classList.remove('panel-fade'); }, 150);
+  } else {
+    applyContent();
   }
 }
 
@@ -3243,7 +3780,7 @@ function showTownFeed() {
 
   if (significant.length === 0) {
     html = '<div class="ad-empty"><div class="hint">🏘</div>Welcome to Cammelot!<br>Run the simulation to see<br>events appear here.</div>';
-    d.innerHTML = html;
+    setPanelContent(html);
     return;
   }
 
@@ -3273,27 +3810,30 @@ function showTownFeed() {
   });
   html += '</div>';
 
-  d.innerHTML = html;
+  // Sprint 15: Fade transition
+  setPanelContent(function() {
+    d.innerHTML = html;
 
-  // Wire up filter buttons
-  d.querySelectorAll('.feed-btn').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      d.querySelectorAll('.feed-btn').forEach(function(b) { b.classList.remove('active'); });
-      this.classList.add('active');
-      var filter = this.dataset.filter;
-      d.querySelectorAll('.feed-entry').forEach(function(entry) {
-        if (filter === 'all') { entry.style.display = ''; }
-        else { entry.style.display = filter.split(',').indexOf(entry.dataset.type) !== -1 ? '' : 'none'; }
+    // Wire up filter buttons
+    d.querySelectorAll('.feed-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        d.querySelectorAll('.feed-btn').forEach(function(b) { b.classList.remove('active'); });
+        this.classList.add('active');
+        var filter = this.dataset.filter;
+        d.querySelectorAll('.feed-entry').forEach(function(entry) {
+          if (filter === 'all') { entry.style.display = ''; }
+          else { entry.style.display = filter.split(',').indexOf(entry.dataset.type) !== -1 ? '' : 'none'; }
+        });
       });
     });
-  });
 
-  // Wire up clicking agent names
-  d.querySelectorAll('.feed-entry').forEach(function(entry) {
-    entry.addEventListener('click', function() {
-      var agId = this.dataset.agent;
-      var a = agents.find(function(ag) { return ag.id === agId; });
-      if (a) selectAgent(a);
+    // Wire up clicking agent names
+    d.querySelectorAll('.feed-entry').forEach(function(entry) {
+      entry.addEventListener('click', function() {
+        var agId = this.dataset.agent;
+        var a = agents.find(function(ag) { return ag.id === agId; });
+        if (a) selectAgent(a);
+      });
     });
   });
 }
@@ -3370,7 +3910,7 @@ function selectBuilding(building){
     }
 
     html+=`<div class="thought">${thought}</div></div>`;
-    d.innerHTML=html;
+    setPanelContent(html); // Sprint 15: fade
 
   } else if(building.id==='hospital'){
     // Hospital dashboard
@@ -3450,7 +3990,7 @@ function selectBuilding(building){
     }
 
     html+=`</div>`;
-    d.innerHTML=html;
+    setPanelContent(html); // Sprint 15: fade
   }
 }
 
@@ -3499,6 +4039,8 @@ function initAgentBehaviors(){
 // ═══ SIMULATION ═══
 function tick(){
   cycle++; const p=M[mode];
+  // Sprint 16: Capture timeline snapshot every 50 cycles
+  if (cycle % 50 === 0) captureSnapshot();
   agents.forEach(a=>{
     if(a.type!=='patient'&&a.type!=='citizen') return;
 
@@ -3543,6 +4085,8 @@ function tick(){
             nb.grievingTimer = 120;
           }
         });
+        // Sprint 15: Death chime
+        playDeathChime();
       }
       return;
     }
@@ -3808,6 +4352,7 @@ function tick(){
           a.healingTicksLeft--;
           if(a.healingTicksLeft <= 0){
             logEvent('recovered', a, 'HP: ' + Math.round(a.hp));
+            playRecoveryChime(); // Sprint 15: recovery sound
           }
         }
         if(a.hp>=85 || a.healingTicksLeft<=0){
@@ -3876,6 +4421,7 @@ function tick(){
         addHistory(frontAgent, 'entered_hospital', 'Arrived at hospital. Being seen by specialist.');
         say('Hospital', `${frontAgent.name} admitted. Beginning treatment.`);
         createFHIRResource('Encounter', frontAgent.id, { class: 'hospital_admission', serviceProvider: 'Hospital' });
+        playAdmitSound(); // Sprint 15: admission sound
       }
       // Shuffle remaining
       hq.agents.forEach((aid, idx) => {
@@ -3961,6 +4507,7 @@ function tick(){
 
   updateUI();
   updateTicker(); // Sprint 6
+  if (timelineVisible) drawTimeline(); // Sprint 16
   if(selectedAgent){const a=agents.find(e=>e.id===selectedAgent);if(a)selectAgent(a);}
   // Auto-save every 10 cycles (Sprint 3)
   if(cycle % 10 === 0) saveGame();
@@ -3976,6 +4523,7 @@ function resetSim(){
   GRAVE_MARKERS.length=0;
   FHIR_STORE.length=0;
   A2A_MESSAGES.length=0;
+  TIMELINE_SNAPSHOTS.length=0; // Sprint 16
   Object.values(QUEUES).forEach(q => { q.agents = []; q.positions = []; });
   try{localStorage.removeItem('cammelot_save');}catch(e){}
   agents.forEach(a=>{
@@ -4488,8 +5036,10 @@ function updateUI(){
   var hpEl=document.getElementById('hP');
   if(hpEl){hpEl.textContent='👥 '+alive+(inHosp>0?' (🏥'+inHosp+')':'');hpEl.className='n g';}
 
-  // Deaths
-  document.getElementById('hG').textContent=dead>0?'💀 '+dead+(sysDeath>0?' ('+sysDeath+' preventable)':''):'💀 0';
+  // Deaths — Sprint 16: animated counter
+  animateNumber('hG', dead);
+  document.getElementById('hG').dataset.prefix = '💀 ';
+  document.getElementById('hG').dataset.suffix = sysDeath > 0 ? ' (' + sysDeath + ' preventable)' : '';
   document.getElementById('hG').className='n'+(dead>0?' r':' g');
 
   // Wait
@@ -4978,15 +5528,45 @@ window.addEventListener('beforeunload',saveGame);
 // ═══ EVENT BINDING (CSP-safe — no inline handlers) ═══
 document.getElementById('bi').addEventListener('click', () => setMode('IST'));
 document.getElementById('bs').addEventListener('click', () => setMode('SOLL'));
-document.getElementById('btn-tick').addEventListener('click', () => tick());
-document.getElementById('btn-batch10').addEventListener('click', () => batch(10));
-document.getElementById('btn-batch100').addEventListener('click', () => batch(100));
-document.getElementById('btn-auto').addEventListener('click', () => autoRun());
-document.getElementById('btn-reset').addEventListener('click', () => resetSim());
-document.getElementById('btn-stats').addEventListener('click', () => toggleStats());
-document.getElementById('btn-qa').addEventListener('click', () => showQAPanel());
+document.getElementById('btn-tick').addEventListener('click', () => { playUIClick(); tick(); });
+document.getElementById('btn-batch10').addEventListener('click', () => { playUIClick(); batch(10); });
+document.getElementById('btn-batch100').addEventListener('click', () => { playUIClick(); batch(100); });
+document.getElementById('btn-auto').addEventListener('click', () => { playUIClick(); autoRun(); });
+document.getElementById('btn-reset').addEventListener('click', () => { playUIClick(); resetSim(); });
+document.getElementById('btn-stats').addEventListener('click', () => { playUIClick(); toggleStats(); });
+document.getElementById('btn-qa').addEventListener('click', () => { playUIClick(); showQAPanel(); });
+document.getElementById('btn-heatmap').addEventListener('click', () => { playUIClick(); toggleHeatmap(); });
+document.getElementById('btn-timeline').addEventListener('click', () => { playUIClick(); toggleTimeline(); });
+document.getElementById('theme-toggle').addEventListener('click', () => toggleDarkMode());
+document.getElementById('sound-toggle').addEventListener('click', () => toggleSound());
 document.getElementById('wizard-skip').addEventListener('click', () => closeWizard());
 document.getElementById('wizard-next').addEventListener('click', () => nextWizardStep());
+
+// Sprint 16: Timeline hover interaction
+(function() {
+  var tlCanvas = document.getElementById('timeline-canvas');
+  var tlLabel = document.getElementById('timeline-label');
+  if (tlCanvas && tlLabel) {
+    tlCanvas.addEventListener('mousemove', function(e) {
+      if (TIMELINE_SNAPSHOTS.length < 2) return;
+      var rect = tlCanvas.getBoundingClientRect();
+      var x = e.clientX - rect.left;
+      var pct = x / rect.width;
+      var maxCycle = TIMELINE_SNAPSHOTS[TIMELINE_SNAPSHOTS.length - 1].cycle;
+      var hoverCycle = Math.round(pct * maxCycle);
+      // Find closest snapshot
+      var closest = TIMELINE_SNAPSHOTS.reduce(function(best, s) {
+        return Math.abs(s.cycle - hoverCycle) < Math.abs(best.cycle - hoverCycle) ? s : best;
+      });
+      tlLabel.textContent = 'C' + closest.cycle + ' | Alive: ' + closest.alive + ' | Dead: ' + closest.dead + ' | Wait: ' + closest.avgWait.toFixed(1) + 'w';
+      tlLabel.style.display = 'block';
+      tlLabel.style.left = Math.min(x, rect.width - 180) + 'px';
+    });
+    tlCanvas.addEventListener('mouseleave', function() {
+      tlLabel.style.display = 'none';
+    });
+  }
+})();
 
 // Event delegation for dynamically generated panel-back buttons
 document.getElementById('agent-detail').addEventListener('click', function(e) {

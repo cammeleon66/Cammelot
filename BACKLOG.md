@@ -690,6 +690,627 @@ A feature is "done" when:
 
 **Acceptance**: Every panel change feels smooth and intentional. No jarring jumps.
 
+#### 18.2 — Typography & Color Refinement
+- Move to SNES-authentic type scale (Press Start 2P headings, system font body)
+- Reduce information density: fewer metrics visible by default
+- Color hierarchy: critical numbers pulse, stable numbers stay calm
+- Dark mode toggle with midnight-blue palette
+
+**Acceptance**: UI feels designed, not engineered.
+
+#### 18.3 — Sound Design (Optional/Mutable)
+- Ambient: soft town hum, birds (day), crickets (night), rain (weather)
+- Events: subtle chime on death, soft blip on new event, heartbeat near critical patients
+- Music: 8-bit ambient loop (muted by default, toggle in settings)
+- Sound icon in top bar: 🔇/🔊
+
+**Acceptance**: With sound on, the simulation is immersive. Sound off by default.
+
+---
+
+### Epic 19: Data Visualization Polish
+
+#### 19.1 — Animated Charts
+- Stats dashboard charts animate on open (bars grow, lines draw)
+- Age distribution: smooth bar chart with CBS reference overlay
+- Mortality curve: animated line chart showing deaths over time
+- Condition breakdown: animated donut chart
+
+**Acceptance**: Opening Stats feels like a reveal, not a data dump.
+
+#### 19.2 — Heatmap Overlay
+- Toggle: "Show Heatmap" overlays the map with a color gradient
+- Red zones: areas where agents wait longest / die most
+- Blue zones: areas near functional healthcare
+- Opacity adjustable via slider
+- Data source: aggregate agent position + HP data over time
+
+**Acceptance**: The spatial inequality of healthcare access is visible at a glance.
+
+#### 19.3 — Timeline Scrubber
+- Bottom bar: horizontal timeline showing simulation history
+- Key events marked with icons (💀 death, 🏥 admission, ⚕ treatment)
+- Drag to rewind/fast-forward through history
+- Playback controls: ⏮ ⏪ ⏸ ⏩ ⏭
+
+**Acceptance**: You can rewind to "when did things go wrong?" and play it forward.
+
+#### 19.4 — Relationship Lines
+- Toggle: show A2A communication lines between agents and buildings
+- Referral lines: dashed, colored by urgency
+- GP→Hospital: thick when queue is full
+- Social chat: thin dotted line between chatting agents
+- Pulse animation on active communication
+
+**Acceptance**: The invisible network of healthcare becomes visible.
+
+---
+
+### Epic 20: Loading & First Impression
+
+#### 20.1 — Loading Screen
+- Animated pixel art loading: castle builds brick by brick
+- Progress bar: "Spawning 5,000 citizens... Calibrating diseases... Building town..."
+- Fun facts during load: "Did you know? 30% of your GP's time goes to paperwork, not you."
+- Tip: "Click any citizen to see their story"
+
+**Acceptance**: Loading is entertaining, not boring. Sets the mood.
+
+#### 20.2 — Intro Camera Pan
+- On first load (no save data): slow zoom from sky-level to street-level
+- Camera pans across the town showing key locations
+- Text overlays: "This is Cammelot. Population 5,000." → "3 GP practices" → "1 Hospital" → "And a crisis."
+- Ends at normal view with the Mayor's welcome wizard
+
+**Acceptance**: First-time visitors get context before interacting. Feels cinematic.
+
+#### 20.3 — Attract/Idle Mode
+- If no interaction for 60s: enters screensaver mode
+- Camera slowly pans across town, auto-follows interesting agents
+- Narration ticker: auto-generated town updates
+- Good for lobby displays, conference booths, embedded widgets
+
+**Acceptance**: The simulation runs beautifully unattended.
+
+---
+
+### Epic 21: Performance & Infrastructure
+
+#### 21.1 — Canvas Optimization
+- Double-buffering: render to offscreen canvas, flip on vsync
+- Dirty region tracking: only repaint changed areas
+- Layer separation: static map, buildings, agents, UI each on own canvas
+- requestAnimationFrame with frame budget (16ms target)
+
+**Acceptance**: Smooth 60fps even with 60 agents + particles + weather.
+
+#### 21.2 — Progressive Asset Loading
+- Map image: load low-res immediately, swap to high-res when ready
+- Font: system fallback → Press Start 2P (no flash of unstyled text)
+- Sprites: pre-render all character variants on init
+
+**Acceptance**: Time to first meaningful paint < 2 seconds.
+
+#### 21.3 — IndexedDB Migration
+- Move from localStorage (5MB limit) to IndexedDB
+- Multiple save slots: "Save 1: Cycle 500, IST, 23 deaths" / "Save 2: ..."
+- Auto-save every 50 cycles
+- Export/import save files as JSON
+
+**Acceptance**: Users can maintain multiple experiments.
+
+#### 21.4 — PWA Support
+- manifest.json: installable as desktop/mobile app
+- Service worker: offline support (cache v4.html + assets)
+- App icon: 192px and 512px Cammelot castle
+- Splash screen matching loading screen design
+
+**Acceptance**: "Add to Home Screen" works on mobile. Runs offline.
+
+---
+
+## ═══════════════════════════════════════════════════════════
+## PHASE 7: WOWZERS 🚀 — The Viral Engine
+## ═══════════════════════════════════════════════════════════
+
+> **Status**: STRATEGIC PLAN — Awaiting execution
+> **Goal**: Transform Cammelot from a simulation into a **social phenomenon**.
+> Every feature here serves one purpose: make people **share** this. On LinkedIn,
+> on X, at conferences, in classrooms, in board meetings. The simulation doesn't
+> just show the crisis — it makes the crisis **impossible to ignore**.
+>
+> **Core Insight**: The biggest WOW isn't prettier graphics — it's **storytelling**.
+> People share **stories**, not dashboards. A citizen's 14-week wait and death is
+> more powerful than any chart. We need to make those stories surface automatically.
+
+---
+
+### Epic 22: The Daily Gazette (24-Hour Summary)
+
+> "What happened in Cammelot today?" — This is the single most important missing
+> feature. It turns raw events into a narrative that non-technical people understand.
+
+#### 22.1 — Cammelot Gazette Panel
+- **Right sidebar toggle**: "📰 Gazette" tab (alongside Town Feed, Agent Detail)
+- Generates every 100 cycles (1 "day") automatically
+- Written as a **newspaper article** by the simulation engine:
+
+```
+═══════════════════════════════
+ 🏰 THE CAMMELOT GAZETTE
+   Day 47 — Autumn, Year 1
+═══════════════════════════════
+
+HEADLINES:
+• Hendrik Veenstra (70) died waiting for cardiology.
+  He waited 14 weeks. Treeknorm says max 12.
+  
+• Hospital queue reached 18 — a new record.
+  Dr. van den Berg is working at 130% capacity.
+  
+• Good news: Maria de Graaf (45) recovered from
+  moderate COPD after 6 weeks of treatment.
+
+NUMBERS:
+  Born:  0   Died:  1   Treated:  8
+  In Queue: 18   Avg Wait: 9.2 weeks
+  System Cost: €14,840
+
+MOOD: 😟 Tense — the town is worried.
+```
+
+- **History**: stores all past gazette entries, scrollable
+- **Click any name** → opens that agent's detail panel
+- **Mood indicator**: aggregates agent emotional states into a town-wide sentiment
+
+**Acceptance**: Anyone can read the Gazette and understand what happened without
+knowing what IST/SOLL, Treeknorm, or FHIR means. It tells a HUMAN story.
+
+#### 22.2 — Mayor's Commentary
+- The Mayor character delivers periodic commentary:
+  - "Citizens, I must address the growing wait times at our hospital..."
+  - "I am pleased to announce: Dr. Bakker treated 12 patients this week."
+  - "We lost Hendrik today. He waited too long. This system failed him."
+- Appears as a special speech bubble on the map (larger, gold border)
+- Also appears at the top of the Gazette
+- In SOLL mode, the Mayor is optimistic: "The new AI system processed 30% more patients today!"
+
+**Acceptance**: The Mayor is the human voice of the simulation. LinkedIn screenshots
+of the Mayor's commentary are immediately quotable.
+
+#### 22.3 — Trend Analysis (Week/Month/Year Summary)
+- "📈 Trends" sub-tab in Gazette:
+  - "This week vs last week: Deaths ↑2, Queue ↓3, Wait time →"
+  - "This month: 4 preventable deaths, €47,000 in admin waste"
+  - "This year: IST lost 22 citizens. SOLL projection: would have lost 6."
+- Sparkline mini-charts inline with text
+- Year-end "Annual Report" auto-generated at cycle 1000
+
+**Acceptance**: Long-running simulations generate increasingly powerful data stories.
+
+---
+
+### Epic 23: Screenshot & Share Engine (The Viral Toolkit)
+
+> People share images, not URLs. We need beautiful, branded, one-click shareable
+> screenshots that tell a story.
+
+#### 23.1 — Screenshot Button (📸)
+- Top bar: "📸" button
+- Captures current canvas + UI + a branded frame:
+  ```
+  ┌─────────────────────────────────────┐
+  │  🏰 CAMMELOT                        │
+  │  Healthcare Crisis Simulation       │
+  │  ┌─────────────────────────────────┐ │
+  │  │                                 │ │
+  │  │   [Canvas snapshot here]        │ │
+  │  │                                 │ │
+  │  └─────────────────────────────────┘ │
+  │  Day 47 | 4,977 alive | 23 deaths   │
+  │  IST Mode | Avg Wait: 9.2 weeks     │
+  │  cammelot.health                     │
+  └─────────────────────────────────────┘
+  ```
+- Uses `canvas.toBlob()` → `navigator.clipboard.write()` (copies to clipboard)
+- Fallback: download as PNG
+- Watermark: `cammelot.health` in bottom-right
+
+**Acceptance**: One click → branded screenshot on clipboard → paste into LinkedIn.
+
+#### 23.2 — Moment Cards (Auto-Generated)
+- When dramatic events happen, auto-generate a "Moment Card":
+  - 💀 Death: "Hendrik Veenstra, 70, died after waiting 14 weeks for cardiology.
+    His Digital Twin predicted this 8 weeks ago. The system knew. It couldn't act."
+  - 🏥 Queue Record: "Hospital queue reached 22. Dr. van den Berg worked 47 hours
+    this week. 8% of his colleagues are on sick leave."
+  - 📊 Milestone: "Cycle 500 complete. IST lost 12 citizens. SOLL would have
+    saved 9 of them. Cost of inaction: €52,605."
+- Cards appear as toast notifications (bottom-right, 5s, dismissable)
+- "📋 Copy" button on each card → copies formatted text to clipboard
+- Card gallery: "🃏 Moments" tab shows all captured moments
+
+**Acceptance**: The simulation generates LinkedIn-ready content without user effort.
+
+#### 23.3 — Auto-Generated LinkedIn Drafts
+- "📝 Generate Post" button in Stats or Gazette
+- Creates a ready-to-paste LinkedIn post based on current sim data:
+
+```
+I built a simulation of the Dutch healthcare crisis.
+
+5,000 AI citizens. Real CBS/RIVM data. Real consequences.
+
+After 500 cycles, here's what I found:
+
+📊 23 citizens died. 18 of them were over 65.
+⏰ Average specialist wait: 11.2 weeks (norm: 4 weeks)
+💰 Admin waste: €127,000 (30% of GP time on paperwork)
+👻 3 deaths were 100% preventable with AI triage
+
+The scariest part? This isn't fiction. These numbers
+match the real Netherlands.
+
+Toggle "SOLL mode" (AI-native future) and watch:
+deaths drop by 60%, costs fall by €89,000.
+
+Try it yourself: cammelot.health
+
+#healthcare #AI #Netherlands #zorginfarct
+```
+
+- Three versions: "Data-heavy", "Story-driven", "Provocative"
+- Copy to clipboard button
+
+**Acceptance**: Someone can go from "run simulation" to "LinkedIn post" in 30 seconds.
+
+#### 23.4 — Social Meta & OG Preview
+- Dynamic OG image generation: render current sim state as og:image
+- Meta tags update based on simulation state
+- Twitter/X card support with live preview
+- URL parameters for sharing specific states: `?mode=ist&cycle=500`
+
+**Acceptance**: When someone shares the URL, the preview shows a living simulation snapshot.
+
+---
+
+### Epic 24: The Explanation Layer
+
+> "What am I looking at?" — Every visitor's first question.
+> We need to answer it without making them read a README.
+
+#### 24.1 — Interactive "About This" Page
+- Accessible from landing page + in-sim "?" button
+- Single-page scroll explaining:
+  1. **What**: "This is a simulation of the Dutch healthcare crisis"
+  2. **Why**: "301,000 worker shortage by 2035. 30% admin waste. 12-week waits."
+  3. **How**: "Real CBS/RIVM data. Markov disease models. AI agents."
+  4. **Who**: "Built by Simone Cammel. Powered by Applied Research."
+  5. **IST vs SOLL**: Visual comparison with before/after
+  6. **Methodology**: Expandable sections for data sources
+  7. **FAQ**: Common questions answered
+- Styled to match SNES aesthetic (pixel borders, game-menu look)
+
+**Acceptance**: A journalist, professor, or LinkedIn visitor can understand the project
+in 60 seconds without touching the simulation.
+
+#### 24.2 — In-Sim Glossary Tooltips
+- Hover/tap any metric → tooltip explains it in plain language:
+  - "C_eff 62%" → "Effective Capacity: Only 62% of GP time goes to patients. The rest? Paperwork."
+  - "Treeknorm 12w" → "The legal maximum wait time. The Netherlands says 4 weeks. Reality? 12+."
+  - "HP 45" → "Health Points. When this reaches 0, this citizen dies. Not from disease — from waiting."
+- "🔍 Learn More" link in each tooltip → opens About page section
+
+**Acceptance**: Zero jargon. Every number tells a story.
+
+#### 24.3 — Guided Tours (Post-Onboarding)
+- "📚 Tours" menu with themed walkthroughs:
+  1. "The Patient Journey" — follow one citizen from healthy to treatment
+  2. "The GP's Day" — show admin burden, queue management, burnout
+  3. "The Queue Problem" — why wait times kill
+  4. "IST vs SOLL" — toggle comparison walkthrough
+- Each tour: 6-8 steps, spotlight UI, narrative text, "Next" button
+- Auto-highlights relevant agents/buildings during tour
+
+**Acceptance**: Teachers can use tours in classrooms. Conference presenters can demo.
+
+---
+
+### Epic 25: Deep Interactivity (What-If Scenarios)
+
+> The simulation currently runs with fixed parameters.
+> What if visitors could tweak things and see what happens?
+
+#### 25.1 — Parameter Playground
+- "⚙ What If?" panel with sliders:
+  - Admin burden: 5% ←——→ 50%
+  - Wait time limit: 2 weeks ←——→ 20 weeks
+  - Staff shortage: 0% ←——→ 20%
+  - AI efficiency: 1.0× ←——→ 2.0×
+  - Population size: 1,000 ←——→ 10,000
+- Changes apply immediately — watch the simulation react in real-time
+- "Reset to IST" / "Reset to SOLL" quick buttons
+- Presets: "Netherlands 2025", "Netherlands 2035", "AI-Native 2030"
+
+**Acceptance**: A health minister can drag the admin slider and see people stop dying.
+
+#### 25.2 — Scenario Bookmarks
+- Save current parameter set as a named scenario
+- "📎 Bookmarks" dropdown with saved configurations
+- Share scenarios via URL: `?admin=0.3&wait=12&staff=0.08`
+- Built-in bookmarks: "Crisis Peak", "Transformation Complete", "Staff Collapse"
+
+**Acceptance**: Researchers can reproducibly test specific hypotheses.
+
+#### 25.3 — A/B Split View
+- Split screen: two simulations running side-by-side
+- Same initial population, different parameters
+- Synced clocks, delta indicators:
+  - "Left: 23 deaths | Right: 6 deaths | Δ: 17 lives saved"
+  - "Left: €127k waste | Right: €38k waste | Δ: €89k saved"
+- Share as comparison screenshot
+
+**Acceptance**: The difference between crisis and solution is viscerally, visually undeniable.
+
+---
+
+### Epic 26: The Content Machine
+
+> Cammelot should generate content continuously, even when nobody's watching.
+
+#### 26.1 — Insight Engine
+- Background process that runs the simulation and detects "interesting" patterns:
+  - First death of the year → "Breaking: First preventable death in Year 2"
+  - All GPs at burnout → "All three GPs reached burnout simultaneously"
+  - Age bias detected → "Citizens over 70 wait 3.2 weeks longer than average"
+  - Queue record broken → "Hospital queue hit 25 — highest ever"
+- Each insight: headline, 2-sentence explanation, relevant data point
+- Stored in EVENT_LOG with type `insight`
+
+**Acceptance**: The simulation writes its own headlines.
+
+#### 26.2 — Weekly Report Generator
+- Every 700 cycles (1 "week"), generate a comprehensive report:
+  - Deaths (total, preventable, by age, by condition)
+  - Queue statistics (peak, average, Treeknorm violations)
+  - Financial summary (admin waste, treatment costs, savings potential)
+  - Bias check (any systematic inequities detected?)
+  - Best/worst: "Best moment: Maria recovered. Worst moment: Queue reached 22."
+- Exportable as formatted text, JSON, or a styled HTML page
+
+**Acceptance**: Run the simulation for an hour → get a full research report.
+
+#### 26.3 — Embedded Widget Mode
+- URL parameter `?embed=true` → minimal chrome, no sidebar, auto-play
+- Perfect for:
+  - Blog posts: embed as `<iframe>`
+  - LinkedIn articles: screenshot + link
+  - Conference slides: full-screen attract mode
+  - Academic papers: embed interactive figure
+- Responsive sizing: adapts to container width
+- "🏰 Powered by Cammelot" watermark link
+
+**Acceptance**: Anyone can embed a live Cammelot simulation in their website.
+
+---
+
+### Epic 27: Go-Live Checklist
+
+> What needs to happen to put this on `cammelot.health` and make it real?
+
+#### 27.1 — Domain & Hosting
+- Register `cammelot.health` (or `.nl`, `.io`)
+- Deploy to Vercel/Netlify (free tier, auto-deploy from GitHub)
+- CloudFlare CDN for global performance
+- SSL certificate (automatic with Vercel/Netlify)
+- Custom 404 page
+
+**Acceptance**: `https://cammelot.health` loads the landing page. Fast globally.
+
+#### 27.2 — Analytics & Monitoring
+- Privacy-respecting analytics: Plausible.io or Simple Analytics
+- Track: page views, time on site, IST/SOLL toggles, cycle count, share button clicks
+- No cookies, no tracking pixels, GDPR-compliant
+- Uptime monitoring (UptimeRobot or similar)
+- Error tracking: capture JS errors without sending user data
+
+**Acceptance**: We know how many people visit and what they do, without violating privacy.
+
+#### 27.3 — SEO & Discoverability
+- Structured data (JSON-LD): WebApplication, ResearchProject
+- Sitemap.xml with landing page, about page, simulation
+- robots.txt allowing all crawlers
+- Meta descriptions optimized for "healthcare simulation", "zorginfarct", "AI healthcare"
+- Blog/changelog page for SEO content (optional)
+
+**Acceptance**: "dutch healthcare crisis simulation" on Google → Cammelot is top 5.
+
+#### 27.4 — Performance Audit
+- Lighthouse score > 90 on all categories
+- First Contentful Paint < 1.5s
+- Time to Interactive < 3s
+- Core Web Vitals: all green
+- Bundle analysis: ensure no unnecessary assets
+
+**Acceptance**: Google PageSpeed Insights gives a green score.
+
+#### 27.5 — Legal & Compliance
+- MIT License clearly stated
+- Data sources cited (CBS, RIVM, NZa, IZA) with links
+- Disclaimer: "This is a simulation, not medical advice"
+- Privacy policy: "We collect no personal data"
+- Cookie banner: not needed (no cookies used!)
+- Accessibility: basic WCAG 2.1 AA (alt text, keyboard nav, contrast)
+
+**Acceptance**: No legal liability. Accessible to screen readers.
+
+---
+
+### Epic 28: Advanced Agent Intelligence
+
+> Make the simulation feel ALIVE, not algorithmic.
+
+#### 28.1 — Agent Memory & Personality
+- Each agent remembers their last 5 major experiences
+- Personality traits affect behavior (stoic, anxious, social, stubborn)
+- Anxious patients visit GP earlier, stubborn patients wait too long
+- Social agents form friendships (chat more with specific people)
+- Memory affects speech: "Last time I waited 8 weeks. I can't do this again."
+
+**Acceptance**: No two agents behave the same. Each feels like a person.
+
+#### 28.2 — Emergent Social Dynamics
+- Agents share healthcare experiences: "I waited 12 weeks. Don't go to that specialist."
+- Word-of-mouth affects behavior: nearby agents may avoid certain specialists
+- Grieving: agents near a death site slow down, show heart particles
+- Community events: multiple agents gather at park, discuss health system
+- "Protest": if queue exceeds 20, agents gather outside hospital with "!" bubbles
+
+**Acceptance**: Social behavior is emergent, not scripted. The town feels organic.
+
+#### 28.3 — Provider Burnout Cascade
+- GP burnout is visible: overworked GPs walk slower, have "😓" emoji
+- When one GP burns out, patients overflow to remaining GPs → cascade
+- Specialist burnout: longer treatment times, more errors
+- System collapse visualization: everything turns grey, movement slows
+- SOLL comparison: AI assistance prevents cascade
+
+**Acceptance**: The "zorginfarct" is visible as a cascading failure, not just a number.
+
+---
+
+### Epic 29: Technical Excellence
+
+#### 29.1 — State Machine Visualization
+- Debug mode: show agent state machines overlaid on the map
+- Color-coded states: healthy=green, queuing=yellow, critical=red
+- Transition arrows between states
+- Useful for presentations about how the simulation works
+
+**Acceptance**: Developers and researchers can see the engine running.
+
+#### 29.2 — Replay & Time Travel
+- Record full simulation state every 10 cycles
+- Rewind to any point and replay from there
+- "What if we intervened at cycle 300?" — rewind, change parameters, replay
+- Export replay as shareable file
+
+**Acceptance**: Reproducible experiments. "Here's exactly when the system failed."
+
+#### 29.3 — Multi-Instance Comparison
+- Run 10 simulations in parallel (web workers)
+- Show statistical distribution of outcomes:
+  - "Across 10 runs, IST averaged 22.4 deaths (σ=3.1)"
+  - "SOLL averaged 6.8 deaths (σ=1.9)"
+- Monte Carlo analysis of parameter sensitivity
+- Academic-grade statistical output
+
+**Acceptance**: Results are statistically significant, not anecdotal.
+
+#### 29.4 — API Mode (Headless)
+- `?headless=true` → runs simulation without rendering
+- Returns JSON results via postMessage
+- Enables: batch processing, academic research, CI/CD testing
+- Python wrapper: `cammelot.run(cycles=10000, mode='ist', seed=42)`
+
+**Acceptance**: Researchers can run thousands of simulations programmatically.
+
+---
+
+## Phase 7 Sprint Schedule
+
+### Sprint 19 — The Gazette & Storytelling (HIGHEST PRIORITY)
+| # | Task | Epic | Priority |
+|---|------|------|----------|
+| 1 | Cammelot Gazette panel (24h summary) | 22.1 | 🔴 CRITICAL |
+| 2 | Mayor's Commentary system | 22.2 | 🔴 CRITICAL |
+| 3 | Trend Analysis (week/month) | 22.3 | 🟡 High |
+
+### Sprint 20 — Screenshot & Share Engine
+| # | Task | Epic | Priority |
+|---|------|------|----------|
+| 4 | Screenshot button (📸) | 23.1 | 🔴 CRITICAL |
+| 5 | Moment Cards (auto-generated) | 23.2 | 🔴 CRITICAL |
+| 6 | LinkedIn Post Generator | 23.3 | 🟡 High |
+| 7 | Social Meta & OG Preview | 23.4 | 🟡 High |
+
+### Sprint 21 — Explanation Layer
+| # | Task | Epic | Priority |
+|---|------|------|----------|
+| 8 | Interactive About Page | 24.1 | 🔴 CRITICAL |
+| 9 | In-Sim Glossary Tooltips | 24.2 | 🟡 High |
+| 10 | Guided Tours | 24.3 | 🟡 High |
+
+### Sprint 22 — Deep Interactivity
+| # | Task | Epic | Priority |
+|---|------|------|----------|
+| 11 | Parameter Playground | 25.1 | 🟡 High |
+| 12 | Scenario Bookmarks | 25.2 | 🟢 Medium |
+| 13 | A/B Split View | 25.3 | 🟢 Medium |
+
+### Sprint 23 — Content Machine & Intelligence
+| # | Task | Epic | Priority |
+|---|------|------|----------|
+| 14 | Insight Engine | 26.1 | 🟡 High |
+| 15 | Weekly Report Generator | 26.2 | 🟡 High |
+| 16 | Embedded Widget Mode | 26.3 | 🟡 High |
+| 17 | Agent Memory & Personality | 28.1 | 🟡 High |
+| 18 | Emergent Social Dynamics | 28.2 | 🟡 High |
+| 19 | Provider Burnout Cascade | 28.3 | 🟡 High |
+
+### Sprint 24 — Go Live & Technical
+| # | Task | Epic | Priority |
+|---|------|------|----------|
+| 20 | Domain & Hosting (Vercel) | 27.1 | 🔴 CRITICAL |
+| 21 | Analytics (Plausible) | 27.2 | 🟡 High |
+| 22 | SEO & Structured Data | 27.3 | 🟡 High |
+| 23 | Performance Audit | 27.4 | 🟡 High |
+| 24 | Legal & Compliance | 27.5 | 🟡 High |
+| 25 | Replay & Time Travel | 29.2 | 🟢 Medium |
+| 26 | Multi-Instance Comparison | 29.3 | 🟢 Medium |
+| 27 | API Mode (Headless) | 29.4 | 🟢 Medium |
+
+---
+
+## The Viral Strategy (LinkedIn Playbook)
+
+### Phase 1: "I Built This" (Launch Post)
+> Post the landing page screenshot + 3 key numbers.
+> Hook: "I built a simulation of the Dutch healthcare crisis. 5,000 AI citizens.
+> Real data. Here's what happened in the first 500 cycles."
+> CTA: Link to cammelot.health
+
+### Phase 2: "The Data Says" (Weekly Research Posts)
+> Use the Insight Engine + Weekly Report to generate data-driven posts.
+> Each post: one finding, one screenshot, one call to action.
+> Examples:
+> - "My simulation's AI agents developed age bias. Nobody programmed it."
+> - "I let 5,000 citizens live for 10 years. The admin paradox killed more than disease."
+> - "One slider change: admin from 30% to 5%. Result: 17 fewer deaths per year."
+
+### Phase 3: "Try It Yourself" (Engagement Posts)
+> Embed the simulation or share interactive scenarios.
+> Let people tweak parameters and share their results.
+> "I set admin burden to 50%. Within 200 cycles, every GP was burned out."
+
+### Phase 4: "The Research" (Authority Posts)
+> Publish the methodology, bias tracking results, ROI analysis.
+> Position as Applied Research, not just a toy.
+> Target: healthcare professionals, policy makers, tech leaders.
+
+---
+
+## README Pages Summary
+
+### For Developers (README.md — Project Root) ✅ DONE
+- Architecture, setup, contributing, technical decisions
+
+### For Users (About Page — Frontend) 🔜 Sprint 21
+- What is this, why it matters, how to use it, methodology
+
+### For Social (OG Meta + Share Cards) 🔜 Sprint 20
+- Branded screenshots, auto-generated posts, social previews
+
 #### 18.2 — Improved Typography & Hierarchy
 - Portrait + name: larger, more prominent, with subtle text shadow
 - Section headers: small decorative line underneath (like ──── )
