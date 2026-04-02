@@ -93,6 +93,23 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a1a2e;font-family:
 .cond-tag{display:inline-block;background:rgba(229,57,53,.1);color:var(--red);border:1px solid rgba(229,57,53,.2);border-radius:4px;padding:2px 8px;font-size:10px;margin:2px 4px 2px 0;font-weight:600}
 .cond-tag.mild{background:rgba(255,179,0,.1);color:#b87a00;border-color:rgba(255,179,0,.2)}
 
+/* HP Sparkline (Sprint 3) */
+.hp-spark-wrap{background:rgba(0,0,0,.04);border:1px solid rgba(0,0,0,.08);border-radius:4px;padding:4px;margin:6px 0}
+.hp-spark-label{font:500 9px 'JetBrains Mono',monospace;color:var(--ink2);margin-bottom:2px}
+#hp-spark{display:block;width:100%;border-radius:2px;background:rgba(245,230,200,.5)}
+
+/* Care Pathway (Sprint 3) */
+.care-pathway{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0}
+.cp-badge{display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:12px;font-size:9px;font-weight:600;background:rgba(0,0,0,.05);color:var(--ink2);border:1px solid rgba(0,0,0,.08)}
+.cp-badge.active{background:rgba(76,175,80,.15);color:#2e7d32;border-color:rgba(76,175,80,.3);box-shadow:0 0 4px rgba(76,175,80,.2)}
+.cp-badge.done{background:rgba(66,165,245,.1);color:#1565c0;border-color:rgba(66,165,245,.2)}
+.cp-badge.dead-stage{background:rgba(229,57,53,.1);color:var(--red);border-color:rgba(229,57,53,.2)}
+.cp-arrow{color:var(--ink2);font-size:10px;opacity:.4}
+
+/* Wait time highlight (Sprint 3) */
+.wait-highlight{background:rgba(255,179,0,.08);border:1px solid rgba(255,179,0,.15);border-radius:6px;padding:6px 10px;margin:6px 0;font-size:11px;color:var(--ink)}
+.wait-highlight .wh-val{font-family:'JetBrains Mono',monospace;font-weight:700;color:#b87a00}
+
 /* History timeline */
 .history-timeline{max-height:220px;overflow-y:auto;margin-top:4px}
 .history-timeline::-webkit-scrollbar{width:4px}.history-timeline::-webkit-scrollbar-thumb{background:var(--ink2);border-radius:2px}
@@ -115,6 +132,36 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a1a2e;font-family:
 .so-row{display:flex;justify-content:space-between;font-size:11px;padding:2px 0}
 .so-row .k{color:#a08060}.so-row .v{font-family:'JetBrains Mono',monospace;font-weight:600}
 .so-row .v.r{color:var(--red)}.so-row .v.g{color:var(--green)}.so-row .v.y{color:var(--gold)}
+
+/* Stats Overlay (Sprint 3) */
+.stats-overlay{position:absolute;inset:0;background:rgba(0,0,0,.55);z-index:10;display:flex;align-items:center;justify-content:center;animation:fadeIn .2s ease}
+.stats-panel{background:linear-gradient(180deg,var(--parchment) 0%,var(--parchment2) 100%);border:4px solid var(--frame);border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.3);max-width:480px;width:92%;max-height:85vh;overflow-y:auto;padding:0}
+.stats-panel::-webkit-scrollbar{width:5px}.stats-panel::-webkit-scrollbar-thumb{background:var(--ink2);border-radius:3px}
+.stats-header{background:var(--frame);color:var(--parchment);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;border-radius:6px 6px 0 0}
+.stats-header h3{font:700 13px 'Playfair Display',serif;letter-spacing:1px;margin:0}
+.stats-close{background:none;border:1px solid rgba(255,255,255,.2);color:var(--parchment);width:24px;height:24px;border-radius:50%;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:.15s}
+.stats-close:hover{background:rgba(255,255,255,.15)}
+.stats-body{padding:14px 16px}
+.stats-group{margin-bottom:14px}
+.stats-group h4{font:700 10px 'JetBrains Mono',monospace;color:var(--ink2);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid rgba(61,43,31,.12)}
+.stats-row{display:flex;justify-content:space-between;font-size:11px;padding:3px 0;color:var(--ink)}
+.stats-row .sk{color:var(--ink2)}.stats-row .sv{font-family:'JetBrains Mono',monospace;font-weight:600}
+.stats-row .sv.sr{color:var(--red)}.stats-row .sv.sg{color:var(--green)}.stats-row .sv.sy{color:var(--gold)}
+.stats-divider{border:none;border-top:1px dashed rgba(61,43,31,.15);margin:10px 0}
+@keyframes fadeIn{0%{opacity:0}100%{opacity:1}}
+
+/* Save Prompt (Sprint 3 — RPG Style) */
+.save-overlay{position:absolute;inset:0;background:rgba(0,0,0,.7);z-index:15;display:flex;align-items:center;justify-content:center;animation:fadeIn .3s ease}
+.save-prompt{background:linear-gradient(180deg,#2a1a0a 0%,#1a0e05 100%);border:3px solid var(--gold);border-radius:8px;box-shadow:0 0 40px rgba(255,179,0,.2),inset 0 1px 0 rgba(255,179,0,.15);padding:24px 32px;text-align:center;min-width:320px}
+.save-prompt h3{font:700 14px 'JetBrains Mono',monospace;color:var(--gold);letter-spacing:2px;margin-bottom:16px;text-shadow:0 0 8px rgba(255,179,0,.3)}
+.save-prompt .sp-info{font:400 11px 'JetBrains Mono',monospace;color:#a08060;line-height:1.8;margin-bottom:18px}
+.save-prompt .sp-info b{color:var(--parchment)}
+.save-btns{display:flex;gap:12px;justify-content:center}
+.save-btn{font:600 12px 'JetBrains Mono',monospace;padding:10px 24px;border:2px solid;border-radius:6px;cursor:pointer;transition:.2s;letter-spacing:1px}
+.save-btn.continue{background:rgba(76,175,80,.15);color:var(--green);border-color:rgba(76,175,80,.4)}
+.save-btn.continue:hover{background:rgba(76,175,80,.3)}
+.save-btn.newgame{background:rgba(255,179,0,.1);color:var(--gold);border-color:rgba(255,179,0,.3)}
+.save-btn.newgame:hover{background:rgba(255,179,0,.25)}
 
 /* Loading */
 #load{position:fixed;inset:0;background:#1a0e05;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;transition:opacity .5s}
@@ -160,6 +207,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a1a2e;font-family:
         <button class="cb go" onclick="batch(100)">×100</button>
         <button class="cb warn" onclick="autoRun()">⟳ Auto</button>
         <button class="cb stop" onclick="resetSim()">↺ Reset</button>
+        <button class="cb" onclick="toggleStats()">📊 Stats</button>
         <div class="cinfo">FHIR <b id="sF">0</b> · A2A <b id="sM">0</b></div>
       </div>
     </div>
@@ -374,6 +422,22 @@ function findWaypointPath(fromIdx, toIdx) {
   }
   return null;
 }
+
+// ═══ GLOBAL EVENT LOG (Sprint 3 — Epic 4.1) ═══
+const EVENT_LOG = []; // { cycle, type, agentId, agentName, detail, hp, timestamp }
+
+function logEvent(type, agent, detail) {
+  EVENT_LOG.push({
+    cycle,
+    type,
+    agentId: agent.id,
+    agentName: agent.name,
+    detail: detail || '',
+    hp: Math.round(agent.hp),
+    timestamp: Date.now()
+  });
+}
+// ═══ END EVENT LOG ═══
 
 // ── Sim ──
 let cycle=0,mode='IST',autoTimer=null;
@@ -856,7 +920,7 @@ function spawnPopulation(count) {
     if (waitWeeks > 10) state = 'critical';
     else if (conditions.length > 0 && waitWeeks > 0) state = 'waiting';
     else if (conditions.length > 0) state = 'managed';
-    spawned.push({
+    const agent = {
       id, name: firstName + ' ' + surname, age, gender,
       type: conditions.length > 0 ? 'patient' : 'citizen',
       conditions, hp, waitWeeks,
@@ -865,8 +929,11 @@ function spawnPopulation(count) {
       insideBuilding: referredToHospital ? 'hospital' : null,
       referredToHospital,
       thoughts: generateThoughts(conditions, hp, age, waitWeeks),
-      color: '#808080'
-    });
+      color: '#808080',
+      hpHistory: [hp]
+    };
+    spawned.push(agent);
+    logEvent('spawned', agent, 'Age ' + agent.age);
   }
   return spawned;
 }
@@ -1013,6 +1080,7 @@ agents.forEach(e=>{
   e.pathComplete = false;
   e.lastGPCycle = -100;
   e.referredToHospital = false;
+  e.hpHistory = e.hpHistory || [Math.round(e.hp)];
   // Store initial values for reset
   e._initHP = e.hp; e._initWaitWeeks = e.waitWeeks;
   e._initConditions = JSON.parse(JSON.stringify(e.conditions||[]));
@@ -1672,6 +1740,9 @@ function selectAgent(a){
   const stateLabels={roaming:'Walking in town',going_to_gp:'Going to GP',at_gp:'At GP consultation',going_to_hospital:'Going to Hospital',at_hospital:'Receiving treatment',recovering:'Recovering',dead:'Deceased'};
   const stateLabel=stateLabels[a.behaviorState]||a.behaviorState||'Idle';
 
+  // Get agent events from EVENT_LOG
+  const agentEvents=EVENT_LOG.filter(e=>e.agentId===a.id);
+
   let html=`<div class="agent-card">
     <div class="ac-name">${a.name}</div>
     <div class="ac-role">${a.type==='gp'?'General Practitioner':a.type==='specialist'?a.role:a.gender==='M'?'Male':'Female'}, Age ${a.age}</div>`;
@@ -1686,6 +1757,49 @@ function selectAgent(a){
       ${a.healingTicksLeft>0?`<div class="ac-row"><span class="k">Recovery</span><span class="v ok">Healing (${a.healingTicksLeft} ticks)</span></div>`:''}
       ${a.insideBuilding?`<div class="ac-row"><span class="k">Location</span><span class="v mid">${BUILDINGS.find(b=>b.id===a.insideBuilding)?.label||a.insideBuilding}</span></div>`:''}
     </div>`;
+
+    // HP Sparkline (Sprint 3)
+    if(a.hpHistory && a.hpHistory.length > 1){
+      html+=`<div class="ac-section"><h4>HP Over Time</h4>
+        <div class="hp-spark-wrap"><canvas id="hp-spark" width="260" height="40"></canvas></div>
+      </div>`;
+    }
+
+    // Care Pathway Visual (Sprint 3)
+    const pathwayStages=[
+      {key:'spawned',icon:'🏠',label:'Healthy'},
+      {key:'feeling_sick',icon:'🤒',label:'Felt Sick'},
+      {key:'visited_gp',icon:'⚕',label:'Visited GP'},
+      {key:'referred',icon:'🔄',label:'Referred'},
+      {key:'admitted',icon:'🏥',label:'Hospital'},
+      {key:'treated',icon:'💊',label:'Treated'},
+      {key:'recovered',icon:'✅',label:'Recovered'}
+    ];
+    const eventTypes=new Set(agentEvents.map(e=>e.type));
+    const currentStageMap={roaming:'spawned',going_to_gp:'feeling_sick',at_gp:'visited_gp',going_to_hospital:'referred',at_hospital:'admitted',recovering:'treated',dead:'died'};
+    const currentStage=currentStageMap[a.behaviorState]||'spawned';
+    html+=`<div class="ac-section"><h4>Care Pathway</h4><div class="care-pathway">`;
+    pathwayStages.forEach((s,i)=>{
+      const isDone=eventTypes.has(s.key);
+      const isActive=s.key===currentStage;
+      const isDead=a.behaviorState==='dead';
+      let cls=isActive?'active':isDone?'done':'';
+      if(isDead && s.key===currentStage) cls='dead-stage';
+      html+=`<span class="cp-badge ${cls}">${s.icon} ${s.label}</span>`;
+      if(i<pathwayStages.length-1) html+=`<span class="cp-arrow">→</span>`;
+    });
+    if(a.behaviorState==='dead'){
+      html+=`<span class="cp-arrow">→</span><span class="cp-badge dead-stage">💀 Died</span>`;
+    }
+    html+=`</div></div>`;
+
+    // Wait Time Display (Sprint 3)
+    const waitEvents=agentEvents.filter(e=>e.type==='referred'||e.type==='admitted');
+    if(a.waitWeeks>0 || waitEvents.length>0){
+      const totalWait=Math.round(a.waitWeeks*10)/10;
+      html+=`<div class="wait-highlight">⏱ Cumulative specialist wait: <span class="wh-val">${totalWait} weeks</span></div>`;
+    }
+
     if(a.conditions.length>0){
       html+=`<div class="ac-section"><h4>Conditions</h4>`;
       const comorbMult=getComorbidityMultiplier(a.conditions);
@@ -1707,16 +1821,25 @@ function selectAgent(a){
         html+=`<span class="cond-tag ${c.severity==='mild'?'mild':''}" ${isInteracting?'style="border-color:var(--red);background:rgba(229,57,53,.18)"':''}>${c.name} (${c.code}) — ${c.severity}${isInteracting?' ⚡':''}</span>`;
       });
       html+=`</div>`;
+    } else {
+      // Healthy agent display (Sprint 3)
+      const lastCheckup=agentEvents.filter(e=>e.type==='checkup').pop();
+      html+=`<div class="ac-section"><h4>Health</h4>
+        <div class="ac-row"><span class="k">Status</span><span class="v ok">No conditions</span></div>
+        <div class="ac-row"><span class="k">Last Checkup</span><span class="v">${lastCheckup?'Cycle '+lastCheckup.cycle:'Never visited GP'}</span></div>
+      </div>`;
     }
     html+=`<div class="thought">${thought}</div>`;
-    // Action history timeline
-    if(a.actionHistory && a.actionHistory.length>0){
+
+    // Enhanced History Timeline from EVENT_LOG (Sprint 3)
+    if(agentEvents.length>0){
       html+=`<div class="ac-section" style="margin-top:12px"><h4>History</h4><div class="history-timeline">`;
-      const icons={feeling_sick:'\uD83E\uDD12',entered_gp:'\uD83C\uDFE5',referred:'\uD83D\uDCCB',gp_treated:'\uD83D\uDC8A',entered_hospital:'\uD83C\uDFE8',treated:'\u2705',recovered:'\uD83D\uDCAA',checkup:'\uD83E\uDE7A',died:'\uD83D\uDC7B',worsened:'\u26A0\uFE0F'};
-      const history=[...a.actionHistory].reverse().slice(0,25);
-      history.forEach(h=>{
-        const icon=icons[h.type]||'\uD83D\uDCDD';
-        html+=`<div class="ht-entry"><span class="ht-cycle">C${h.cycle}</span><span class="ht-icon">${icon}</span><span class="ht-text">${h.text}</span><span class="ht-hp">${h.hp}HP</span></div>`;
+      const eventIcons={spawned:'👶',feeling_sick:'🤒',visited_gp:'⚕',referred:'🔄',gp_treated:'💊',checkup:'📋',admitted:'🏥',treated:'💊',discharged:'🏠',recovered:'✅',worsened:'⚠️',died:'💀',natural_death:'💀'};
+      const recentEvents=[...agentEvents].reverse().slice(0,15);
+      recentEvents.forEach(ev=>{
+        const icon=eventIcons[ev.type]||'📝';
+        const detailText=ev.detail||ev.type;
+        html+=`<div class="ht-entry"><span class="ht-cycle">C${ev.cycle}</span><span class="ht-icon">${icon}</span><span class="ht-text">${ev.type.replace(/_/g,' ')} — ${detailText}</span><span class="ht-hp">${ev.hp}HP</span></div>`;
       });
       html+=`</div></div>`;
     }
@@ -1731,6 +1854,44 @@ function selectAgent(a){
 
   html+=`</div>`;
   d.innerHTML=html;
+
+  // Draw HP Sparkline on canvas (Sprint 3)
+  const sparkCanvas=document.getElementById('hp-spark');
+  if(sparkCanvas && a.hpHistory && a.hpHistory.length>1){
+    const ctx=sparkCanvas.getContext('2d');
+    const w=sparkCanvas.width, h=sparkCanvas.height;
+    ctx.clearRect(0,0,w,h);
+    const data=a.hpHistory.slice(-200);
+    const step=w/(data.length-1);
+    // Draw gradient fill
+    ctx.beginPath();
+    ctx.moveTo(0, h-(data[0]/100)*h);
+    for(let i=1;i<data.length;i++){
+      const x=i*step;
+      const y=h-(data[i]/100)*h;
+      ctx.lineTo(x,y);
+    }
+    // Stroke with color based on current HP
+    const curHP=data[data.length-1];
+    const lineColor=curHP>50?'#4CAF50':curHP>20?'#FF9800':'#E53935';
+    ctx.strokeStyle=lineColor;
+    ctx.lineWidth=1.5;
+    ctx.stroke();
+    // Fill below
+    ctx.lineTo(w,h);
+    ctx.lineTo(0,h);
+    ctx.closePath();
+    const fillColor=curHP>50?'rgba(76,175,80,0.12)':curHP>20?'rgba(255,152,0,0.12)':'rgba(229,57,53,0.12)';
+    ctx.fillStyle=fillColor;
+    ctx.fill();
+    // HP threshold lines
+    ctx.setLineDash([2,3]);
+    ctx.strokeStyle='rgba(229,57,53,0.3)';ctx.lineWidth=0.5;
+    ctx.beginPath();ctx.moveTo(0,h-0.2*h);ctx.lineTo(w,h-0.2*h);ctx.stroke(); // 20 HP
+    ctx.strokeStyle='rgba(255,179,0,0.3)';
+    ctx.beginPath();ctx.moveTo(0,h-0.5*h);ctx.lineTo(w,h-0.5*h);ctx.stroke(); // 50 HP
+    ctx.setLineDash([]);
+  }
 }
 
 function showEmptyPanel(){
@@ -1927,6 +2088,11 @@ function tick(){
   agents.forEach(a=>{
     if(a.type!=='patient'&&a.type!=='citizen') return;
 
+    // Track HP history for sparkline (Sprint 3)
+    a.hpHistory = a.hpHistory || [];
+    a.hpHistory.push(Math.round(a.hp));
+    if(a.hpHistory.length > 200) a.hpHistory.shift();
+
     // --- DEATH CHECK ---
     if(a.hp<=0){
       if(a.state!=='dead'){
@@ -1934,10 +2100,12 @@ function tick(){
         a.insideBuilding=null;
         if(!a.causeOfDeath) a.causeOfDeath='system_failure';
         if(a.causeOfDeath==='natural'){
+          logEvent('natural_death', a, 'Age ' + a.age);
           addHistory(a,'died',`Passed away peacefully at age ${a.age}.`);
           say(a.name,`Passed away peacefully at age ${a.age}.`,'ghost');
           say('SYSTEM',`NATURAL DEATH: ${a.name} (${a.age}).`,'sys');
         } else {
+          logEvent('died', a, 'System failure');
           addHistory(a,'died','The system failed me. I waited too long...');
           say(a.name,`I waited too long... ${Math.round(a.waitWeeks)} weeks. The system failed me.`,'ghost');
           say('SYSTEM',`MORTALITY: ${a.name} (${a.age}) — after ${Math.round(a.waitWeeks)} weeks.`,'alert');
@@ -1962,9 +2130,14 @@ function tick(){
     // === DISEASE STATE PROGRESSION (every 4 ticks ≈ 1 sim week) ===
     if (cycle % 4 === 0 && a.conditions && a.conditions.length > 0) {
       for (const cond of a.conditions) {
+        const oldState = cond.severity;
         const newState = transitionDiseaseState(cond.code, cond.severity, a.waitWeeks, p.tree);
         if (newState !== cond.severity) {
           cond.severity = newState;
+          const states = ['healthy','mild','moderate','severe','critical','deceased'];
+          if(states.indexOf(newState) > states.indexOf(oldState)){
+            logEvent('worsened', a, cond.code + ': ' + oldState + '→' + newState);
+          }
           addHistory(a, 'worsened', `${cond.name} progressed to ${newState}`);
         }
       }
@@ -1987,6 +2160,7 @@ function tick(){
         );
         if(needsGP){
           a.behaviorState='going_to_gp'; a.pathComplete=false;
+          logEvent('feeling_sick', a, 'HP: ' + Math.round(a.hp));
           addHistory(a,'feeling_sick','I don\'t feel well... I should see '+(a.gpName||'a doctor')+'.');
           sendAgentTo(a, getGPDest(a.gpName).entrance);
           a.bubbleTimer=80;
@@ -2010,6 +2184,7 @@ function tick(){
           a.behaviorState='at_gp';
           a.stateTimer=3+Math.floor(Math.random()*3);
           a.lastGPCycle=cycle;
+          logEvent('visited_gp', a, 'GP: ' + (a.gpName||'Unknown'));
           addHistory(a,'entered_gp','Visiting '+(a.gpName||'the GP')+'. Explaining my symptoms...');
           say(a.gpName||'GP',`${a.name} has arrived for consultation.`);
         }
@@ -2033,6 +2208,7 @@ function tick(){
             a.waitWeeks=0;
             const gpDest=getGPDest(a.gpName);
             a.x=gpDest.entrance.x; a.y=gpDest.entrance.y;
+            logEvent('referred', a, a.conditions.map(c=>c.code).join(','));
             addHistory(a,'referred',(a.gpName||'GP')+' referred me to the hospital. Specialist care needed.');
             say(a.gpName||'GP',`Referring ${a.name} to hospital — needs specialist care.`);
             sendAgentTo(a, DESTINATIONS.hospital.entrance);
@@ -2054,6 +2230,7 @@ function tick(){
             a.hp=Math.min(100, a.hp+5);
             const gpDest=getGPDest(a.gpName);
             a.x=gpDest.entrance.x; a.y=gpDest.entrance.y;
+            logEvent('gp_treated', a, 'Conditions treated at GP');
             addHistory(a,'gp_treated','GP prescribed medication. Should start feeling better.');
             say(a.gpName||'GP',`${a.name}: condition manageable. Prescribed treatment.`);
             a.path=[]; a.pathIdx=0; a.idleUntil=performance.now()+1500;
@@ -2071,6 +2248,7 @@ function tick(){
             a.insideBuilding=null; a.behaviorState='roaming';
             const gpDest=getGPDest(a.gpName);
             a.x=gpDest.entrance.x; a.y=gpDest.entrance.y;
+            logEvent('checkup', a, 'All clear');
             addHistory(a,'checkup','Clean bill of health!');
             a.path=[]; a.pathIdx=0; a.idleUntil=performance.now()+1500;
             if(gpAgent){
@@ -2094,6 +2272,7 @@ function tick(){
         if(a.pathComplete){
           a.insideBuilding='hospital'; a.behaviorState='at_hospital';
           a.stateTimer=5+Math.floor(Math.random()*6);
+          logEvent('admitted', a, 'Hospital');
           addHistory(a,'entered_hospital','Arrived at hospital. Being seen by specialist.');
           say('Hospital',`${a.name} admitted. Beginning treatment.`);
         }
@@ -2135,6 +2314,8 @@ function tick(){
           const hpGain=15+Math.floor(Math.random()*15);
           a.hp=Math.min(100, a.hp+hpGain);
           a.x=DESTINATIONS.hospital.entrance.x; a.y=DESTINATIONS.hospital.entrance.y;
+          logEvent('treated', a, 'Treatment complete');
+          logEvent('discharged', a, 'HP: ' + Math.round(a.hp));
           addHistory(a,'treated','Treatment complete! Specialist helped. Feeling much better.');
           say('Hospital',`${a.name} treated & discharged. Recovery underway.`);
           // Track discharged patients for hospital dashboard
@@ -2154,6 +2335,9 @@ function tick(){
           }
           a.hp = Math.min(100, a.hp + bestRecovery);
           a.healingTicksLeft--;
+          if(a.healingTicksLeft <= 0){
+            logEvent('recovered', a, 'HP: ' + Math.round(a.hp));
+          }
         }
         if(a.hp>=85 || a.healingTicksLeft<=0){
           a.behaviorState='roaming';
@@ -2199,6 +2383,8 @@ function tick(){
 
   updateUI();
   if(selectedAgent){const a=agents.find(e=>e.id===selectedAgent);if(a)selectAgent(a);}
+  // Auto-save every 10 cycles (Sprint 3)
+  if(cycle % 10 === 0) saveGame();
 }
 
 function batch(n){for(let i=0;i<n;i++)tick();}
@@ -2206,7 +2392,9 @@ function autoRun(){if(autoTimer){clearInterval(autoTimer);autoTimer=null;return;
 function resetSim(){
   if(autoTimer){clearInterval(autoTimer);autoTimer=null;}
   cycle=0; S={res:6,msgs:0,waste:0};
+  EVENT_LOG.length=0;
   HOSPITAL_DISCHARGED.length=0;
+  try{localStorage.removeItem('cammelot_save');}catch(e){}
   agents.forEach(a=>{
     a.hp=a._initHP; a.waitWeeks=a._initWaitWeeks;
     a.conditions=JSON.parse(JSON.stringify(a._initConditions));
@@ -2217,6 +2405,7 @@ function resetSim(){
     a.actionHistory=[]; a.healingTicksLeft=0;
     a.pathComplete=false; a.lastGPCycle=-100;
     a.referredToHospital=false; a.causeOfDeath=undefined;
+    a.hpHistory=[Math.round(a.hp)];
     a.path=[]; a.pathIdx=0;
     a.idleUntil=performance.now()+Math.random()*5000;
     // Reset GP/specialist tracking
@@ -2250,6 +2439,127 @@ function say(w,t,c=''){
   while(d.children.length>40)d.removeChild(d.firstChild);
 }
 
+// ═══ STATS DASHBOARD (Sprint 3 — Epic 4.3) ═══
+let statsVisible=false;
+
+function toggleStats(){
+  statsVisible=!statsVisible;
+  const gw=document.getElementById('game-wrap');
+  const existing=gw.querySelector('.stats-overlay');
+  if(existing){existing.remove();statsVisible=false;return;}
+  statsVisible=true;
+  const overlay=document.createElement('div');
+  overlay.className='stats-overlay';
+  overlay.onclick=function(e){if(e.target===overlay){overlay.remove();statsVisible=false;}};
+  overlay.innerHTML=buildStatsHTML();
+  gw.appendChild(overlay);
+}
+
+function buildStatsHTML(){
+  const p=M[mode];
+  const alive=agents.filter(a=>a.hp>0&&(a.type==='patient'||a.type==='citizen'));
+  const dead=agents.filter(a=>(a.type==='patient'||a.type==='citizen')&&a.hp<=0);
+  const totalPop=agents.filter(a=>a.type==='patient'||a.type==='citizen').length;
+  const atHosp=agents.filter(a=>a.behaviorState==='at_hospital'&&a.type!=='specialist'&&a.type!=='gp');
+  const recovering=agents.filter(a=>a.behaviorState==='recovering');
+  const atGP=agents.filter(a=>a.behaviorState==='at_gp');
+  const goingHosp=agents.filter(a=>a.behaviorState==='going_to_hospital');
+
+  // Death breakdown
+  const sysDeath=EVENT_LOG.filter(e=>e.type==='died').length;
+  const natDeath=EVENT_LOG.filter(e=>e.type==='natural_death').length;
+  const sysDeathPct=totalPop>0?(sysDeath/totalPop*100).toFixed(1):'0';
+  const natDeathPct=totalPop>0?(natDeath/totalPop*100).toFixed(1):'0';
+
+  // Wait times
+  const waitingAgents=agents.filter(a=>a.waitWeeks>0&&a.hp>0);
+  const avgWait=waitingAgents.length>0?(waitingAgents.reduce((s,a)=>s+a.waitWeeks,0)/waitingAgents.length).toFixed(1):'0';
+  let longestWaitAgent={name:'—',waitWeeks:0};
+  waitingAgents.forEach(a=>{if(a.waitWeeks>longestWaitAgent.waitWeeks)longestWaitAgent=a;});
+  const treeViolations=waitingAgents.filter(a=>a.waitWeeks>p.tree).length;
+
+  // GP utilization
+  const gps=agents.filter(a=>a.type==='gp');
+  const effectiveCap=Math.round(MAX_GP_CONSULTS_PER_DAY*(1-p.admin));
+
+  // Hospital
+  const bedsOcc=atHosp.length;
+  const allTreated=EVENT_LOG.filter(e=>e.type==='treated');
+  const avgStay=HOSPITAL_DISCHARGED.length>0?
+    (HOSPITAL_DISCHARGED.reduce((s,d)=>s+5,0)/HOSPITAL_DISCHARGED.length).toFixed(1):'—';
+
+  // Top conditions causing deaths
+  const deathConditions={};
+  dead.forEach(a=>{
+    if(a.conditions)a.conditions.forEach(c=>{
+      deathConditions[c.code]=(deathConditions[c.code]||{name:c.name,code:c.code,count:0});
+      deathConditions[c.code].count++;
+    });
+  });
+  const topDeathConds=Object.values(deathConditions).sort((a,b)=>b.count-a.count).slice(0,3);
+
+  // Cost calculations (CLAUDE.md Section 5.4)
+  const adminWaste=Math.round(S.waste);
+  const preventableDeathCost=sysDeath*5845;
+  const totalCost=adminWaste+preventableDeathCost;
+
+  return `<div class="stats-panel">
+    <div class="stats-header"><h3>📊 SIMULATION SUMMARY — Cycle ${cycle}</h3><button class="stats-close" onclick="this.closest('.stats-overlay').remove();statsVisible=false;">✕</button></div>
+    <div class="stats-body">
+      <div class="stats-group"><h4>Population</h4>
+        <div class="stats-row"><span class="sk">Total</span><span class="sv">${totalPop}</span></div>
+        <div class="stats-row"><span class="sk">Alive</span><span class="sv sg">${alive.length}</span></div>
+        <div class="stats-row"><span class="sk">Dead</span><span class="sv ${dead.length>0?'sr':''}">${dead.length}</span></div>
+        <div class="stats-row"><span class="sk">In Treatment</span><span class="sv">${atHosp.length} hospital · ${recovering.length} recovering</span></div>
+        <div class="stats-row"><span class="sk">At GP</span><span class="sv">${atGP.length}</span></div>
+        <div class="stats-row"><span class="sk">Going to Hospital</span><span class="sv ${goingHosp.length>3?'sr':''}">${goingHosp.length}</span></div>
+      </div>
+
+      <hr class="stats-divider">
+      <div class="stats-group"><h4>Deaths</h4>
+        <div class="stats-row"><span class="sk">System Failure</span><span class="sv sr">${sysDeath} (${sysDeathPct}%)</span></div>
+        <div class="stats-row"><span class="sk">Natural</span><span class="sv">${natDeath} (${natDeathPct}%)</span></div>
+      </div>
+
+      <hr class="stats-divider">
+      <div class="stats-group"><h4>Wait Times</h4>
+        <div class="stats-row"><span class="sk">Current Avg</span><span class="sv ${parseFloat(avgWait)>p.tree?'sr':'sy'}">${avgWait} weeks</span></div>
+        <div class="stats-row"><span class="sk">Longest</span><span class="sv ${longestWaitAgent.waitWeeks>p.tree?'sr':''}">${Math.round(longestWaitAgent.waitWeeks*10)/10}w (${longestWaitAgent.name})</span></div>
+        <div class="stats-row"><span class="sk">Treeknorm Violations</span><span class="sv ${treeViolations>0?'sr':''}">${treeViolations}</span></div>
+      </div>
+
+      <hr class="stats-divider">
+      <div class="stats-group"><h4>GP Utilization</h4>
+        ${gps.map(g=>{
+          const pct=effectiveCap>0?Math.round((g.patientsSeenToday||0)/effectiveCap*100):0;
+          return `<div class="stats-row"><span class="sk">${g.name}</span><span class="sv">${pct}% (${g.patientsSeenToday||0}/${effectiveCap} slots)</span></div>`;
+        }).join('')}
+      </div>
+
+      <hr class="stats-divider">
+      <div class="stats-group"><h4>Hospital</h4>
+        <div class="stats-row"><span class="sk">Beds</span><span class="sv ${bedsOcc>=MAX_HOSPITAL_BEDS?'sr':''}">${bedsOcc}/${MAX_HOSPITAL_BEDS} occupied</span></div>
+        <div class="stats-row"><span class="sk">Avg Stay</span><span class="sv">${avgStay} ticks</span></div>
+      </div>
+
+      ${topDeathConds.length>0?`<hr class="stats-divider">
+      <div class="stats-group"><h4>Top Conditions Causing Deaths</h4>
+        ${topDeathConds.map((c,i)=>`<div class="stats-row"><span class="sk">${i+1}. ${c.code} — ${c.name}</span><span class="sv sr">${c.count} death${c.count>1?'s':''}</span></div>`).join('')}
+      </div>`:''}
+
+      <hr class="stats-divider">
+      <div class="stats-group"><h4>Cost Accumulation</h4>
+        <div class="stats-row"><span class="sk">Admin Waste</span><span class="sv sr">€${adminWaste.toLocaleString()}</span></div>
+        <div class="stats-row"><span class="sk">Preventable Deaths</span><span class="sv sr">€${preventableDeathCost.toLocaleString()} (${sysDeath} × €5,845)</span></div>
+        <div class="stats-row"><span class="sk">Total System Cost</span><span class="sv sr" style="font-size:13px">€${totalCost.toLocaleString()}</span></div>
+      </div>
+
+      <div style="text-align:center;padding:8px 0 4px;font-size:9px;color:var(--ink2)">Mode: ${mode} · C_eff: ${mode==='IST'?'62':'83'}% · Admin: ${Math.round(p.admin*100)}%</div>
+    </div>
+  </div>`;
+}
+// ═══ END STATS DASHBOARD ═══
+
 function updateUI(){
   document.getElementById('hC').textContent=cycle;
   const ghosts=agents.filter(a=>a.hp<=0).length;
@@ -2267,9 +2577,147 @@ function updateUI(){
 // ═══ ANIMATION LOOP ═══
 function loop(){render();requestAnimationFrame(loop);}
 
-updateUI();initCharSprites();buildWaypointGraph();initAgentBehaviors();loop();
+// ═══ LOCALSTORAGE PERSISTENCE (Sprint 3 — Epic 4.4) ═══
+function saveGame(){
+  try{
+    const saveState={
+      version:2,
+      cycle,
+      mode,
+      stats:{res:S.res,msgs:S.msgs,waste:S.waste},
+      agents:agents.map(a=>({
+        id:a.id, x:a.x, y:a.y, tx:a.tx, ty:a.ty,
+        hp:a.hp, conditions:a.conditions,
+        behaviorState:a.behaviorState, state:a.state,
+        waitWeeks:a.waitWeeks, stateTimer:a.stateTimer,
+        healingTicksLeft:a.healingTicksLeft,
+        insideBuilding:a.insideBuilding,
+        hpHistory:a.hpHistory?a.hpHistory.slice(-200):[],
+        patientsSeenToday:a.patientsSeenToday,
+        referralsMade:a.referralsMade,
+        burnoutLevel:a.burnoutLevel,
+        totalPatientsSeen:a.totalPatientsSeen,
+        actionHistory:a.actionHistory?a.actionHistory.slice(-50):[],
+        queue:a.queue,
+        causeOfDeath:a.causeOfDeath,
+        age:a.age, name:a.name, type:a.type, gender:a.gender,
+        gpName:a.gpName, color:a.color, role:a.role,
+        thoughts:a.thoughts, specialty:a.specialty,
+        lastGPCycle:a.lastGPCycle, referredToHospital:a.referredToHospital,
+        pathComplete:a.pathComplete
+      })),
+      eventLog:EVENT_LOG.slice(-500)
+    };
+    localStorage.setItem('cammelot_save',JSON.stringify(saveState));
+  }catch(e){console.warn('Save failed:',e);}
+}
+
+function loadGame(){
+  try{
+    const raw=localStorage.getItem('cammelot_save');
+    if(!raw) return false;
+    const save=JSON.parse(raw);
+    if(save.version!==2) return false;
+    cycle=save.cycle;
+    mode=save.mode;
+    if(save.stats){S.res=save.stats.res||6;S.msgs=save.stats.msgs||0;S.waste=save.stats.waste||0;}
+    // Restore agents — merge saved properties onto existing agents
+    agents.length=0;
+    save.agents.forEach(sa=>{
+      // Restore all saved properties
+      const a={...sa};
+      // Restore non-serializable state
+      a.frame=Math.random()*100|0;
+      a.bubbleTimer=0;
+      a.currentThought=0;
+      a.path=[];
+      a.pathIdx=0;
+      a.walkDist=0;
+      a.idleUntil=performance.now()+Math.random()*3000;
+      a.hpHistory=sa.hpHistory||[Math.round(sa.hp)];
+      a.actionHistory=sa.actionHistory||[];
+      a.queue=sa.queue||[];
+      a.thoughts=sa.thoughts||[];
+      a.conditions=sa.conditions||[];
+      // Store init values for reset (use saved state as new baseline)
+      a._initHP=sa.hp;
+      a._initWaitWeeks=sa.waitWeeks||0;
+      a._initConditions=JSON.parse(JSON.stringify(sa.conditions||[]));
+      a._initState=sa.state||'managed';
+      a._initInsideBuilding=sa.insideBuilding;
+      a._initX=sa.x; a._initY=sa.y;
+      agents.push(a);
+    });
+    // Restore event log
+    EVENT_LOG.length=0;
+    if(save.eventLog) save.eventLog.forEach(e=>EVENT_LOG.push(e));
+    // Re-generate looks for all agents
+    agents.forEach(a=>{
+      if(!LOOKS[a.id] && (a.type==='patient'||a.type==='citizen')){
+        LOOKS[a.id]=generateLooks(a.id,a.age,a.gender);
+      }
+    });
+    initCharSprites();
+    setMode(mode);
+    return true;
+  }catch(e){console.warn('Load failed:',e);return false;}
+}
+
+function showSavePrompt(){
+  const gw=document.getElementById('game-wrap');
+  let saveData;
+  try{
+    saveData=JSON.parse(localStorage.getItem('cammelot_save'));
+  }catch(e){startNewGame();return;}
+  if(!saveData||saveData.version!==2){startNewGame();return;}
+  const aliveCt=saveData.agents.filter(a=>a.hp>0&&(a.type==='patient'||a.type==='citizen')).length;
+  const overlay=document.createElement('div');
+  overlay.className='save-overlay';
+  overlay.innerHTML=`<div class="save-prompt">
+    <h3>⚔ SAVED GAME FOUND</h3>
+    <div class="sp-info">
+      Cycle <b>${saveData.cycle}</b> — <b>${saveData.mode}</b> Mode<br>
+      <b>${aliveCt}</b> citizens alive<br>
+      <b>${saveData.eventLog?saveData.eventLog.length:0}</b> events logged
+    </div>
+    <div class="save-btns">
+      <button class="save-btn continue" onclick="this.closest('.save-overlay').remove();continueGame();">▶ Continue</button>
+      <button class="save-btn newgame" onclick="this.closest('.save-overlay').remove();startNewGame();">✦ New Game</button>
+    </div>
+  </div>`;
+  gw.appendChild(overlay);
+}
+
+function startNewGame(){
+  try{localStorage.removeItem('cammelot_save');}catch(e){}
+  updateUI();initCharSprites();buildWaypointGraph();initAgentBehaviors();loop();
+}
+
+function continueGame(){
+  if(loadGame()){
+    buildWaypointGraph();
+    initAgentBehaviors();
+    updateUI();
+    loop();
+  } else {
+    startNewGame();
+  }
+}
+
+// ═══ STARTUP (Sprint 3 — Save-aware) ═══
+const hasSave=localStorage.getItem('cammelot_save');
+if(hasSave){
+  // Start render loop but show save prompt
+  buildWaypointGraph();
+  initCharSprites();
+  loop();
+  showSavePrompt();
+} else {
+  startNewGame();
+}
 setTimeout(()=>document.getElementById('load').classList.add('go'),1400);
 window.addEventListener('resize',()=>{userZoomed=false;zoom=1;render();});
+window.addEventListener('beforeunload',saveGame);
 </script>
 </body>
 </html>
