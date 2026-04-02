@@ -185,6 +185,45 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a1a2e;font-family:
 .portrait-wrap { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
 .portrait-canvas { width: 56px; height: 56px; border: 2px solid var(--frame); border-radius: 4px; image-rendering: pixelated; image-rendering: crisp-edges; background: var(--parchment2); }
 .portrait-info { flex: 1; }
+
+/* ── Sprint 5: Queue state badge ── */
+.state-badge.queuing{background:rgba(255,152,0,.15);color:#e65100}
+
+/* ── Sprint 6: Welcome Wizard ── */
+.wizard-overlay{position:absolute;inset:0;background:rgba(0,0,0,.7);z-index:20;display:flex;align-items:center;justify-content:center;animation:fadeIn .3s ease}
+.wizard-box{background:linear-gradient(180deg,#1a1a3a 0%,#12122a 100%);border:3px solid var(--gold);border-radius:10px;box-shadow:0 0 40px rgba(255,179,0,.15),inset 0 1px 0 rgba(255,179,0,.1);max-width:480px;width:92%;padding:0;overflow:hidden}
+.wizard-inner{display:flex;align-items:flex-start;gap:14px;padding:20px 20px 10px}
+.wizard-portrait{width:64px;height:64px;flex-shrink:0;border:2px solid var(--gold);border-radius:4px;image-rendering:pixelated;image-rendering:crisp-edges;background:#2a2a4a}
+.wizard-content{flex:1;min-width:0}
+.wizard-title{font:700 15px 'JetBrains Mono',monospace;color:var(--gold);margin:0 0 8px;letter-spacing:1px;text-shadow:0 0 6px rgba(255,179,0,.2)}
+.wizard-text{font:400 12px Inter,sans-serif;color:var(--parchment);line-height:1.6;margin:0;opacity:.9}
+.wizard-controls{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;border-top:1px solid rgba(255,179,0,.1)}
+.wizard-skip-label{font:400 10px Inter,sans-serif;color:#a08060;cursor:pointer;display:flex;align-items:center;gap:4px}
+.wizard-skip-label input{accent-color:var(--gold)}
+.wizard-btns{display:flex;gap:8px}
+.wizard-btn{font:600 11px 'JetBrains Mono',monospace;padding:6px 16px;border:1px solid rgba(255,179,0,.3);background:rgba(255,255,255,.05);color:var(--parchment);border-radius:5px;cursor:pointer;transition:.15s;letter-spacing:.5px}
+.wizard-btn:hover{background:rgba(255,255,255,.12)}
+.wizard-btn.wizard-next{background:rgba(255,179,0,.15);color:var(--gold);border-color:rgba(255,179,0,.5)}
+.wizard-btn.wizard-next:hover{background:rgba(255,179,0,.3)}
+.wizard-dots{display:flex;justify-content:center;gap:6px;padding:8px 0 14px}
+.wizard-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.15);transition:.2s}
+.wizard-dot.active{background:var(--gold);box-shadow:0 0 6px rgba(255,179,0,.4)}
+.wizard-highlight-pulse{animation:wizPulse 1s ease-in-out infinite}
+@keyframes wizPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,179,0,0)}50%{box-shadow:0 0 12px 4px rgba(255,179,0,.5)}}
+
+/* ── Sprint 6: Metric Tooltips ── */
+.metric-tooltip{position:fixed;background:rgba(26,26,46,.95);color:#F5E6C8;font-size:11px;padding:8px 12px;border-radius:6px;border:1px solid rgba(255,179,0,.3);max-width:280px;line-height:1.4;z-index:1000;pointer-events:none;box-shadow:0 4px 12px rgba(0,0,0,.4)}
+
+/* ── Sprint 6: Event Ticker ── */
+.event-ticker{position:absolute;bottom:50px;left:0;right:0;height:28px;background:rgba(26,26,46,.85);border-top:1px solid rgba(255,179,0,.2);border-bottom:1px solid rgba(255,179,0,.2);overflow:hidden;z-index:4}
+.ticker-content{display:flex;gap:40px;white-space:nowrap;animation:ticker-scroll 30s linear infinite;padding:6px 0;font:500 11px 'JetBrains Mono',monospace;color:var(--parchment)}
+.ticker-item{cursor:pointer}
+.ticker-item:hover{color:var(--gold)}
+.ticker-item.death{color:#E53935}
+.ticker-item.hospital{color:#FF9800}
+.ticker-item.gp{color:#4CAF50}
+.ticker-item.social{color:#42A5F5}
+@keyframes ticker-scroll{from{transform:translateX(100%)}to{transform:translateX(-100%)}}
 </style>
 </head>
 <body>
@@ -214,6 +253,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a1a2e;font-family:
       <div id="chatlog">
         <div class="cm sys"><span class="w">[SYSTEM]</span> <span class="t">Welcome to Cammelot. Click on a citizen to see their story.</span></div>
       </div>
+      <div id="event-ticker" class="event-ticker"><div class="ticker-content" id="ticker-content"></div></div>
       <div id="cbar">
         <button class="cb go" onclick="tick()">▶</button>
         <button class="cb go" onclick="batch(10)">▶▶ ×10</button>
@@ -222,6 +262,26 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a1a2e;font-family:
         <button class="cb stop" onclick="resetSim()">↺ Reset</button>
         <button class="cb" onclick="toggleStats()">📊 Stats</button>
         <div class="cinfo">FHIR <b id="sF">0</b> · A2A <b id="sM">0</b></div>
+      </div>
+      <!-- Sprint 6: Wizard Overlay -->
+      <div id="wizard-overlay" class="wizard-overlay" style="display:none">
+        <div class="wizard-box">
+          <div class="wizard-inner">
+            <canvas class="wizard-portrait" id="wizard-portrait-cv" width="64" height="64"></canvas>
+            <div class="wizard-content">
+              <h3 class="wizard-title" id="wizard-title"></h3>
+              <p class="wizard-text" id="wizard-text"></p>
+            </div>
+          </div>
+          <div class="wizard-controls">
+            <label class="wizard-skip-label"><input type="checkbox" id="wizard-noshow"> Don't show again</label>
+            <div class="wizard-btns">
+              <button class="wizard-btn" id="wizard-skip" onclick="closeWizard()">Skip</button>
+              <button class="wizard-btn wizard-next" id="wizard-next" onclick="nextWizardStep()">Next →</button>
+            </div>
+          </div>
+          <div class="wizard-dots" id="wizard-dots"></div>
+        </div>
       </div>
     </div>
 
@@ -451,6 +511,15 @@ function logEvent(type, agent, detail) {
   });
 }
 // ═══ END EVENT LOG ═══
+
+// ═══ SPRINT 5: VISIBLE QUEUES ═══
+const QUEUES = {
+  gp1_bldg: { agents: [], positions: [] },
+  gp2_bldg: { agents: [], positions: [] },
+  hospital: { agents: [], positions: [] }
+};
+
+const GRAVE_MARKERS = []; // {x, y, name, age, cause, waitWeeks, cycle, conditions}
 
 // ── Sim ──
 let cycle=0,mode='IST',autoTimer=null;
@@ -1756,6 +1825,22 @@ function drawAgent(e){
   let drawX = sx - charSize/2;
   let drawY = sy - charSize;
   
+  // ── Sprint 5: Ghost float-up animation ──
+  if (e.ghostFloatTimer > 0) {
+    drawY -= (90 - e.ghostFloatTimer) * 0.5 * s;
+    cx.globalAlpha = e.ghostFloatTimer / 90;
+    e.ghostFloatTimer--;
+    // Draw ghost sprite floating up
+    const prefix = e.id + '_ghost_';
+    const sprite = charCanvases[prefix + '0'] || charCanvases[e.id + '_0'];
+    if (sprite) {
+      cx.drawImage(sprite, drawX, drawY, charSize, charSize);
+    }
+    cx.restore();
+    e.frame++;
+    return;
+  }
+  
   // ── Sprint 4: Emotional visual effects ──
   const hasConditions = e.conditions && e.conditions.length > 0;
   const isHappy = !isG && e.hp > 80 && !hasConditions;
@@ -1899,21 +1984,80 @@ function drawLabels(){
   cx.restore();
 }
 
-// ── Queue visualization ──
-function drawQueues(){
-  const worldW=mapImgW, worldH=mapImgH;
-  const maxWait=Math.max(...agents.filter(a=>a.type==='patient').map(a=>a.waitWeeks));
-  if(maxWait<=4)return;
-  const qLen=Math.min(Math.floor(maxWait-2),15);
-  // Queue appears near hospital (top-center of map)
-  for(let i=0;i<qLen;i++){
-    const fx=.30-i*.015, fy=.18+(i%3)*.012;
-    const sx=(fx*worldW-camX)*zoom, sy=(fy*worldH-camY)*zoom;
-    cx.fillStyle='rgba(0,0,0,.1)';cx.beginPath();cx.ellipse(sx,sy+10*zoom,5*zoom,2*zoom,0,0,6.28);cx.fill();
-    cx.fillStyle=['#e9c46a','#e76f51','#a8dadc','#f4a261','#c8b0d0'][i%5];
-    cx.beginPath();cx.ellipse(sx,sy,4*zoom,6*zoom,0,0,6.28);cx.fill();
-    cx.fillStyle='#fcd5b4';cx.beginPath();cx.arc(sx,sy-7*zoom,4*zoom,0,6.28);cx.fill();
-  }
+// ── Sprint 5: Queue positions per building ──
+const QUEUE_ORIGINS = {
+  gp1_bldg: { x: 0.62, y: 0.23, dir: 1 },   // GP Collins — queue going south
+  gp2_bldg: { x: 0.22, y: 0.46, dir: 1 },   // GP Bennett — queue going south
+  hospital: { x: 0.38, y: 0.23, dir: 1 }     // Hospital — queue going south
+};
+
+function getQueuePosition(buildingId, slotIndex) {
+  const origin = QUEUE_ORIGINS[buildingId];
+  if (!origin) return { x: 0.5, y: 0.5 };
+  // Stagger positions along road, with slight x jitter
+  const jitterX = (Math.sin(slotIndex * 7.13) * 0.005);
+  return {
+    x: origin.x + jitterX,
+    y: origin.y + (slotIndex + 1) * 0.015 * origin.dir
+  };
+}
+
+// ── Sprint 5: Building status indicators ──
+function drawBuildingStatus() {
+  const worldW = mapImgW, worldH = mapImgH;
+  BUILDINGS.forEach(b => {
+    const queueLen = QUEUES[b.id] ? QUEUES[b.id].agents.length : 0;
+    const capacity = b.id === 'hospital' ? MAX_HOSPITAL_BEDS : MAX_GP_CONSULTS_PER_DAY;
+    const load = queueLen / Math.max(1, capacity);
+
+    // Glow color based on load
+    const color = load > 1.0 ? 'rgba(229,57,53,0.3)' : load > 0.5 ? 'rgba(255,179,0,0.3)' : 'rgba(76,175,80,0.2)';
+
+    const x1 = (b.x1 * worldW - camX) * zoom;
+    const y1 = (b.y1 * worldH - camY) * zoom;
+    const w = (b.x2 - b.x1) * worldW * zoom;
+    const h = (b.y2 - b.y1) * worldH * zoom;
+
+    cx.fillStyle = color;
+    cx.fillRect(x1, y1, w, h);
+
+    // Pulse animation when overloaded
+    if (load > 1.0) {
+      const pulse = Math.sin(Date.now() / 300) * 0.15 + 0.15;
+      cx.fillStyle = `rgba(229,57,53,${pulse})`;
+      cx.fillRect(x1, y1, w, h);
+    }
+
+    // Queue count badge
+    if (queueLen > 0) {
+      const bx = (b.x2 * worldW - camX) * zoom;
+      const by = (b.y1 * worldH - camY) * zoom;
+      cx.fillStyle = load > 1.0 ? '#E53935' : load > 0.5 ? '#FF9800' : '#4CAF50';
+      cx.beginPath(); cx.arc(bx, by, 10 * zoom, 0, 6.28); cx.fill();
+      cx.fillStyle = '#fff';
+      cx.font = `bold ${9 * zoom}px Inter`;
+      cx.textAlign = 'center'; cx.textBaseline = 'middle';
+      cx.fillText(queueLen.toString(), bx, by);
+      cx.textBaseline = 'alphabetic';
+    }
+  });
+}
+
+// ── Sprint 5: Ghost trail / grave markers ──
+function drawGraveMarkers() {
+  const worldW = mapImgW, worldH = mapImgH;
+  GRAVE_MARKERS.forEach(m => {
+    const sx = (m.x * worldW - camX) * zoom;
+    const sy = (m.y * worldH - camY) * zoom;
+    const sz = Math.max(8, 12 * zoom);
+    cx.font = `${sz}px sans-serif`;
+    cx.textAlign = 'center';
+    cx.fillText(m.cause === 'system_failure' ? '🪦' : '✝', sx, sy);
+    if (m.cause === 'system_failure') {
+      cx.fillStyle = 'rgba(229,57,53,0.6)';
+      cx.beginPath(); cx.arc(sx, sy + sz * 0.3, 3 * zoom, 0, 6.28); cx.fill();
+    }
+  });
 }
 
 // ═══ MAIN RENDER ═══
@@ -2032,7 +2176,7 @@ function render(){
         // Path complete
         e.pathComplete = true;
         // If going somewhere specific, wait for tick() to handle arrival
-        if(e.behaviorState==='going_to_gp'||e.behaviorState==='going_to_hospital') return;
+        if(e.behaviorState==='going_to_gp'||e.behaviorState==='going_to_hospital'||e.behaviorState==='queuing') return;
         // Default roaming: idle then pick new random destination
         e.idleUntil = now + 2000 + Math.random() * 6000;
         const fromIdx = nearestWaypointIdx(e.x, e.y);
@@ -2077,9 +2221,30 @@ function render(){
 
     if(Math.random()<.001) e.bubbleTimer=60;
   });
+
+  // ── Sprint 5: Queue agent fidget ──
+  agents.forEach(e => {
+    if (e.behaviorState === 'queuing' && !e.insideBuilding) {
+      e.x += (Math.random() - 0.5) * 0.002;
+      e.y += (Math.random() - 0.5) * 0.002;
+      // Occasional wait speech bubble
+      if (Math.random() < 0.005) {
+        e.bubbleTimer = 60;
+        const waitLines = ['...', 'Still waiting...', 'How long?', '*sigh*', 'My turn soon?'];
+        e.chatBubbleText = waitLines[Math.floor(Math.random() * waitLines.length)];
+        e.chatTimer = 60;
+      }
+    }
+  });
   
+  // ── Sprint 5: Draw building status indicators (after map, before agents) ──
+  drawBuildingStatus();
+
   // Draw only agents that are NOT inside buildings
   [...agents].filter(a=>!a.insideBuilding).sort((a,b)=>a.y-b.y).forEach(drawAgent);
+
+  // ── Sprint 5: Draw grave markers (after agents) ──
+  drawGraveMarkers();
 }
 
 // ═══ INTERACTION ═══
@@ -2114,6 +2279,13 @@ cv.addEventListener('mouseup',e=>{
     // Check buildings FIRST
     const clickedBuilding=BUILDINGS.find(b=>fx>=b.x1&&fx<=b.x2&&fy>=b.y1&&fy<=b.y2);
     if(clickedBuilding){selectBuilding(clickedBuilding);dragStart=null;return;}
+    // Sprint 5: Check grave markers
+    let clickedGrave = null;
+    GRAVE_MARKERS.forEach(m => {
+      const gdx = m.x - fx, gdy = m.y - fy;
+      if (Math.sqrt(gdx * gdx + gdy * gdy) < 0.02) clickedGrave = m;
+    });
+    if (clickedGrave) { showMemorial(clickedGrave); dragStart = null; return; }
     // Then check agents
     let found=null,bestDist=.04;
     agents.forEach(a=>{
@@ -2126,6 +2298,31 @@ cv.addEventListener('mouseup',e=>{
   dragStart=null;
 });
 
+// Sprint 5: Memorial panel for grave markers
+function showMemorial(grave) {
+  selectedAgent = null;
+  const d = document.getElementById('agent-detail');
+  document.querySelector('.panel-header').textContent = 'MEMORIAL';
+  const isSystem = grave.cause === 'system_failure';
+  let html = `<div class="agent-card">
+    <div class="ac-name" style="color:${isSystem ? 'var(--red)' : 'var(--ink2)'}">In Memory of ${grave.name}</div>
+    <div class="ac-role">Age ${grave.age}</div>
+    <div class="ac-section"><h4>Cause of Death</h4>
+      <div class="ac-row"><span class="k">Type</span><span class="v ${isSystem ? 'bad' : ''}">${isSystem ? '⚠ System Failure' : '🕊 Natural Causes'}</span></div>
+      ${isSystem ? `<div class="ac-row"><span class="k">Wait Time</span><span class="v bad">${Math.round(grave.waitWeeks)} weeks</span></div>` : ''}
+      <div class="ac-row"><span class="k">Cycle</span><span class="v">${grave.cycle}</span></div>
+    </div>`;
+  if (grave.conditions && grave.conditions.length > 0) {
+    html += `<div class="ac-section"><h4>Conditions at Death</h4>`;
+    grave.conditions.forEach(c => {
+      html += `<span class="cond-tag">${c}</span>`;
+    });
+    html += `</div>`;
+  }
+  html += `<div class="thought">${isSystem ? 'The system failed me. I waited too long...' : 'Passed away peacefully.'}</div></div>`;
+  d.innerHTML = html;
+}
+
 function selectAgent(a){
   selectedAgent=a.id;
   const d=document.getElementById('agent-detail');
@@ -2135,6 +2332,7 @@ function selectAgent(a){
   // Dynamic thought based on behavioral state
   let thought=a.thoughts[(a.currentThought||0)%a.thoughts.length];
   if(a.behaviorState==='going_to_gp') thought="I need to see my doctor. These symptoms worry me...";
+  else if(a.behaviorState==='queuing') thought="Waiting in the queue... I hope they see me soon.";
   else if(a.behaviorState==='at_gp') thought="The doctor is examining me. I hope it's treatable.";
   else if(a.behaviorState==='going_to_hospital') thought=`The GP referred me to a specialist. Week ${Math.round(a.waitWeeks)} of waiting...`;
   else if(a.behaviorState==='at_hospital') thought="The specialist is treating me. Finally getting real care.";
@@ -2142,7 +2340,7 @@ function selectAgent(a){
   else if(a.behaviorState==='dead') thought=a.causeOfDeath==='natural'?`Passed away peacefully at age ${a.age}.`:"The system failed me...";
   a.currentThought=(a.currentThought||0)+1;
 
-  const stateLabels={roaming:'Walking in town',going_to_gp:'Going to GP',at_gp:'At GP consultation',going_to_hospital:'Going to Hospital',at_hospital:'Receiving treatment',recovering:'Recovering',dead:'Deceased'};
+  const stateLabels={roaming:'Walking in town',going_to_gp:'Going to GP',queuing:'Waiting in queue',at_gp:'At GP consultation',going_to_hospital:'Going to Hospital',at_hospital:'Receiving treatment',recovering:'Recovering',dead:'Deceased'};
   const stateLabel=stateLabels[a.behaviorState]||a.behaviorState||'Idle';
 
   // Get agent events from EVENT_LOG
@@ -2198,7 +2396,7 @@ function selectAgent(a){
       {key:'recovered',icon:'✅',label:'Recovered'}
     ];
     const eventTypes=new Set(agentEvents.map(e=>e.type));
-    const currentStageMap={roaming:'spawned',going_to_gp:'feeling_sick',at_gp:'visited_gp',going_to_hospital:'referred',at_hospital:'admitted',recovering:'treated',dead:'died'};
+    const currentStageMap={roaming:'spawned',going_to_gp:'feeling_sick',queuing:'feeling_sick',at_gp:'visited_gp',going_to_hospital:'referred',at_hospital:'admitted',recovering:'treated',dead:'died'};
     const currentStage=currentStageMap[a.behaviorState]||'spawned';
     html+=`<div class="ac-section"><h4>Care Pathway</h4><div class="care-pathway">`;
     pathwayStages.forEach((s,i)=>{
@@ -2358,8 +2556,8 @@ function selectBuilding(building){
 
     // Patients at this GP
     const atGP=agents.filter(a=>a.insideBuilding===building.id&&(a.type==='patient'||a.type==='citizen'));
-    // Patients going to this GP
-    const goingToGP=agents.filter(a=>a.behaviorState==='going_to_gp'&&getGPDest(a.gpName).building===building.id);
+    // Patients going to this GP or queuing
+    const goingToGP=agents.filter(a=>(a.behaviorState==='going_to_gp'&&getGPDest(a.gpName).building===building.id)||(a.behaviorState==='queuing'&&a.queueBuilding===building.id));
     const queueLen=atGP.length+goingToGP.length;
 
     // Recent action history
@@ -2413,7 +2611,7 @@ function selectBuilding(building){
     const p=M[mode];
     const inHospital=agents.filter(a=>a.insideBuilding==='hospital'&&(a.type==='patient'||a.type==='citizen'));
     const bedsOccupied=inHospital.length;
-    const waitList=agents.filter(a=>a.behaviorState==='going_to_hospital');
+    const waitList=agents.filter(a=>a.behaviorState==='going_to_hospital'||(a.behaviorState==='queuing'&&a.queueBuilding==='hospital'));
     const avgWait=waitList.length>0?Math.round(waitList.reduce((s,a)=>s+a.waitWeeks,0)/waitList.length*10)/10:0;
     const treeWeeks=p.tree;
     const treeViolated=waitList.some(a=>a.waitWeeks>treeWeeks)||inHospital.some(a=>a.waitWeeks>treeWeeks);
@@ -2535,6 +2733,17 @@ function tick(){
         a.state='dead'; a.behaviorState='dead';
         a.insideBuilding=null;
         if(!a.causeOfDeath) a.causeOfDeath='system_failure';
+        // ── Sprint 5: Ghost float-up and grave marker ──
+        a.ghostFloatTimer = 90;
+        GRAVE_MARKERS.push({
+          x: a.x, y: a.y, name: a.name, age: a.age,
+          cause: a.causeOfDeath, waitWeeks: a.waitWeeks || 0,
+          cycle, conditions: (a.conditions || []).map(c => c.name)
+        });
+        // Remove from any queue
+        Object.values(QUEUES).forEach(q => {
+          q.agents = q.agents.filter(aid => aid !== a.id);
+        });
         if(a.causeOfDeath==='natural'){
           logEvent('natural_death', a, 'Age ' + a.age);
           addHistory(a,'died',`Passed away peacefully at age ${a.age}.`);
@@ -2623,14 +2832,34 @@ function tick(){
 
       case 'going_to_gp': {
         if(a.pathComplete){
+          // Sprint 5: Join queue instead of entering immediately
           const gpDest=getGPDest(a.gpName);
-          a.insideBuilding=gpDest.building||'gp1_bldg';
-          a.behaviorState='at_gp';
-          a.stateTimer=3+Math.floor(Math.random()*3);
+          const bldgId=gpDest.building||'gp1_bldg';
+          if(QUEUES[bldgId] && !QUEUES[bldgId].agents.includes(a.id)){
+            QUEUES[bldgId].agents.push(a.id);
+            const slotIdx = QUEUES[bldgId].agents.indexOf(a.id);
+            const qPos = getQueuePosition(bldgId, slotIdx);
+            a.tx = qPos.x; a.ty = qPos.y;
+          }
+          a.behaviorState='queuing';
+          a.queueBuilding=bldgId;
+          a.queueType='gp';
           a.lastGPCycle=cycle;
-          logEvent('visited_gp', a, 'GP: ' + (a.gpName||'Unknown'));
-          addHistory(a,'entered_gp','Visiting '+(a.gpName||'the GP')+'. Explaining my symptoms...');
-          say(a.gpName||'GP',`${a.name} has arrived for consultation.`);
+        }
+        break;
+      }
+
+      case 'queuing': {
+        // Wait in queue — processed by queue service logic below
+        // HP drain while waiting (if going to hospital via queue)
+        if(a.queueType==='hospital'){
+          a.waitWeeks += 0.25 / p.ai;
+          let totalDrain = 0;
+          const comorbMult = getComorbidityMultiplier(a.conditions);
+          for (const cond of a.conditions) {
+            totalDrain += calculateHPDrain(cond, cond.severity, a.waitWeeks, p);
+          }
+          a.hp = Math.max(0, a.hp - totalDrain * comorbMult);
         }
         break;
       }
@@ -2714,11 +2943,16 @@ function tick(){
         }
         a.hp = Math.max(0, a.hp - totalDrain * comorbMult);
         if(a.pathComplete){
-          a.insideBuilding='hospital'; a.behaviorState='at_hospital';
-          a.stateTimer=5+Math.floor(Math.random()*6);
-          logEvent('admitted', a, 'Hospital');
-          addHistory(a,'entered_hospital','Arrived at hospital. Being seen by specialist.');
-          say('Hospital',`${a.name} admitted. Beginning treatment.`);
+          // Sprint 5: Join hospital queue instead of entering immediately
+          if(QUEUES.hospital && !QUEUES.hospital.agents.includes(a.id)){
+            QUEUES.hospital.agents.push(a.id);
+            const slotIdx = QUEUES.hospital.agents.indexOf(a.id);
+            const qPos = getQueuePosition('hospital', slotIdx);
+            a.tx = qPos.x; a.ty = qPos.y;
+          }
+          a.behaviorState='queuing';
+          a.queueBuilding='hospital';
+          a.queueType='hospital';
         }
         break;
       }
@@ -2803,6 +3037,71 @@ function tick(){
     else a.state='managed';
   });
 
+  // ═══ Sprint 5: QUEUE PROCESSING ═══
+  // GP queues: serve 1 per tick (unless admin-blocked)
+  ['gp1_bldg', 'gp2_bldg'].forEach(bldgId => {
+    const q = QUEUES[bldgId];
+    if (!q || q.agents.length === 0) return;
+    // Check admin blocking (random chance based on admin burden)
+    if (Math.random() < p.admin * 0.3) return; // admin delay
+    // Serve front of queue
+    const frontId = q.agents.shift();
+    const frontAgent = agents.find(a => a.id === frontId);
+    if (frontAgent && frontAgent.behaviorState === 'queuing') {
+      frontAgent.insideBuilding = bldgId;
+      frontAgent.behaviorState = 'at_gp';
+      frontAgent.stateTimer = 3 + Math.floor(Math.random() * 3);
+      frontAgent.queueBuilding = null;
+      frontAgent.queueType = null;
+      logEvent('visited_gp', frontAgent, 'GP: ' + (frontAgent.gpName || 'Unknown'));
+      addHistory(frontAgent, 'entered_gp', 'Visiting ' + (frontAgent.gpName || 'the GP') + '. Explaining my symptoms...');
+      say(frontAgent.gpName || 'GP', `${frontAgent.name} has arrived for consultation.`);
+    }
+    // Shuffle remaining agents forward in positions
+    q.agents.forEach((aid, idx) => {
+      const ag = agents.find(a => a.id === aid);
+      if (ag) {
+        const qPos = getQueuePosition(bldgId, idx);
+        ag.tx = qPos.x; ag.ty = qPos.y;
+      }
+    });
+  });
+
+  // Hospital queue: serve 1 per 2 ticks
+  if (cycle % 2 === 0) {
+    const hq = QUEUES.hospital;
+    if (hq && hq.agents.length > 0) {
+      const frontId = hq.agents.shift();
+      const frontAgent = agents.find(a => a.id === frontId);
+      if (frontAgent && frontAgent.behaviorState === 'queuing') {
+        frontAgent.insideBuilding = 'hospital';
+        frontAgent.behaviorState = 'at_hospital';
+        frontAgent.stateTimer = 5 + Math.floor(Math.random() * 6);
+        frontAgent.queueBuilding = null;
+        frontAgent.queueType = null;
+        logEvent('admitted', frontAgent, 'Hospital');
+        addHistory(frontAgent, 'entered_hospital', 'Arrived at hospital. Being seen by specialist.');
+        say('Hospital', `${frontAgent.name} admitted. Beginning treatment.`);
+      }
+      // Shuffle remaining
+      hq.agents.forEach((aid, idx) => {
+        const ag = agents.find(a => a.id === aid);
+        if (ag) {
+          const qPos = getQueuePosition('hospital', idx);
+          ag.tx = qPos.x; ag.ty = qPos.y;
+        }
+      });
+    }
+  }
+
+  // Clean dead agents from queues
+  Object.values(QUEUES).forEach(q => {
+    q.agents = q.agents.filter(aid => {
+      const ag = agents.find(a => a.id === aid);
+      return ag && ag.hp > 0 && ag.behaviorState === 'queuing';
+    });
+  });
+
   S.res+=2; S.msgs++; S.waste+=12.43*p.admin;
 
   // Weekly GP reset (every 28 ticks ≈ 1 sim week)
@@ -2826,6 +3125,7 @@ function tick(){
   }
 
   updateUI();
+  updateTicker(); // Sprint 6
   if(selectedAgent){const a=agents.find(e=>e.id===selectedAgent);if(a)selectAgent(a);}
   // Auto-save every 10 cycles (Sprint 3)
   if(cycle % 10 === 0) saveGame();
@@ -2838,6 +3138,8 @@ function resetSim(){
   cycle=0; S={res:6,msgs:0,waste:0};
   EVENT_LOG.length=0;
   HOSPITAL_DISCHARGED.length=0;
+  GRAVE_MARKERS.length=0;
+  Object.values(QUEUES).forEach(q => { q.agents = []; q.positions = []; });
   try{localStorage.removeItem('cammelot_save');}catch(e){}
   agents.forEach(a=>{
     a.hp=a._initHP; a.waitWeeks=a._initWaitWeeks;
@@ -2907,7 +3209,7 @@ function buildStatsHTML(){
   const atHosp=agents.filter(a=>a.behaviorState==='at_hospital'&&a.type!=='specialist'&&a.type!=='gp');
   const recovering=agents.filter(a=>a.behaviorState==='recovering');
   const atGP=agents.filter(a=>a.behaviorState==='at_gp');
-  const goingHosp=agents.filter(a=>a.behaviorState==='going_to_hospital');
+  const goingHosp=agents.filter(a=>a.behaviorState==='going_to_hospital'||(a.behaviorState==='queuing'&&a.queueBuilding==='hospital'));
 
   // Death breakdown
   const sysDeath=EVENT_LOG.filter(e=>e.type==='died').length;
@@ -3050,7 +3352,8 @@ function saveGame(){
         lastGPCycle:a.lastGPCycle, referredToHospital:a.referredToHospital,
         pathComplete:a.pathComplete
       })),
-      eventLog:EVENT_LOG.slice(-500)
+      eventLog:EVENT_LOG.slice(-500),
+      graveMarkers:GRAVE_MARKERS.slice(-200)
     };
     localStorage.setItem('cammelot_save',JSON.stringify(saveState));
   }catch(e){console.warn('Save failed:',e);}
@@ -3095,6 +3398,9 @@ function loadGame(){
     // Restore event log
     EVENT_LOG.length=0;
     if(save.eventLog) save.eventLog.forEach(e=>EVENT_LOG.push(e));
+    // Restore grave markers (Sprint 5)
+    GRAVE_MARKERS.length=0;
+    if(save.graveMarkers) save.graveMarkers.forEach(m=>GRAVE_MARKERS.push(m));
     // Re-generate looks for all agents
     agents.forEach(a=>{
       if(!LOOKS[a.id] && (a.type==='patient'||a.type==='citizen')){
@@ -3157,6 +3463,275 @@ function continueGame(){
   }
 }
 
+// ═══ SPRINT 6: NARRATIVE EVENT TICKER ═══
+function updateTicker() {
+  const recent = EVENT_LOG.slice(-20).reverse();
+  const tickerEl = document.getElementById('ticker-content');
+  if (!tickerEl) return;
+
+  const items = recent.map(e => {
+    let icon, cls, text;
+    switch (e.type) {
+      case 'died': icon = '💀'; cls = 'death'; text = `${e.agentName} (HP${e.hp >= 0 ? e.hp : '?'}) died after waiting`; break;
+      case 'natural_death': icon = '🕊'; cls = ''; text = `${e.agentName} passed peacefully`; break;
+      case 'admitted': icon = '🏥'; cls = 'hospital'; text = `${e.agentName} admitted to hospital`; break;
+      case 'referred': icon = '🔄'; cls = 'gp'; text = `${e.agentName} referred to specialist`; break;
+      case 'treated': icon = '💊'; cls = 'hospital'; text = `${e.agentName} treatment complete`; break;
+      case 'worsened': icon = '⚠'; cls = 'death'; text = `${e.agentName}: ${e.detail}`; break;
+      case 'social_chat': icon = '💬'; cls = 'social'; text = `${e.agentName} chatted`; break;
+      case 'visited_gp': icon = '⚕'; cls = 'gp'; text = `${e.agentName} visiting GP`; break;
+      case 'discharged': icon = '🏠'; cls = 'gp'; text = `${e.agentName} discharged`; break;
+      default: return '';
+    }
+    return `<span class="ticker-item ${cls}" data-agent="${e.agentId}">${icon} ${text}</span>`;
+  }).filter(Boolean);
+
+  tickerEl.innerHTML = items.join('');
+}
+
+// Ticker click handler — select agent
+document.getElementById('ticker-content')?.addEventListener('click', function(ev) {
+  const item = ev.target.closest('.ticker-item');
+  if (!item) return;
+  const agentId = item.dataset.agent;
+  const agent = agents.find(a => a.id === agentId);
+  if (agent) selectAgent(agent);
+});
+
+// ═══ SPRINT 6: CONTEXTUAL TOOLTIPS ═══
+const METRIC_TOOLTIPS = {
+  'hC': 'Cycle — Each tick represents roughly 1/4 of a simulated week.',
+  'hG': 'Deaths — Citizens who have died. System failures are preventable; natural deaths are age-based.',
+  'hW': 'Average Wait — How long patients wait for specialist care. The Treeknorm says under 4 weeks.',
+  'hE': 'Clinical Efficiency — Only this percentage of doctor time goes to actual patients. The rest is paperwork.',
+  'oA': 'Admin Burden — Dutch GPs spend this much time on administrative tasks instead of treating patients.',
+  'oS': 'Sick Leave — Percentage of healthcare capacity lost to staff illness (ziekteverzuim).',
+  'oT': 'Treeknorm — The legal maximum waiting time for specialist care in the Netherlands.',
+  'oF': 'FHIR Resources — Total medical records generated in the simulation (FHIR R4 standard).',
+  'oW': 'Waste — Estimated cost of administrative burden based on NZa GP consultation rates (€12.43).',
+  'sF': 'FHIR — Fast Healthcare Interoperability Resources. Total medical records created.',
+  'sM': 'A2A — Agent-to-Agent protocol messages exchanged between healthcare providers.'
+};
+const LABEL_TOOLTIPS = {
+  'Pop': 'Population — Total citizens in the simulation, based on CBS demographic data.',
+  'Cycle': 'Cycle — Each tick represents roughly 1/4 of a simulated week.',
+  'Ghosts': 'Deaths — Citizens who have died. Hover the Stats panel to see system vs natural breakdown.',
+  'Wait': 'Average Wait — How long patients wait for specialist care. The Treeknorm says under 4 weeks.',
+  'C_eff': 'Clinical Efficiency — Effective capacity = Total × (1 - Admin - Sick) × AI factor.'
+};
+
+let tooltipEl = null;
+function showTooltip(text, rect) {
+  if (!tooltipEl) {
+    tooltipEl = document.createElement('div');
+    tooltipEl.className = 'metric-tooltip';
+    document.body.appendChild(tooltipEl);
+  }
+  tooltipEl.textContent = text;
+  tooltipEl.style.display = 'block';
+  tooltipEl.style.left = rect.left + 'px';
+  tooltipEl.style.top = (rect.bottom + 6) + 'px';
+}
+function hideTooltip() {
+  if (tooltipEl) tooltipEl.style.display = 'none';
+}
+
+// Event delegation for top bar and sim overview
+['top', 'sim-overview'].forEach(containerId => {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.addEventListener('mouseover', function(ev) {
+    // Check for .n elements with IDs
+    const nEl = ev.target.closest('.n[id]');
+    if (nEl && METRIC_TOOLTIPS[nEl.id]) {
+      showTooltip(METRIC_TOOLTIPS[nEl.id], nEl.getBoundingClientRect());
+      return;
+    }
+    // Check for .v elements with IDs
+    const vEl = ev.target.closest('.v[id]');
+    if (vEl && METRIC_TOOLTIPS[vEl.id]) {
+      showTooltip(METRIC_TOOLTIPS[vEl.id], vEl.getBoundingClientRect());
+      return;
+    }
+    // Check for .l label elements
+    const lEl = ev.target.closest('.l');
+    if (lEl && LABEL_TOOLTIPS[lEl.textContent.trim()]) {
+      showTooltip(LABEL_TOOLTIPS[lEl.textContent.trim()], lEl.getBoundingClientRect());
+      return;
+    }
+    // Check for .ts containers
+    const tsEl = ev.target.closest('.ts');
+    if (tsEl) {
+      const idEl = tsEl.querySelector('.n[id]');
+      if (idEl && METRIC_TOOLTIPS[idEl.id]) {
+        showTooltip(METRIC_TOOLTIPS[idEl.id], tsEl.getBoundingClientRect());
+        return;
+      }
+      const labelEl = tsEl.querySelector('.l');
+      if (labelEl && LABEL_TOOLTIPS[labelEl.textContent.trim()]) {
+        showTooltip(LABEL_TOOLTIPS[labelEl.textContent.trim()], tsEl.getBoundingClientRect());
+        return;
+      }
+    }
+  });
+  container.addEventListener('mouseout', hideTooltip);
+});
+
+// Also handle cinfo tooltips
+const cinfoEl = document.querySelector('.cinfo');
+if (cinfoEl) {
+  cinfoEl.addEventListener('mouseover', function(ev) {
+    const bEl = ev.target.closest('b[id]');
+    if (bEl && METRIC_TOOLTIPS[bEl.id]) {
+      showTooltip(METRIC_TOOLTIPS[bEl.id], bEl.getBoundingClientRect());
+    }
+  });
+  cinfoEl.addEventListener('mouseout', hideTooltip);
+}
+
+// ═══ SPRINT 6: WELCOME WIZARD ═══
+const WIZARD_STEPS = [
+  {
+    title: "Welcome to Cammelot!",
+    text: "I am the Mayor of this small Dutch town. What you're about to see is a simulation of our healthcare system \u2014 and why it's breaking. Each citizen has real medical conditions based on Dutch health data (CBS/RIVM 2025).",
+    highlight: null
+  },
+  {
+    title: "Meet Your Citizens",
+    text: "Click on any person walking through town to see their medical dossier \u2014 age, conditions, HP (health points), and their personal story. Watch how the system treats them.",
+    highlight: 'citizen'
+  },
+  {
+    title: "The System Under Pressure",
+    text: "When people get sick, they visit the GP. If it's serious, they're referred to a specialist. But the wait can be deadly \u2014 30% of GP time is lost to admin, and specialist waits can exceed 12 weeks.",
+    highlight: 'buildings'
+  },
+  {
+    title: "IST vs SOLL",
+    text: "IST shows today's crisis: 30% admin burden, 12-week waits, 8% sick leave. SOLL shows what AI-native healthcare could look like: <5% admin, <4-week waits. Toggle between them and watch the difference.",
+    highlight: 'toggle'
+  }
+];
+
+let wizardStep = 0;
+
+function drawMayorPortrait() {
+  const cv = document.getElementById('wizard-portrait-cv');
+  if (!cv) return;
+  const g = cv.getContext('2d');
+  const u = 64 / 24;
+  const px = (x, y, w, h, col) => {
+    g.fillStyle = col;
+    g.fillRect(Math.round(x * u), Math.round(y * u), Math.round(w * u), Math.round(h * u));
+  };
+  g.clearRect(0, 0, 64, 64);
+  // Background
+  g.fillStyle = '#2a2a4a'; g.fillRect(0, 0, 64, 64);
+  // Body — distinguished suit
+  px(6, 13, 10, 8, '#1a1a3a'); // dark suit
+  px(4, 14, 2, 6, '#1a1a3a'); // left arm
+  px(16, 14, 2, 6, '#1a1a3a'); // right arm
+  // Gold chain of office
+  px(7, 13, 8, 1, '#FFB300');
+  px(6, 14, 1, 2, '#FFB300');
+  px(15, 14, 1, 2, '#FFB300');
+  px(8, 15, 6, 1, '#DAA520');
+  // Head
+  px(5, 2, 12, 10, '#E0C0A0');
+  px(4, 3, 14, 8, '#E0C0A0');
+  px(7, 1, 8, 1, '#E0C0A0');
+  // Eyes
+  px(6, 5, 4, 4, '#FFFFFF');
+  px(12, 5, 4, 4, '#FFFFFF');
+  px(8, 6, 2, 3, '#1A1A2A');
+  px(14, 6, 2, 3, '#1A1A2A');
+  px(6, 5, 4, 1, '#1A1A2A');
+  px(12, 5, 4, 1, '#1A1A2A');
+  px(9, 6, 1, 1, '#FFFFFF');
+  px(15, 6, 1, 1, '#FFFFFF');
+  // Mouth — slight smile
+  px(9, 10, 4, 1, '#C08070');
+  px(8, 10, 1, 1, '#C08070');
+  // Grey distinguished hair
+  px(4, 0, 14, 4, '#B0B0B8');
+  px(4, 0, 2, 6, '#B0B0B8');
+  px(16, 0, 2, 6, '#B0B0B8');
+  // Glasses
+  px(5, 5, 6, 1, '#6B5540');
+  px(11, 5, 6, 1, '#6B5540');
+  px(5, 8, 6, 1, '#6B5540');
+  px(11, 8, 6, 1, '#6B5540');
+  px(5, 5, 1, 4, '#6B5540');
+  px(10, 5, 1, 4, '#6B5540');
+  px(11, 5, 1, 4, '#6B5540');
+  px(16, 5, 1, 4, '#6B5540');
+}
+
+function showWizard() {
+  wizardStep = 0;
+  const overlay = document.getElementById('wizard-overlay');
+  if (!overlay) return;
+  overlay.style.display = 'flex';
+  drawMayorPortrait();
+  updateWizardStep();
+}
+
+function updateWizardStep() {
+  const step = WIZARD_STEPS[wizardStep];
+  if (!step) return;
+  document.getElementById('wizard-title').textContent = step.title;
+  document.getElementById('wizard-text').innerHTML = step.text;
+  // Update dots
+  const dotsEl = document.getElementById('wizard-dots');
+  dotsEl.innerHTML = WIZARD_STEPS.map((_, i) =>
+    `<span class="wizard-dot ${i === wizardStep ? 'active' : ''}"></span>`
+  ).join('');
+  // Update next button text
+  const nextBtn = document.getElementById('wizard-next');
+  nextBtn.textContent = wizardStep === WIZARD_STEPS.length - 1 ? 'Start ✦' : 'Next →';
+  // Clear previous highlights
+  document.querySelectorAll('.wizard-highlight-pulse').forEach(el => el.classList.remove('wizard-highlight-pulse'));
+  // Apply highlight
+  if (step.highlight === 'citizen') {
+    // Flash a random visible agent — handled visually
+  } else if (step.highlight === 'buildings') {
+    BUILDINGS.forEach(b => {
+      // Nothing to highlight in DOM — buildings are canvas-drawn
+    });
+  } else if (step.highlight === 'toggle') {
+    const tog = document.querySelector('.mode-tog');
+    if (tog) tog.classList.add('wizard-highlight-pulse');
+  }
+}
+
+function nextWizardStep() {
+  wizardStep++;
+  if (wizardStep >= WIZARD_STEPS.length) {
+    closeWizard();
+    return;
+  }
+  updateWizardStep();
+}
+
+function closeWizard() {
+  const overlay = document.getElementById('wizard-overlay');
+  if (overlay) {
+    overlay.style.opacity = '0';
+    overlay.style.transition = 'opacity 0.3s ease';
+    setTimeout(() => {
+      overlay.style.display = 'none';
+      overlay.style.opacity = '1';
+      overlay.style.transition = '';
+    }, 300);
+  }
+  // Clear highlights
+  document.querySelectorAll('.wizard-highlight-pulse').forEach(el => el.classList.remove('wizard-highlight-pulse'));
+  // Save preference
+  if (document.getElementById('wizard-noshow')?.checked) {
+    try { localStorage.setItem('cammelot_wizard_done', '1'); } catch (e) {}
+  }
+}
+
 // ═══ STARTUP (Sprint 3 — Save-aware) ═══
 const hasSave=localStorage.getItem('cammelot_save');
 if(hasSave){
@@ -3169,6 +3744,12 @@ if(hasSave){
   startNewGame();
 }
 setTimeout(()=>document.getElementById('load').classList.add('go'),1400);
+// Sprint 6: Show wizard for first-time visitors
+setTimeout(() => {
+  if (!localStorage.getItem('cammelot_wizard_done')) {
+    showWizard();
+  }
+}, 1800);
 window.addEventListener('resize',()=>{userZoomed=false;zoom=1;render();});
 window.addEventListener('beforeunload',saveGame);
 </script>
