@@ -3634,7 +3634,16 @@ function render(){
         // Default roaming: idle then pick new random destination
         e.idleUntil = now + 2000 + Math.random() * 6000;
         const fromIdx = nearestWaypointIdx(e.x, e.y);
-        const toIdx = Math.floor(Math.random() * ROAD_WAYPOINTS.length);
+        let toIdx = Math.floor(Math.random() * ROAD_WAYPOINTS.length);
+        // Sprint 26: Elderly wander radius — stay close to home
+        if (e.lifeStage === 'elderly' && e.homePos) {
+          const maxWander = 0.15;
+          for (let tries = 0; tries < 5; tries++) {
+            const cand = Math.floor(Math.random() * ROAD_WAYPOINTS.length);
+            const wdx = ROAD_WAYPOINTS[cand].x - e.homePos.x, wdy = ROAD_WAYPOINTS[cand].y - e.homePos.y;
+            if (Math.sqrt(wdx * wdx + wdy * wdy) < maxWander) { toIdx = cand; break; }
+          }
+        }
         if(fromIdx !== toIdx) {
           const p = findWaypointPath(fromIdx, toIdx);
           if(p && p.length > 1) {
@@ -3668,6 +3677,11 @@ function render(){
       const step = Math.min(speed, dist);
       e.x += (dx/dist) * step;
       e.y += (dy/dist) * step;
+      // Sprint 26: Child zigzag — slight random offset while walking
+      if (e.lifeStage === 'child') {
+        e.x += (Math.random() - 0.5) * 0.001;
+        e.y += (Math.random() - 0.5) * 0.001;
+      }
       e.walkDist = (e.walkDist || 0) + step;
       // Face direction of movement (Sprint 14)
       if (Math.abs(dx) > 0.001) {
@@ -4482,6 +4496,159 @@ function tick(){
       }
     }
 
+    // ═══ Sprint 26: LIFE-STAGE BEHAVIORS ═══
+    const timeOfDay = getTimeOfDay().phase;
+
+    // ── 26.1: Day/Night Rhythm ──
+    if (timeOfDay === 'night' && a.behaviorState !== 'at_hospital' && a.behaviorState !== 'queuing' && a.behaviorState !== 'at_gp' && a.behaviorState !== 'going_to_hospital' && a.behaviorState !== 'dead') {
+      if (!a.isNightOwl) {
+        // Send home at night
+        if (!a.insideBuilding && a.homePos) {
+          const hdx = a.x - a.homePos.x, hdy = a.y - a.homePos.y;
+          const homeDist = Math.sqrt(hdx * hdx + hdy * hdy);
+          if (homeDist < 0.02) {
+            a.insideBuilding = 'home';
+          } else if (!a.pathComplete || homeDist > 0.05) {
+            sendAgentTo(a, a.homePos);
+          }
+        }
+        // Skip normal behavior while heading home or at home
+        if (a.insideBuilding === 'home') return;
+      } else {
+        // Night owls wander slowly (handled by speedMultiplier already)
+      }
+    }
+    // Dawn — emerge from home
+    if (timeOfDay === 'dawn' && a.insideBuilding === 'home') {
+      a.insideBuilding = null;
+      a.atWork = false;
+      a.workTimer = 0;
+    }
+    // Dusk — head home, some socialize
+    if (timeOfDay === 'dusk' && a.behaviorState === 'roaming' && !a.insideBuilding) {
+      if (a.atWork) {
+        a.insideBuilding = null;
+        a.atWork = false;
+      }
+      // 30% chance of evening social chat
+      if (Math.random() < 0.003) {
+        a.bubbleTimer = 80;
+      }
+    }
+
+    // ── 26.2: Child Behavior ──
+    if (a.lifeStage === 'toddler' && a.behaviorState === 'roaming' && timeOfDay === 'day') {
+      // Toddlers stay near home, move in small circles
+      if (a.homePos) {
+        const tdx = a.x - a.homePos.x, tdy = a.y - a.homePos.y;
+        if (Math.sqrt(tdx * tdx + tdy * tdy) > 0.06) {
+          sendAgentTo(a, a.homePos);
+        }
+      }
+    }
+    if (a.lifeStage === 'child' && a.behaviorState === 'roaming' && timeOfDay === 'day' && !a.insideBuilding) {
+      if (a.schoolPos && a.schoolTimer <= 0) {
+        // Go to school
+        const sdx = a.x - a.schoolPos.x, sdy = a.y - a.schoolPos.y;
+        if (Math.sqrt(sdx * sdx + sdy * sdy) > 0.03) {
+          sendAgentTo(a, a.schoolPos);
+        } else {
+          a.schoolTimer = 50 + Math.floor(Math.random() * 20);
+        }
+      }
+      if (a.schoolTimer > 0) {
+        a.schoolTimer--;
+        if (a.schoolTimer <= 0) {
+          // After school, go to park to play
+          const parkPos = { x: 0.72, y: 0.65 };
+          sendAgentTo(a, parkPos);
+        }
+      }
+    }
+    if (a.lifeStage === 'teen' && a.behaviorState === 'roaming' && timeOfDay === 'day' && !a.insideBuilding) {
+      if (a.schoolPos && a.schoolTimer <= 0) {
+        const sdx = a.x - a.schoolPos.x, sdy = a.y - a.schoolPos.y;
+        if (Math.sqrt(sdx * sdx + sdy * sdy) > 0.03) {
+          sendAgentTo(a, a.schoolPos);
+        } else {
+          a.schoolTimer = 50 + Math.floor(Math.random() * 30);
+        }
+      }
+      if (a.schoolTimer > 0) {
+        a.schoolTimer--;
+        if (a.schoolTimer <= 0) {
+          // After school — wander or park
+          if (Math.random() < 0.5) {
+            sendAgentTo(a, { x: 0.72, y: 0.65 });
+          }
+        }
+      }
+    }
+
+    // ── 26.3: Elderly Behavior ──
+    if (a.lifeStage === 'elderly' && a.behaviorState === 'roaming') {
+      // Rest pauses — stand still for 10-20 ticks
+      if (a.restTimer > 0) {
+        a.restTimer--;
+        return; // skip normal behavior while resting
+      }
+      if (Math.random() < 0.02) {
+        a.restTimer = 10 + Math.floor(Math.random() * 11);
+      }
+    }
+    // Seniors (65+): routine GP checkup every ~200 cycles when healthy
+    if ((a.lifeStage === 'senior' || a.lifeStage === 'elderly') && a.behaviorState === 'roaming' && timeOfDay === 'day') {
+      a.routineGPTimer = (a.routineGPTimer || 0) + 1;
+      if (a.routineGPTimer >= 200 && a.conditions.length === 0 && Math.random() < 0.05) {
+        a.routineGPTimer = 0;
+        a.behaviorState = 'going_to_gp';
+        a.pathComplete = false;
+        sendAgentTo(a, getGPDest(a.gpName).entrance);
+        addHistory(a, 'checkup', 'Time for my routine checkup.');
+      }
+    }
+
+    // ── 26.4: Worker/Commuter Patterns ──
+    if (a.lifeStage === 'adult' && a.workplace && a.workplacePos && a.behaviorState === 'roaming' && !a.insideBuilding) {
+      if (timeOfDay === 'day' || timeOfDay === 'dawn') {
+        if (!a.atWork && a.workTimer <= 0) {
+          // Morning commute
+          const wdx = a.x - a.workplacePos.x, wdy = a.y - a.workplacePos.y;
+          if (Math.sqrt(wdx * wdx + wdy * wdy) < 0.03) {
+            a.insideBuilding = a.workplace;
+            a.atWork = true;
+            a.workTimer = 60 + Math.floor(Math.random() * 20);
+          } else {
+            sendAgentTo(a, a.workplacePos);
+          }
+        }
+      }
+      if (a.atWork && a.insideBuilding === a.workplace) {
+        a.workTimer--;
+        if (a.workTimer <= 0) {
+          // Lunch break or end of work
+          a.insideBuilding = null;
+          a.atWork = false;
+          // Brief lunch break wander
+          if (timeOfDay === 'day' && Math.random() < 0.4) {
+            a.workTimer = -(15 + Math.floor(Math.random() * 10)); // negative = lunch break ticks
+          }
+        }
+        return; // skip normal behavior while working
+      }
+      // Lunch break countdown
+      if (a.workTimer < 0) {
+        a.workTimer++;
+        if (a.workTimer >= 0 && timeOfDay === 'day') {
+          // Back to work after lunch
+          a.workTimer = 0; // will trigger commute again on next tick
+        }
+      }
+      if (timeOfDay === 'dusk' && a.homePos) {
+        sendAgentTo(a, a.homePos);
+      }
+    }
+
     // === BEHAVIORAL STATE MACHINE ===
     switch(a.behaviorState){
 
@@ -4909,6 +5076,9 @@ function resetSim(){
     a.reflections=[]; a.plans=[]; a.digitalTwinRisk=null;
     a.path=[]; a.pathIdx=0;
     a.idleUntil=performance.now()+Math.random()*5000;
+    // Sprint 26: Reset life-stage properties
+    a.atWork=false; a.workTimer=0; a.schoolTimer=0;
+    a.restTimer=0; a.routineGPTimer=0;
     // Reset GP/specialist tracking
     if(a.type==='gp'||a.type==='specialist'){
       a.patientsSeenToday=0; a.referralsMade=0; a.burnoutLevel=0;
@@ -6073,7 +6243,13 @@ function buildSaveState(){
       gpName:a.gpName,color:a.color,role:a.role,
       thoughts:a.thoughts,specialty:a.specialty,
       lastGPCycle:a.lastGPCycle,referredToHospital:a.referredToHospital,
-      pathComplete:a.pathComplete
+      pathComplete:a.pathComplete,
+      // Sprint 26: Life-stage properties
+      lifeStage:a.lifeStage,speedMultiplier:a.speedMultiplier,
+      homePos:a.homePos,isNightOwl:a.isNightOwl,
+      workplace:a.workplace,workplacePos:a.workplacePos,schoolPos:a.schoolPos,
+      parentId:a.parentId,atWork:a.atWork,workTimer:a.workTimer,
+      schoolTimer:a.schoolTimer,restTimer:a.restTimer,routineGPTimer:a.routineGPTimer
     })),
     eventLog:EVENT_LOG.slice(-500),
     graveMarkers:GRAVE_MARKERS.slice(-200)
@@ -6172,6 +6348,20 @@ function loadGame(){
       a._initState=sa.state||'managed';
       a._initInsideBuilding=sa.insideBuilding;
       a._initX=sa.x; a._initY=sa.y;
+      // Sprint 26: Restore life-stage properties with defaults for old saves
+      a.lifeStage=sa.lifeStage||'adult';
+      a.speedMultiplier=sa.speedMultiplier||1.0;
+      a.homePos=sa.homePos||{x:sa.x,y:sa.y};
+      a.isNightOwl=sa.isNightOwl||false;
+      a.workplace=sa.workplace||null;
+      a.workplacePos=sa.workplacePos||null;
+      a.schoolPos=sa.schoolPos||null;
+      a.parentId=sa.parentId||null;
+      a.atWork=sa.atWork||false;
+      a.workTimer=sa.workTimer||0;
+      a.schoolTimer=sa.schoolTimer||0;
+      a.restTimer=sa.restTimer||0;
+      a.routineGPTimer=sa.routineGPTimer||0;
       agents.push(a);
     });
     // Restore event log
