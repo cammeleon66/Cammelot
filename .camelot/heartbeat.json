@@ -1,6 +1,6 @@
 {
   "fleet": "cammelot-cli",
-  "commander": "Fleet Commander (CLI)",
+  "commander": "Fleet Commander (Opus 4.6)",
   "bootTime": "2026-04-02T05:41:02Z",
   "branch": "feature/agentic-overhaul",
   "agents": {
@@ -9,7 +9,7 @@
       "status": "active",
       "isolation": "worktree",
       "worktreePath": "C:\\Users\\Public\\camelot-qa",
-      "lastHeartbeat": "2026-04-02T05:49:00Z",
+      "lastHeartbeat": "2026-04-02T06:59:00Z",
       "lastResult": { "total": 109, "passed": 109, "failed": 0, "vetoTriggered": false },
       "vetoActive": false
     },
@@ -18,14 +18,62 @@
       "status": "active",
       "isolation": "main",
       "worktreePath": "C:\\Users\\Public\\Cammelot",
-      "lastHeartbeat": "2026-04-02T05:49:00Z",
-      "lastResult": { "sprint1Complete": true, "featuresDelivered": 3, "testsPass": 109 },
+      "lastHeartbeat": "2026-04-02T06:59:00Z",
+      "lastResult": { "sprintsComplete": 3, "featuresDelivered": 15, "testsPass": 109 },
       "pausedByVeto": false
+    },
+    "mordred": {
+      "role": "Security Sentinel",
+      "status": "active",
+      "isolation": "main",
+      "lastHeartbeat": "2026-04-02T06:59:00Z",
+      "vetoAuthority": true,
+      "vetoScope": "owasp_top10",
+      "lastScan": null,
+      "findings": [],
+      "vetoActive": false
+    },
+    "scribe": {
+      "role": "Knowledge Keeper",
+      "status": "active",
+      "isolation": "main",
+      "lastHeartbeat": "2026-04-02T06:59:00Z",
+      "lastSync": null,
+      "docsUpdated": [],
+      "pendingUpdates": ["CODEBASE_MAP.md (Sprint 2-3 changes)", "ADR.md (create)"]
     }
   },
   "stateLink": {
-    "rule": "If Galahad detects test failure, Merlin must pause until resolved",
+    "rule": "If Galahad detects test failure OR Mordred detects OWASP violation, Merlin must pause",
     "vetoProtocol": "swarm.rules.json",
-    "failureChannel": "galahad -> heartbeat.json -> merlin reads before acting"
+    "failureChannel": "galahad|mordred -> heartbeat.json -> merlin reads before acting",
+    "vetoPrecedence": ["mordred", "galahad"]
+  },
+  "security_status": {
+    "lastFullScan": null,
+    "owaspFindings": 0,
+    "cspConfigured": false,
+    "secretsDetected": 0,
+    "inlineHandlers": "present (onclick in v4.html — tracked for Phase 3 migration)",
+    "overallRisk": "medium",
+    "nextAction": "Initial baseline scan pending"
+  },
+  "token_burn_rate": {
+    "sessionStart": "2026-04-02T05:41:02Z",
+    "sprintsCompleted": 3,
+    "estimatedTokensUsed": "~120k",
+    "avgTokensPerSprint": "~40k",
+    "costGuardianThreshold": 150000,
+    "lastCompaction": null,
+    "status": "nominal"
+  },
+  "governance": {
+    "costGuardian": {
+      "status": "active",
+      "warningAt": 120000,
+      "autoCompactAt": 150000,
+      "currentEstimate": "~120k",
+      "recommendation": "Consider /compact before Sprint 4"
+    }
   }
 }

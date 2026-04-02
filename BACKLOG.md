@@ -1,392 +1,521 @@
-# Cammelot — Engineering Backlog
+# Cammelot — Strategic Engineering Backlog
 
-> **Status**: Active — Last updated 2026-04-01
-> **Goal**: Turn the architectural proof-of-concept into a working, connected simulation
-> **Runtime target**: `npm run frontend` serves everything — no separate backend process needed
-
----
-
-## Current State (Honest Assessment)
-
-The project has **two disconnected systems**:
-
-| Layer | What exists | Problem |
-|-------|-------------|---------|
-| **Frontend** (v4.html) | 15 hardcoded agents, visual walking, click-to-inspect | No connection to backend engines; disease progression is fake math in the tick() function |
-| **Backend** (simulation_loop.js) | Real Markov disease models, FHIR store, A2A protocol, cognitive loop | Nobody sees it — runs headless in terminal, output goes to console.log |
-| **Data** | RIVM/CBS/NZa reference data in config/ | In-memory only, no persistence, conditions hardcoded per agent |
-| **Buildings** | Drawn on map, agents walk in/out | Can't click them, can't see queues, doctor load, or patient flow |
-
-### What works today
-- Agents walk around town on roads (waypoint pathfinding)
-- Sick agents walk to GP → get referred → walk to hospital → get treated → recover
-- Click agent → see HP, conditions, behavioral state, action history
-- IST/SOLL mode toggle changes drain parameters
-- Loading screen with logo
-
-### What's broken
-- Disease spawning ignores the statistical RIVM model — conditions are hardcoded per agent
-- Almost everyone still dies because drain math isn't balanced against treatment speed
-- Can't click buildings (Hospital, GP practices) to see what's happening inside
-- History is shallow — only tracks the current session, no persistence
-- Doctors have no visible workload/burnout/queue stats in UI
-- Backend engines (disease_engine.js, population_engine.js, fhir_store.js) exist but frontend doesn't use them
-- Zero tests
+> **Status**: Active — Last updated 2026-04-02
+> **Vision**: A public-facing simulation of the Dutch healthcare crisis that anyone can visit, understand, and share. People watch tiny citizens live, get sick, queue, wait, and sometimes die — not from disease alone, but from a system that can't keep up.
+> **URL target**: `cammelot.health` — static Docker container, zero backend
+> **Runtime**: Self-contained `v4.html` (~2500 lines) — no bundler, no framework
 
 ---
 
-## Epic 1: Disease Database & Statistical Spawning
+## What We've Built (Sprints 1–3 ✅)
 
-**Why**: Conditions are currently hardcoded per agent. The RIVM prevalence data exists in `config/reference_data.js` but the frontend doesn't use it. We need a proper disease catalog that drives spawning.
+| Feature | Status | Sprint |
+|---------|--------|--------|
+| DISEASE_DB (10 ICD-10 conditions, Markov matrices) | ✅ | 1 |
+| Statistical Population Spawner (45 CBS-distributed agents) | ✅ | 1 |
+| Inline Disease Engine (Markov transitions in tick()) | ✅ | 1 |
+| Clickable Buildings (GP + Hospital dashboards) | ✅ | 2 |
+| Doctor Agent Tracking (queue, burnout, capacity) | ✅ | 2 |
+| Specialist Wait Times + Treeknorm visualization | ✅ | 2 |
+| Natural Mortality (age-based, distinct from system failure) | ✅ | 2 |
+| Comorbidity Interactions (multipliers + F03 delay) | ✅ | 2 |
+| Decay Curve Calibration | ✅ | 2 |
+| Global Event Log (13 event types) | ✅ | 3 |
+| Enhanced Agent History (HP sparkline, care pathway) | ✅ | 3 |
+| Simulation Summary Dashboard (📊 Stats overlay) | ✅ | 3 |
+| LocalStorage Persistence (Continue / New Game) | ✅ | 3 |
+| 109 backend tests | ✅ | 1 |
 
-### 1.1 — Disease Catalog (client-side database)
-Build a `DISEASE_DB` object in the frontend containing every condition with full metadata:
+### What's Still Wrong (Honest)
+
+| Problem | Impact | Why it matters for visitors |
+|---------|--------|---------------------------|
+| Agents are **soulless** — no bio, no occupation, no personality | People don't care about "cit-023" | Emotional connection drives sharing |
+| Agents **don't talk to each other** — they walk in silence | Town feels dead | "Watch" value is zero if nothing happens |
+| **Queues aren't visible** — blobs appear but agents don't physically line up | The core visual metaphor is missing | The whole point is showing congestion |
+| **No onboarding** — visitors land on a simulation and have no idea what anything means | Bounce rate will be 95% | Must explain before they explore |
+| **Right panel is wasted** — empty until you click something | First-time visitors see nothing | Should show a living town feed |
+| **Metrics are cryptic** — "C_eff 62%" means nothing to non-experts | Core message is lost | Must translate to human language |
+| **Not mobile-friendly** — no media queries, fixed 320px sidebar | 60%+ of visitors are on phones | Dead on arrival for social sharing |
+| **Not deployable** — no Docker, no CI/CD, no hosting config | Can't share it | The whole point is public visibility |
+| **No security model** — anyone could inject, no CSP, no testing | Public website = attack surface | Must harden before launch |
+
+---
+
+## Strategic Phases
+
+### Phase 1: Make It Alive (Sprint 4–5)
+*"I want to watch these people and feel something."*
+
+### Phase 2: Make It Understandable (Sprint 6–7)
+*"A stranger lands on this page and gets it within 30 seconds."*
+
+### Phase 3: Make It Shareable (Sprint 8–9)
+*"I can send this link to anyone and it works on their phone."*
+
+### Phase 4: Make It Smart (Sprint 10–11)
+*"The agents actually think, remember, and communicate."*
+
+### Phase 5: Make It Rigorous (Sprint 12)
+*"We can prove it's fair, secure, and scientifically grounded."*
+
+---
+
+## Phase 1: Make It Alive
+
+### Epic 7: Vivid Characters
+
+#### 7.1 — Agent Biographies
+Generate a short bio for every citizen:
+- **Occupation**: Teacher, Retired nurse, Bus driver, Baker, Student, etc. (30+ Dutch occupations)
+- **Family**: "Married to Anna, 2 children" / "Lives alone since partner passed" / "Single parent"
+- **Personality trait**: Stoic, Anxious, Optimistic, Stubborn, Social
+- **One-liner backstory**: "Worked at the Philips factory for 32 years. Knees gave out first, then the heart."
+- Seeded from agent ID for determinism (same citizen = same backstory on reload)
+
+**Acceptance**: Click any citizen → see occupation, family, personality, backstory in the panel. Makes you care.
+
+#### 7.2 — Agent Portraits
+Generate a pixel-art face closeup for each agent (64×64px canvas):
+- Derive from existing LOOKS data (skin tone, hair style/color, gender, age)
+- Frontal face with eyes, simple expression
+- Elderly: wrinkles (darker skin lines), glasses (random)
+- Sick: pale tint, droopy expression
+- Dead: greyscale, eyes closed
+- Shown in agent panel header and in building patient lists
+
+**Acceptance**: Every citizen has a unique, recognizable face. Panel feels personal.
+
+#### 7.3 — Social Interactions (Agent-to-Agent)
+When two agents are near each other on a road:
+- 15% chance per tick of "chatting" — both pause for 3-5 ticks
+- Speech bubble appears with contextual dialogue:
+  - Healthy: "Lovely weather!" / "Have you seen the new bakery?"
+  - Sick: "I've been waiting 8 weeks for the specialist..." / "My GP says there's nothing they can do."
+  - About town: "Did you hear about Hendrik? He passed last week." / "The hospital queue is terrible."
+- Post-interaction: add a `talked_to` event to both agents' EVENT_LOG
+- Proximity threshold: 0.03 in normalized coords
+- Visual: both agents face each other, speech icons appear
+
+**Acceptance**: Watching the town for 30 seconds, you see people stop, chat, and move on. The conversations reference actual simulation state.
+
+#### 7.4 — Emotional Sprites
+Add visible emotional states to agent sprites:
+- **Happy** (HP > 80, no conditions): slight bounce in walk, 😊 occasionally
+- **Worried** (HP 50-80, has conditions): slower walk speed, 😟
+- **In Pain** (HP 20-50): hobbling animation (alternating lean), 😣
+- **Critical** (HP < 20): crawling speed, ❗ permanent bubble
+- **Grieving**: When a nearby agent dies, neighbors get 💔 for 20 ticks
+
+**Acceptance**: You can tell how someone is doing just by watching them walk.
+
+---
+
+### Epic 8: Visible Queues & Congestion
+
+#### 8.1 — Physical Queue Lines
+Replace abstract blob queues with actual agents lining up:
+- When `behaviorState === 'going_to_gp'` and agent reaches GP entrance, enter a FIFO queue
+- Queue positions: line up along the road outside the building (staggered positions)
+- Agents in queue are visible on the map (not hidden inside building)
+- They fidget (tiny random movement), show wait-related speech bubbles
+- Queue length visible from a distance (you can see congestion at a glance)
+
+**Acceptance**: When 6 agents are waiting at the GP, you SEE 6 tiny sprites lined up outside.
+
+#### 8.2 — Building Status Indicators
+Add visual indicators on buildings themselves:
+- 🟢 Green glow: operating normally (queue < 50% capacity)
+- 🟡 Yellow glow: busy (queue 50-100% capacity)
+- 🔴 Red glow + pulse: overloaded (queue > capacity or Treeknorm violated)
+- Small number badge on building: current queue count
+- Hospital shows bed count: "3/8" rendered near the building
+
+**Acceptance**: Zoom out and immediately see which buildings are in crisis.
+
+#### 8.3 — Ghost Trail Enhancement
+Make death more visible and impactful:
+- Ghost sprite floats slowly upward for 30 ticks before fading out
+- A small 🪦 marker remains at the location of death for the rest of the session
+- If death was from system failure: marker is red, tooltip shows "Died waiting: 14 weeks for cardiology"
+- If natural death: marker is grey, tooltip shows "Passed peacefully at age 87"
+- Running death counter animation in top bar when a death occurs (flash red)
+
+**Acceptance**: Deaths are unmissable. The graveyard of markers tells the story over time.
+
+---
+
+## Phase 2: Make It Understandable
+
+### Epic 9: Onboarding & Education
+
+#### 9.1 — Welcome Wizard (Mayor of Cammelot)
+First-time visitors get a 4-step guided tour by the Mayor sprite:
+1. **"Welcome to Cammelot!"** — Mayor portrait, brief intro: "I am the Mayor of this small Dutch town of 5,000 souls. What you're about to see is a simulation of our healthcare system — and why it's breaking."
+2. **"Meet Your Citizens"** — Highlights a citizen, explains: age, conditions, HP. "Each person has real medical conditions based on Dutch health data."
+3. **"The System"** — Highlights GP + Hospital. "When people get sick, they visit the GP. If it's serious, they're referred to a specialist. But the wait can be deadly."
+4. **"IST vs SOLL"** — Shows the toggle. "IST shows today's crisis: 30% admin burden, 12-week waits. SOLL shows what AI could fix."
+
+- Skip button always available
+- "Don't show again" checkbox → localStorage
+- Mayor sprite: distinguished character with chain of office
+
+**Acceptance**: A stranger can understand the simulation in 60 seconds without reading documentation.
+
+#### 9.2 — Contextual Tooltips
+Hover any metric → get a plain-language explanation:
+- **C_eff 62%**: "Clinical Efficiency — Only 62% of doctor time goes to patients. The rest is lost to paperwork."
+- **Ghosts: 3**: "3 citizens have died. Some from untreatable disease, some because the system was too slow."
+- **Wait 8w**: "Average time patients wait for a specialist. The Treeknorm says it should be under 4 weeks."
+- **Treeknorm**: "The legal maximum waiting time for specialist care in the Netherlands."
+- **Admin Burden 30%**: "Dutch GPs spend 30% of their time on administrative tasks instead of treating patients."
+
+**Acceptance**: Every number on screen can be understood by a non-expert.
+
+#### 9.3 — Narrative Event Ticker
+A scrolling text ticker at the bottom of the game area (or top) showing key events in plain language:
+- "💀 Hendrik Veenstra (70) died after waiting 14 weeks for a cardiologist."
+- "🏥 Maria de Vries was admitted to hospital with severe COPD."
+- "⚕ Dr. Collins referred 3 patients today. Her burnout level: HIGH."
+- "⚠ Hospital wait time has exceeded the Treeknorm (12 weeks)."
+- Ticker auto-scrolls, clickable to select the agent mentioned
+
+**Acceptance**: Even without clicking anything, visitors understand what's happening by reading the ticker.
+
+---
+
+### Epic 10: Right Panel Redesign
+
+#### 10.1 — Town Feed (Default View)
+When no agent/building is selected, the right panel shows a **"Last 24 Hours in Cammelot"** feed:
+- Reverse-chronological list of significant events
+- Each entry: emoji icon + agent name (clickable) + event description + cycle number
+- Categories: Deaths (red), Admissions (orange), Referrals (yellow), Recoveries (green), Social (blue)
+- Filter buttons at top: All | 💀 Deaths | 🏥 Hospital | ⚕ GP | 💬 Social
+- Auto-updates every tick
+
+**Acceptance**: The panel is never empty. First thing a visitor sees is a living feed of what's happening.
+
+#### 10.2 — Contextual Panel Switching
+The right panel smoothly transitions between views:
+- **Click nothing** → Town Feed ("Last 24 Hours")
+- **Click a citizen** → Citizen Dossier (bio, HP sparkline, care pathway, history)
+- **Click a doctor** → Staff Dossier (workload, patients, burnout)
+- **Click a building** → Building Report (dashboard, queue, stats)
+- **Click a grave marker** → Memorial (who died, how, what went wrong)
+- Back button / click empty space → return to Town Feed
+
+**Acceptance**: Panel always has relevant content. Transitions feel smooth and intentional.
+
+#### 10.3 — Summary Statistics Bar
+Replace or augment the top stats bar with human-readable metrics:
+- Instead of "C_eff 62%" → "⚕ Doctors at 62% capacity"
+- Instead of "Ghosts: 3" → "💀 3 deaths (2 preventable)"
+- Instead of "Wait 8w" → "⏱ 8 week average wait"
+- Add: "👥 42 alive" / "🏥 3 in hospital" / "💰 €24k system cost"
+- Color-coded: green (good), yellow (warning), red (crisis)
+
+**Acceptance**: A visitor immediately understands the state of the town from the top bar alone.
+
+---
+
+## Phase 3: Make It Shareable
+
+### Epic 11: Mobile & Responsive Design
+
+#### 11.1 — Responsive Layout
+- **Desktop (>1024px)**: Current layout — game left, panel right
+- **Tablet (768-1024px)**: Game full width, panel slides up from bottom (40% height)
+- **Mobile (<768px)**: Game full width, panel is a bottom sheet (swipe up to expand)
+- Touch-friendly: tap to select (no hover), pinch to zoom, swipe to pan
+- Control bar adapts: fewer buttons on mobile, hamburger menu for extras
+
+**Acceptance**: Simulation is usable on an iPhone SE.
+
+#### 11.2 — Social Sharing Meta
+- Open Graph tags: title, description, preview image (screenshot of town)
+- Twitter Card: large image summary
+- Description: "Watch a simulation of the Dutch healthcare crisis. 5,000 citizens, real medical data, real consequences."
+- Favicon: Cammelot crest (16px)
+
+**Acceptance**: Sharing the URL on LinkedIn/Twitter shows a rich preview card.
+
+---
+
+### Epic 12: Deployment & Infrastructure
+
+#### 12.1 — Docker Container
+- `Dockerfile`: nginx serving static files (v4.html + assets/)
+- `docker-compose.yml` for local dev
+- Multi-stage build: copy only production files
+- Health check endpoint
+- Gzip compression for v4.html (~100KB → ~20KB)
+
+```dockerfile
+FROM nginx:alpine
+COPY src/frontend/v4.html /usr/share/nginx/html/index.html
+COPY assets/ /usr/share/nginx/html/assets/
+EXPOSE 80
 ```
-{
-  code: "I25",
-  name: "Chronic Ischemic Heart Disease",
-  icd10: "I25",
-  category: "cardiovascular",
-  prevalenceNL: 800_000,
-  seniorPrevalence: 0.12,
-  ageMin: 0,
-  canBeReferred: true,
-  referralSpecialty: "cardiology",
-  gpTreatable: false,         // needs specialist
-  treatmentDurationTicks: 6,  // how long hospital stay
-  recoveryDurationTicks: 15,
-  hpDrainPerTick: 0.3,       // passive drain while untreated
-  hpGainPerTreatmentTick: 2.5,
-  hpGainPerRecoveryTick: 1.2,
-  interactsWith: ["E11", "I10"],  // comorbidity pairs
-  markovTransitions: { ... },     // condition-specific Markov matrix
-  treatmentEffect: "moderate→mild, severe→moderate",
-  mortalityRisk: { untreated: 0.04, treated: 0.005 },  // per cycle
-}
-```
-Source: merge `RIVM_DATA.chronicConditions` + `DiseaseProgressionModel.baseTransitions` + new clinical data.
 
-**Acceptance**: Every condition referenced in the sim has a full entry. No more magic numbers in tick().
+**Acceptance**: `docker build -t cammelot . && docker run -p 80:80 cammelot` → simulation runs at localhost.
 
-### 1.2 — Statistical Population Spawner
-Replace the 15 hardcoded agent definitions with a procedural spawner:
-- Use `CBS_DATA.ageDistribution` to generate ages
-- Use `RIVM_DATA.chronicConditions[].seniorPrevalence` to assign diseases
-- Use `RIVM_DATA.multimorbidityRate` (45% of 75+) for multi-condition assignment
-- Use `CBS_DATA.genderRatio` for gender split
-- Generate Dutch names from `FIRST_NAMES_M/F` + `SURNAMES` lists (already in population_engine.js)
-- Assign GP based on grid proximity
-- Initial HP based on age + conditions (already in population_engine.js)
-- Generate 30–60 agents (enough to see patterns, not so many it lags)
+#### 12.2 — CI/CD Pipeline
+- GitHub Actions workflow:
+  - On push: run 109 tests
+  - On merge to main: build Docker image, push to registry
+  - Lighthouse performance audit (target: >90 performance score)
+  - HTML validation
+- Branch protection on `main`
 
-**Acceptance**: On page load, citizens are procedurally generated with statistically accurate disease distribution. Refresh gives different citizens.
+**Acceptance**: Every PR runs tests automatically. Merge to main deploys.
 
-### 1.3 — Comorbidity Interactions
-When a patient has multiple conditions, model interactions:
-- Diabetes (E11) + Heart Disease (I25): HP drain ×1.4
-- COPD (J44) + Lung Cancer (C34): HP drain ×2.0
-- Hypertension (I10) + Heart Failure (I50): HP drain ×1.5
-- Dementia (F03) + anything: patient takes 2× longer to seek GP (delayed self-awareness)
+#### 12.3 — Performance Optimization
+- Canvas rendering: dirty-rect optimization (only redraw changed areas)
+- Agent limit: cap at 60, with "crowd simulation" for visual filler beyond that
+- Asset loading: inline SVG sprites (already done), lazy-load map image
+- Target: 60fps with 60 agents on mid-range hardware
+- Lighthouse audit: Performance >90, Accessibility >80
 
-**Acceptance**: Comorbid patients visibly deteriorate faster. Click panel shows "Comorbidity risk: High".
+**Acceptance**: Runs smoothly on a 2020 MacBook Air or equivalent.
 
-### 1.4 — Natural Mortality (Age-Based)
-Not everyone should die from wait times. Add background mortality:
-- CBS says 48 deaths/year in a 5,000 town
-- Per-tick probability: `(48 / 5000) / (365 * 4) = 0.0000066` per tick for average citizen
-- Scale by age: 80+ has ~15× the mortality rate of 18-64
-- When natural death occurs: ghost sprite + "Passed away peacefully at age 87"
+#### 12.4 — Landing Page
+Before entering the simulation, show a brief context page:
+- Cammelot logo + tagline
+- "The Netherlands has a healthcare crisis. We built a simulation to show you."
+- 3 key stats: "301,000 worker shortage by 2035" / "12-week specialist waits" / "30% GP time lost to admin"
+- [Enter Simulation →] button
+- Links: About, Methodology, Data Sources, GitHub
+- Language toggle: EN / NL
 
-**Acceptance**: Some elderly agents die naturally over long runs, not just from system failure.
+**Acceptance**: Visitor understands context before seeing the simulation. Professional enough for LinkedIn sharing.
 
 ---
 
-## Epic 2: Wire Backend Engines into Frontend
+## Phase 4: Make It Smart
 
-**Why**: The frontend has its own simplified tick() function. The backend has proper Markov chains, HP drain engines, FHIR stores, and cognitive loops that nobody sees.
+### Epic 13: Cognitive Architecture
 
-### 2.1 — Inline the Disease Engine
-Port the core logic from `disease_engine.js` into the frontend:
-- `DiseaseProgressionModel` — Markov state transitions per condition
-- `HPDrainEngine` — calculates HP loss from Treeknorm violations
-- `TreeknormChecker` — compliance checking
+#### 13.1 — Inline FHIR Memory Store
+Port lightweight FHIR store into v4.html:
+- Every agent action creates a FHIR-like resource (Patient, Condition, Encounter, Observation)
+- Resources queryable by patient ID for history panel
+- Memory stream = chronological log per agent
+- Powers the "Memory" tab in agent panel
 
-Don't import ES modules (v4.html is a standalone file). Copy the logic as functions.
+**Acceptance**: Click agent → Memory tab shows FHIR resources: "Observation: HP dropped from 82 to 67. Encounter: Visited GP Collins."
 
-**Acceptance**: `tick()` uses real Markov transitions, not `a.hp -= 0.05 * conditions.length`.
+#### 13.2 — Cognitive Loop (Reflect → Plan → Act)
+Port reflection/planning from cognitive_loop.js:
+- **Memory retrieval**: Agent reviews last N FHIR events
+- **Reflection**: Draws conclusions: "My breathing is getting worse. I waited 6 weeks already."
+- **Planning**: Generates action: seek_gp, wait, seek_alternative, complain
+- Replaces hardcoded `if(hp < 75) goto gp` with actual reasoning
+- Visible in panel: "Thinking: My HP dropped 15 points this week. I should see a doctor."
 
-### 2.2 — Inline the FHIR Memory Store
-Port a lightweight version of `fhir_store.js` into the frontend:
-- Every agent action creates a FHIR-like log entry
-- `Patient`, `Condition`, `Encounter`, `Observation` resources
-- Queryable by patient ID for the history panel
-- Memory stream = chronological log of everything that happened to this agent
+**Acceptance**: Agents make decisions based on history, not just HP thresholds. Different agents with same HP make different choices based on personality/history.
 
-**Acceptance**: Click an agent → History tab shows timestamped FHIR events. "Cycle 45: Condition I25 progressed from mild to moderate".
+#### 13.3 — A2A Protocol (Agent-to-Agent Communication)
+GP agents communicate with specialist agents:
+- Referral messages: GP sends structured referral with patient ID, condition, urgency
+- Specialists respond: "Accepted. Estimated wait: 8 weeks" or "Queue full. Suggest alternative."
+- Messages visible in building dashboards
+- Agent Cards with published wait times and capacity
 
-### 2.3 — Cognitive Loop Integration
-Port the reflection/planning logic from `cognitive_loop.js`:
-- Memory Stream: agent reviews recent FHIR events
-- Reflection: "My HP is dropping — I should see a doctor" 
-- Planning: generates action (seek_gp, wait, seek_alternative)
-- This replaces the hardcoded `if(hp < 75) goto gp` logic
+**Acceptance**: The A2A protocol panel shows live message flow between GP and Hospital agents.
 
-**Acceptance**: Agent thoughts in the panel reflect actual reasoning from FHIR memory. Different agents make different decisions based on their history.
+#### 13.4 — Digital Twin Predictions
+Each patient agent has a lightweight "Digital Twin" that predicts outcomes:
+- Based on current conditions, age, treatment status
+- Predicts: "32% chance of heart failure within 6 months if untreated"
+- Shown in agent panel: "Digital Twin says: Seek specialist within 4 weeks"
+- Drives urgency in cognitive loop decisions
 
----
-
-## Epic 3: Clickable Buildings & Doctor Dashboards
-
-**Why**: You can't click the hospital or GP to see what's going on inside. Doctors have no visible workload.
-
-### 3.1 — Click Detection for Buildings
-When clicking a map location that's inside a building zone (`BUILDINGS` array), show a building detail panel instead of the agent panel:
-- Hospital: show queue, patients inside, patients treated today, specialist workload
-- GP: show queue, admin burden %, patients seen, referrals made
-- Determine click target: check buildings FIRST (agent might be inside), then agents
-
-**Acceptance**: Click hospital → see panel titled "Cammelot Hospital" with live stats.
-
-### 3.2 — GP Dashboard Panel
-When GP building is clicked, show:
-```
-GP Collins
-──────────────
-Admin Burden:     30% ████████░░ 
-Patients Seen:    12 today
-Referrals Made:   3
-Queue:            4 waiting
-Burnout Risk:     Medium ⚠
-──────────────
-Active Patients:
-  • Henry Ward (I25) — referred to hospital
-  • Sophie Taylor (F32) — treated, recovering
-  • Keith Miller — checkup, all clear
-──────────────
-Thoughts: "30% of my day is paperwork. If only I had more time..."
-```
-
-**Acceptance**: Click GP building → see live workload, patient list, burnout indicator.
-
-### 3.3 — Hospital Dashboard Panel
-When hospital is clicked, show:
-```
-Cammelot Hospital
-──────────────
-Beds Occupied:    3 / 8
-Specialists:      Dr. Ashworth (Cardiology), Dr. Pryce (Pulmonology)
-Wait List:        7 patients
-Avg Wait:         9.2 weeks
-Treeknorm Status: ⚠ VIOLATED (12w norm)
-──────────────
-Patients Inside:
-  • Peter Shaw (C34, severe) — Day 3 of treatment, HP 42→58
-  • Robert Green (I50) — Admitted today
-──────────────
-Recently Discharged:
-  • Henry Ward (I25) — Treated, discharged cycle 52, HP 34→78
-──────────────
-Thoughts: "My queue is 12 weeks deep. Patients are deteriorating."
-```
-
-**Acceptance**: Click hospital → see bed count, wait list, Treeknorm violations, patients inside.
-
-### 3.4 — Doctor Agent Tracking
-GP and Specialist agents should have proper state:
-- `patientsSeenToday` counter (resets every 28 ticks = 1 sim week)
-- `referralsMade` counter
-- `burnoutLevel`: function of (admin_burden × queue_size × sick_leave_risk)
-- `currentPatient`: who they're seeing right now
-- Action history (same as patients): "Cycle 12: Referred Henry Ward to cardiology"
-
-**Acceptance**: Click a doctor sprite OR their building → see their workload and history.
+**Acceptance**: Agent panel shows predicted risk. Predictions influence behavior.
 
 ---
 
-## Epic 4: Proper History & Event System
+## Phase 5: Make It Rigorous
 
-**Why**: The action history is shallow. Events aren't persisted. You can't see what happened over time.
+### Epic 14: Testing & Security
 
-### 4.1 — Global Event Log
-Create a simulation-wide event log:
-```js
-const EVENT_LOG = [];  // { cycle, type, agentId, agentName, detail, hp }
-```
-Types: `spawned`, `feeling_sick`, `visited_gp`, `referred`, `admitted`, `treated`, `discharged`, `recovered`, `worsened`, `died`, `natural_death`, `gp_consultation`, `specialist_consultation`
+#### 14.1 — Security Hardening
+- Content Security Policy (CSP) headers in Docker/nginx
+- No inline event handlers (move onclick to addEventListener)
+- Input sanitization for any user-facing text
+- Rate limiting if WebSocket is added later
+- Subresource Integrity for external fonts
 
-**Acceptance**: Event log is queryable. "Show me all referrals" or "Show me all deaths."
+**Acceptance**: OWASP ZAP scan produces no medium/high findings.
 
-### 4.2 — Enhanced Agent History Panel
-When you click an agent, the history section should show:
-- **Full lifecycle**: from spawn to current state
-- **HP graph**: tiny sparkline showing HP over time (array of HP values per tick)
-- **Condition timeline**: when each condition was diagnosed, progressed, treated
-- **Care pathway**: visual flow → Healthy → Felt Sick → Visited GP → Referred → Hospital → Recovered
-- **Wait time tracking**: "Spent 14 weeks waiting for cardiology"
+#### 14.2 — Security Swarm Test (Red Team)
+Automated test scenario:
+- Inject a "malicious agent" with forged Agent Card
+- Test: Can it corrupt care logistics? Access other agents' FHIR data?
+- Test: Naming collision attack (agent claims to be "gp1")
+- Test: Overflow EVENT_LOG or localStorage to DOS
+- Document findings for LinkedIn Applied Research post
 
-**Acceptance**: Clicking even a healthy citizen shows "No conditions. Last checkup: Cycle 40."
+**Acceptance**: All attack vectors documented with pass/fail. No critical vulnerabilities.
 
-### 4.3 — Simulation Summary Dashboard
-Add a collapsible panel or overlay showing:
-- Total agents / alive / dead / in treatment / recovering
-- Deaths by cause (system failure vs natural)
-- Average wait time trend
-- GP utilization %
-- Hospital bed occupancy %
-- Top 3 conditions causing deaths
-- Cost accumulation (admin waste, preventable deaths in EUR)
+#### 14.3 — Agentic Test Panel
+An in-sim "observer agent" that reviews outcomes:
+- Checks: Is mortality rate within expected bounds? (5-15% IST, 1-3% SOLL)
+- Checks: Are queues realistic? (average wait < 20 weeks)
+- Checks: Are all conditions represented in deaths? (no single condition dominates >50%)
+- Checks: Is age distribution of deaths realistic? (elderly > young)
+- Visual: "🔬 QA" button shows test panel with pass/fail indicators
+- Auto-runs every 100 cycles
 
-Could be a toggle button in the control bar: "📊 Stats"
+**Acceptance**: The simulation self-validates. Anomalies are flagged automatically.
 
-**Acceptance**: Click Stats → see full overview of the simulation's cumulative state.
+#### 14.4 — Bias Tracker (DIB Method)
+Track systematic inequities across 1000+ cycles:
+- Age bias: Do 65+ agents get systematically delayed vs younger?
+- Condition bias: Are certain ICD-10 codes undertreated?
+- GP assignment bias: Does GP proximity affect outcomes?
+- Gender bias: Any statistical difference in treatment speed?
+- Output: bias report with p-values and effect sizes
+- Visual: "📊 Bias" tab in Stats overlay
 
-### 4.4 — LocalStorage Persistence
-Save simulation state to `localStorage` so it survives page refresh:
-- Agent positions, HP, conditions, behavioral state
-- Event log
-- Cycle count
-- Serialize on every 10th cycle + on page unload
-- Load on startup if available (with "Continue" / "New Game" prompt)
+**Acceptance**: After 1000 cycles, bias report shows whether the system discriminates. Feeds LinkedIn Applied Research posts.
 
-**Acceptance**: Close tab, reopen → simulation continues where you left off.
+#### 14.5 — Frontend Test Suite
+Add browser-testable assertions for v4.html:
+- Playwright or Puppeteer tests that load v4.html and verify:
+  - Agents spawn correctly
+  - Click detection works (agents + buildings)
+  - IST/SOLL toggle changes parameters
+  - Stats overlay opens/closes
+  - Save/load cycle works
+  - 500-cycle run produces expected mortality range
+- Run in CI pipeline
 
----
-
-## Epic 5: Balanced Simulation Mechanics
-
-**Why**: The drain/heal math needs to be balanced so that the simulation tells a meaningful story — not "everyone dies" and not "everyone is fine."
-
-### 5.1 — Treatment Effectiveness from Disease DB
-Pull treatment parameters from the Disease Catalog (Epic 1.1):
-- Each condition specifies: `treatmentDurationTicks`, `hpGainPerTreatmentTick`, `recoveryDurationTicks`
-- GP-treatable conditions (mild depression, managed hypertension, mild diabetes) heal at GP without referral
-- Specialist-required conditions (severe heart disease, COPD, cancer) need hospital
-- Treatment downgrades severity: severe→moderate→mild (not instant cure)
-
-**Acceptance**: A patient with mild hypertension visits GP, gets medication, recovers to 95+ HP. A patient with severe heart disease goes to hospital, comes out moderate, slowly improves.
-
-### 5.2 — GP Capacity Model
-GPs shouldn't treat infinitely:
-- Max consultations per day: 30 (NZa standard)
-- Admin burden (30% IST) steals 9 slots → 21 effective consultations
-- If queue > capacity: patients wait (visible queue at GP building)
-- In SOLL: admin drops to 5% → 28.5 effective slots
-- GP can see 1 patient per tick (4 ticks/day = max 4 per tick-day... simplify to: GP processes 1 patient per tick from queue)
-
-**Acceptance**: When many agents are sick simultaneously, GP queue builds up. Visible congestion at GP building.
-
-### 5.3 — Specialist Wait Times (Treeknorm)
-Model real specialist capacity:
-- Cardiology: 12 patients/week → 3/tick (if 4 ticks/week)
-- If waitlist exceeds capacity: actual wait = waitlist.length / capacity_per_tick
-- Publish wait time on building dashboard
-- When wait > 12 weeks (Treeknorm): HP drain accelerates (this is already modeled)
-- In SOLL: capacity × 1.34 (AI efficiency multiplier)
-
-**Acceptance**: Hospital dashboard shows "Cardiology wait: 8 weeks (compliant)" or "14 weeks ⚠ TREEKNORM VIOLATED".
-
-### 5.4 — Decay Curve Calibration
-Target outcomes over 1000 cycles (~250 sim days):
-- IST mode: 5-15% mortality (system failure deaths) + 1-2% natural mortality → ~6-17% total
-- SOLL mode: 1-3% system failure deaths + 1-2% natural → ~2-5% total
-- Most agents should cycle through: healthy → sick → treated → recovered → healthy
-- Severe cases should take 2-3 treatment cycles before stabilizing
-
-Currently: decay is either too aggressive (everyone dies by cycle 50) or too gentle (nobody dies). Need to calibrate:
-- Passive drain (roaming, untreated): ~0.02/tick per mild condition, ~0.08/tick per severe
-- Treeknorm drain: 0.3/tick per week overdue × severity multiplier
-- Treatment heal: +2.5/tick (hospital), +1.0/tick (GP)
-- Recovery heal: +1.2/tick for 15-25 ticks
-
-**Acceptance**: Run 500 cycles in IST. ~10% ghost. Switch to SOLL, run 500 more. Ghost rate decreases. Meaningful difference.
+**Acceptance**: `npm run test:e2e` passes. Catches regressions in the frontend.
 
 ---
 
-## Epic 6: Server & API Improvements
+### Epic 15: Applied Research Output
 
-**Why**: The server.js is a basic static file server. It needs to support the live simulation.
+#### 15.1 — ROI Dashboard
+Calculate and display:
+- Admin waste: GP time × hourly rate × admin_burden%
+- Preventable death cost: system_failure_deaths × €5,845
+- Treeknorm violation cost: queue_weeks × weekly_cost
+- IST vs SOLL comparison: "Switching to SOLL saves €X per year"
+- Visual: cost counter ticking up in real-time
 
-### 6.1 — WebSocket Simulation API (Optional / Future)
-If we ever want a shared multi-user view or headless simulation:
-- Server runs `SimulationRunner` from `simulation_loop.js`
-- WebSocket pushes tick updates to all connected clients
-- Client sends: `{ action: "tick" }`, `{ action: "selectAgent", id: "..." }`
-- Server responds with full state snapshot
+**Acceptance**: The economic argument for healthcare transformation is quantified and visible.
 
-**NOTE**: This is OPTIONAL. The current approach (all logic in v4.html) works for single-user. Only build this if we need multi-user or persistence beyond localStorage.
+#### 15.2 — Scenario Comparison Mode
+Side-by-side view:
+- Left panel: IST simulation running
+- Right panel: SOLL simulation running (identical starting population)
+- Synced clocks: same cycle count
+- Delta indicators: "SOLL has 8 fewer deaths, €34k less waste"
 
-### 6.2 — SQLite Persistence (Optional / Future)
-Replace in-memory FHIR store with SQLite:
-- `better-sqlite3` package (synchronous, no ORM needed)
-- Tables: `patients`, `conditions`, `events`, `encounters`, `observations`
-- Server stores simulation state; frontend queries via REST API
-- Enables: replay, time-travel debugging, cross-session continuity
+**Acceptance**: The difference between IST and SOLL is immediately, viscerally clear.
 
-**NOTE**: This is a Phase 2 item. LocalStorage (Epic 4.4) covers the immediate need.
+#### 15.3 — Data Export
+- Export button: download simulation results as JSON or CSV
+- Includes: all agents, all events, all metrics, parameters used
+- Enables: academic analysis, reproducibility, external visualization
+- Anonymized mode: strip names, use agent IDs only
 
----
-
-## Priority Order (What to Build Tomorrow)
-
-### Sprint 1 — Core Loop Fix (Morning)
-| # | Task | Epic | Est. | Why first |
-|---|------|------|------|-----------|
-| 1 | Disease Catalog (`DISEASE_DB`) | 1.1 | 30min | Everything else depends on this |
-| 2 | Statistical Population Spawner | 1.2 | 45min | Replaces hardcoded agents |
-| 3 | Inline Disease Engine | 2.1 | 30min | Real Markov transitions in tick() |
-| 4 | Decay Curve Calibration | 5.4 | 30min | Balance drain vs healing |
-| 5 | GP Capacity Model | 5.2 | 20min | Realistic bottleneck |
-
-### Sprint 2 — Buildings & Doctors (Afternoon)
-| # | Task | Epic | Est. | Why second |
-|---|------|------|------|-----------|
-| 6 | Click Detection for Buildings | 3.1 | 20min | Enables building panels |
-| 7 | GP Dashboard Panel | 3.2 | 30min | See doctor workload |
-| 8 | Hospital Dashboard Panel | 3.3 | 30min | See hospital state |
-| 9 | Doctor Agent Tracking | 3.4 | 20min | Doctors get history too |
-| 10 | Specialist Wait Times | 5.3 | 20min | Treeknorm visualization |
-
-### Sprint 3 — History & Polish (Evening)
-| # | Task | Epic | Est. | Why third |
-|---|------|------|------|-----------|
-| 11 | Global Event Log | 4.1 | 20min | Powers all history views |
-| 12 | Enhanced Agent History Panel | 4.2 | 30min | HP sparkline, care pathway |
-| 13 | Simulation Summary Dashboard | 4.3 | 30min | Stats overlay |
-| 14 | LocalStorage Persistence | 4.4 | 20min | Survive refresh |
-| 15 | Comorbidity Interactions | 1.3 | 20min | More realistic progression |
-| 16 | Natural Mortality | 1.4 | 15min | Not everyone dies from queues |
-
-### Phase 2 (Later)
-| # | Task | Epic | When |
-|---|------|------|------|
-| 17 | Cognitive Loop Integration | 2.3 | Week 2 |
-| 18 | FHIR Memory Store in frontend | 2.2 | Week 2 |
-| 19 | WebSocket API | 6.1 | Week 3 |
-| 20 | SQLite Persistence | 6.2 | Week 3 |
-| 21 | Bias Tracker UI | — | Week 4 |
-| 22 | ROI Dashboard | — | Week 4 |
-| 23 | Security Red Team UI | — | Week 4 |
-| 24 | Test Suite | — | Ongoing |
+**Acceptance**: A researcher can load the export into R/Python and reproduce findings.
 
 ---
 
-## Technical Decisions
+## Sprint Schedule
+
+### Sprint 4 — Vivid Characters (Next)
+| # | Task | Epic | Priority |
+|---|------|------|----------|
+| 1 | Agent Biographies | 7.1 | 🔴 Critical |
+| 2 | Agent Portraits (pixel faces) | 7.2 | 🔴 Critical |
+| 3 | Social Interactions | 7.3 | 🔴 Critical |
+| 4 | Emotional Sprites | 7.4 | 🟡 High |
+
+### Sprint 5 — Visible Queues
+| # | Task | Epic | Priority |
+|---|------|------|----------|
+| 5 | Physical Queue Lines | 8.1 | 🔴 Critical |
+| 6 | Building Status Indicators | 8.2 | 🟡 High |
+| 7 | Ghost Trail Enhancement | 8.3 | 🟡 High |
+
+### Sprint 6 — Onboarding
+| # | Task | Epic | Priority |
+|---|------|------|----------|
+| 8 | Welcome Wizard (Mayor) | 9.1 | 🔴 Critical |
+| 9 | Contextual Tooltips | 9.2 | 🔴 Critical |
+| 10 | Narrative Event Ticker | 9.3 | 🟡 High |
+
+### Sprint 7 — Right Panel & Metrics
+| # | Task | Epic | Priority |
+|---|------|------|----------|
+| 11 | Town Feed (default view) | 10.1 | 🔴 Critical |
+| 12 | Contextual Panel Switching | 10.2 | 🟡 High |
+| 13 | Human-Readable Stats Bar | 10.3 | 🟡 High |
+
+### Sprint 8 — Mobile & Social
+| # | Task | Epic | Priority |
+|---|------|------|----------|
+| 14 | Responsive Layout | 11.1 | 🔴 Critical |
+| 15 | Social Sharing Meta | 11.2 | 🟡 High |
+
+### Sprint 9 — Deployment
+| # | Task | Epic | Priority |
+|---|------|------|----------|
+| 16 | Docker Container | 12.1 | 🔴 Critical |
+| 17 | CI/CD Pipeline | 12.2 | 🔴 Critical |
+| 18 | Performance Optimization | 12.3 | 🟡 High |
+| 19 | Landing Page | 12.4 | 🟡 High |
+
+### Sprint 10–11 — Cognitive Architecture
+| # | Task | Epic | Priority |
+|---|------|------|----------|
+| 20 | Inline FHIR Memory Store | 13.1 | 🟡 High |
+| 21 | Cognitive Loop | 13.2 | 🟡 High |
+| 22 | A2A Protocol | 13.3 | 🟢 Medium |
+| 23 | Digital Twin Predictions | 13.4 | 🟢 Medium |
+
+### Sprint 12 — Rigor & Research
+| # | Task | Epic | Priority |
+|---|------|------|----------|
+| 24 | Security Hardening | 14.1 | 🔴 Critical |
+| 25 | Security Swarm Test | 14.2 | 🟡 High |
+| 26 | Agentic Test Panel | 14.3 | 🟡 High |
+| 27 | Bias Tracker | 14.4 | 🟡 High |
+| 28 | Frontend E2E Tests | 14.5 | 🟡 High |
+| 29 | ROI Dashboard | 15.1 | 🟡 High |
+| 30 | Scenario Comparison | 15.2 | 🟢 Medium |
+| 31 | Data Export | 15.3 | 🟢 Medium |
+
+---
+
+## Technical Architecture Decisions
 
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
-| Where does sim logic run? | **Frontend (v4.html)** | Single-file app, no build step, instant reload. Port backend logic as inline functions. |
-| Database? | **localStorage now, SQLite later** | localStorage is free and works. SQLite needs `better-sqlite3` + API routes. |
-| How many agents? | **30–60 procedurally generated** | Enough for statistical patterns, fast enough for 60fps rendering |
-| Module bundler? | **None** | v4.html is self-contained. Copy-paste needed functions. Keep it simple. |
-| State management? | **Plain objects + arrays** | No framework. agents[], EVENT_LOG[], DISEASE_DB object. |
+| Runtime | **Frontend-only (v4.html)** | Zero backend = free hosting, no server costs, instant load |
+| Persistence | **localStorage (done) → IndexedDB (future)** | Supports larger datasets than localStorage's 5MB limit |
+| Hosting | **Docker + nginx** | Static files, CDN-friendly, scales infinitely |
+| Memory system | **EVENT_LOG (done) → FHIR store (Phase 4)** | EVENT_LOG is simple and fast; FHIR adds semantic structure for research |
+| Testing | **Node test (backend) + Playwright (frontend)** | Separate concerns: logic tests vs integration tests |
+| Security | **CSP + no inline handlers + input sanitization** | Standard web hardening for public-facing site |
+| Mobile | **CSS media queries + touch events** | No separate mobile app; responsive web works |
+| Agent count | **45-60 active + crowd simulation for visual filler** | Balance between meaningful data and performance |
+| Bundler | **None** | Single file keeps deployment trivial |
 
 ---
 
 ## Definition of Done
 
-A task is "done" when:
-1. The feature works in the browser (no console errors)
-2. Click interaction functions as described in acceptance criteria
-3. IST and SOLL modes both produce different, meaningful outcomes
-4. The simulation can run 500 cycles without everyone dying or nobody dying
-5. No regressions — existing features still work
+A feature is "done" when:
+1. It works in Chrome, Firefox, and Safari (no console errors)
+2. Click/touch interactions function as described
+3. IST and SOLL modes produce meaningfully different outcomes
+4. The simulation runs 500 cycles without everyone dying or nobody dying
+5. No regressions — all existing features still work
+6. A non-technical person can understand the feature without explanation
+7. Mobile layout doesn't break (Phase 3+)

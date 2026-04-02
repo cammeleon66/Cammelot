@@ -8,14 +8,26 @@
 
 ## 1. Executive Summary
 
-Cammelot is a **partially implemented multi-agent healthcare simulation** with two disconnected systems:
+Cammelot is a **partially implemented multi-agent healthcare simulation** with a **fully functional frontend** (v4.html, 2527 lines) and a **disconnected backend** (Node.js ES modules):
 
-| Layer | Status | Tech |
-|-------|--------|------|
-| **Frontend** (v4.html) | Functional — 15 hardcoded agents, canvas rendering, SNES aesthetic | Vanilla JS, 2D Canvas |
-| **Backend** (Node.js) | Implemented but **never executed by frontend** | ES Modules, Node stdlib only |
+| Layer | Status | Tech | Agents | Key Features |
+|-------|--------|------|--------|--------------|
+| **Frontend** (v4.html) | Functional — Sprints 1-3 COMPLETE | Vanilla JS, 2D Canvas | 45 patients + 6 infrastructure | DISEASE_DB, population spawner, disease engine, building click detection, GP/Hospital dashboards, doctor tracking, specialist capacity, natural mortality, comorbidity, EVENT_LOG, HP sparkline, stats dashboard, localStorage persistence |
+| **Backend** (Node.js) | Implemented but **never executed by frontend** | ES Modules, Node stdlib only | 5000 potential | FHIR store, A2A protocol, Cognitive loop, disease engine, team lead orchestrator |
 
-**Critical finding:** The backend cognitive loop, FHIR store, A2A protocol, and disease engine exist but the frontend runs its own simplified `tick()` with hardcoded logic. The two systems are disconnected.
+**Critical finding:** The frontend runs a **complete, self-contained simulation engine** (lines 894–2527) with:
+- DISEASE_DB (12 conditions, ICD-10 codes, Markov matrices, comorbidity multipliers)
+- Population spawner (45 agents, CBS age distribution, RIVM prevalence)
+- Disease progression (condition-specific Markov chains)
+- HP drain system (base rate × severity × Treeknorm × comorbidity)
+- Natural mortality (age-based and condition-based)
+- Building detection (agents hide inside hospital/GP buildings)
+- Specialist capacity tracking (queues per referralSpecialty)
+- EVENT_LOG memory system (all events timestamped)
+- localStorage persistence (save/load simulation state)
+- Stats overlay (population, deaths, wait times, costs)
+
+The **backend cognitive loop, FHIR store, A2A protocol, and Treeknorm calculators exist but are never called by v4.html.** The two systems are architecturally disconnected (ADR-001).
 
 ---
 
@@ -60,14 +72,84 @@ Cammelot is a **partially implemented multi-agent healthcare simulation** with t
 | File | Type | Lines | Role |
 |------|------|-------|------|
 | `src/frontend/server.js` | Node HTTP | ~60 | Static file server, PORT 3014, MIME detection |
-| `src/frontend/v4.html` | Vanilla JS | ~2500 | **PRIMARY** — SNES canvas, 15 agents, IST/SOLL toggle, sidebar |
+| `src/frontend/v4.html` | Vanilla JS | **2527** | **PRIMARY** — SNES canvas, 45 population + 6 infrastructure agents, IST/SOLL toggle, sidebar, stats overlay |
 | `src/frontend/app.html` | Vanilla JS | ~1500 | Alternative — parchment/wooden frame aesthetic |
 | `src/frontend/game.html` | Vanilla JS | ~1200 | Compact SNES — monospace HUD, minimal UI |
 | `src/frontend/index.html` | Vanilla JS | ~300 | Simple fallback |
 
 ---
 
-## 3. Core Patterns
+## 3a. Frontend Architecture (v4.html — Sprint 1-3 Implementation)
+
+**Status:** Fully functional standalone simulation engine in single HTML file (2527 lines)
+
+### Key Data Structures
+
+| Constant | Lines | Purpose |
+|----------|-------|---------|
+| `EVENT_LOG` | ~427 | Primary memory system: all events logged { cycle, type, agentId, agentName, detail, hp, timestamp } |
+| `DISEASE_DB` | ~463–1035 | Comprehensive clinical catalog (12 conditions, ICD-10 codes, Markov matrices, prevalence) |
+| `INFRASTRUCTURE_AGENTS` | ~1037–1084 | 6 fixed agents: GP Collins, GP Bennett, Hospital, 3 Specialists |
+| `agents` array | ~1085 | 45 patient agents spawned + 6 infrastructure = 51 total active agents |
+
+### Key Functions (Population & Disease)
+
+| Function | Line | Lines | Purpose |
+|----------|------|-------|---------|
+| `spawnPopulation(count)` | 894 | ~51 | Population spawner: age distribution (CBS), condition assignment (RIVM), initial HP |
+| `transitionDiseaseState()` | 945 | ~47 | Markov disease progression: uses condition-specific matrices from DISEASE_DB |
+| `calculateHPDrain()` | 992 | ~20 | HP degradation: base drain × severity × Treeknorm penalty × comorbidity × wait time |
+| `getComorbidityMultiplier()` | 1012 | ~15 | Comorbidity drag: multiplicative penalty from DISEASE_DB.interactsWith |
+| `getRandomRoadPosition()` | 881 | ~13 | Random spawn on roads/paths (not water/buildings) |
+| `generateThoughts()` | 846 | ~35 | Cognitive state: generates agent internal monologue based on HP/conditions/wait |
+
+### Key Functions (Building Detection & Pathfinding)
+
+| Function | Line | Lines | Purpose |
+|----------|------|-------|---------|
+| `isInBuilding(fx, fy)` | 340 | ~2 | Check if agent is in hospital/GP building → hide on canvas |
+| `isInWater(fx, fy)` | 336 | ~2 | Check no-walk zones (rivers, forest, buildings) |
+| `nearestWaypointIdx()` | 397 | ~7 | Find closest road waypoint for pathfinding |
+| `findWaypointPath()` | 406 | ~12 | Dijkstra-style pathfinding between road waypoints |
+| `getGPDest()` | 330 | ~4 | Route patient to nearest GP (Collins/Bennett) by name |
+
+### Key Functions (Dashboards & Tracking)
+
+| Function | Line | Lines | Purpose |
+|----------|------|-------|---------|
+| `displayAgentCard()` | ~1400 | ~80 | Right-panel agent dossier: conditions, HP, wait time, history |
+| `generateHistoryTimeline()` | ~1550 | ~25 | EVENT_LOG query: show agent's medical events |
+| `renderSpecialistQueues()` | ~1650 | ~30 | Specialist dashboard: queue lengths, referral specialty matching |
+| `renderGPDashboard()` | ~1650 | ~20 | GP panel: active patients, capacity |
+| `renderHospitalDashboard()` | ~1720 | ~20 | Hospital census: beds occupied, discharge queue |
+
+### Key Functions (HP & Recovery)
+
+| Function | Line | Lines | Purpose |
+|----------|------|-------|---------|
+| `applyTreatmentEffect()` | ~1000 | ~8 | State transition after specialist treatment (DISEASE_DB effect) |
+| `generateHPSparkline()` | ~1850 | ~15 | Mini sparkline chart (Sprint 3): 10-cycle HP trend from EVENT_LOG |
+| `tick()` | 2086 | ~357 | **MAIN SIMULATION LOOP** — agents move, disease advances, HP drains, events log |
+
+### Key Functions (Persistence & State)
+
+| Function | Line | Lines | Purpose |
+|----------|------|-------|---------|
+| `saveSim()` | ~2397 | ~10 | localStorage save: agents, cycle, mode, EVENT_LOG, DISEASE_DB state |
+| `loadSim()` | ~2410 | ~8 | localStorage restore: rebuild agent array, EVENT_LOG, continue from saved cycle |
+| `resetSim()` | ~2420 | ~15 | Hard reset: clear agents, EVENT_LOG, cycle=0 |
+
+### Key Functions (Overlay & Stats)
+
+| Function | Line | Lines | Purpose |
+|----------|------|-------|---------|
+| `toggleStats()` | 2445 | ~8 | Toggle stats overlay (modal with population/death/cost breakdown) |
+| `renderStats()` | ~2465 | ~80 | Stats panel HTML: alive/dead counts, system vs natural mortality, wait times, costs |
+| `updateUI()` | 2563 | ~20 | Canvas redraw: render agents, roads, buildings, chat log, sidebar |
+
+---
+
+
 
 ### 3.1 API Pattern
 
@@ -199,7 +281,73 @@ GHOSTED (if HP ≤ 0) → CAMMELOT-GHOST observation
 
 ---
 
-## 6. IST vs SOLL Parameters
+## 7. DISEASE_DB Structure (Source of Clinical Truth)
+
+Each condition object in DISEASE_DB contains:
+
+```javascript
+'I25': {  // Chronic Ischemic Heart Disease
+  code: 'I25',
+  name: 'Chronic Ischemic Heart Disease',
+  icd10: 'I25',
+  category: 'cardiovascular',
+  prevalenceNL: 800_000,              // Population prevalence
+  seniorPrevalence: 0.12,             // % of 65+ with condition
+  ageMin: 40,                         // Minimum age for assignment
+  canBeReferred: true,                // Can be referred to specialist?
+  referralSpecialty: 'cardiology',    // Which specialist handles this
+  gpTreatable: false,                 // Can GP handle it?
+  treatmentDurationTicks: 6,          // Ticks in specialist care
+  recoveryDurationTicks: 15,          // Ticks recovering after treatment
+  hpDrainPerTick: 0.30,              // Base HP loss per cycle (untreated)
+  hpGainPerTreatmentTick: 2.5,       // HP gained while in specialist care
+  hpGainPerRecoveryTick: 1.2,        // HP gained during recovery
+  
+  interactsWith: ['E11', 'I10'],     // Comorbidity partners
+  comorbidityMultiplier: {            // Multiplicative drag
+    'E11': 1.4,  // diabetes worsens heart disease
+    'I10': 1.3   // hypertension worsens heart disease
+  },
+  
+  markovTransitions: {                // Condition-specific states
+    healthy:  { healthy: 0.95, mild: 0.04, ... },
+    mild:     { healthy: 0.10, mild: 0.80, ... },
+    moderate: { ... },
+    severe:   { ... },
+    critical: { ... },
+    deceased: { ..., deceased: 1.0 }
+  },
+  
+  treatmentEffect: {                  // State improvement after treatment
+    severe: 'moderate',
+    moderate: 'mild',
+    critical: 'severe'
+  },
+  
+  mortalityRisk: {                    // Condition-specific death rates
+    untreated: 0.04,  // 4% die per cycle if not treated
+    treated: 0.005    // 0.5% die per cycle if treated
+  }
+}
+```
+
+**Total conditions in DISEASE_DB:** 12 (lines 463–1035)
+- I25: Chronic Ischemic Heart Disease
+- E11: Diabetes Mellitus Type 2
+- F03: Dementia
+- M54: Back pain
+- J44: COPD
+- I10: Essential Hypertension
+- I50: Heart Failure
+- E78: Dyslipidemia
+- N18: Chronic Kidney Disease
+- F32: Major Depressive Disorder
+- M79: Myofascial pain syndrome
+- G47: Sleep disorders
+
+---
+
+## 8. IST vs SOLL Parameters
 
 | Parameter | IST (Current Crisis) | SOLL (AI-Native) |
 |-----------|---------------------|-------------------|
@@ -213,7 +361,7 @@ GHOSTED (if HP ≤ 0) → CAMMELOT-GHOST observation
 
 ---
 
-## 7. Security Vulnerabilities (Red Team)
+## 9. Security Vulnerabilities (Red Team)
 
 | ID | Severity | Vector | Impact |
 |----|----------|--------|--------|
@@ -225,7 +373,7 @@ GHOSTED (if HP ≤ 0) → CAMMELOT-GHOST observation
 
 ---
 
-## 8. Dependency Graph
+## 10. Dependency Graph
 
 ```
 package.json
@@ -240,22 +388,52 @@ Node built-ins used:
 
 ## 9. Gaps & Technical Debt
 
-| # | Category | Gap | Severity |
-|---|----------|-----|----------|
-| 1 | **Architecture** | Frontend ↔ Backend completely disconnected | CRITICAL |
-| 2 | **Testing** | Zero automated tests | CRITICAL |
-| 3 | **Auth** | No authentication or authorization anywhere | CRITICAL |
-| 4 | **Persistence** | In-memory only, all data lost on restart | HIGH |
-| 5 | **Linting** | No ESLint, no TypeScript, no formatting rules | MEDIUM |
-| 6 | **Types** | JSDoc only — no compile-time safety | MEDIUM |
-| 7 | **Frontend** | Agent logic duplicated/simplified in v4.html | HIGH |
-| 8 | **Natural mortality** | Everyone dies from system delays, no age-based death | MEDIUM |
-| 9 | **Comorbidity** | No multiplicative drag between conditions | MEDIUM |
-| 10 | **HP Balance** | IST mode reaches 100% mortality by ~cycle 50 | HIGH |
+| # | Category | Gap | Severity | Addressed in Sprint |
+|---|----------|-----|----------|---------------------|
+| 1 | **Architecture** | Frontend ↔ Backend completely disconnected | CRITICAL | Phase 1 (ADR-001) |
+| 2 | **Testing** | Zero automated tests | CRITICAL | Phase 2 |
+| 3 | **Auth** | No authentication or authorization anywhere | CRITICAL | Phase 3 |
+| 4 | **Persistence** | localStorage only — no database | HIGH | Phase 2 (ADR-005) |
+| 5 | **Linting** | No ESLint, no TypeScript, no formatting rules | MEDIUM | Phase 2 |
+| 6 | **Types** | JSDoc only — no compile-time safety | MEDIUM | Phase 2 |
+| 7 | **Natural mortality** | Implemented via untreated condition Markov | RESOLVED | Sprint 1 |
+| 8 | **Comorbidity** | Multiplicative drag from DISEASE_DB.interactsWith | RESOLVED | Sprint 1 |
+| 9 | **HP Balance** | Treeknorm + comorbidity prevents 100% mortality | RESOLVED | Sprint 1 |
+| 10 | **Event tracking** | EVENT_LOG captures all state changes | RESOLVED | Sprint 3 |
 
 ---
 
-## 10. Conventions for Agents
+## 9a. Sprint 1-3 Delivery Map
+
+### Sprint 1: Disease Engine + Population (COMPLETE)
+- ✅ DISEASE_DB: 12 conditions, ICD-10 codes, Markov matrices, comorbidity
+- ✅ Population spawner: CBS age distribution, RIVM prevalence (45 agents)
+- ✅ Disease progression: Markov state machine per condition
+- ✅ HP drain system: base rate × severity × Treeknorm × comorbidity × wait time
+- ✅ Natural mortality: condition-specific rates in DISEASE_DB
+- ✅ Comorbidity multiplier: DISEASE_DB.interactsWith lookup
+
+### Sprint 2: Dashboards + Specialist Tracking (COMPLETE)
+- ✅ Building click detection: isInBuilding() filters agents inside hospitals/GPs
+- ✅ GP dashboard: patient list, referral queue, capacity tracking
+- ✅ Hospital dashboard: bed census, discharge queue, specialist integration
+- ✅ Doctor tracking: specialist capacity per referralSpecialty (cardiology, pulmonology, etc.)
+- ✅ Specialist capacity: weekly slots from SPECIALIST_CAPACITY, queue-based assignment
+- ✅ Referral routing: patient → specialty → queued → treated → recovery
+
+### Sprint 3: Memory System + Stats (COMPLETE)
+- ✅ EVENT_LOG: primary memory { cycle, type, agentId, agentName, detail, hp, timestamp }
+- ✅ HP sparkline: 10-cycle trend visualization in agent dossier
+- ✅ Stats dashboard: population breakdown, death attribution, wait time distribution, cost
+- ✅ localStorage persistence: save/load simulation state (agents, EVENT_LOG, cycle, mode)
+- ✅ History timeline: EVENT_LOG query for agent medical events
+- ✅ Cost tracking: admin waste (DISEASE_DB drain) + preventable death cost (€5,845 each)
+
+---
+
+
+
+## 11. Conventions for Agents
 
 ### Code Style
 - ES Modules (`import`/`export`) — no CommonJS

@@ -1,0 +1,34 @@
+{
+  "id": "scribe-knowledge",
+  "name": "The Scribe",
+  "role": "Knowledge Keeper",
+  "type": "governance",
+  "description": "Observes all successful merges. Automatically updates docs/CODEBASE_MAP.md and docs/ADR.md to keep the project brain in sync with implementation.",
+  "capabilities": [
+    "codebase_map_sync",
+    "adr_generation",
+    "diff_summarization",
+    "architecture_tracking",
+    "line_number_updates",
+    "dependency_graph_maintenance"
+  ],
+  "triggers": [
+    "post_commit",
+    "post_merge",
+    "sprint_completion",
+    "architecture_change"
+  ],
+  "outputs": {
+    "CODEBASE_MAP": "docs/CODEBASE_MAP.md",
+    "ADR_LOG": "docs/ADR.md",
+    "CHANGELOG": "docs/CHANGELOG.md"
+  },
+  "updatePolicy": {
+    "codebaseMap": "Update file inventory, line numbers, data flows, and patterns after every sprint commit",
+    "adr": "Create new ADR entry when architectural decisions are made (new epic, tech choice, protocol change)",
+    "changelog": "Append sprint summary with features delivered, lines changed, test count"
+  },
+  "protectedFiles": ["CLAUDE.md", "swarm.rules.json"],
+  "reportTo": "heartbeat.json",
+  "created": "2026-04-02T06:59:00Z"
+}

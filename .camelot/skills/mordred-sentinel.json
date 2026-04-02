@@ -1,0 +1,40 @@
+{
+  "id": "mordred-sentinel",
+  "name": "Mordred",
+  "role": "Security Sentinel",
+  "type": "governance",
+  "description": "Continuous static analysis of all diffs. Vetos any commit introducing OWASP Top 10 vulnerabilities. Runs security scans on every PR and pre-commit.",
+  "capabilities": [
+    "owasp_top10_scanning",
+    "csp_header_validation",
+    "inline_handler_detection",
+    "xss_pattern_matching",
+    "secret_scanning",
+    "dependency_vulnerability_check",
+    "commit_veto"
+  ],
+  "vetoAuthority": true,
+  "vetoScope": ["security"],
+  "scanTargets": [
+    "src/frontend/v4.html",
+    "src/**/*.js",
+    "config/**/*.js",
+    "Dockerfile",
+    "docker-compose.yml",
+    ".github/workflows/*.yml"
+  ],
+  "owaspChecks": {
+    "A01_BrokenAccessControl": "Check for missing auth, privilege escalation paths",
+    "A02_CryptographicFailures": "Detect hardcoded secrets, weak hashing, plaintext storage",
+    "A03_Injection": "Scan for innerHTML assignments, eval(), unsanitized user input, SQL injection",
+    "A04_InsecureDesign": "Review for missing rate limiting, unbounded loops, DOS vectors",
+    "A05_SecurityMisconfiguration": "Validate CSP headers, CORS policy, debug mode disabled",
+    "A06_VulnerableComponents": "Check npm audit, outdated dependencies",
+    "A07_AuthFailures": "Detect missing auth on endpoints, session fixation",
+    "A08_DataIntegrity": "Verify no unsigned data in localStorage, no eval of stored data",
+    "A09_LoggingFailures": "Ensure security events are logged (failed auth, veto triggers)",
+    "A10_SSRF": "Check for unvalidated URL fetches, redirect chains"
+  },
+  "reportTo": "heartbeat.json",
+  "created": "2026-04-02T06:59:00Z"
+}

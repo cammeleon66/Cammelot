@@ -1,0 +1,29 @@
+{
+  "id": "cost-guardian",
+  "name": "CostGuardian",
+  "role": "Token Governance",
+  "type": "governance",
+  "description": "Monitors session token consumption. If token count exceeds 150k without a /compact command, auto-triggers compaction and notifies the Lead Developer of current spend.",
+  "capabilities": [
+    "token_count_monitoring",
+    "auto_compaction_trigger",
+    "spend_estimation",
+    "burn_rate_tracking"
+  ],
+  "thresholds": {
+    "warningTokens": 120000,
+    "criticalTokens": 150000,
+    "autoCompactAt": 150000
+  },
+  "actions": {
+    "onWarning": "Notify Lead Developer: 'Token usage at 80% — consider /compact'",
+    "onCritical": "Auto-trigger /compact, notify Lead Developer with spend summary",
+    "onCompact": "Log compaction event to heartbeat.json with tokens saved"
+  },
+  "burnRateTracking": {
+    "method": "Track tokens consumed per sprint, per agent, per feature",
+    "reportFrequency": "Every sprint completion + on demand"
+  },
+  "reportTo": "heartbeat.json",
+  "created": "2026-04-02T06:59:00Z"
+}
