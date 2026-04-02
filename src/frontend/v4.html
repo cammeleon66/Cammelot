@@ -107,6 +107,37 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a1a2e;font-family:
 .cond-tag{display:inline-block;background:rgba(229,57,53,.1);color:var(--red);border:1px solid rgba(229,57,53,.2);border-radius:4px;padding:2px 8px;font-size:10px;margin:2px 4px 2px 0;font-weight:600}
 .cond-tag.mild{background:rgba(255,179,0,.1);color:#b87a00;border-color:rgba(255,179,0,.2)}
 
+/* Sprint 21: Data-tooltip for agent detail panel */
+[data-tooltip]{position:relative;cursor:help}
+[data-tooltip]:hover::after{content:attr(data-tooltip);position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:#2a1f0e;color:#F5E6C8;border:2px solid #FFB300;padding:8px 12px;border-radius:4px;font:11px 'Inter',sans-serif;white-space:normal;width:220px;z-index:1000;pointer-events:none;box-shadow:0 4px 12px rgba(0,0,0,.4);margin-bottom:4px}
+[data-tooltip]:hover::before{content:'';position:absolute;bottom:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:#FFB300;z-index:1001;pointer-events:none}
+
+/* Sprint 21: Tour overlay */
+.tour-overlay{position:fixed;inset:0;z-index:9500;pointer-events:auto}
+.tour-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9500}
+.tour-spotlight{position:absolute;z-index:9501;box-shadow:0 0 0 9999px rgba(0,0,0,.65);border:2px solid #FFB300;border-radius:6px;pointer-events:none;animation:tour-pulse 2s ease-in-out infinite}
+@keyframes tour-pulse{0%,100%{border-color:#FFB300;box-shadow:0 0 0 9999px rgba(0,0,0,.65),0 0 12px rgba(255,179,0,.3)}50%{border-color:#FF6F00;box-shadow:0 0 0 9999px rgba(0,0,0,.65),0 0 20px rgba(255,179,0,.5)}}
+.tour-panel{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:9502;background:#2a1f0e;border:2px solid #FFB300;border-radius:8px;padding:20px 24px 16px;max-width:500px;width:calc(100% - 48px);box-shadow:0 8px 32px rgba(0,0,0,.5)}
+.tour-text{color:#F5E6C8;font:14px/1.6 'Inter',sans-serif;margin-bottom:14px}
+.tour-footer{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.tour-step{font:500 11px 'JetBrains Mono',monospace;color:#a08060}
+.tour-btns{display:flex;gap:8px}
+.tour-btn{font:600 12px 'Inter',sans-serif;padding:6px 16px;border:1px solid rgba(255,179,0,.3);background:rgba(255,179,0,.1);color:#FFB300;border-radius:5px;cursor:pointer;transition:.2s}
+.tour-btn:hover{background:rgba(255,179,0,.2)}
+.tour-btn.primary{background:linear-gradient(135deg,#FFB300,#FF6F00);color:#1a1a2e;border:none}
+.tour-btn.close{background:rgba(229,57,53,.1);color:#E53935;border-color:rgba(229,57,53,.3)}
+.tour-btn.close:hover{background:rgba(229,57,53,.2)}
+
+/* Sprint 21: Tour selection panel */
+.tour-select-overlay{position:fixed;inset:0;z-index:9400;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.6)}
+.tour-select-panel{background:#2a1f0e;border:2px solid #FFB300;border-radius:8px;padding:24px;max-width:560px;width:calc(100% - 48px);box-shadow:0 8px 32px rgba(0,0,0,.5)}
+.tour-select-title{font:700 16px 'Playfair Display',serif;color:#FFB300;margin-bottom:16px;text-align:center}
+.tour-card{background:rgba(0,0,0,.2);border:1px solid rgba(107,66,38,.3);border-radius:6px;padding:14px 16px;margin-bottom:10px;cursor:pointer;transition:.2s}
+.tour-card:hover{border-color:#FFB300;background:rgba(255,179,0,.06)}
+.tour-card-name{font:600 13px 'Inter',sans-serif;color:#F5E6C8;margin-bottom:4px}
+.tour-card-desc{font:12px 'Inter',sans-serif;color:#a08060;line-height:1.4}
+.tour-card-done{font:10px 'JetBrains Mono',monospace;color:#4CAF50;margin-top:4px}
+
 /* HP Sparkline (Sprint 3) */
 .hp-spark-wrap{background:rgba(0,0,0,.04);border:1px solid rgba(0,0,0,.08);border-radius:4px;padding:4px;margin:6px 0}
 .hp-spark-label{font:500 9px 'JetBrains Mono',monospace;color:var(--ink2);margin-bottom:2px}
@@ -211,6 +242,10 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a1a2e;font-family:
 .bio-family { font-size: 11px; color: var(--ink2); margin: 4px 0; opacity: 0.8; }
 .bio-personality { display: inline-block; font-size: 9px; padding: 2px 8px; border-radius: 10px; background: rgba(255,179,0,.15); color: #b8860b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
 .bio-backstory { font-size: 11px; color: var(--ink2); font-style: italic; margin-top: 6px; line-height: 1.4; opacity: 0.75; }
+/* Sprint 27: Family & friends section */
+.family-members { display: flex; flex-direction: column; gap: 4px; margin-top: 4px; }
+.family-member { font-size: 11px; color: var(--ink); cursor: pointer; padding: 3px 6px; border-radius: 4px; transition: background 0.15s; }
+.family-member:hover { background: rgba(255,179,0,.15); }
 /* Portrait */
 .portrait-wrap { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
 .portrait-canvas { width: 56px; height: 56px; border: 2px solid var(--frame); border-radius: 4px; image-rendering: pixelated; image-rendering: crisp-edges; background: var(--parchment2); }
@@ -712,7 +747,9 @@ body.dark-mode .cammelot-toast{background:#0f0f1e;border-color:rgba(255,179,0,.5
       <div class="ts"><div class="n y" id="hW">4w</div><div class="l">Avg Wait</div></div>
       <div class="ts"><div class="n" id="hE">62%</div><div class="l">Capacity</div></div>
     </div>
-    <button class="cb" id="theme-toggle" title="Toggle dark mode" style="margin-left:4px;padding:4px 8px;font-size:14px;border:1px solid rgba(255,179,0,.2);background:rgba(0,0,0,.3);border-radius:5px;cursor:pointer;color:var(--parchment)">🌙</button>
+    <button class="cb" id="btn-about" title="About Cammelot" style="margin-left:4px;padding:4px 8px;font-size:14px;border:1px solid rgba(255,179,0,.2);background:rgba(0,0,0,.3);border-radius:5px;cursor:pointer;color:var(--parchment)">❓</button>
+    <button class="cb" id="btn-tours" title="Guided Tours" style="padding:4px 8px;font-size:14px;border:1px solid rgba(255,179,0,.2);background:rgba(0,0,0,.3);border-radius:5px;cursor:pointer;color:var(--parchment)">📚</button>
+    <button class="cb" id="theme-toggle" title="Toggle dark mode" style="padding:4px 8px;font-size:14px;border:1px solid rgba(255,179,0,.2);background:rgba(0,0,0,.3);border-radius:5px;cursor:pointer;color:var(--parchment)">🌙</button>
     <button class="cb" id="sound-toggle" title="Toggle sound" style="padding:4px 8px;font-size:14px;border:1px solid rgba(255,179,0,.2);background:rgba(0,0,0,.3);border-radius:5px;cursor:pointer;color:var(--parchment)">🔇</button>
   </div>
 
@@ -2068,8 +2105,100 @@ const ELDERLY_DIALOGUES = [
   "At least the weather is nice for a walk","Have you taken your pills today?",
   "The new doctor is nice, but so young!"
 ];
+// ── Sprint 27: Friend-specific dialogue ──
+const FRIEND_DIALOGUES = [
+  "How have you been? I've been thinking about you!",
+  "We should go for coffee sometime!",
+  "It's so good to see a friendly face",
+  "Remember when we used to walk here every day?",
+  "I missed our chats!",
+  "You look well! What's your secret?",
+  "Let's catch up properly soon",
+  "I heard the news — are you doing okay?"
+];
+// ── Sprint 27: Context-aware dialogue pools ──
+const CONTEXT_DIALOGUES = {
+  near_hospital: [
+    "Look at that queue... it's getting longer every day",
+    "I hope they don't close the ward",
+    "My neighbor waited 14 weeks. Fourteen!",
+    "The ambulance came three times this week",
+    "They need more staff in there"
+  ],
+  near_grave: [
+    "This town lost a good soul",
+    "It shouldn't have ended like that",
+    "We need to do better for each other"
+  ],
+  post_treatment: [
+    "Finally saw the specialist! What a relief",
+    "The treatment is working. I feel better",
+    "I was so scared, but the doctors were wonderful",
+    "Recovery is slow, but I'm getting there"
+  ],
+  weather_elderly: [
+    "This rain makes my joints ache",
+    "I should have brought my umbrella",
+    "Too cold for these old bones",
+    "The damp air goes right through you",
+    "I'll stay inside if this weather keeps up"
+  ],
+  soll_optimism: [
+    "The new AI system is amazing — I got an appointment in 2 weeks!",
+    "The digital assistant caught something my doctor missed!",
+    "Everything feels more organized now with the AI",
+    "I barely had to wait at all this time"
+  ]
+};
 let activeChatCount = 0;
 const MAX_ACTIVE_CHATS = 3;
+
+// ── Sprint 27: Context-aware dialogue selector ──
+function getContextDialogue(agent) {
+  // Near hospital
+  const hospDx = agent.x - 0.36, hospDy = agent.y - 0.13;
+  if (Math.sqrt(hospDx * hospDx + hospDy * hospDy) < 0.12) {
+    if (Math.random() < 0.3) return CONTEXT_DIALOGUES.near_hospital[Math.floor(Math.random() * CONTEXT_DIALOGUES.near_hospital.length)];
+  }
+  // Near grave marker / recent death location
+  if (typeof GRAVE_MARKERS !== 'undefined') {
+    for (let g = 0; g < GRAVE_MARKERS.length; g++) {
+      const gm = GRAVE_MARKERS[g];
+      const gdx = agent.x - gm.x, gdy = agent.y - gm.y;
+      if (Math.sqrt(gdx * gdx + gdy * gdy) < 0.06) {
+        if (Math.random() < 0.4) {
+          const pronoun = gm.name && gm.name.split(' ')[0] ? 'them' : 'them';
+          const pool = [
+            "Rest in peace, " + (gm.name || 'friend') + "...",
+            ...CONTEXT_DIALOGUES.near_grave,
+            "The system failed " + pronoun
+          ];
+          return pool[Math.floor(Math.random() * pool.length)];
+        }
+        break;
+      }
+    }
+  }
+  // After treatment (recently healed, within 50 ticks)
+  if (agent.healingTicksLeft > 0 || (agent.behaviorState === 'recovering')) {
+    if (Math.random() < 0.4) {
+      const line = CONTEXT_DIALOGUES.post_treatment[Math.floor(Math.random() * CONTEXT_DIALOGUES.post_treatment.length)];
+      return agent.gpName ? line.replace('the specialist', agent.gpName) : line;
+    }
+  }
+  // Weather-influenced (elderly in rain/cold)
+  if (typeof WEATHER !== 'undefined' && (WEATHER.current === 'rain' || WEATHER.current === 'snow') && agent.age >= 65) {
+    if (Math.random() < 0.35) return CONTEXT_DIALOGUES.weather_elderly[Math.floor(Math.random() * CONTEXT_DIALOGUES.weather_elderly.length)];
+  }
+  // SOLL mode specific
+  if (typeof mode !== 'undefined' && mode === 'SOLL') {
+    if (Math.random() < 0.15) {
+      const line = CONTEXT_DIALOGUES.soll_optimism[Math.floor(Math.random() * CONTEXT_DIALOGUES.soll_optimism.length)];
+      return agent.gpName ? line.replace('my doctor', agent.gpName) : line;
+    }
+  }
+  return null;
+}
 
 function pickDialogue(a, b, rng) {
   const aAge = a.age || 30;
@@ -2082,6 +2211,20 @@ function pickDialogue(a, b, rng) {
   // Teen talking to adult — 50% teen pool
   if (youngest <= 17) {
     if (rng() < 0.5) return TEEN_DIALOGUES[Math.floor(rng() * TEEN_DIALOGUES.length)];
+  }
+  // ── Sprint 27: Context-aware dialogue (priority check) ──
+  const ctxLine = getContextDialogue(a) || getContextDialogue(b);
+  if (ctxLine) return ctxLine;
+  // ── Sprint 27: Friend-specific dialogue ──
+  const areFriends = a.friendIds && a.friendIds.includes(b.id);
+  if (areFriends && rng() < 0.5) {
+    let line = FRIEND_DIALOGUES[Math.floor(rng() * FRIEND_DIALOGUES.length)];
+    // Personalize: mention friend's condition if sick
+    const sickFriend = (b.conditions && b.conditions.length > 0) ? b : ((a.conditions && a.conditions.length > 0) ? a : null);
+    if (sickFriend && rng() < 0.3) {
+      line = "I heard about your " + sickFriend.conditions[0].name + "... how are you coping?";
+    }
+    return line;
   }
   const aSick = a.conditions && a.conditions.length > 0;
   const bSick = b.conditions && b.conditions.length > 0;
@@ -2321,94 +2464,220 @@ function getRandomRoadPosition() {
 }
 
 // ═══ POPULATION SPAWNER (Epic 1.2) ═════════════════════════════════════════
+// ── Sprint 27: Family type distribution ──
+function pickFamilyType() {
+  const r = Math.random();
+  if (r < 0.35) return 'couple_kids';
+  if (r < 0.50) return 'elderly_couple';
+  if (r < 0.60) return 'single_parent';
+  if (r < 0.75) return 'couple_no_kids';
+  return 'solo';
+}
+
+// ── Sprint 27: Single agent spawner (refactored from loop body) ──
+function spawnAgent(index, age, gender, surname) {
+  let names;
+  if (age <= 12) names = gender === 'M' ? FIRST_NAMES_CHILD_M : FIRST_NAMES_CHILD_F;
+  else if (age <= 17) names = gender === 'M' ? FIRST_NAMES_TEEN_M : FIRST_NAMES_TEEN_F;
+  else names = gender === 'M' ? FIRST_NAMES_M : FIRST_NAMES_F;
+  const firstName = names[Math.floor(Math.random() * names.length)];
+  const conditions = assignConditions(age);
+  const id = 'cit-' + index.toString().padStart(3,'0');
+  // HP based on age + conditions
+  let hp = 100;
+  if (age >= 80) hp = 50 + Math.floor(Math.random() * 35);
+  else if (age >= 65) hp = 65 + Math.floor(Math.random() * 30);
+  else if (conditions.length > 0) hp = 75 + Math.floor(Math.random() * 20);
+  // Some seniors already waiting
+  let waitWeeks = 0;
+  let referredToHospital = false;
+  if (conditions.length > 0 && age >= 65 && Math.random() < 0.15) {
+    waitWeeks = 1 + Math.floor(Math.random() * 15);
+    referredToHospital = waitWeeks >= 10;
+  }
+  const pos = getRandomRoadPosition();
+  const gpName = Math.random() < 0.5 ? 'Dr. de Jong' : 'Dr. Bakker';
+  let state = 'healthy';
+  if (waitWeeks > 10) state = 'critical';
+  else if (conditions.length > 0 && waitWeeks > 0) state = 'waiting';
+  else if (conditions.length > 0) state = 'managed';
+  // ── Sprint 26: Life-stage properties ──
+  let lifeStage = 'adult';
+  if (age <= 5) lifeStage = 'toddler';
+  else if (age <= 12) lifeStage = 'child';
+  else if (age <= 17) lifeStage = 'teen';
+  else if (age <= 67) lifeStage = 'adult';
+  else if (age <= 79) lifeStage = 'senior';
+  else lifeStage = 'elderly';
+  // Speed multiplier by age
+  let speedMultiplier = 1.0;
+  if (age < 13) speedMultiplier = 1.2;
+  else if (age >= 80) speedMultiplier = 0.5;
+  else if (age >= 65) speedMultiplier = 0.7;
+  // Home position — near spawn point
+  const homePos = { x: pos.x + (Math.random() - 0.5) * 0.03, y: pos.y + (Math.random() - 0.5) * 0.03 };
+  // Night owl — 10% of agents
+  const isNightOwl = Math.random() < 0.10;
+  // Workplace for working-age adults
+  let workplace = null;
+  let workplacePos = null;
+  if (lifeStage === 'adult') {
+    const workBuildings = BUILDINGS.filter(b => b.id !== 'hospital' || Math.random() < 0.15);
+    const wb = workBuildings[Math.floor(Math.random() * workBuildings.length)];
+    workplace = wb.id;
+    workplacePos = { x: (wb.x1 + wb.x2) / 2, y: wb.y2 + 0.02 };
+  }
+  // School position for children/teens
+  const schoolPos = (lifeStage === 'child' || lifeStage === 'teen') ? { x: 0.50, y: 0.35 } : null;
+  return {
+    id, name: firstName + ' ' + surname, age, gender,
+    type: conditions.length > 0 ? 'patient' : 'citizen',
+    conditions, hp, waitWeeks,
+    x: pos.x, y: pos.y,
+    state, gpName,
+    insideBuilding: referredToHospital ? 'hospital' : null,
+    referredToHospital,
+    thoughts: generateThoughts(conditions, hp, age, waitWeeks),
+    color: '#808080',
+    hpHistory: [hp],
+    bio: generateBio(id, age, gender),
+    chatPartner: null, chatTimer: 0, chatBubbleText: '',
+    grievingTimer: 0,
+    // Sprint 26: Life-stage properties
+    lifeStage, speedMultiplier, homePos, isNightOwl,
+    workplace, workplacePos, schoolPos,
+    parentId: null, atWork: false, workTimer: 0,
+    schoolTimer: 0, restTimer: 0, routineGPTimer: 0,
+    // Sprint 27: Family & social properties
+    partnerId: null, familyId: null, childrenIds: [], friendIds: []
+  };
+}
+
+// ── Sprint 27: Assign friend relationships post-spawn ──
+function assignFriendships(allAgents) {
+  const citizens = allAgents.filter(function(a) { return a.type !== 'gp' && a.type !== 'specialist'; });
+  citizens.forEach(function(a) {
+    if (!a.friendIds) a.friendIds = [];
+    // Find candidates: similar age (±15 years), not family, not already friends
+    const candidates = citizens.filter(function(c) {
+      return c.id !== a.id &&
+        Math.abs(c.age - a.age) < 15 &&
+        c.familyId !== a.familyId &&
+        !a.friendIds.includes(c.id) &&
+        !c.friendIds.includes(a.id);
+    });
+    const numFriends = 1 + Math.floor(Math.random() * 3);
+    const needed = Math.max(0, numFriends - a.friendIds.length);
+    for (let f = 0; f < needed && candidates.length > 0; f++) {
+      const idx = Math.floor(Math.random() * candidates.length);
+      const friend = candidates.splice(idx, 1)[0];
+      a.friendIds.push(friend.id);
+      if (!friend.friendIds) friend.friendIds = [];
+      friend.friendIds.push(a.id); // bidirectional
+    }
+  });
+}
+
 function spawnPopulation(count) {
   count = count || 45;
   const spawned = [];
-  for (let i = 0; i < count; i++) {
-    const gender = Math.random() < 0.50 ? 'M' : 'F';
-    const age = generateAge();
-    let names;
-    if (age <= 12) names = gender === 'M' ? FIRST_NAMES_CHILD_M : FIRST_NAMES_CHILD_F;
-    else if (age <= 17) names = gender === 'M' ? FIRST_NAMES_TEEN_M : FIRST_NAMES_TEEN_F;
-    else names = gender === 'M' ? FIRST_NAMES_M : FIRST_NAMES_F;
-    const firstName = names[Math.floor(Math.random() * names.length)];
-    const surname = SURNAMES[Math.floor(Math.random() * SURNAMES.length)];
-    const conditions = assignConditions(age);
-    const id = 'cit-' + i.toString().padStart(3,'0');
-    // HP based on age + conditions
-    let hp = 100;
-    if (age >= 80) hp = 50 + Math.floor(Math.random() * 35);
-    else if (age >= 65) hp = 65 + Math.floor(Math.random() * 30);
-    else if (conditions.length > 0) hp = 75 + Math.floor(Math.random() * 20);
-    // Some seniors already waiting
-    let waitWeeks = 0;
-    let referredToHospital = false;
-    if (conditions.length > 0 && age >= 65 && Math.random() < 0.15) {
-      waitWeeks = 1 + Math.floor(Math.random() * 15);
-      referredToHospital = waitWeeks >= 10;
+  let i = 0;
+  let familyCounter = 0;
+  while (i < count) {
+    const familyType = pickFamilyType();
+    const familySurname = SURNAMES[Math.floor(Math.random() * SURNAMES.length)];
+    const familyId = 'fam-' + familyCounter++;
+
+    switch(familyType) {
+      case 'couple_kids': {
+        if (i + 2 > count) { i = count; break; } // not enough slots, skip
+        const parentAge = 30 + Math.floor(Math.random() * 20);
+        const parent1 = spawnAgent(i++, parentAge, 'M', familySurname);
+        const parent2 = spawnAgent(i++, Math.max(22, parentAge + Math.floor(Math.random() * 6) - 3), 'F', familySurname);
+        parent1.partnerId = parent2.id;
+        parent2.partnerId = parent1.id;
+        parent1.familyId = familyId;
+        parent2.familyId = familyId;
+        parent2.homePos = { x: parent1.homePos.x, y: parent1.homePos.y };
+        parent1.childrenIds = [];
+        parent2.childrenIds = [];
+        spawned.push(parent1, parent2);
+        logEvent('spawned', parent1, 'Age ' + parent1.age);
+        logEvent('spawned', parent2, 'Age ' + parent2.age);
+        const numKids = 1 + Math.floor(Math.random() * 3);
+        for (let k = 0; k < numKids && i < count; k++) {
+          const kidAge = Math.max(0, parentAge - 25 + Math.floor(Math.random() * 15));
+          const kid = spawnAgent(i++, kidAge, Math.random() < 0.5 ? 'M' : 'F', familySurname);
+          kid.parentId = parent1.id;
+          kid.familyId = familyId;
+          kid.homePos = { x: parent1.homePos.x, y: parent1.homePos.y };
+          parent1.childrenIds.push(kid.id);
+          parent2.childrenIds.push(kid.id);
+          spawned.push(kid);
+          logEvent('spawned', kid, 'Age ' + kid.age);
+        }
+        break;
+      }
+      case 'elderly_couple': {
+        if (i + 1 >= count) { i = count; break; }
+        const eAge = 65 + Math.floor(Math.random() * 25);
+        const p1 = spawnAgent(i++, eAge, 'M', familySurname);
+        const p2 = spawnAgent(i++, Math.max(63, eAge + Math.floor(Math.random() * 4) - 2), 'F', familySurname);
+        p1.partnerId = p2.id;
+        p2.partnerId = p1.id;
+        p1.familyId = familyId;
+        p2.familyId = familyId;
+        p2.homePos = { x: p1.homePos.x, y: p1.homePos.y };
+        spawned.push(p1, p2);
+        logEvent('spawned', p1, 'Age ' + p1.age);
+        logEvent('spawned', p2, 'Age ' + p2.age);
+        break;
+      }
+      case 'single_parent': {
+        if (i + 1 >= count) { i = count; break; }
+        const spAge = 25 + Math.floor(Math.random() * 20);
+        const parent = spawnAgent(i++, spAge, Math.random() < 0.5 ? 'M' : 'F', familySurname);
+        parent.familyId = familyId;
+        parent.childrenIds = [];
+        const kidAge2 = Math.max(1, spAge - 22 + Math.floor(Math.random() * 10));
+        const kid2 = spawnAgent(i++, kidAge2, Math.random() < 0.5 ? 'M' : 'F', familySurname);
+        kid2.parentId = parent.id;
+        kid2.familyId = familyId;
+        kid2.homePos = { x: parent.homePos.x, y: parent.homePos.y };
+        parent.childrenIds.push(kid2.id);
+        spawned.push(parent, kid2);
+        logEvent('spawned', parent, 'Age ' + parent.age);
+        logEvent('spawned', kid2, 'Age ' + kid2.age);
+        break;
+      }
+      case 'couple_no_kids': {
+        if (i + 1 >= count) { i = count; break; }
+        const cnAge = 25 + Math.floor(Math.random() * 30);
+        const c1 = spawnAgent(i++, cnAge, 'M', familySurname);
+        const c2 = spawnAgent(i++, Math.max(20, cnAge + Math.floor(Math.random() * 6) - 3), 'F', familySurname);
+        c1.partnerId = c2.id;
+        c2.partnerId = c1.id;
+        c1.familyId = familyId;
+        c2.familyId = familyId;
+        c2.homePos = { x: c1.homePos.x, y: c1.homePos.y };
+        spawned.push(c1, c2);
+        logEvent('spawned', c1, 'Age ' + c1.age);
+        logEvent('spawned', c2, 'Age ' + c2.age);
+        break;
+      }
+      case 'solo':
+      default: {
+        const soloAge = generateAge();
+        const solo = spawnAgent(i++, soloAge, Math.random() < 0.5 ? 'M' : 'F', familySurname);
+        solo.familyId = familyId;
+        spawned.push(solo);
+        logEvent('spawned', solo, 'Age ' + solo.age);
+        break;
+      }
     }
-    const pos = getRandomRoadPosition();
-    const gpName = Math.random() < 0.5 ? 'Dr. de Jong' : 'Dr. Bakker';
-    let state = 'healthy';
-    if (waitWeeks > 10) state = 'critical';
-    else if (conditions.length > 0 && waitWeeks > 0) state = 'waiting';
-    else if (conditions.length > 0) state = 'managed';
-    // ── Sprint 26: Life-stage properties ──
-    let lifeStage = 'adult';
-    if (age <= 5) lifeStage = 'toddler';
-    else if (age <= 12) lifeStage = 'child';
-    else if (age <= 17) lifeStage = 'teen';
-    else if (age <= 67) lifeStage = 'adult';
-    else if (age <= 79) lifeStage = 'senior';
-    else lifeStage = 'elderly';
-    // Speed multiplier by age
-    let speedMultiplier = 1.0;
-    if (age < 13) speedMultiplier = 1.2;
-    else if (age >= 80) speedMultiplier = 0.5;
-    else if (age >= 65) speedMultiplier = 0.7;
-    // Home position — near spawn point
-    const homePos = { x: pos.x + (Math.random() - 0.5) * 0.03, y: pos.y + (Math.random() - 0.5) * 0.03 };
-    // Night owl — 10% of agents
-    const isNightOwl = Math.random() < 0.10;
-    // Workplace for working-age adults
-    let workplace = null;
-    let workplacePos = null;
-    if (lifeStage === 'adult') {
-      const workBuildings = BUILDINGS.filter(b => b.id !== 'hospital' || Math.random() < 0.15);
-      const wb = workBuildings[Math.floor(Math.random() * workBuildings.length)];
-      workplace = wb.id;
-      workplacePos = { x: (wb.x1 + wb.x2) / 2, y: wb.y2 + 0.02 };
-    }
-    // School position for children/teens
-    const schoolPos = (lifeStage === 'child' || lifeStage === 'teen') ? { x: 0.50, y: 0.35 } : null;
-    const agent = {
-      id, name: firstName + ' ' + surname, age, gender,
-      type: conditions.length > 0 ? 'patient' : 'citizen',
-      conditions, hp, waitWeeks,
-      x: pos.x, y: pos.y,
-      state, gpName,
-      insideBuilding: referredToHospital ? 'hospital' : null,
-      referredToHospital,
-      thoughts: generateThoughts(conditions, hp, age, waitWeeks),
-      color: '#808080',
-      hpHistory: [hp],
-      bio: generateBio(id, age, gender),
-      chatPartner: null, chatTimer: 0, chatBubbleText: '',
-      grievingTimer: 0,
-      // Sprint 26: Life-stage properties
-      lifeStage, speedMultiplier, homePos, isNightOwl,
-      workplace, workplacePos, schoolPos,
-      parentId: null, atWork: false, workTimer: 0,
-      schoolTimer: 0, restTimer: 0, routineGPTimer: 0
-    };
-    // Sprint 26: Pair toddlers with parent (find adult with same surname)
-    if (lifeStage === 'toddler' || lifeStage === 'child') {
-      const parent = spawned.find(s => s.lifeStage === 'adult' && s.name.endsWith(surname) && !spawned.some(c => c.parentId === s.id));
-      if (parent) agent.parentId = parent.id;
-    }
-    spawned.push(agent);
-    logEvent('spawned', agent, 'Age ' + agent.age);
   }
+  // Sprint 27: Assign friendships after all agents are spawned
+  assignFriendships(spawned);
   return spawned;
 }
 // ═══ END POPULATION SPAWNER ════════════════════════════════════════════════
@@ -3594,7 +3863,10 @@ function render(){
         if ((b.chatTimer || 0) > 0 || b.hp <= 0) continue;
         const cdx = a.x - b.x, cdy = a.y - b.y;
         const cdist = Math.sqrt(cdx * cdx + cdy * cdy);
-        if (cdist < 0.03 && Math.random() < 0.003) {
+        // Sprint 27: Friends/family have 3x chat probability
+        const areFriendsOrFamily = (a.friendIds && a.friendIds.includes(b.id)) || (a.familyId && a.familyId === b.familyId);
+        const chatProb = areFriendsOrFamily ? 0.009 : 0.003;
+        if (cdist < 0.03 && Math.random() < chatProb) {
           const chatRng = seededRandom(hashCode(a.id + b.id + Math.floor(Date.now() / 1000)));
           const line = pickDialogue(a, b, chatRng);
           a.chatPartner = b.id; a.chatTimer = 120; a.chatBubbleText = line;
@@ -3939,12 +4211,81 @@ function selectAgent(a){
     </div>`;
   }
 
+  // ── Sprint 27: Family section ──
+  if(isPatient) {
+    const familyMembers = [];
+    // Partner
+    if (a.partnerId) {
+      const partner = agents.find(function(ag) { return ag.id === a.partnerId; });
+      if (partner) familyMembers.push({ agent: partner, role: '💑 Partner' });
+    }
+    // Parent
+    if (a.parentId) {
+      const parent = agents.find(function(ag) { return ag.id === a.parentId; });
+      if (parent) {
+        const parentIcon = parent.gender === 'M' ? '👨 Father' : '👩 Mother';
+        familyMembers.push({ agent: parent, role: parentIcon });
+      }
+    }
+    // Children
+    if (a.childrenIds && a.childrenIds.length > 0) {
+      a.childrenIds.forEach(function(cid) {
+        const child = agents.find(function(ag) { return ag.id === cid; });
+        if (child) {
+          let childIcon = '👶 Child';
+          if (child.age > 12) childIcon = (child.gender === 'M' ? '👦' : '👧') + ' Child';
+          else if (child.age > 5) childIcon = (child.gender === 'M' ? '👦' : '👧') + ' Child';
+          familyMembers.push({ agent: child, role: childIcon });
+        }
+      });
+    }
+    // Find agents sharing familyId (siblings, etc.) not yet listed
+    if (a.familyId) {
+      const familyOthers = agents.filter(function(ag) {
+        return ag.familyId === a.familyId && ag.id !== a.id &&
+          ag.id !== a.partnerId && ag.id !== a.parentId &&
+          !(a.childrenIds && a.childrenIds.includes(ag.id));
+      });
+      familyOthers.forEach(function(sib) {
+        const sibAge = sib.age || 0;
+        const icon = sibAge >= 65 ? (sib.gender === 'M' ? '👴' : '👵') : '👤';
+        familyMembers.push({ agent: sib, role: icon + ' Family' });
+      });
+    }
+    if (familyMembers.length > 0) {
+      html += '<div class="bio-section"><h4>\uD83D\uDC68\u200D\uD83D\uDC69\u200D\uD83D\uDC67 Family</h4><div class="family-members">';
+      familyMembers.forEach(function(fm) {
+        const isDead = fm.agent.hp <= 0;
+        const style = isDead ? ' style="opacity:0.5;text-decoration:line-through"' : '';
+        const deadMark = isDead ? ' ☠' : '';
+        html += '<div class="family-member" data-agent-id="' + fm.agent.id + '"' + style + '>' +
+          fm.role + ': ' + fm.agent.name + ' (' + fm.agent.age + ')' + deadMark + '</div>';
+      });
+      html += '</div></div>';
+    }
+    // ── Sprint 27: Friends section ──
+    if (a.friendIds && a.friendIds.length > 0) {
+      html += '<div class="bio-section"><h4>\uD83E\uDD1D Friends</h4><div class="family-members">';
+      a.friendIds.forEach(function(fid) {
+        const friend = agents.find(function(ag) { return ag.id === fid; });
+        if (friend) {
+          const isDead = friend.hp <= 0;
+          const style = isDead ? ' style="opacity:0.5;text-decoration:line-through"' : '';
+          const deadMark = isDead ? ' ☠' : '';
+          html += '<div class="family-member" data-agent-id="' + friend.id + '"' + style + '>' +
+            '\uD83D\uDE42 ' + friend.name + ' (' + friend.age + ')' + deadMark + '</div>';
+        }
+      });
+      html += '</div></div>';
+    }
+  }
+
   if(isPatient){
     const hp=Math.max(0,Math.round(a.hp));
     html+=`<div class="ac-section"><h4>Health Status</h4>
-      <div class="hp-outer"><div class="hp-inner ${hp>50?'g':hp>20?'y':hp>0?'r':'d'}" style="width:${hp}%"></div><div class="hp-label">${hp} / 100 HP</div></div>
+      <div class="hp-outer" data-tooltip="Health Points. Drains when waiting too long for care. At 0, the citizen dies."><div class="hp-inner ${hp>50?'g':hp>20?'y':hp>0?'r':'d'}" style="width:${hp}%"></div><div class="hp-label">${hp} / 100 HP</div></div>
       <div class="ac-row"><span class="k">Activity</span><span class="state-badge ${a.behaviorState||'roaming'}">${stateLabel}</span></div>
-      ${a.waitWeeks>0?`<div class="ac-row"><span class="k">Wait time</span><span class="v ${a.waitWeeks>12?'bad':a.waitWeeks>6?'mid':'ok'}">${Math.round(a.waitWeeks*10)/10} weeks</span></div>`:''}
+      ${a.waitWeeks>0?`<div class="ac-row"><span class="k">Wait time</span><span class="v ${a.waitWeeks>12?'bad':a.waitWeeks>6?'mid':'ok'}" data-tooltip="How long this citizen has been waiting for specialist treatment">${Math.round(a.waitWeeks*10)/10} weeks</span></div>`:''}
       ${a.gpName?`<div class="ac-row"><span class="k">GP</span><span class="v">${a.gpName}</span></div>`:''}
       ${a.healingTicksLeft>0?`<div class="ac-row"><span class="k">Recovery</span><span class="v ok">Healing (${a.healingTicksLeft} ticks)</span></div>`:''}
       ${a.insideBuilding?`<div class="ac-row"><span class="k">Location</span><span class="v mid">${BUILDINGS.find(b=>b.id===a.insideBuilding)?.label||a.insideBuilding}</span></div>`:''}
@@ -4010,7 +4351,7 @@ function selectAgent(a){
       });
       a.conditions.forEach(c=>{
         const isInteracting=interactingCodes.has(c.code);
-        html+=`<span class="cond-tag ${c.severity==='mild'?'mild':''}" ${isInteracting?'style="border-color:var(--red);background:rgba(229,57,53,.18)"':''}>${c.name} (${c.code}) — ${c.severity}${isInteracting?' ⚡':''}</span>`;
+        html+=`<span class="cond-tag ${c.severity==='mild'?'mild':''}" data-tooltip="${c.severity} — how advanced the condition is. Severity affects HP drain rate when waiting." ${isInteracting?'style="border-color:var(--red);background:rgba(229,57,53,.18)"':''}>${c.name} (${c.code}) — ${c.severity}${isInteracting?' ⚡':''}</span>`;
       });
       html+=`</div>`;
     } else {
@@ -4452,11 +4793,16 @@ function tick(){
           say(a.name,`I waited too long... ${Math.round(a.waitWeeks)} weeks. The system failed me.`,'ghost');
           say('SYSTEM',`MORTALITY: ${a.name} (${a.age}) — after ${Math.round(a.waitWeeks)} weeks.`,'alert');
         }
-        // ── Sprint 4: Grieving — nearby agents react ──
+        // ── Sprint 4 + Sprint 27: Grieving — nearby agents react, friends grieve longer ──
         agents.forEach(nb => {
           if (nb.id === a.id || nb.hp <= 0 || nb.insideBuilding) return;
           const gdx = nb.x - a.x, gdy = nb.y - a.y;
-          if (Math.sqrt(gdx * gdx + gdy * gdy) < 0.05) {
+          const isNearby = Math.sqrt(gdx * gdx + gdy * gdy) < 0.05;
+          const isFriend = nb.friendIds && nb.friendIds.includes(a.id);
+          const isFamily = nb.familyId && nb.familyId === a.familyId;
+          if (isFamily || isFriend) {
+            nb.grievingTimer = isFamily ? 300 : 240; // family grieves longest, friends next
+          } else if (isNearby) {
             nb.grievingTimer = 120;
           }
         });
@@ -5079,6 +5425,9 @@ function resetSim(){
     // Sprint 26: Reset life-stage properties
     a.atWork=false; a.workTimer=0; a.schoolTimer=0;
     a.restTimer=0; a.routineGPTimer=0;
+    // Sprint 27: Reset social state (preserve family/friend links)
+    a.chatPartner=null; a.chatTimer=0; a.chatBubbleText='';
+    a.grievingTimer=0;
     // Reset GP/specialist tracking
     if(a.type==='gp'||a.type==='specialist'){
       a.patientsSeenToday=0; a.referralsMade=0; a.burnoutLevel=0;
@@ -6249,7 +6598,10 @@ function buildSaveState(){
       homePos:a.homePos,isNightOwl:a.isNightOwl,
       workplace:a.workplace,workplacePos:a.workplacePos,schoolPos:a.schoolPos,
       parentId:a.parentId,atWork:a.atWork,workTimer:a.workTimer,
-      schoolTimer:a.schoolTimer,restTimer:a.restTimer,routineGPTimer:a.routineGPTimer
+      schoolTimer:a.schoolTimer,restTimer:a.restTimer,routineGPTimer:a.routineGPTimer,
+      // Sprint 27: Family & social properties
+      partnerId:a.partnerId||null,familyId:a.familyId||null,
+      childrenIds:a.childrenIds||[],friendIds:a.friendIds||[]
     })),
     eventLog:EVENT_LOG.slice(-500),
     graveMarkers:GRAVE_MARKERS.slice(-200)
@@ -6362,6 +6714,11 @@ function loadGame(){
       a.schoolTimer=sa.schoolTimer||0;
       a.restTimer=sa.restTimer||0;
       a.routineGPTimer=sa.routineGPTimer||0;
+      // Sprint 27: Restore family & social properties with defaults for old saves
+      a.partnerId=sa.partnerId||null;
+      a.familyId=sa.familyId||null;
+      a.childrenIds=sa.childrenIds||[];
+      a.friendIds=sa.friendIds||[];
       agents.push(a);
     });
     // Restore event log
@@ -6499,11 +6856,11 @@ document.getElementById('ticker-content')?.addEventListener('click', function(ev
 
 // ═══ SPRINT 6: CONTEXTUAL TOOLTIPS ═══
 const METRIC_TOOLTIPS = {
-  'hC': 'Cycle — Each tick represents roughly 1/4 of a simulated week.',
-  'hP': 'Alive — Current living population. Number in parentheses shows citizens in hospital.',
-  'hG': 'Deaths — Citizens who have died. System failures are preventable; natural deaths are age-based.',
-  'hW': 'Average Wait — How long patients wait for specialist care. The Treeknorm says under 4 weeks.',
-  'hE': 'Clinical Efficiency — Only this percentage of doctor time goes to actual patients. The rest is paperwork.',
+  'hC': '⏰ Simulation Cycle: Each cycle represents roughly one day in Cammelot. Four ticks make one week.',
+  'hP': '👥 Living Citizens: Currently alive out of the starting population. Number in parentheses shows citizens in hospital.',
+  'hG': '💀 Deaths: Citizens lost. Includes both natural deaths and system failures (preventable deaths from waiting too long).',
+  'hW': '⏳ Average Wait Time: How long citizens wait for specialist care. The legal maximum (Treeknorm) is 4 weeks.',
+  'hE': '⚙ Effective Capacity: How much of GP time actually goes to patients. The rest is admin work, sick leave, etc.',
   'oA': 'Admin Burden — Dutch GPs spend this much time on administrative tasks instead of treating patients.',
   'oS': 'Sick Leave — Percentage of healthcare capacity lost to staff illness (ziekteverzuim).',
   'oT': 'Treeknorm — The legal maximum waiting time for specialist care in the Netherlands.',
@@ -6513,15 +6870,15 @@ const METRIC_TOOLTIPS = {
   'sM': 'A2A — Agent-to-Agent protocol messages exchanged between healthcare providers.'
 };
 const LABEL_TOOLTIPS = {
-  'Alive': 'Population — Total citizens alive in the simulation, based on CBS demographic data.',
-  'Pop': 'Population — Total citizens in the simulation, based on CBS demographic data.',
-  'Cycle': 'Cycle — Each tick represents roughly 1/4 of a simulated week.',
-  'Deaths': 'Deaths — Citizens who have died. System failures are preventable; natural deaths are age-based.',
-  'Ghosts': 'Deaths — Citizens who have died. Hover the Stats panel to see system vs natural breakdown.',
-  'Avg Wait': 'Average Wait — How long patients wait for specialist care. The Treeknorm says under 4 weeks.',
-  'Wait': 'Average Wait — How long patients wait for specialist care. The Treeknorm says under 4 weeks.',
-  'Capacity': 'Clinical Efficiency — Effective capacity = Total × (1 - Admin - Sick) × AI factor.',
-  'C_eff': 'Clinical Efficiency — Effective capacity = Total × (1 - Admin - Sick) × AI factor.'
+  'Alive': '👥 Living Citizens: Currently alive out of the starting population.',
+  'Pop': '👥 Population: Total citizens in the simulation, based on CBS demographic data.',
+  'Cycle': '⏰ Simulation Cycle: Each cycle represents roughly one day in Cammelot.',
+  'Deaths': '💀 Deaths: Citizens lost. Includes both natural deaths and system failures (preventable).',
+  'Ghosts': '💀 Deaths: Citizens who have died. Hover the Stats panel to see system vs natural breakdown.',
+  'Avg Wait': '⏳ Average Wait Time: How long citizens wait for specialist care. The legal maximum (Treeknorm) is 4 weeks.',
+  'Wait': '⏳ Average Wait Time: How long citizens wait for specialist care. The Treeknorm says under 4 weeks.',
+  'Capacity': '⚙ Effective Capacity: How much of GP time actually goes to patients. The rest is admin work, sick leave, etc.',
+  'C_eff': '⚙ Effective Capacity: Effective capacity = Total × (1 - Admin - Sick) × AI factor.'
 };
 
 let tooltipEl = null;
@@ -6823,6 +7180,13 @@ document.getElementById('wizard-next').addEventListener('click', () => nextWizar
 document.getElementById('agent-detail').addEventListener('click', function(e) {
   const back = e.target.closest('[data-action="showTownFeed"]');
   if (back) showTownFeed();
+  // Sprint 27: Click family/friend member to select that agent
+  const familyEl = e.target.closest('.family-member[data-agent-id]');
+  if (familyEl) {
+    const agId = familyEl.getAttribute('data-agent-id');
+    var ag = agents.find(function(a) { return a.id === agId; });
+    if (ag) selectAgent(ag);
+  }
 });
 
 // ═══ SPRINT 20: SCREENSHOT & SHARE ENGINE ═══
@@ -7244,6 +7608,274 @@ function showLinkedInPanel() {
 }
 
 // ═══ END SPRINT 20 FUNCTIONS ═══
+
+// ═══ SPRINT 21: EXPLANATION LAYER — About button, Guided Tours ═══
+
+// ❓ About button — opens about.html in new tab
+document.getElementById('btn-about').addEventListener('click', function() {
+  if (typeof playUIClick === 'function') playUIClick();
+  window.open('about.html', '_blank');
+});
+
+// Tour definitions
+const TOURS = {
+  patient_journey: {
+    name: "The Patient Journey",
+    desc: "Follow a citizen from health to sickness to care — or death.",
+    steps: [
+      { text: "This is Cammelot — a town of 5,000 AI citizens. Each one has a name, age, medical history, and daily life. Click any citizen to see their story.", highlight: '#cv' },
+      { text: "When citizens get sick, they visit their GP. Watch the queue form as demand exceeds capacity.", highlight: '#top' },
+      { text: "If the GP can't treat them, they're referred to the hospital. The referral enters the specialist queue.", highlight: '#cv' },
+      { text: "The wait begins. In IST mode, this can take 12+ weeks — three times the legal maximum.", highlight: '#hW' },
+      { text: "While waiting, their HP drains. The longer the wait and the more severe the condition, the faster they decline.", highlight: '#cv' },
+      { text: "When HP reaches 0… they become a ghost. A preventable death — caused not by disease, but by system delay.", highlight: '#hG' }
+    ]
+  },
+  ist_vs_soll: {
+    name: "IST vs SOLL",
+    desc: "Compare current reality with an AI-native healthcare future.",
+    steps: [
+      { text: "You're watching IST mode — the current Dutch healthcare system. GPs drown in paperwork while patients wait.", highlight: '#bi' },
+      { text: "GPs lose 30% of their time to administration. That means effective capacity is only 62% — nearly 4 in 10 consultation slots wasted on forms.", highlight: '#hE' },
+      { text: "Click SOLL to see what AI-native healthcare could look like. Admin drops to 5%, capacity jumps to 83%.", highlight: '#bs' },
+      { text: "Watch the wait times fall. AI triage ensures patients are seen within the Treeknorm — the 4-week legal maximum.", highlight: '#hW' },
+      { text: "Fewer deaths. More treatments completed. The same population, the same diseases — but a better system.", highlight: '#hG' },
+      { text: "Toggle between IST and SOLL anytime. The difference in outcomes is the argument for healthcare AI.", highlight: '.mode-tog' }
+    ]
+  },
+  gp_day: {
+    name: "A GP's Day",
+    desc: "See what a Dutch GP deals with in a single day.",
+    steps: [
+      { text: "Click a GP practice on the map to see what the doctor deals with daily. Each practice serves hundreds of citizens.", highlight: '#cv' },
+      { text: "30% of their time is paperwork. Not patients — paperwork. Letters, referrals, insurance forms, digital records.", highlight: '#hE' },
+      { text: "The queue keeps growing. Each GP can only see a limited number of patients per day (based on NZa rates).", highlight: '#cv' },
+      { text: "When the GP can't handle a case — complex conditions, specialist needs — they refer to the hospital.", highlight: '#cv' },
+      { text: "But the hospital has its own queue. The system bottlenecks. Patients wait, deteriorate, and sometimes die from the delay.", highlight: '#hW' }
+    ]
+  }
+};
+
+let activeTour = null;
+let tourStep = 0;
+let tourElements = { overlay: null, spotlight: null, panel: null };
+
+function getCompletedTours() {
+  try { return JSON.parse(localStorage.getItem('cammelot_tours_completed') || '[]'); } catch(e) { return []; }
+}
+function markTourComplete(tourId) {
+  var completed = getCompletedTours();
+  if (completed.indexOf(tourId) === -1) { completed.push(tourId); }
+  localStorage.setItem('cammelot_tours_completed', JSON.stringify(completed));
+}
+
+function showTourSelection() {
+  // Remove existing selection panel if any
+  var existing = document.querySelector('.tour-select-overlay');
+  if (existing) { existing.remove(); return; }
+
+  var completed = getCompletedTours();
+  var overlay = document.createElement('div');
+  overlay.className = 'tour-select-overlay';
+
+  var panel = document.createElement('div');
+  panel.className = 'tour-select-panel';
+
+  var title = document.createElement('div');
+  title.className = 'tour-select-title';
+  title.textContent = '📚 Guided Tours';
+  panel.appendChild(title);
+
+  var tourIds = Object.keys(TOURS);
+  tourIds.forEach(function(tid) {
+    var tour = TOURS[tid];
+    var card = document.createElement('div');
+    card.className = 'tour-card';
+    card.setAttribute('data-tour', tid);
+
+    var name = document.createElement('div');
+    name.className = 'tour-card-name';
+    name.textContent = tour.name;
+    card.appendChild(name);
+
+    var desc = document.createElement('div');
+    desc.className = 'tour-card-desc';
+    desc.textContent = tour.desc + ' (' + tour.steps.length + ' steps)';
+    card.appendChild(desc);
+
+    if (completed.indexOf(tid) !== -1) {
+      var done = document.createElement('div');
+      done.className = 'tour-card-done';
+      done.textContent = '✓ Completed';
+      card.appendChild(done);
+    }
+
+    card.addEventListener('click', function() {
+      overlay.remove();
+      startTour(tid);
+    });
+
+    panel.appendChild(card);
+  });
+
+  // Close button
+  var closeBtn = document.createElement('button');
+  closeBtn.className = 'tour-btn close';
+  closeBtn.textContent = '✕ Close';
+  closeBtn.style.cssText = 'margin-top:12px;width:100%';
+  closeBtn.addEventListener('click', function() { overlay.remove(); });
+  panel.appendChild(closeBtn);
+
+  overlay.appendChild(panel);
+  overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+
+  var gw = document.getElementById('game-wrap') || document.body;
+  gw.appendChild(overlay);
+}
+
+function startTour(tourId) {
+  activeTour = { id: tourId, data: TOURS[tourId] };
+  tourStep = 0;
+  showTourStep();
+}
+
+function showTourStep() {
+  if (!activeTour || tourStep >= activeTour.data.steps.length) { endTour(); return; }
+  var step = activeTour.data.steps[tourStep];
+
+  // Remove previous tour elements
+  cleanupTourElements();
+
+  // Create overlay container
+  var overlay = document.createElement('div');
+  overlay.className = 'tour-overlay';
+
+  // Spotlight on highlighted element
+  var target = null;
+  if (step.highlight) {
+    target = document.querySelector(step.highlight);
+  }
+
+  if (target) {
+    var rect = target.getBoundingClientRect();
+    var spot = document.createElement('div');
+    spot.className = 'tour-spotlight';
+    spot.style.position = 'fixed';
+    spot.style.left = (rect.left - 4) + 'px';
+    spot.style.top = (rect.top - 4) + 'px';
+    spot.style.width = (rect.width + 8) + 'px';
+    spot.style.height = (rect.height + 8) + 'px';
+    overlay.appendChild(spot);
+    tourElements.spotlight = spot;
+  } else {
+    // No target — just darken everything
+    var backdrop = document.createElement('div');
+    backdrop.className = 'tour-backdrop';
+    overlay.appendChild(backdrop);
+  }
+
+  // Panel at bottom
+  var panel = document.createElement('div');
+  panel.className = 'tour-panel';
+
+  var text = document.createElement('div');
+  text.className = 'tour-text';
+  text.textContent = step.text;
+  panel.appendChild(text);
+
+  var footer = document.createElement('div');
+  footer.className = 'tour-footer';
+
+  var stepLabel = document.createElement('span');
+  stepLabel.className = 'tour-step';
+  stepLabel.textContent = (tourStep + 1) + ' / ' + activeTour.data.steps.length;
+  footer.appendChild(stepLabel);
+
+  var btns = document.createElement('div');
+  btns.className = 'tour-btns';
+
+  if (tourStep > 0) {
+    var backBtn = document.createElement('button');
+    backBtn.className = 'tour-btn';
+    backBtn.textContent = '← Back';
+    backBtn.addEventListener('click', function() { tourStep--; showTourStep(); });
+    btns.appendChild(backBtn);
+  }
+
+  var closeBtn = document.createElement('button');
+  closeBtn.className = 'tour-btn close';
+  closeBtn.textContent = '✕';
+  closeBtn.addEventListener('click', function() { endTour(); });
+  btns.appendChild(closeBtn);
+
+  if (tourStep < activeTour.data.steps.length - 1) {
+    var nextBtn = document.createElement('button');
+    nextBtn.className = 'tour-btn primary';
+    nextBtn.textContent = 'Next →';
+    nextBtn.addEventListener('click', function() { tourStep++; showTourStep(); });
+    btns.appendChild(nextBtn);
+  } else {
+    var finishBtn = document.createElement('button');
+    finishBtn.className = 'tour-btn primary';
+    finishBtn.textContent = '✓ Done';
+    finishBtn.addEventListener('click', function() { endTour(); });
+    btns.appendChild(finishBtn);
+  }
+
+  footer.appendChild(btns);
+  panel.appendChild(footer);
+  overlay.appendChild(panel);
+
+  document.body.appendChild(overlay);
+  tourElements.overlay = overlay;
+  tourElements.panel = panel;
+}
+
+function cleanupTourElements() {
+  if (tourElements.overlay) { tourElements.overlay.remove(); tourElements.overlay = null; }
+  tourElements.spotlight = null;
+  tourElements.panel = null;
+}
+
+function endTour() {
+  if (activeTour) { markTourComplete(activeTour.id); }
+  cleanupTourElements();
+  activeTour = null;
+  tourStep = 0;
+}
+
+// 📚 Tours button
+document.getElementById('btn-tours').addEventListener('click', function() {
+  if (typeof playUIClick === 'function') playUIClick();
+  showTourSelection();
+});
+
+// Sprint 21: Mobile touch support for data-tooltip attributes
+(function() {
+  var mobileTooltip = null;
+  document.addEventListener('touchstart', function(e) {
+    var el = e.target.closest('[data-tooltip]');
+    if (el) {
+      e.preventDefault();
+      if (mobileTooltip) { mobileTooltip.remove(); mobileTooltip = null; }
+      var tip = document.createElement('div');
+      tip.className = 'metric-tooltip';
+      tip.textContent = el.getAttribute('data-tooltip');
+      tip.style.display = 'block';
+      var rect = el.getBoundingClientRect();
+      tip.style.left = Math.max(8, rect.left) + 'px';
+      tip.style.top = (rect.top - 8) + 'px';
+      tip.style.transform = 'translateY(-100%)';
+      document.body.appendChild(tip);
+      mobileTooltip = tip;
+      setTimeout(function() { if (mobileTooltip) { mobileTooltip.remove(); mobileTooltip = null; } }, 3000);
+    } else {
+      if (mobileTooltip) { mobileTooltip.remove(); mobileTooltip = null; }
+    }
+  }, { passive: false });
+})();
+
+// ═══ END SPRINT 21 ═══
 
 // ═══ SPRINT 18.4: SERVICE WORKER REGISTRATION ═══
 if('serviceWorker' in navigator){
