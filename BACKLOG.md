@@ -42,6 +42,61 @@
 
 ---
 
+### 🛡️ Mordred Security Audit — OWASP Top 10 Baseline (17 findings)
+
+> Mordred (Security Sentinel) completed a full static analysis scan on 2026-04-02.
+> 5 findings are **veto-worthy** (block deployment). All are in `src/frontend/v4.html`.
+
+#### Veto-Worthy (Must Fix Before Deployment)
+
+| ID | OWASP Category | Severity | Description | Line(s) |
+|----|---------------|----------|-------------|---------|
+| MISCONFIG-003 | A05 Misconfiguration | **HIGH** | 12 inline `onclick=` handlers violate CSP | Throughout |
+| XSS-001 | A03 Injection | MEDIUM | `innerHTML+=` with unsanitized template literals (chat data) | ~2373 |
+| XSS-004 | A03 Injection | MEDIUM | innerHTML with unsanitized cycle count from localStorage | ~2676 |
+| MISCONFIG-001 | A05 Misconfiguration | MEDIUM | No CSP (Content-Security-Policy) header configured | Server |
+| INTEGRITY-001 | A08 Data Integrity | MEDIUM | localStorage load has no schema validation (only checks version) | ~2620 |
+
+#### Tracked (Fix in Sprint 9 Before Docker)
+
+| ID | OWASP Category | Severity | Description |
+|----|---------------|----------|-------------|
+| MISCONFIG-002 | A05 Misconfiguration | MEDIUM | Missing X-Frame-Options header |
+| DESIGN-001 | A04 Insecure Design | MEDIUM | JSON.parse of localStorage without schema validation |
+| DESIGN-005 | A04 Insecure Design | MEDIUM | Agent array from save spread without property whitelist |
+| XSS-002 | A03 Injection | LOW | Template literals building agent cards with unsanitized names |
+| XSS-003 | A03 Injection | LOW | innerHTML assignment (safe — static text only) |
+| DESIGN-002 | A04 Insecure Design | LOW | EVENT_LOG bounded at 500 (✅ already mitigated) |
+| DESIGN-003 | A04 Insecure Design | LOW | hpHistory bounded at 200 (✅ already mitigated) |
+| DESIGN-004 | A04 Insecure Design | LOW | actionHistory bounded at 50 (✅ already mitigated) |
+| INTEGRITY-002 | A08 Data Integrity | LOW | Numeric defaults prevent NaN injection (✅ already mitigated) |
+
+#### Clean (No Action Required)
+
+| ID | Category | Finding |
+|----|----------|---------|
+| SECRETS-001 | A02 Cryptographic | No hardcoded API keys, passwords, or tokens found ✅ |
+| SECRETS-002 | A02 Cryptographic | No third-party packages with vulnerabilities ✅ |
+| COMPONENTS-001 | A06 Vulnerable Components | Only Node.js built-ins used ✅ |
+
+**Mordred's Verdict**: Overall risk = **MEDIUM**. No secrets exposure. Zero third-party supply chain risk. The 5 veto-worthy items are all CSP/XSS related and must be resolved in Sprint 9 (before Docker deployment). The bounded arrays (DESIGN-002/003/004) and defensive defaults (INTEGRITY-002) are already properly mitigated.
+
+---
+
+### 🧪 Galahad QA Findings — Pre-Existing Bugs (2)
+
+> Galahad (QA Sentinel) found 2 bugs in the backend reference implementation during Sprint 1.
+> Neither affects v4.html (frontend-first architecture), but they should be fixed for backend parity.
+
+| ID | File | Description | Impact |
+|----|------|-------------|--------|
+| BUG-001 | `src/clinical_logic/disease_engine.js` | `getAdjustedTransitions("deceased", >12w)` — probability sum < 1.0 | Dead agents could theoretically transition states |
+| BUG-002 | `src/clinical_logic/disease_engine.js` | `severityMultiplier["healthy"] = 0` is JS-falsy, hits `\|\| 1.0` fallback | Healthy agents drain HP faster than intended |
+
+**Galahad's Verdict**: These are backend-only. The v4.html inline disease engine uses different code paths. Fix when we port FHIR store (Sprint 10).
+
+---
+
 ## Strategic Phases
 
 ### Phase 1: Make It Alive (Sprint 4–5)
@@ -339,14 +394,24 @@ Each patient agent has a lightweight "Digital Twin" that predicts outcomes:
 
 ### Epic 14: Testing & Security
 
-#### 14.1 — Security Hardening
-- Content Security Policy (CSP) headers in Docker/nginx
-- No inline event handlers (move onclick to addEventListener)
-- Input sanitization for any user-facing text
-- Rate limiting if WebSocket is added later
-- Subresource Integrity for external fonts
+#### 14.1 — Security Hardening (Mordred-Informed)
+Remediate all 5 veto-worthy OWASP findings from Mordred's baseline scan:
 
-**Acceptance**: OWASP ZAP scan produces no medium/high findings.
+| Finding | Fix | Effort |
+|---------|-----|--------|
+| MISCONFIG-003: 12 inline `onclick=` | Refactor all to `addEventListener()` in init block | Medium |
+| XSS-001: innerHTML+= with chat data | Sanitize via `textContent` or DOMPurify-lite helper | Small |
+| XSS-004: innerHTML with save data | Escape cycle count before interpolation | Small |
+| MISCONFIG-001: No CSP header | Add strict CSP in nginx config (`script-src 'self'`) | Small |
+| INTEGRITY-001: No save schema validation | Add JSON schema check on localStorage load | Medium |
+
+Additional hardening (from Mordred tracked findings):
+- MISCONFIG-002: Add `X-Frame-Options: DENY` in nginx
+- DESIGN-001/005: Property whitelist for deserialized agent objects
+- XSS-002: Escape agent names in template literals (defense-in-depth)
+- Subresource Integrity for external fonts (Press Start 2P from Google Fonts)
+
+**Acceptance**: Re-run Mordred scan → 0 veto-worthy findings. OWASP ZAP produces no medium/high findings.
 
 #### 14.2 — Security Swarm Test (Red Team)
 Automated test scenario:
@@ -463,33 +528,34 @@ Side-by-side view:
 | 14 | Responsive Layout | 11.1 | 🔴 Critical |
 | 15 | Social Sharing Meta | 11.2 | 🟡 High |
 
-### Sprint 9 — Deployment
+### Sprint 9 — Security Gate + Deployment
 | # | Task | Epic | Priority |
 |---|------|------|----------|
-| 16 | Docker Container | 12.1 | 🔴 Critical |
-| 17 | CI/CD Pipeline | 12.2 | 🔴 Critical |
-| 18 | Performance Optimization | 12.3 | 🟡 High |
-| 19 | Landing Page | 12.4 | 🟡 High |
+| 16 | **Security Hardening** (Mordred veto items) | 14.1 | 🔴 Critical — BLOCKS deployment |
+| 17 | Docker Container | 12.1 | 🔴 Critical |
+| 18 | CI/CD Pipeline | 12.2 | 🔴 Critical |
+| 19 | Performance Optimization | 12.3 | 🟡 High |
+| 20 | Landing Page | 12.4 | 🟡 High |
 
 ### Sprint 10–11 — Cognitive Architecture
 | # | Task | Epic | Priority |
 |---|------|------|----------|
-| 20 | Inline FHIR Memory Store | 13.1 | 🟡 High |
-| 21 | Cognitive Loop | 13.2 | 🟡 High |
-| 22 | A2A Protocol | 13.3 | 🟢 Medium |
-| 23 | Digital Twin Predictions | 13.4 | 🟢 Medium |
+| 21 | Inline FHIR Memory Store | 13.1 | 🟡 High |
+| 22 | Cognitive Loop | 13.2 | 🟡 High |
+| 23 | A2A Protocol | 13.3 | 🟢 Medium |
+| 24 | Digital Twin Predictions | 13.4 | 🟢 Medium |
+| 25 | Fix Galahad BUG-001/002 (backend disease_engine) | — | 🟢 Medium |
 
 ### Sprint 12 — Rigor & Research
 | # | Task | Epic | Priority |
 |---|------|------|----------|
-| 24 | Security Hardening | 14.1 | 🔴 Critical |
-| 25 | Security Swarm Test | 14.2 | 🟡 High |
-| 26 | Agentic Test Panel | 14.3 | 🟡 High |
-| 27 | Bias Tracker | 14.4 | 🟡 High |
-| 28 | Frontend E2E Tests | 14.5 | 🟡 High |
-| 29 | ROI Dashboard | 15.1 | 🟡 High |
-| 30 | Scenario Comparison | 15.2 | 🟢 Medium |
-| 31 | Data Export | 15.3 | 🟢 Medium |
+| 26 | Security Swarm Test (Red Team) | 14.2 | 🟡 High |
+| 27 | Agentic Test Panel | 14.3 | 🟡 High |
+| 28 | Bias Tracker | 14.4 | 🟡 High |
+| 29 | Frontend E2E Tests | 14.5 | 🟡 High |
+| 30 | ROI Dashboard | 15.1 | 🟡 High |
+| 31 | Scenario Comparison | 15.2 | 🟢 Medium |
+| 32 | Data Export | 15.3 | 🟢 Medium |
 
 ---
 
@@ -502,7 +568,7 @@ Side-by-side view:
 | Hosting | **Docker + nginx** | Static files, CDN-friendly, scales infinitely |
 | Memory system | **EVENT_LOG (done) → FHIR store (Phase 4)** | EVENT_LOG is simple and fast; FHIR adds semantic structure for research |
 | Testing | **Node test (backend) + Playwright (frontend)** | Separate concerns: logic tests vs integration tests |
-| Security | **CSP + no inline handlers + input sanitization** | Standard web hardening for public-facing site |
+| Security | **CSP + no inline handlers + input sanitization** | Mordred scan: 5 veto items must clear before Sprint 9 Docker gate |
 | Mobile | **CSS media queries + touch events** | No separate mobile app; responsive web works |
 | Agent count | **45-60 active + crowd simulation for visual filler** | Balance between meaningful data and performance |
 | Bundler | **None** | Single file keeps deployment trivial |
