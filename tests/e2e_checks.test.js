@@ -138,4 +138,51 @@ describe('E2E Simulation Checks', () => {
     const v4 = fs.readFileSync(path.join(ROOT, 'src', 'frontend', 'v4.html'), 'utf8');
     assert.ok(v4.includes('screenshotMode'), 'Screenshot mode exists');
   });
+
+  // ── Sprint 23: Insight Engine ──
+  it('should have Insight Engine in v4.html', () => {
+    const v4 = fs.readFileSync(path.join(ROOT, 'src', 'frontend', 'v4.html'), 'utf8');
+    assert.ok(v4.includes('INSIGHT_LOG'), 'INSIGHT_LOG array defined');
+    assert.ok(v4.includes('INSIGHT_FIRED'), 'INSIGHT_FIRED tracking object defined');
+    assert.ok(v4.includes('runInsightEngine'), 'runInsightEngine function defined');
+    assert.ok(v4.includes('addInsight'), 'addInsight function defined');
+    assert.ok(v4.includes('showInsightsPanel'), 'showInsightsPanel function defined');
+    assert.ok(v4.includes('first_death'), 'First death insight type exists');
+    assert.ok(v4.includes('all_gps_burnout'), 'All GPs burnout insight type exists');
+    assert.ok(v4.includes('age_bias'), 'Age bias insight type exists');
+    assert.ok(v4.includes('queue_record'), 'Queue record insight type exists');
+  });
+
+  // ── Sprint 23: Weekly Report Generator ──
+  it('should have Weekly Report Generator in v4.html', () => {
+    const v4 = fs.readFileSync(path.join(ROOT, 'src', 'frontend', 'v4.html'), 'utf8');
+    assert.ok(v4.includes('WEEKLY_REPORTS'), 'WEEKLY_REPORTS array defined');
+    assert.ok(v4.includes('generateWeeklyReport'), 'generateWeeklyReport function defined');
+    assert.ok(v4.includes('showWeeklyReport'), 'showWeeklyReport function defined');
+    assert.ok(v4.includes('lastWeeklyReportCycle'), 'lastWeeklyReportCycle tracker defined');
+    assert.ok(v4.includes('deathsByAge'), 'Deaths by age group breakdown');
+    assert.ok(v4.includes('deathsByCondition'), 'Deaths by condition breakdown');
+    assert.ok(v4.includes('treeknormViolations'), 'Treeknorm violations count in report');
+    assert.ok(v4.includes('savingsPotential'), 'Savings potential in financial section');
+    assert.ok(v4.includes('EQUITY CHECK'), 'Bias/equity check section in report');
+  });
+
+  // ── Sprint 23: Provider Burnout Cascade ──
+  it('should have Provider Burnout Cascade in v4.html', () => {
+    const v4 = fs.readFileSync(path.join(ROOT, 'src', 'frontend', 'v4.html'), 'utf8');
+    assert.ok(v4.includes('processBurnoutCascade'), 'processBurnoutCascade function defined');
+    assert.ok(v4.includes('incrementBurnoutForPatient'), 'incrementBurnoutForPatient function defined');
+    assert.ok(v4.includes('burnoutCascadeSickLeave'), 'Burnout cascade sick leave flag exists');
+    assert.ok(v4.includes('_systemOverload'), 'System overload flag exists');
+    assert.ok(v4.includes('System Overload'), 'System Overload ticker message exists');
+    assert.ok(v4.includes('burnout cascade'), 'Burnout cascade messaging exists');
+  });
+
+  // ── Sprint 23: Burnout visual effects ──
+  it('should have burnout visual effects in v4.html', () => {
+    const v4 = fs.readFileSync(path.join(ROOT, 'src', 'frontend', 'v4.html'), 'utf8');
+    assert.ok(v4.includes('burnEmoji'), 'Burnout emoji indicator exists');
+    assert.ok(v4.includes('GP Burnout visual'), 'GP burnout visual comment exists');
+    assert.ok(v4.includes('Burned out GPs walk slower'), 'GP burnout speed reduction exists');
+  });
 });

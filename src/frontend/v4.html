@@ -1124,6 +1124,17 @@ let mayorBubbleText = '';
 const MOMENTS = { items: [], queueRecord: 0 };
 // ═══ END MOMENTS DATA ═══
 
+// ═══ SPRINT 23: INSIGHT ENGINE DATA ═══
+const INSIGHT_LOG = []; // { cycle, headline, explanation, dataPoint, insightType }
+const INSIGHT_FIRED = {}; // track which one-shot insights have fired (key → true)
+let insightQueueRecord = 0; // separate queue record tracker for insights
+// ═══ END INSIGHT ENGINE DATA ═══
+
+// ═══ SPRINT 23: WEEKLY REPORT DATA ═══
+const WEEKLY_REPORTS = []; // { cycle, weekNumber, deaths, queues, financial, bias, moments }
+let lastWeeklyReportCycle = 0;
+// ═══ END WEEKLY REPORT DATA ═══
+
 // ═══ SPRINT 5: VISIBLE QUEUES ═══
 const QUEUES = {
   gp1_bldg: { agents: [], positions: [] },
@@ -3729,6 +3740,15 @@ function drawAgent(e){
     cx.fillStyle = isG ? '#888' : '#fff';
     cx.fillText(e.name, sx, drawY - 7*s);
   }
+
+  // ── Sprint 23: GP Burnout visual — emoji indicator ──
+  if (e.type === 'gp' && (e.burnoutLevel || 0) > 70 && e.hp > 0) {
+    var burnEmoji = (e.burnoutLevel || 0) > 90 ? '🤒' : '😓';
+    var burnFS = Math.max(10, 12 * s);
+    cx.font = burnFS + 'px sans-serif';
+    cx.textAlign = 'center';
+    cx.fillText(burnEmoji, sx + 12 * s, drawY - 12 * s);
+  }
   
   // ── Sprint 4: Social chat speech bubble ──
   if ((e.chatTimer || 0) > 0 && e.chatBubbleText) {
@@ -4484,6 +4504,8 @@ function render(){
       if ((e.grievingTimer || 0) > 0) speedMult *= 0.5;
       // Sprint 26: Age-based speed multiplier
       if (e.speedMultiplier) speedMult *= e.speedMultiplier;
+      // Sprint 23: Burned out GPs walk slower
+      if (e.type === 'gp' && (e.burnoutLevel || 0) > 70) speedMult *= 0.6;
       const baseSpeed = (e.hp <= 0 ? 0.010 : 0.025) * dt * speedMult;
       // Ease-out near destination (slow down approaching)
       const easeFactor = Math.min(1, dist / 0.03);
@@ -5205,6 +5227,8 @@ function formatEventText(e) {
     case 'visited_gp': return 'visited ' + (e.detail || 'GP');
     case 'gp_treated': return 'treated at GP';
     case 'checkup': return 'routine checkup';
+    case 'insight': return '💡 ' + (e.detail || 'pattern detected');
+    case 'sick_leave': return '😓 ' + (e.detail || 'sick leave');
     default: return e.detail || e.type;
   }
 }
@@ -5215,7 +5239,7 @@ function showTownFeed() {
   document.querySelector('.panel-header').textContent = 'TOWN FEED';
 
   const significant = EVENT_LOG.filter(function(e) {
-    return ['died','natural_death','admitted','referred','treated','discharged','recovered','worsened','social_chat','feeling_sick','visited_gp','gp_treated','checkup'].indexOf(e.type) !== -1;
+    return ['died','natural_death','admitted','referred','treated','discharged','recovered','worsened','social_chat','feeling_sick','visited_gp','gp_treated','checkup','insight','sick_leave'].indexOf(e.type) !== -1;
   }).slice(-50).reverse();
 
   let html = '';
@@ -5225,6 +5249,13 @@ function showTownFeed() {
     setPanelContent(html);
     return;
   }
+
+  html += '<div style="display:flex;gap:4px;margin-bottom:6px;flex-wrap:wrap">';
+  html += '<button class="feed-btn" onclick="showGazette()" style="font-size:10px">📰 Gazette</button>';
+  html += '<button class="feed-btn" onclick="showInsightsPanel()" style="font-size:10px">💡 Insights</button>';
+  html += '<button class="feed-btn" onclick="showWeeklyReport()" style="font-size:10px">📋 Reports</button>';
+  html += '<button class="feed-btn" onclick="showMomentsGallery()" style="font-size:10px">🃏 Moments</button>';
+  html += '</div>';
 
   html += '<div class="feed-filters">';
   html += '<button class="feed-btn active" data-filter="all">All</button>';
@@ -6002,6 +6033,7 @@ function tick(){
               gpAgent.actionHistory.push({cycle,action:'referred',patientName:a.name,detail:a.conditions.map(c=>c.code).join(',')});
               if(gpAgent.actionHistory.length>50)gpAgent.actionHistory.shift();
               gpAgent.burnoutLevel=calculateBurnout(gpAgent, p);
+              incrementBurnoutForPatient(gpAgent); // Sprint 23: per-patient burnout
             }
           } else if(a.conditions.length>0){
             // Treat at GP level
@@ -6024,6 +6056,7 @@ function tick(){
               gpAgent.actionHistory.push({cycle,action:'treated',patientName:a.name,detail:a.conditions.map(c=>c.code).join(',')});
               if(gpAgent.actionHistory.length>50)gpAgent.actionHistory.shift();
               gpAgent.burnoutLevel=calculateBurnout(gpAgent, p);
+              incrementBurnoutForPatient(gpAgent); // Sprint 23: per-patient burnout
             }
           } else {
             // Healthy checkup
@@ -6396,6 +6429,15 @@ function tick(){
   // ═══ Sprint 20: Check for shareable moments ═══
   checkForMoments(cycle);
 
+  // ═══ Sprint 23: Insight Engine (every 10 cycles) ═══
+  if (cycle % 10 === 0 && cycle > 0) runInsightEngine();
+
+  // ═══ Sprint 23: Weekly Report Generator (every 700 cycles) ═══
+  if (cycle % 700 === 0 && cycle > 0) generateWeeklyReport();
+
+  // ═══ Sprint 23: Burnout Cascade Processing ═══
+  processBurnoutCascade();
+
   updateUI();
   updateTicker(); // Sprint 6
   if (timelineVisible) drawTimeline(); // Sprint 16
@@ -6421,6 +6463,9 @@ function resetSim(){
   TIMELINE_SNAPSHOTS.length=0; // Sprint 16
   GAZETTE_HISTORY.length=0; TREND_DATA.periods.length=0; lastGazetteCycle=0; mayorBubbleTimer=0; mayorBubbleText=''; // Sprint 19
   MOMENTS.items.length=0; MOMENTS.queueRecord=0; // Sprint 20
+  // Sprint 23: Clear Insight Engine & Weekly Reports
+  INSIGHT_LOG.length=0; Object.keys(INSIGHT_FIRED).forEach(function(k){delete INSIGHT_FIRED[k];}); insightQueueRecord=0;
+  WEEKLY_REPORTS.length=0; lastWeeklyReportCycle=0; window._systemOverload=false;
   // Sprint S4: Clear Gini & bias history
   BIAS_DATA.giniHistory.length=0; BIAS_DATA.currentGini=0;
   BIAS_DATA.biasScoreHistory.length=0; BIAS_DATA.currentBiasScore=0;
@@ -6456,6 +6501,7 @@ function resetSim(){
       a.patientsSeenToday=0; a.referralsMade=0; a.burnoutLevel=0;
       a.currentPatient=null; a.queue=[]; a.totalPatientsSeen=0;
       a.sickLeaveTimer=0; // Sprint S2
+      a.burnoutCascadeSickLeave=false; // Sprint 23
     }
   });
   selectedAgent=null; showTownFeed();
@@ -8091,6 +8137,18 @@ function updateUI(){
       hPAEl.closest('.ts').style.display = 'none';
     }
   }
+
+  // ── Sprint 23: System Overload — amber flash when all GPs burned out ──
+  var topBar = document.querySelector('.top-stats');
+  if (topBar) {
+    if (window._systemOverload) {
+      topBar.style.boxShadow = '0 0 15px rgba(255,140,0,' + (0.4 + 0.3 * Math.sin(Date.now() / 300)).toFixed(2) + ')';
+      topBar.style.borderBottom = '2px solid #ff8c00';
+    } else {
+      topBar.style.boxShadow = '';
+      topBar.style.borderBottom = '';
+    }
+  }
 }
 
 // ═══ SPRINT 17.1: LOADING SCREEN CONTROLLER ═══
@@ -8506,10 +8564,17 @@ function updateTicker() {
       case 'social_chat': icon = '💬'; cls = 'social'; text = `${e.agentName} chatted`; break;
       case 'visited_gp': icon = '⚕'; cls = 'gp'; text = `${e.agentName} visiting GP`; break;
       case 'discharged': icon = '🏠'; cls = 'gp'; text = `${e.agentName} discharged`; break;
+      case 'insight': icon = '💡'; cls = 'gp'; text = `${e.detail}`; break;
+      case 'sick_leave': icon = '😓'; cls = 'death'; text = `${e.agentName}: ${e.detail}`; break;
       default: return '';
     }
     return `<span class="ticker-item ${cls}" data-agent="${e.agentId}">${icon} ${text}</span>`;
   }).filter(Boolean);
+
+  // Sprint 23: System overload ticker prefix
+  if (window._systemOverload) {
+    items.unshift('<span class="ticker-item death">⚠ System Overload — All GPs burned out!</span>');
+  }
 
   tickerEl.innerHTML = items.join('');
 }
@@ -9213,6 +9278,439 @@ function showMomentsGallery() {
     }
   });
 }
+
+// ═══ SPRINT 23: INSIGHT ENGINE (Epic 26.1) ═══
+function addInsight(insightType, headline, explanation, dataPoint) {
+  var entry = {
+    cycle: cycle,
+    headline: headline,
+    explanation: explanation,
+    dataPoint: dataPoint,
+    insightType: insightType,
+    timestamp: Date.now()
+  };
+  INSIGHT_LOG.push(entry);
+  if (INSIGHT_LOG.length > 200) INSIGHT_LOG.splice(0, INSIGHT_LOG.length - 200);
+  // Also log as EVENT_LOG entry with type 'insight'
+  EVENT_LOG.push({
+    cycle: cycle,
+    type: 'insight',
+    agentId: 'system',
+    agentName: 'INSIGHT',
+    detail: headline,
+    hp: 0,
+    timestamp: Date.now()
+  });
+  showToast('💡 ' + headline, 5000);
+}
+
+function runInsightEngine() {
+  var dateInfo = getSeasonAndDay(cycle);
+  var yearNum = dateInfo.year;
+  var p = M[mode];
+  var pop = agents.filter(function(a) { return a.type === 'patient' || a.type === 'citizen'; });
+  var gpAgents = agents.filter(function(a) { return a.type === 'gp'; });
+
+  // ── 1. First death of the year ──
+  var yearKey = 'first_death_year_' + yearNum;
+  if (!INSIGHT_FIRED[yearKey]) {
+    var yearStartCycle = (yearNum - 1) * 365 * 4; // 4 ticks per day
+    var deathsThisYear = EVENT_LOG.filter(function(e) {
+      return e.type === 'died' && e.cycle >= yearStartCycle && e.cycle <= cycle;
+    });
+    if (deathsThisYear.length > 0) {
+      INSIGHT_FIRED[yearKey] = true;
+      var firstDeath = deathsThisYear[0];
+      addInsight('first_death',
+        'Breaking: First preventable death in Year ' + yearNum,
+        firstDeath.agentName + ' died after the system failed to provide timely care. ' +
+        'This marks the first preventable mortality event of Year ' + yearNum + '.',
+        'Victim: ' + firstDeath.agentName + ' at cycle ' + firstDeath.cycle
+      );
+    }
+  }
+
+  // ── 2. All GPs at burnout (>70) ──
+  if (gpAgents.length > 0) {
+    var allBurnedOut = gpAgents.every(function(g) { return (g.burnoutLevel || 0) > 70; });
+    var burnoutKey = 'all_gps_burnout_' + Math.floor(cycle / 100);
+    if (allBurnedOut && !INSIGHT_FIRED[burnoutKey]) {
+      INSIGHT_FIRED[burnoutKey] = true;
+      var avgBurn = Math.round(gpAgents.reduce(function(s, g) { return s + (g.burnoutLevel || 0); }, 0) / gpAgents.length);
+      addInsight('all_gps_burnout',
+        'All ' + gpAgents.length + ' GPs reached burnout simultaneously',
+        'Every general practitioner in Cammelot is now operating above 70% burnout. ' +
+        'Patient care quality is severely compromised and sick leave cascades are imminent.',
+        'Average burnout: ' + avgBurn + '%'
+      );
+    }
+  }
+
+  // ── 3. Age bias detected ──
+  if (cycle % 50 === 0 && cycle > 100) {
+    var elderlyWaiters = pop.filter(function(a) { return a.hp > 0 && a.age >= 70 && a.waitWeeks > 0; });
+    var youngWaiters = pop.filter(function(a) { return a.hp > 0 && a.age < 70 && a.waitWeeks > 0; });
+    if (elderlyWaiters.length >= 2 && youngWaiters.length >= 2) {
+      var elderlyAvgWait = elderlyWaiters.reduce(function(s, a) { return s + a.waitWeeks; }, 0) / elderlyWaiters.length;
+      var youngAvgWait = youngWaiters.reduce(function(s, a) { return s + a.waitWeeks; }, 0) / youngWaiters.length;
+      var waitDiff = elderlyAvgWait - youngAvgWait;
+      if (waitDiff > 2) {
+        var biasKey = 'age_bias_' + Math.floor(cycle / 200);
+        if (!INSIGHT_FIRED[biasKey]) {
+          INSIGHT_FIRED[biasKey] = true;
+          addInsight('age_bias',
+            'Citizens over 70 wait ' + waitDiff.toFixed(1) + ' weeks longer than average',
+            'Analysis reveals a systematic age disparity in healthcare access. ' +
+            'Elderly patients face disproportionately longer waits, compounding their higher mortality risk.',
+            'Elderly avg: ' + elderlyAvgWait.toFixed(1) + 'w vs Under-70 avg: ' + youngAvgWait.toFixed(1) + 'w'
+          );
+        }
+      }
+    }
+  }
+
+  // ── 4. Queue record broken ──
+  var currentQueue = agents.filter(function(a) {
+    return (a.behaviorState === 'queuing' || a.referredToHospital) && a.hp > 0;
+  }).length;
+  if (currentQueue > insightQueueRecord && currentQueue >= 3) {
+    insightQueueRecord = currentQueue;
+    var queueKey = 'queue_record_' + currentQueue;
+    if (!INSIGHT_FIRED[queueKey]) {
+      INSIGHT_FIRED[queueKey] = true;
+      addInsight('queue_record',
+        'Hospital queue hit ' + currentQueue + ' — highest ever',
+        'The hospital waiting list has reached an unprecedented ' + currentQueue + ' patients. ' +
+        'Treeknorm violations are mounting and patient outcomes are deteriorating rapidly.',
+        'Queue size: ' + currentQueue + ' patients'
+      );
+    }
+  }
+
+  // ── 5. Milestone cycles (every 500) ──
+  if (cycle > 0 && cycle % 500 === 0) {
+    var milestoneKey = 'milestone_' + cycle;
+    if (!INSIGHT_FIRED[milestoneKey]) {
+      INSIGHT_FIRED[milestoneKey] = true;
+      var totalDeaths = pop.filter(function(a) { return a.hp <= 0; }).length;
+      var aliveCount = pop.filter(function(a) { return a.hp > 0; }).length;
+      var sysDeaths = EVENT_LOG.filter(function(e) { return e.type === 'died'; }).length;
+      var treeViolations = agents.filter(function(a) { return a.hp > 0 && a.waitWeeks > p.tree; }).length;
+      addInsight('milestone',
+        'Cycle ' + cycle + ' Summary: ' + aliveCount + ' alive, ' + totalDeaths + ' lost',
+        mode + ' mode — ' + sysDeaths + ' preventable deaths so far. ' +
+        treeViolations + ' patients currently exceeding Treeknorm wait limits.',
+        'Preventable: ' + sysDeaths + ' | Treeknorm violations: ' + treeViolations
+      );
+    }
+  }
+}
+
+function showInsightsPanel() {
+  selectedAgent = null;
+  document.querySelector('.panel-header').textContent = '💡 INSIGHTS';
+  var insights = INSIGHT_LOG.slice().reverse();
+  var html = '<div class="panel-back" data-action="showTownFeed">← Town Feed</div>';
+  html += '<div style="padding:8px">';
+  html += '<h3 style="color:var(--gold);margin:4px 0 8px">💡 Insight Engine</h3>';
+  html += '<div style="font-size:11px;color:var(--parchment);opacity:0.7;margin-bottom:10px">';
+  html += 'Auto-detected patterns and anomalies (' + insights.length + ' total)</div>';
+
+  if (insights.length === 0) {
+    html += '<div style="text-align:center;padding:20px;color:var(--parchment);opacity:0.5">';
+    html += 'No insights yet. Run the simulation to detect patterns.</div>';
+  } else {
+    insights.forEach(function(ins) {
+      var icon = ins.insightType === 'first_death' ? '💀' :
+                 ins.insightType === 'all_gps_burnout' ? '🔥' :
+                 ins.insightType === 'age_bias' ? '⚖' :
+                 ins.insightType === 'queue_record' ? '🏥' :
+                 ins.insightType === 'milestone' ? '📊' : '💡';
+      var borderColor = ins.insightType === 'first_death' ? 'var(--red)' :
+                        ins.insightType === 'all_gps_burnout' ? '#ff6b00' :
+                        ins.insightType === 'age_bias' ? '#e040fb' :
+                        ins.insightType === 'queue_record' ? 'var(--blue)' : 'var(--gold)';
+      html += '<div style="background:rgba(0,0,0,.3);border-left:3px solid ' + borderColor + ';padding:8px 10px;margin-bottom:6px;border-radius:4px">';
+      html += '<div style="font-weight:700;color:var(--parchment);font-size:12px">' + icon + ' ' + ins.headline + '</div>';
+      html += '<div style="font-size:11px;color:var(--parchment);opacity:0.8;margin:3px 0">' + ins.explanation + '</div>';
+      html += '<div style="font-size:10px;color:var(--gold);opacity:0.7">📊 ' + ins.dataPoint + ' · Cycle ' + ins.cycle + '</div>';
+      html += '</div>';
+    });
+  }
+  html += '</div>';
+  setPanelContent(html);
+}
+// ═══ END INSIGHT ENGINE ═══
+
+// ═══ SPRINT 23: WEEKLY REPORT GENERATOR (Epic 26.2) ═══
+function generateWeeklyReport() {
+  var weekNumber = WEEKLY_REPORTS.length + 1;
+  var startCycle = lastWeeklyReportCycle;
+  var endCycle = cycle;
+  var p = M[mode];
+  var pop = agents.filter(function(a) { return a.type === 'patient' || a.type === 'citizen'; });
+  var periodEvents = EVENT_LOG.filter(function(e) { return e.cycle > startCycle && e.cycle <= endCycle; });
+
+  // ── Deaths breakdown ──
+  var systemDeaths = periodEvents.filter(function(e) { return e.type === 'died'; });
+  var naturalDeaths = periodEvents.filter(function(e) { return e.type === 'natural_death'; });
+  var totalDeathsPeriod = systemDeaths.length + naturalDeaths.length;
+  var preventableDeaths = systemDeaths.length;
+  // Deaths by age group
+  var deathsByAge = { '0-44': 0, '45-64': 0, '65-79': 0, '80+': 0 };
+  systemDeaths.concat(naturalDeaths).forEach(function(d) {
+    var a = agents.find(function(ag) { return ag.id === d.agentId; });
+    if (a) {
+      if (a.age >= 80) deathsByAge['80+']++;
+      else if (a.age >= 65) deathsByAge['65-79']++;
+      else if (a.age >= 45) deathsByAge['45-64']++;
+      else deathsByAge['0-44']++;
+    }
+  });
+  // Deaths by condition
+  var deathsByCondition = {};
+  systemDeaths.forEach(function(d) {
+    var a = agents.find(function(ag) { return ag.id === d.agentId; });
+    if (a && a.conditions) {
+      a.conditions.forEach(function(c) {
+        deathsByCondition[c.code] = (deathsByCondition[c.code] || 0) + 1;
+      });
+    }
+  });
+
+  // ── Queue statistics ──
+  var waitingAgents = pop.filter(function(a) { return a.hp > 0 && a.waitWeeks > 0; });
+  var queuePeak = Math.max(QUEUES.hospital.agents.length, QUEUES.gp1_bldg.agents.length + QUEUES.gp2_bldg.agents.length);
+  var avgWait = waitingAgents.length > 0 ? waitingAgents.reduce(function(s, a) { return s + a.waitWeeks; }, 0) / waitingAgents.length : 0;
+  var treeViolations = periodEvents.filter(function(e) { return e.type === 'treeknorm_violation'; }).length;
+
+  // ── Financial summary ──
+  var adminWastePeriod = Math.round((endCycle - startCycle) * NZA_GP_CONSULT_EUR * p.admin);
+  var treatmentCosts = periodEvents.filter(function(e) { return e.type === 'treated' || e.type === 'gp_treated'; }).length;
+  var treatmentCostEur = treatmentCosts * NZA_GP_CONSULT_EUR + periodEvents.filter(function(e) { return e.type === 'admitted'; }).length * 150;
+  var preventableDeathCost = preventableDeaths * SIM_PREVENTABLE_DEATH_EUR;
+  var treeknormCost = treeViolations * SIM_TREEKNORM_WEEK_EUR;
+  var savingsPotential = Math.round(adminWastePeriod * 0.83 + preventableDeathCost * 0.6);
+
+  // ── Bias check ──
+  var waitValues = pop.filter(function(a) { return a.hp > 0 && a.waitWeeks > 0; }).map(function(a) { return a.waitWeeks; });
+  var gini = calculateGiniCoefficient(waitValues);
+  var elderlyWaiters = pop.filter(function(a) { return a.hp > 0 && a.age >= 70 && a.waitWeeks > 0; });
+  var youngWaiters = pop.filter(function(a) { return a.hp > 0 && a.age < 70 && a.waitWeeks > 0; });
+  var elderlyAvg = elderlyWaiters.length > 0 ? elderlyWaiters.reduce(function(s, a) { return s + a.waitWeeks; }, 0) / elderlyWaiters.length : 0;
+  var youngAvg = youngWaiters.length > 0 ? youngWaiters.reduce(function(s, a) { return s + a.waitWeeks; }, 0) / youngWaiters.length : 0;
+  var ageInequity = elderlyAvg - youngAvg;
+
+  // ── Best/worst moments ──
+  var bestMoment = 'No notable positive events this week.';
+  var worstMoment = 'No critical failures this week.';
+  var recoveries = periodEvents.filter(function(e) { return e.type === 'recovered' || e.type === 'discharged'; });
+  if (recoveries.length > 0) {
+    bestMoment = recoveries.length + ' patients recovered or discharged this week.';
+  }
+  if (systemDeaths.length > 0) {
+    var worstDeath = systemDeaths[systemDeaths.length - 1];
+    var worstAgent = agents.find(function(a) { return a.id === worstDeath.agentId; });
+    worstMoment = worstDeath.agentName + (worstAgent ? ' (' + worstAgent.age + ')' : '') + ' died — preventable system failure.';
+  }
+  var gpAgents = agents.filter(function(a) { return a.type === 'gp'; });
+  var avgBurnout = gpAgents.length > 0 ? Math.round(gpAgents.reduce(function(s, g) { return s + (g.burnoutLevel || 0); }, 0) / gpAgents.length) : 0;
+  if (avgBurnout > 70 && systemDeaths.length === 0) {
+    worstMoment = 'GP burnout averaged ' + avgBurnout + '% — system under severe strain.';
+  }
+
+  var report = {
+    cycle: endCycle,
+    weekNumber: weekNumber,
+    startCycle: startCycle,
+    endCycle: endCycle,
+    mode: mode,
+    deaths: {
+      total: totalDeathsPeriod,
+      preventable: preventableDeaths,
+      natural: naturalDeaths.length,
+      byAge: deathsByAge,
+      byCondition: deathsByCondition
+    },
+    queues: {
+      peak: queuePeak,
+      avgWait: Math.round(avgWait * 10) / 10,
+      treeknormViolations: treeViolations,
+      currentSize: waitingAgents.length
+    },
+    financial: {
+      adminWaste: adminWastePeriod,
+      treatmentCosts: Math.round(treatmentCostEur),
+      preventableDeathCost: preventableDeathCost,
+      treeknormCost: treeknormCost,
+      savingsPotential: savingsPotential
+    },
+    bias: {
+      gini: Math.round(gini * 1000) / 1000,
+      ageInequity: Math.round(ageInequity * 10) / 10,
+      elderlyAvgWait: Math.round(elderlyAvg * 10) / 10,
+      youngAvgWait: Math.round(youngAvg * 10) / 10
+    },
+    moments: {
+      best: bestMoment,
+      worst: worstMoment
+    },
+    burnout: avgBurnout,
+    timestamp: Date.now()
+  };
+
+  WEEKLY_REPORTS.push(report);
+  if (WEEKLY_REPORTS.length > 50) WEEKLY_REPORTS.splice(0, WEEKLY_REPORTS.length - 50);
+  lastWeeklyReportCycle = endCycle;
+  showToast('📋 Weekly Report #' + weekNumber + ' generated', 4000);
+  return report;
+}
+
+function showWeeklyReport() {
+  selectedAgent = null;
+  document.querySelector('.panel-header').textContent = '📋 WEEKLY REPORTS';
+  var html = '<div class="panel-back" data-action="showTownFeed">← Town Feed</div>';
+  html += '<div style="padding:8px">';
+  html += '<h3 style="color:var(--gold);margin:4px 0 8px">📋 Weekly Report Center</h3>';
+
+  if (WEEKLY_REPORTS.length === 0) {
+    html += '<div style="text-align:center;padding:20px;color:var(--parchment);opacity:0.5">';
+    html += 'No reports yet. Reports auto-generate every 700 cycles.</div>';
+  } else {
+    var reports = WEEKLY_REPORTS.slice().reverse();
+    reports.forEach(function(r, idx) {
+      var isLatest = idx === 0;
+      html += '<div style="background:rgba(0,0,0,' + (isLatest ? '.4' : '.2') + ');border:1px solid ' + (isLatest ? 'var(--gold)' : 'rgba(255,179,0,.2)') + ';border-radius:6px;padding:10px;margin-bottom:8px">';
+      html += '<div style="font-weight:700;font-size:13px;color:var(--gold);margin-bottom:6px">';
+      html += '📋 Week ' + r.weekNumber + ' Report' + (isLatest ? ' (Latest)' : '') + ' <span style="font-size:10px;opacity:.6">' + r.mode + ' mode · Cycles ' + r.startCycle + '–' + r.endCycle + '</span></div>';
+
+      // Deaths section
+      html += '<div style="margin-bottom:6px"><div style="font-weight:600;font-size:11px;color:var(--parchment);margin-bottom:3px">💀 MORTALITY</div>';
+      html += '<div style="font-size:11px;color:var(--parchment);opacity:.85">';
+      html += 'Total: <b>' + r.deaths.total + '</b> · Preventable: <b style="color:var(--red)">' + r.deaths.preventable + '</b> · Natural: ' + r.deaths.natural;
+      html += '<br>By age: ';
+      Object.keys(r.deaths.byAge).forEach(function(k) {
+        if (r.deaths.byAge[k] > 0) html += k + ': ' + r.deaths.byAge[k] + ' ';
+      });
+      if (Object.keys(r.deaths.byCondition).length > 0) {
+        html += '<br>By condition: ';
+        Object.keys(r.deaths.byCondition).forEach(function(k) {
+          html += k + ': ' + r.deaths.byCondition[k] + ' ';
+        });
+      }
+      html += '</div></div>';
+
+      // Queue section
+      html += '<div style="margin-bottom:6px"><div style="font-weight:600;font-size:11px;color:var(--parchment);margin-bottom:3px">🏥 QUEUES</div>';
+      html += '<div style="font-size:11px;color:var(--parchment);opacity:.85">';
+      html += 'Peak: ' + r.queues.peak + ' · Avg Wait: ' + r.queues.avgWait + 'w · Treeknorm Violations: <b style="color:' + (r.queues.treeknormViolations > 0 ? 'var(--red)' : 'var(--green)') + '">' + r.queues.treeknormViolations + '</b>';
+      html += '</div></div>';
+
+      // Financial section
+      html += '<div style="margin-bottom:6px"><div style="font-weight:600;font-size:11px;color:var(--parchment);margin-bottom:3px">💰 FINANCIAL</div>';
+      html += '<div style="font-size:11px;color:var(--parchment);opacity:.85">';
+      html += 'Admin Waste: <b style="color:#ff6b00">€' + r.financial.adminWaste.toLocaleString() + '</b>';
+      html += ' · Treatment: €' + r.financial.treatmentCosts.toLocaleString();
+      html += '<br>Preventable Death Cost: €' + r.financial.preventableDeathCost.toLocaleString();
+      html += ' · Treeknorm Cost: €' + r.financial.treeknormCost.toLocaleString();
+      html += '<br>💡 Savings Potential (SOLL): <b style="color:var(--green)">€' + r.financial.savingsPotential.toLocaleString() + '</b>';
+      html += '</div></div>';
+
+      // Bias section
+      html += '<div style="margin-bottom:6px"><div style="font-weight:600;font-size:11px;color:var(--parchment);margin-bottom:3px">⚖ EQUITY CHECK</div>';
+      html += '<div style="font-size:11px;color:var(--parchment);opacity:.85">';
+      html += 'Gini Coefficient: <b>' + r.bias.gini + '</b>' + (r.bias.gini > 0.3 ? ' <span style="color:var(--red)">⚠ HIGH INEQUALITY</span>' : ' ✓');
+      html += ' · Age gap: ' + (r.bias.ageInequity > 0 ? '+' : '') + r.bias.ageInequity + 'w';
+      if (r.bias.ageInequity > 2) html += ' <span style="color:#e040fb">⚠ Elderly disadvantaged</span>';
+      html += '</div></div>';
+
+      // Moments
+      html += '<div style="margin-bottom:4px"><div style="font-weight:600;font-size:11px;color:var(--parchment);margin-bottom:3px">✨ HIGHLIGHTS</div>';
+      html += '<div style="font-size:11px;color:var(--parchment);opacity:.85">';
+      html += '🌟 Best: ' + r.moments.best;
+      html += '<br>⛈ Worst: ' + r.moments.worst;
+      html += '<br>🔥 GP Burnout: ' + r.burnout + '%';
+      html += '</div></div>';
+
+      html += '</div>';
+    });
+  }
+  html += '</div>';
+  setPanelContent(html);
+}
+// ═══ END WEEKLY REPORT GENERATOR ═══
+
+// ═══ SPRINT 23: BURNOUT CASCADE HELPERS (Epic 28.3) ═══
+function processBurnoutCascade() {
+  var p = M[mode];
+  var gpAgents = agents.filter(function(a) { return a.type === 'gp'; });
+
+  gpAgents.forEach(function(gp) {
+    if (gp.sickLeaveTimer > 0) return; // already on sick leave, handled elsewhere
+
+    // ── Burnout recovery ──
+    var queueLoad = 0;
+    ['gp1_bldg', 'gp2_bldg'].forEach(function(bId) {
+      var gpMap = {'gp1_bldg':'gp1','gp2_bldg':'gp2'};
+      if (gpMap[bId] === gp.id) queueLoad = QUEUES[bId] ? QUEUES[bId].agents.length : 0;
+    });
+    var capacityUsed = queueLoad / 10; // rough capacity fraction
+    if (capacityUsed < 0.8) {
+      gp.burnoutLevel = Math.max(0, (gp.burnoutLevel || 0) - 0.3);
+    } else {
+      gp.burnoutLevel = Math.max(0, (gp.burnoutLevel || 0) - 0.1);
+    }
+
+    // ── Sprint 23: Sick leave at burnout > 90 (~50 ticks) ──
+    if ((gp.burnoutLevel || 0) > 90) {
+      gp.sickLeaveTimer = 45 + Math.floor(Math.random() * 11); // ~50 ticks
+      gp.state = 'sick_leave';
+      gp.burnoutCascadeSickLeave = true;
+      logEvent('sick_leave', gp, gp.name + ' collapsed — burnout cascade (' + Math.round(gp.burnoutLevel) + '%).');
+      say(gp.name, '😓 I can\'t go on... burnout at ' + Math.round(gp.burnoutLevel) + '%. Taking sick leave.', 'alert');
+      showToast('⚠ ' + gp.name + ' on sick leave — burnout cascade!', 4000);
+
+      // ── CASCADE: Redistribute patients to remaining GPs ──
+      var gpQueueMap = {'gp1':'gp1_bldg','gp2':'gp2_bldg'};
+      var sickGPQueue = QUEUES[gpQueueMap[gp.id]];
+      if (sickGPQueue && sickGPQueue.agents.length > 0) {
+        var remainingGPs = gpAgents.filter(function(g) { return g.id !== gp.id && g.sickLeaveTimer <= 0; });
+        if (remainingGPs.length > 0) {
+          var overflowPatients = sickGPQueue.agents.splice(0);
+          overflowPatients.forEach(function(patientId, idx) {
+            var targetGP = remainingGPs[idx % remainingGPs.length];
+            var targetQueue = QUEUES[gpQueueMap[targetGP.id]];
+            if (targetQueue) {
+              targetQueue.agents.push(patientId);
+              var qPos = getQueuePosition(gpQueueMap[targetGP.id], targetQueue.agents.length - 1);
+              var patient = agents.find(function(a) { return a.id === patientId; });
+              if (patient) { patient.tx = qPos.x; patient.ty = qPos.y; }
+            }
+            // Cascade effect: receiving GP gets extra burnout
+            var burnoutIncrease = mode === 'IST' ? 0.5 : 0.15;
+            targetGP.burnoutLevel = Math.min(100, (targetGP.burnoutLevel || 0) + burnoutIncrease * 3);
+          });
+          say('SYSTEM', '⚠ ' + overflowPatients.length + ' patients redistributed from ' + gp.name + ' — cascade building!', 'alert');
+        }
+      }
+    }
+  });
+
+  // ── Visual: System Overload check (all GPs > 70) ──
+  var allBurnedOut = gpAgents.length > 0 && gpAgents.every(function(g) {
+    return (g.burnoutLevel || 0) > 70 || g.sickLeaveTimer > 0;
+  });
+  // Set flag for render to flash amber top bar
+  window._systemOverload = allBurnedOut;
+}
+
+// Enhanced burnout increment per patient processed (called from at_gp case)
+function incrementBurnoutForPatient(gpAgent) {
+  if (!gpAgent) return;
+  var burnoutRate = mode === 'IST' ? 0.5 : 0.15;
+  gpAgent.burnoutLevel = Math.min(100, (gpAgent.burnoutLevel || 0) + burnoutRate);
+}
+// ═══ END BURNOUT CASCADE ═══
 
 // 20.3 — LinkedIn Post Generator
 function getSimStats() {
