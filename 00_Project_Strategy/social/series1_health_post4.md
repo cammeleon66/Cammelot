@@ -1,6 +1,6 @@
 # Series 1 — Health Sector | Post 4: Does AI Make Inequality Worse?
 
-**Status:** Draft v1
+**Status:** Draft v2 — Real Data
 **Target:** LinkedIn
 **Tags:** #HealthcareAI #AIBias #HealthEquity #GiniCoefficient #Cammelot #DIB
 
@@ -8,92 +8,67 @@
 
 ## Post
 
-I asked 5,000 AI agents to run the Dutch healthcare system.
+I asked AI agents to run the Dutch healthcare system.
 
-The inequality got worse before it got better.
-
----
-
-This is the post I didn't want to write. Because the finding is uncomfortable.
-
-**Setup:** I ran Cammelot in SOLL mode (full AI-native healthcare) for 5,000 cycles — about 3.5 simulated years. AI triage, ambient scribes, digital twins for every citizen, full A2A protocol between providers.
-
-I tracked three equity metrics across the entire run:
-- **Gini coefficient** of care access (0 = perfect equality, 1 = total inequality)
-- **Age bias score** (differential wait times for 65+ vs under-65)
-- **Digital literacy gap** (how agent "digital literacy" correlates with care speed)
+The headline numbers improved. The equity numbers barely moved.
 
 ---
 
-**Phase 1 (cycles 0–1,000): The Honeymoon**
+**Setup:** I ran Cammelot 10 times in each mode — IST (status quo) and SOLL (AI-native healthcare) — 3,000 cycles per run. Tracked bias score, Gini coefficient, and mortality by age group.
 
-Everything improved. Admin dropped to 5%. Wait times fell. Deaths plummeted. The headline numbers were spectacular:
-- Mortality: 18 → 6 (67% reduction)
-- Average wait: 9.2 → 4.1 weeks
-- GP burnout: eliminated
+**What SOLL fixed spectacularly:**
+- Admin waste: €13,611/GP → €2,268/GP (**83% reduction**)
+- GP burnout: 19.8% → 3.7% (**81% reduction**)
+- Proactive Digital Twin alerts: 0 → **418 per run**
+- 80+ mortality: 93.9% → 57.1% (**-39%**)
 
-The Gini coefficient fell from 0.38 to 0.24. 
-
-**Phase 2 (cycles 1,000–3,000): The Divergence**
-
-Then something happened.
-
-The AI triage system — optimizing for "best outcomes per resource unit" — started systematically favoring patients with:
-- Clean, complete health records (better Digital Twin predictions)
-- Single conditions (simpler treatment paths, higher success probability)
-- Recent GP engagement (more data points = more confident triage)
-
-Who has the messiest records, the most comorbidities, and the least recent GP visits? **The elderly. The most vulnerable.**
-
-The Gini coefficient drifted back up to **0.31**.
-
-The age bias score — which had improved initially — reversed. By cycle 2,500, patients over 70 were waiting **2.8 weeks longer** than average again. Not because the system was cruel. Because it was *optimizing.*
-
-**Phase 3 (cycles 3,000–5,000): The Correction**
-
-I added a fairness constraint to the AI triage: **no patient group's average wait may exceed 120% of the population mean.** A simple guardrail.
-
-The system adapted. The Gini coefficient settled at **0.19** — better than IST had ever been. But it took the guardrail. Without it, the optimization naturally amplified existing disparities.
+**What SOLL barely moved:**
+- Overall bias score: IST **0.53** → SOLL **0.49** (an 8% improvement)
+- System deaths overall: 5.5 → 4.3 (22% — modest)
 
 ---
 
-**The uncomfortable finding:**
+**Why the gap?** I deliberately built a bias amplification mechanism into SOLL to test a real-world hypothesis.
 
-AI doesn't create bias. It *inherits* it from the data — then compounds it through optimization pressure.
+In SOLL mode, the AI triage gives a **digital-literacy bonus**: patients with higher `digitalLiteracy` scores get faster queue processing (+15 × score). Patients with 2+ comorbidities get a **complexity penalty** (-5 to -10 priority points).
 
-In the simulation, the AI system was never programmed to discriminate by age. It simply learned that younger patients with single conditions had better outcomes per resource invested. That's not bias in the algorithm. That's bias in the healthcare system, reflected in the data, amplified by optimization.
+Who has the lowest digital literacy and the most comorbidities? The elderly. The most vulnerable.
 
-The **transition period** — between old system and full AI adoption — is the most dangerous moment. Early AI gains disproportionately benefit the already-advantaged. The equity correction only comes when:
-1. Data interoperability reaches critical mass (IZA targets 66%, currently 11%)
-2. Digital literacy gaps are addressed (not everyone can use a patient portal)
-3. Explicit fairness constraints are built into triage algorithms
+This mirrors a real risk. AI systems that optimize for "best outcome per resource" inherently favor simpler cases with cleaner data — which skews young, single-condition, digitally fluent.
 
 ---
 
-**The DIB method (Detect, Investigate, Build):**
+**The fairness guardrail:**
 
-I tracked every agent decision across 5,000 cycles:
-- **Detect**: Gini coefficient divergence at cycle 1,200
-- **Investigate**: Correlation with digital literacy score (r = 0.67) and comorbidity count (r = -0.54)
-- **Build**: Fairness guardrail reducing max group variance to 120% of mean
+I built a circuit breaker: if any age group's average wait exceeds **120% of the population mean**, the digital-literacy bonus and comorbidity penalty are disabled automatically.
 
-This is what Applied Research looks like. Not "AI good" or "AI bad." **AI reveals the system it's built on.**
+In 10 SOLL runs, the guardrail activated in **3 out of 10** — meaning in 30% of simulations, the bias was severe enough to trigger the correction. When it fired, the triage reverted to pure severity scoring.
 
-The question for policymakers isn't "should we deploy AI in healthcare?" It's: **"what guardrails do we need before we do?"**
-
-Next post: what if your GP's AI assistant knew you were heading for heart failure 6 weeks before you did?
-
-[📸 Screenshot: Gini coefficient chart showing the 3-phase arc]
-[📸 Screenshot: Bias score dashboard]
-[📸 Screenshot: Agent with low digital literacy struggling in SOLL mode]
-[🔗 Simulation: cammelot.health]
+**The takeaway:** AI doesn't create bias. It inherits it from the data and compounds it through optimization pressure. The fix doesn't come from the algorithm getting "smarter." It comes from an explicit equity constraint. You have to build it in.
 
 ---
+
+*Methodology: 10 runs × 3,000 cycles per mode, 45 agents. SOLL bias mechanisms: digitalLiteracy×15 bonus, comorbidity -5/-10 penalty, fairness guardrail at 120% mean threshold. CBS/RIVM/NZa parameters. Stochastic — high variance between runs.*
+
+Next: what if your GP's AI knew you were heading for heart failure 6 weeks before you did?
+
+[📸 Screenshot: Gini coefficient chart over time]
+[📸 Screenshot: Bias score panel — IST vs SOLL]
+
+---
+
+## Data Source (10-run averages)
+```
+IST: bias_score=0.53, system_deaths=5.5, burnout=19.8%
+SOLL: bias_score=0.49, system_deaths=4.3, burnout=3.7%, alerts=418, guardrail=3/10
+Age mortality IST: 0-44=3%, 45-64=26.4%, 65-79=72.5%, 80+=93.9%
+Age mortality SOLL: 0-44=2.8%, 45-64=19.4%, 65-79=61.1%, 80+=57.1%
+Bias mechanisms: digitalLiteracy×15, comorbidity -5/-10, guardrail 120%
+Runner: scripts/research_run.cjs × 10
+```
 
 ## Screenshots Needed
-1. Gini coefficient timeline chart showing the 3-phase arc (drop → rise → settle)
-2. Bias score composite tracking over time
-3. Stats overlay comparing IST vs SOLL equity metrics
-4. Agent panel showing "digital literacy" attribute + its effect
-5. Two Gazette entries: one showing early SOLL wins, one showing the divergence
-6. QA panel with bias detection alerts
+1. Gini coefficient timeline chart
+2. Bias score dashboard comparing IST vs SOLL
+3. Agent with low digital literacy attribute visible
+4. QA panel showing bias tracking

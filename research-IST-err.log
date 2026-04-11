@@ -1,0 +1,17 @@
+Running IST mode for 2000 cycles...
+Sim initialized. Population: 48 agents
+Running 2000 cycles in IST mode...
+Done in 395ms (5063 cycles/sec)
+<anonymous_script>:8391
+  const g = cv.getContext('2d');
+               ^
+
+TypeError: cv.getContext is not a function
+    at drawMayorPortrait (eval at <anonymous> (C:\Users\Public\Cammelot\scripts\research_run.cjs:203:3), <anonymous>:8391:16)
+    at showWizard (eval at <anonymous> (C:\Users\Public\Cammelot\scripts\research_run.cjs:203:3), <anonymous>:8445:3)
+    at eval (eval at <anonymous> (C:\Users\Public\Cammelot\scripts\research_run.cjs:203:3), <anonymous>:8560:56)
+    at Timeout.eval [as _onTimeout] (eval at <anonymous> (C:\Users\Public\Cammelot\scripts\research_run.cjs:203:3), <anonymous>:7881:111)
+    at listOnTimeout (node:internal/timers:605:17)
+    at process.processTimers (node:internal/timers:541:7)
+
+Node.js v25.0.0

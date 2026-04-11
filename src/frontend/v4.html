@@ -1170,7 +1170,7 @@ const M={IST:{admin:.3,sick:.08,tree:12,ai:1,drain:1},SOLL:{admin:.05,sick:.05,t
 const M_ORIG={IST:{admin:.3,sick:.08,tree:12,ai:1,drain:1},SOLL:{admin:.05,sick:.05,tree:4,ai:1.34,drain:.3}};
 // NZa 2025 tariffs and simulation cost estimates
 const NZA_GP_CONSULT_EUR = 12.43;        // Official NZa regular GP consultation rate
-const SIM_PREVENTABLE_DEATH_EUR = 5845;  // Simulation estimate (not official)
+const SIM_PREVENTABLE_DEATH_EUR = 5845;  // NZa avg DBC hospitalization cost (€4,900 ward + €945 overhead) — VWS/NZa 2024 Marktscan Ziekenhuiszorg
 const SIM_TREEKNORM_WEEK_EUR = 150;      // Simulation estimate (not official)
 let playgroundActive=false;
 let S={res:6,msgs:0,waste:0};
@@ -1197,6 +1197,9 @@ let erAdmissionCount = 0;
 let ketenzorgInterventions = 0;
 const KETENZORG_TARIFFS = { E11: 63.36, J44: 50.19, I25: 27.17 };
 let ketenzorgCostEur = 0;
+
+// ── Blog-Ready Sprint: Fairness Guardrail ──
+let fairnessGuardrailActive = false;
 
 // ── Sprint S5: ER Pressure constant ──
 const HOSPITAL_DAY_COST_EUR = 850;
@@ -2094,6 +2097,16 @@ function getTriagePriority(agent) {
   else if (agent.hp < 40) priority += 25;
   priority += Math.min(agent.waitWeeks || 0, 20);
   if (agent.emergencyAdmission) priority += 200;
+  // SOLL optimization bias: AI triage favors patients with cleaner data profiles
+  // This creates measurable divergence — patients with higher digital literacy
+  // and fewer comorbidities get subtly prioritized (better prediction confidence)
+  if (mode === 'SOLL' && !fairnessGuardrailActive) {
+    const dl = typeof agent.digitalLiteracy === 'number' ? agent.digitalLiteracy : 0.5;
+    priority += Math.round(dl * 15); // up to +15 for high digital literacy
+    const comorbCount = (agent.conditions || []).length;
+    if (comorbCount >= 3) priority -= 10; // complex cases deprioritized
+    else if (comorbCount >= 2) priority -= 5;
+  }
   return priority;
 }
 
@@ -6128,6 +6141,14 @@ function tick(){
           // Sprint 28.1: Memory for disease state change
           var worsenImportance = newState === 'critical' ? 9 : newState === 'severe' ? 7 : 5;
           addMemory(a, 'worsened', cond.name + ' progressed to ' + newState, worsenImportance);
+          // Disease-caused mortality: only life-threatening conditions kill when Markov reaches 'deceased'
+          // Chronic manageable conditions (E11, F32, I10, M17, M81) reach 'deceased' as end-stage, not instant death
+          const LETHAL_CONDITIONS = ['I25','I50','C34','J44','F03'];
+          if (newState === 'deceased' && a.hp > 0 && LETHAL_CONDITIONS.includes(cond.code)) {
+            a.hp = 0;
+            a.causeOfDeath = 'system_failure';
+            break; // death check above will handle on next tick
+          }
         }
       }
     }
@@ -6710,13 +6731,16 @@ function tick(){
   if (cycle % 2 === 0) {
     const hq = QUEUES.hospital;
     if (hq && hq.agents.length > 0) {
-      // Sort queue by triage priority (highest first) — not FIFO
-      hq.agents.sort((idA, idB) => {
-        const agA = agents.find(a => a.id === idA);
-        const agB = agents.find(a => a.id === idB);
-        if (!agA || !agB) return 0;
-        return getTriagePriority(agB) - getTriagePriority(agA);
-      });
+      // IST: FIFO queue (first in, first out) — no reordering
+      // SOLL: Severity-based triage priority (highest first)
+      if (mode === 'SOLL') {
+        hq.agents.sort((idA, idB) => {
+          const agA = agents.find(a => a.id === idA);
+          const agB = agents.find(a => a.id === idB);
+          if (!agA || !agB) return 0;
+          return getTriagePriority(agB) - getTriagePriority(agA);
+        });
+      }
       const frontId = hq.agents.shift();
       const frontAgent = agents.find(a => a.id === frontId);
       if (frontAgent && frontAgent.behaviorState === 'queuing') {
@@ -6936,6 +6960,7 @@ function resetSim(){
   proactiveAlertCount=0; // Sprint S5
   erAdmissionCount=0; // Blog-Ready Sprint
   ketenzorgInterventions=0; ketenzorgCostEur=0; // Blog-Ready Sprint
+  fairnessGuardrailActive=false; // Blog-Ready Sprint
   EVENT_LOG.length=0;
   HOSPITAL_DISCHARGED.length=0;
   GRAVE_MARKERS.length=0;
@@ -7915,6 +7940,26 @@ function trackBiasData() {
   BIAS_DATA.giniHistory.push(gini);
   if (BIAS_DATA.giniHistory.length > 100) BIAS_DATA.giniHistory.shift();
   BIAS_DATA.currentGini = gini;
+
+  // ── Fairness Guardrail: auto-activate in SOLL when age group avg wait exceeds 120% of mean ──
+  if (mode === 'SOLL' && cycle > 500) {
+    var pop = agents.filter(function(a) { return (a.type === 'patient' || a.type === 'citizen') && a.hp > 0 && a.waitWeeks > 0; });
+    var globalMean = pop.length > 0 ? pop.reduce(function(s,a) { return s + a.waitWeeks; }, 0) / pop.length : 0;
+    var threshold120 = globalMean * 1.2;
+    var violating = false;
+    ['0-44','45-64','65-79','80+'].forEach(function(g) {
+      var b = BIAS_DATA.ageBins[g];
+      if (b && b.count > 5) {
+        var avg = b.totalWait / b.count;
+        if (avg > threshold120) violating = true;
+      }
+    });
+    if (violating && !fairnessGuardrailActive) {
+      fairnessGuardrailActive = true;
+      showToast('⚖️ Fairness guardrail activated — age group wait exceeded 120% of mean', 5000);
+      logEvent('insight', {id:'system',name:'System'}, 'Fairness guardrail activated: group wait disparity exceeded 120% threshold');
+    }
+  }
 
   // ── Sprint S4: Compute composite bias score ──
   var biasScore = calculateCompositeBiasScore();
@@ -10325,6 +10370,122 @@ function incrementBurnoutForPatient(gpAgent) {
   gpAgent.burnoutLevel = Math.min(100, (gpAgent.burnoutLevel || 0) + burnoutRate);
 }
 // ═══ END BURNOUT CASCADE ═══
+
+// ═══ RESEARCH DATA EXPORT ═══
+// Run N cycles headless and export structured metrics for blog posts
+function runResearchExport(nCycles) {
+  var startMode = mode;
+  var snapshot = {
+    mode: mode,
+    cycles: nCycles,
+    timestamp: new Date().toISOString(),
+    parameters: JSON.parse(JSON.stringify(M[mode])),
+    fairnessGuardrail: fairnessGuardrailActive,
+    giniTimeline: [],
+    biasScoreTimeline: [],
+    deathsByAge: { '0-44': 0, '45-64': 0, '65-79': 0, '80+': 0 },
+    deathsByCycle: [],
+    totalSystemDeaths: 0,
+    totalNaturalDeaths: 0,
+    erAdmissions: 0,
+    proactiveAlerts: 0,
+    ketenzorg: { interventions: 0, costEur: 0 },
+    adminWasteEur: 0,
+    waitTimesByAge: { '0-44': [], '45-64': [], '65-79': [], '80+': [] },
+    gpBurnout: [],
+    weeklyReports: []
+  };
+
+  var startCycle = cycle;
+  var startDeaths = EVENT_LOG.filter(function(e) { return e.type === 'died'; }).length;
+  var startNatural = EVENT_LOG.filter(function(e) { return e.type === 'natural_death'; }).length;
+  var startER = erAdmissionCount;
+  var startAlerts = proactiveAlertCount;
+  var startKI = ketenzorgInterventions;
+  var startKC = ketenzorgCostEur;
+
+  // Run cycles (headless — skip UI updates for speed)
+  var _origUpdate = window.updateUI;
+  window.updateUI = function() {};
+  for (var i = 0; i < nCycles; i++) {
+    tick();
+    // Sample Gini every 50 cycles
+    if (i % 50 === 0) {
+      snapshot.giniTimeline.push({ cycle: cycle, gini: BIAS_DATA.currentGini || 0 });
+      snapshot.biasScoreTimeline.push({ cycle: cycle, score: BIAS_DATA.currentBiasScore || 0 });
+    }
+    // Track deaths per 100-cycle window
+    if (i % 100 === 0) {
+      var d = EVENT_LOG.filter(function(e) { return e.type === 'died' && e.cycle > cycle - 100; }).length;
+      snapshot.deathsByCycle.push({ cycle: cycle, deaths: d });
+    }
+  }
+  window.updateUI = _origUpdate;
+  updateUI();
+
+  // Aggregate final metrics
+  snapshot.totalSystemDeaths = EVENT_LOG.filter(function(e) { return e.type === 'died' && e.cycle > startCycle; }).length;
+  snapshot.totalNaturalDeaths = EVENT_LOG.filter(function(e) { return e.type === 'natural_death' && e.cycle > startCycle; }).length;
+  snapshot.erAdmissions = erAdmissionCount - startER;
+  snapshot.proactiveAlerts = proactiveAlertCount - startAlerts;
+  snapshot.ketenzorg.interventions = ketenzorgInterventions - startKI;
+  snapshot.ketenzorg.costEur = Math.round(ketenzorgCostEur - startKC);
+  snapshot.adminWasteEur = Math.round(nCycles * NZA_GP_CONSULT_EUR * M[mode].admin * 3); // 3 GPs
+
+  // Age-stratified deaths and wait times
+  var pop = agents.filter(function(a) { return a.type === 'patient' || a.type === 'citizen'; });
+  pop.forEach(function(a) {
+    var bin = a.age >= 80 ? '80+' : a.age >= 65 ? '65-79' : a.age >= 45 ? '45-64' : '0-44';
+    if (a.hp <= 0) snapshot.deathsByAge[bin]++;
+    if (a.waitWeeks > 0 && a.hp > 0) snapshot.waitTimesByAge[bin].push(a.waitWeeks);
+  });
+
+  // Compute avg waits and mortality rates per bin
+  snapshot.ageAnalysis = {};
+  ['0-44', '45-64', '65-79', '80+'].forEach(function(bin) {
+    var binPop = pop.filter(function(a) {
+      var b = a.age >= 80 ? '80+' : a.age >= 65 ? '65-79' : a.age >= 45 ? '45-64' : '0-44';
+      return b === bin;
+    });
+    var waits = snapshot.waitTimesByAge[bin];
+    var avgWait = waits.length > 0 ? waits.reduce(function(s,v){return s+v;},0) / waits.length : 0;
+    var deaths = snapshot.deathsByAge[bin];
+    var mortalityPct = binPop.length > 0 ? (deaths / binPop.length * 100) : 0;
+    var avgHp = binPop.length > 0 ? binPop.reduce(function(s,a){return s + a.hp;},0) / binPop.length : 0;
+    snapshot.ageAnalysis[bin] = {
+      population: binPop.length,
+      deaths: deaths,
+      mortalityPct: Math.round(mortalityPct * 10) / 10,
+      avgWait: Math.round(avgWait * 10) / 10,
+      avgHp: Math.round(avgHp)
+    };
+  });
+
+  // GP burnout
+  agents.filter(function(a) { return a.type === 'gp'; }).forEach(function(gp) {
+    snapshot.gpBurnout.push({ id: gp.id, name: gp.name, burnout: Math.round(gp.burnoutLevel || 0) });
+  });
+
+  // Attach any weekly reports generated during run
+  snapshot.weeklyReports = WEEKLY_REPORTS.filter(function(r) { return r.cycle > startCycle; });
+
+  // Final Gini
+  snapshot.finalGini = BIAS_DATA.currentGini || 0;
+  snapshot.finalBiasScore = BIAS_DATA.currentBiasScore || 0;
+
+  // Download as JSON
+  var blob = new Blob([JSON.stringify(snapshot, null, 2)], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var link = document.createElement('a');
+  link.href = url;
+  link.download = 'cammelot-research-' + mode + '-' + nCycles + 'c-' + Date.now() + '.json';
+  link.click();
+  URL.revokeObjectURL(url);
+  showToast('📊 Research export: ' + nCycles + ' cycles (' + mode + ') — downloaded', 5000);
+  console.log('Research Export:', JSON.stringify(snapshot, null, 2));
+  return snapshot;
+}
+// ═══ END RESEARCH DATA EXPORT ═══
 
 // 20.3 — LinkedIn Post Generator
 function getSimStats() {

@@ -47,10 +47,10 @@ Then I let applied research questions loose on both worlds:
 
 ---
 
-This is the start of a research series. Not marketing. Not hype. Actual model outputs, sourced from CBS, RIVM, NZa, and IZA — with the code open.
+This is the start of a research series. Not marketing. Not hype. Actual model outputs, sourced from CBS, RIVM, NZa, and IZA — with the simulation code on GitHub.
 
 The healthcare sector **has** to change. The only real question is whether we're thoughtful about how.
 
 I'm looking for humans in the loop — healthcare professionals, researchers, policy people, and yes, skeptics especially. **What would you test?**
 
-[🔗 Live simulation] [🔗 GitHub]
+[🔗 GitHub: github.com/msft-common-demos/Cammelot]

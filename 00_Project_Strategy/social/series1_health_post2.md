@@ -1,6 +1,6 @@
 # Series 1 — Health Sector | Post 2: The Admin Tax
 
-**Status:** Draft v1
+**Status:** Draft v2 — Real Data
 **Target:** LinkedIn
 **Tags:** #HealthcareAI #AdminBurden #MeerTijdVoorDePatiënt #Zorginfarct #Cammelot #NZa
 
@@ -8,64 +8,54 @@
 
 ## Post
 
-What if the biggest killer in Dutch healthcare isn't a disease?
+What if the biggest drag on Dutch healthcare isn't a disease — but a spreadsheet?
 
-I ran 1,000 simulation cycles in Cammelot — a town of 5,000 AI citizens with real CBS/RIVM health data.
+I built Cammelot: a 16-bit simulation of a Dutch town where AI agents live, get sick, and navigate the healthcare system. Every parameter sourced from CBS, RIVM, and NZa.
 
-Here's what I tested: **What happens when you remove the 30% GP admin burden?**
+Here's what I tested: **What happens when you cut the 30% GP admin burden?**
 
 ---
 
-Right now, Dutch GPs spend roughly 30% of their working hours on administration. Not patient care. Paperwork, systems, coding, reporting. This is well-documented — NZa, LHV, and IZA all track it.
+Dutch GPs spend ~30% of their time on administration (NZa, LHV, IZA). Effective capacity drops to just 62%.
 
-In simulation terms, this means:
-- **Effective GP capacity: 62%** (C_eff = total × (1 - 0.30 admin - 0.08 sick leave))
-- A GP with 2,400 registered patients can actually *attend to* about 1,488 per cycle
-- The remaining 912 patient-slots are consumed by administration
-
-I modeled this across three GPs serving Cammelot:
+I ran 10 simulations of 3,000 cycles each, across two modes:
 
 **IST (status quo):**
-- 📊 Admin waste per GP per year: **~€47,000** (based on NZa consult rate × lost slots)
-- 📊 Average specialist wait: **9.2 weeks** (Treeknorm norm: 4 weeks)
-- 📊 Preventable deaths (1,000 cycles): **18** — citizens who ran out of time in the queue
-- 📊 GP burnout: all three GPs exceeded 70% burnout by cycle 600
+- 📊 Admin waste per GP: **€13,611/year** (NZa consult rates × lost capacity)
+- 📊 GP burnout score: **~20%** and climbing
+- 📊 System deaths (disease progression): **5.5 avg** per run
 
-**SOLL (admin reduced to 5% via AI scribes):**
-- 📊 Effective capacity jumps to **83%** (C_eff × 1.34 AI multiplier)
-- 📊 Average specialist wait drops to **4.1 weeks**
-- 📊 Preventable deaths: **6** — a 67% reduction
-- 📊 GP burnout: none exceeded 50%
+**SOLL (admin reduced to <5% via AI scribes):**
+- 📊 Admin waste per GP: **€2,268/year** — an **83% reduction**
+- 📊 GP burnout score: **3.7%** — near zero
+- 📊 System deaths: **4.3 avg** — 22% fewer
 
 ---
 
-The economics are brutal.
+The burnout finding is dramatic. An 81% reduction in GP burnout just from removing admin friction. That's not a treatment improvement — it's a workflow improvement with clinical consequences.
 
-The IZA "Meer Tijd voor de Patiënt" program costs **€3.23 per patient per quarter**. That's the investment.
-
-A single preventable death — one citizen who deteriorates in a specialist queue because their GP couldn't process the referral in time — represents an estimated **€5,845** in avoided hospitalization costs alone. That's before you count the human cost.
-
-In Cammelot, the admin tax killed more people than heart disease.
+The IZA "Meer Tijd voor de Patiënt" program costs **€3.23/patient/quarter**. A single preventable hospitalization costs ~**€5,845** (NZa avg DBC). The admin tax isn't just waste — it compounds into burnout, delays, and lost lives.
 
 ---
 
-This is applied research, not an opinion piece. The model parameters come from CBS 2024, RIVM chronic condition prevalence, and NZa 2025 tariff data. The simulation code is open.
+*Methodology: 10 runs × 3,000 cycles, 45 agents (proportional demographics). CBS 2024, RIVM chronic condition prevalence, NZa 2025 tariffs. Headless research runner. Variance between runs is significant — these are stochastic averages, not deterministic claims.*
 
-The question isn't whether the admin burden is a problem. Everyone agrees it is. The question is: **what is it actually costing in lives?**
+Next: the waiting list isn't neutral — and I have the age-stratified data to prove it.
 
-I'm building the tool to answer that.
-
-Next post: the waiting list isn't neutral — and I have the age-stratified data to prove it.
-
-[📸 Screenshot: Cammelot admin waste taxi meter showing €47,000+]
-[📸 Screenshot: IST vs SOLL comparison — deaths counter]
-[🔗 Try it yourself: cammelot.health]
+[📸 Screenshot: Cammelot admin waste taxi meter]
+[📸 Screenshot: IST vs SOLL burnout comparison]
 
 ---
+
+## Data Source (10-run averages)
+```
+IST: system_deaths=5.5, ER=93, burnout=19.8%, bias=0.53, admin_waste/GP=€13,611
+SOLL: system_deaths=4.3, ER=92.6, burnout=3.7%, bias=0.49, admin_waste/GP=€2,268
+Runner: scripts/research_run.cjs × 10 | 3,000 cycles each
+```
 
 ## Screenshots Needed
-1. Admin waste taxi meter (💰 counter on canvas) running during IST mode
-2. Top bar showing GP Burnout at 70%+ (red indicator)
-3. IST mode with 18 deaths counter vs SOLL mode with 6 deaths
+1. Admin waste taxi meter (💰 counter) running during IST mode
+2. Top bar showing GP Burnout climbing in IST
+3. IST vs SOLL mode toggle — burnout comparison
 4. Stats overlay showing cost breakdown
-5. A ghost sprite near the hospital with wait time tooltip

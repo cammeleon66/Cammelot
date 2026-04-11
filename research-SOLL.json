@@ -1,0 +1,70 @@
+{
+  "mode": "SOLL",
+  "cycles": 2000,
+  "elapsed_ms": 533,
+  "population": 45,
+  "system_deaths": 0,
+  "natural_deaths": 1,
+  "total_deaths": 1,
+  "er_admissions": 88,
+  "proactive_alerts": 500,
+  "ketenzorg_interventions": 296,
+  "ketenzorg_cost_eur": 16550,
+  "admin_waste_eur": 3729,
+  "gini": 0.977,
+  "bias_score": 0.3,
+  "fairness_guardrail": false,
+  "gini_history_samples": [
+    0.963,
+    0.977,
+    0,
+    0
+  ],
+  "age_analysis": {
+    "0-44": {
+      "population": 36,
+      "deaths": 0,
+      "mortality_pct": 0,
+      "avg_wait_weeks": 0.4,
+      "avg_hp_in_queue": 100,
+      "waiting_count": 1
+    },
+    "45-64": {
+      "population": 3,
+      "deaths": 0,
+      "mortality_pct": 0,
+      "avg_wait_weeks": 0,
+      "avg_hp_in_queue": 0,
+      "waiting_count": 0
+    },
+    "65-79": {
+      "population": 2,
+      "deaths": 0,
+      "mortality_pct": 0,
+      "avg_wait_weeks": 0,
+      "avg_hp_in_queue": 0,
+      "waiting_count": 0
+    },
+    "80+": {
+      "population": 4,
+      "deaths": 2,
+      "mortality_pct": 50,
+      "avg_wait_weeks": 0,
+      "avg_hp_in_queue": 0,
+      "waiting_count": 0
+    }
+  },
+  "gp_burnout": [
+    {
+      "name": "Dr. de Jong",
+      "burnout": 10
+    },
+    {
+      "name": "Dr. Bakker",
+      "burnout": 8
+    }
+  ],
+  "weekly_reports_count": 2,
+  "preventable_death_cost_eur": 0,
+  "total_admin_waste_annual_per_gp": 2268
+}
