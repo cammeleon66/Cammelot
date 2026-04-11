@@ -936,22 +936,29 @@ let camX=0,camY=0,zoom=1.0,dragStart=null,dragCam=null,userZoomed=false;
 function ns(x,y){return((Math.sin(x*12.9898+y*78.233)*43758.5453)%1+1)%1;}
 
 // ── Background map image ──
-// The map image is loaded from /assets/map.png or via drag-drop
+// The map image is loaded from assets/ or via drag-drop
 let mapImg = new Image();
 let mapLoaded = false;
 const MAP_W = 1280; // image pixel width (will be measured from loaded image)
 const MAP_H = 720;  // image pixel height
 
-// Try loading from assets
+// Try loading from assets — use relative paths so file:// works
 mapImg.onload = () => { mapLoaded = true; mapImgW = mapImg.naturalWidth; mapImgH = mapImg.naturalHeight; mapCacheDirty = true; };
 mapImg.onerror = () => {
-  // Try alternate extensions
-  const alt = new Image();
-  alt.onload = () => { mapImg = alt; mapLoaded = true; mapImgW = alt.naturalWidth; mapImgH = alt.naturalHeight; mapCacheDirty = true; };
-  alt.onerror = () => { console.log('No map image found — drag and drop one onto the game area.'); };
-  alt.src = '/assets/map.jpg';
+  // Try alternate paths (relative to HTML location)
+  const alts = ['../../assets/map.png', '../../assets/map2.jpeg', '../../assets/map.png.jpeg',
+                '/assets/map2.jpeg', '/assets/map.png'];
+  let idx = 0;
+  function tryNext() {
+    if (idx >= alts.length) { console.log('No map image found — drag and drop one onto the game area.'); return; }
+    const alt = new Image();
+    alt.onload = () => { mapImg = alt; mapLoaded = true; mapImgW = alt.naturalWidth; mapImgH = alt.naturalHeight; mapCacheDirty = true; };
+    alt.onerror = () => { idx++; tryNext(); };
+    alt.src = alts[idx];
+  }
+  tryNext();
 };
-mapImg.src = '/assets/map2.jpeg';
+mapImg.src = '../../assets/map2.jpeg';
 
 let mapImgW = MAP_W, mapImgH = MAP_H;
 
