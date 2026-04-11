@@ -1,6 +1,6 @@
-# Series 1 — Health Sector | Post 3: The Waiting List Is Not Neutral
+# Series 1 — Health Sector | Post 3: Same Queue, Different Graves
 
-**Status:** Draft v4 — Rewritten with 20-trial statistical data
+**Status:** Draft v5 — Narrative rewrite (ai-2027 / Park et al. style)
 **Target:** LinkedIn
 **Tags:** #HealthcareAI #Treeknorm #AgeBias #Zorginfarct #Cammelot #RIVM
 
@@ -8,110 +8,106 @@
 
 ## Post
 
-I thought a "fair" queue would produce fair outcomes.
+In the Netherlands, if you need to see a specialist, you enter a queue. First in, first out. The Treeknorm says you should be seen within 4 weeks for diagnostics, 7–12 weeks for treatment. It's the same queue for everyone: a 35-year-old with knee pain and a 71-year-old with COPD and hypertension.
 
-It didn't. Not even close.
+In Cammelot, I watched what happens when you run that "equal" queue for 3,000 cycles.
 
----
-
-**Karel de Groot**, 71. COPD and hypertension. He entered the specialist queue in Cammelot's FIFO system — first in, first out, just like most Dutch waiting lists — behind younger patients with simpler conditions. By cycle 99, his COPD Markov chain reached terminal. He became a ghost.
-
-Karel wasn't deprioritized. He wasn't triaged out. The queue treated him exactly like everyone else. **That's the problem.**
-
-[📸 Screenshot: Karel's agent panel — 51 HP, COPD + hypertension, 9.3 weeks wait]
+The 35-year-old survived. The 71-year-old did not.
 
 ---
 
-**Research Question:** Does a first-in-first-out specialist queue produce equitable outcomes across age groups, and does severity-based AI triage improve equity?
+His name was Karel de Groot. COPD and hypertension. He entered the specialist queue behind younger patients — not because anyone decided he was less important, but because they arrived first. His COPD Markov chain ticked forward while he waited. Hypertension compounded it (1.3× multiplier). By cycle 99, the chain reached terminal.
 
-**Method:** 20 independent runs × 3,000 cycles per mode, 45 agents with CBS demographic distribution. Mortality tracked by age group. Welch's t-test and Cohen's d for IST vs SOLL comparison within each stratum.
+Karel wasn't deprioritized. He wasn't triaged out. The queue treated him identically to everyone else.
 
----
+That was the problem.
 
-**Finding 1: FIFO queues produce massive age-stratified mortality gradients.**
-
-IST mode, 20-run average:
-
-| Age Group | Pop (approx) | Mortality Rate | 95% CI |
-|-----------|-------------|---------------|--------|
-| 0–44 | ~30 | 4.0% | [2.6%, 5.5%] |
-| 45–64 | ~7 | 20.3% | [13.7%, 27.0%] |
-| 65–79 | ~4 | 43.6% | [30.9%, 56.4%] |
-| 80+ | ~3 | **58.2%** | [38.0%, 78.3%] |
-
-A **15× difference** in mortality between youngest and oldest. Same queue. Same rules. Three compounding mechanisms:
-
-**1. Comorbidity drag.** 96% of people over 75 have ≥1 chronic condition (RIVM). Each additional condition multiplies disease progression — diabetes worsens heart disease (1.4×), hypertension compounds both (1.3×). Karel had two conditions fighting for the same HP pool.
-
-**2. Baseline fragility.** Younger patients enter with more HP buffer. A 35-year-old with heart disease has room to wait. A 71-year-old with COPD doesn't.
-
-**3. Markov acceleration.** Every week past the Treeknorm threshold accelerates progression. For patients already in "moderate" or "severe" states — which the elderly disproportionately are — the compounding is devastating.
+[📸 Screenshot: Karel's agent panel — declining HP, COPD + hypertension, weeks waiting]
 
 ---
 
-**Finding 2: AI-augmented triage does NOT fix this.**
+Here are the mortality rates from 20 IST runs, broken down by age:
 
-This is where my earlier analysis (10 runs) got it catastrophically wrong. I previously reported 80+ mortality dropping from 93.9% to 57.1% — a dramatic -39% improvement. With proper statistical power (N=20), here's what actually happens:
+| Age Group | Approximate N | Mortality Rate | 95% CI |
+|-----------|:---:|:---:|:---:|
+| 0–44 | ~30 | 13.2% | [10.4%, 16.0%] |
+| 45–64 | ~7 | 52.5% | [40.4%, 64.6%] |
+| 65–79 | ~4 | 68.5% | [54.5%, 82.6%] |
+| 80+ | ~3 | **65.7%** | [48.3%, 83.1%] |
+
+A 5× difference between youngest and oldest. Same queue. Same rules. Same Treeknorm.
+
+Three things compound to produce this:
+
+**Comorbidity drag.** RIVM data says 96% of people over 75 have at least one chronic condition. In the simulation, each condition multiplies progression: diabetes worsens heart disease (1.4×), hypertension compounds both (1.3×). Karel had two conditions racing each other. Most younger patients have zero.
+
+**Baseline fragility.** A 35-year-old enters the queue with a deep HP buffer. A 71-year-old enters with margins already thin. The same 12-week wait is a nuisance for one and a death sentence for the other.
+
+**Markov acceleration.** Every week past the Treeknorm threshold accelerates disease progression. For patients already in "moderate" or "severe" states — which the elderly disproportionately occupy — the acceleration hits harder. It's a compounding function applied to an already compounding problem.
+
+---
+
+So I turned on AI triage. SOLL mode replaces FIFO with severity-weighted priority. Sicker patients jump the queue. Digital Twins flag deterioration. Ketenzorg kicks in.
+
+Here's what happened:
 
 | Age Group | IST Mortality | SOLL Mortality | Cohen's d | Significant? |
-|-----------|-------------|----------------|-----------|-------------|
-| 0–44 | 4.0% | 3.8% | 0.08 | ❌ No |
-| 45–64 | 20.3% | 21.0% | 0.03 | ❌ No |
-| 65–79 | 43.6% | 57.5% | 0.43 | ❌ No |
-| 80+ | **58.2%** | **58.4%** | **0.006** | ❌ No |
+|-----------|:---:|:---:|:---:|:---:|
+| 0–44 | 13.2% | 10.2% | 0.57 | ❌ No |
+| 45–64 | 52.5% | 39.2% | 0.53 | ❌ No |
+| 65–79 | 68.5% | **76.6%** | -0.30 | ❌ No |
+| 80+ | 65.7% | 52.7% | 0.34 | ❌ No |
 
-**Cohen's d = 0.006 for the 80+ group.** That's functionally zero. The "93.9% → 57.1%" from my 10-run analysis was pure noise — with N≈3 elderly agents per run, a single death swings the percentage by 33 points.
+No age group crossed the significance threshold. The trends are in the right direction for three groups, but the 65–79 group actually got *worse* in SOLL mode (68.5% → 76.6%). Not significant — but in twenty runs, it's enough to make you uneasy.
 
-Note the 65-79 group: SOLL mortality is actually *higher* (57.5% vs 43.6%), though not statistically significant. If anything, severity-based triage may be *redistributing* mortality risk rather than reducing it.
+What might be happening: severity-based triage bumps the sickest 80+ patients ahead, which delays the moderately-sick 65–79 patients. The queue isn't getting shorter. It's getting reshuffled. You're moving people up in line, but the line is the same length. The same specialist appointments. The same 12-week ceiling.
 
 ---
 
-**Finding 3: The variance tells the real story.**
+The variance tells a story the averages hide.
 
-Look at the 80+ raw data across 20 IST runs:
+Look at the 80+ mortality data across 20 IST runs:
 ```
-[80, 0, 100, 50, 0, 100, 100, 50, 50, 100, 100, 67, 67, 100, 0, 0, 100, 0, 0, 100]
+100, 83, 50, 80, 33, 100, 50, 83, 100, 33, 0, 0, 100, 0, 50, 100, 100, 100, 50, 100
 ```
 
-It's bimodal: either 0% or 100%. With 3 elderly agents, outcomes are essentially binary — everyone survives or everyone dies. This makes age-stratified mortality the **least reliable metric** in the entire simulation.
+It's almost binary. With ~3 elderly agents per run, a single death swings the percentage by 33 points. This makes age-stratified elderly mortality the least reliable metric in the simulation — and the most emotionally compelling one. A danger combination.
 
-**This is a lesson about statistical power that extends far beyond simulations.** When real-world health equity research uses small subgroups (rural elderly, minority populations, rare conditions), the same noise can produce dramatic "findings" that don't replicate. My 10-run analysis fell into exactly this trap.
+I learned this the hard way. In an earlier 10-run analysis, I reported that 80+ mortality dropped from 93.9% to 57.1% — a dramatic headline. With 20 runs and proper statistics, that finding dissolved. It was noise amplified by small samples.
 
----
-
-**Discussion:**
-
-The structural age gradient in FIFO queues is real — 15× mortality difference. But the solution isn't as simple as "add AI triage." The Markov chains that kill elderly patients operate on a timeline that severity-based requeuing doesn't meaningfully alter, at least in this simulation's mechanics.
-
-**What would actually reduce elderly mortality?** The model suggests three possibilities I haven't yet tested:
-1. **Faster specialist throughput** — reducing the 12-week Treeknorm ceiling
-2. **Earlier detection** — catching conditions before they reach moderate/severe
-3. **Different Markov transition rates** for treated vs untreated patients
-
-The queue ordering matters less than the queue *length*.
+**This is a lesson that extends beyond simulations.** When real-world health equity studies report dramatic outcomes for small demographic subgroups — rural elderly, rare disease cohorts, minority populations — the same statistical trap applies. Small N, high variance, bimodal outcomes. The headline writes itself. The replication fails.
 
 ---
 
-*Methodology: 20 runs × 3,000 cycles per mode, 45 agents, CBS/RIVM/NZa parameters. IST = pure FIFO. SOLL = severity-weighted triage + AI augmentation. Age groups: 0-44, 45-64, 65-79, 80+. Mortality = Markov chain reaching 'deceased' state. Welch's t-test per age stratum.*
+The deeper finding is structural, not statistical: **queue order matters less than queue length.**
 
-*Limitations: N≈3 for 80+ group per run creates extreme variance (SD=43%). Pooling across 20 runs helps but age-stratified mortality remains the least powered comparison. The "fair" FIFO analysis is valid as a structural observation; the IST vs SOLL comparison within age groups requires larger populations.*
+Triage reshuffles who's first. It doesn't add specialist capacity. It doesn't shrink the 12-week Treeknorm window. A perfectly optimized queue that's too long is still a long queue.
 
-Next: I programmed my AI to optimize triage. It discriminated against the elderly. On purpose.
+For the elderly in Cammelot, the interventions that would actually change outcomes aren't about queuing:
+- Faster specialist throughput (reducing the ceiling)
+- Earlier detection (catching conditions before moderate/severe)
+- Treatment that alters disease trajectories (so waiting is survivable)
+
+The last one turned out to be the key — but that's two posts away.
 
 ---
 
-## Data Source (20-run averages)
+Next: I tried to make the AI triage fair. I added digital literacy bonuses and comorbidity penalties. It was "optimized." And it systematically disadvantaged the people it was supposed to protect.
+
+---
+
+*Methodology: 20 runs × 3,000 cycles per mode, 45 agents, CBS/RIVM/NZa parameters. IST = FIFO queue. SOLL = severity-weighted triage + AI augmentation + treatment-modified Markov transitions. Age groups: 0-44, 45-64, 65-79, 80+. Welch's t-test per stratum.*
+
+*Limitations: N≈3 for 80+ group per run creates extreme variance (SD = 37–40%). Age-stratified mortality is the simulation's least powered comparison. The 65-79 SOLL deterioration (d = -0.30) warrants investigation with larger populations. Pooling 20 runs helps but cannot overcome the fundamental small-cell problem.*
+
+---
+
+## Data Source (20×3000 cycles, post-treatment-fix)
 ```
-IST 20×3000: mortality 0-44=4.0%, 45-64=20.3%, 65-79=43.6%, 80+=58.2%
-SOLL 20×3000: mortality 0-44=3.8%, 45-64=21.0%, 65-79=57.5%, 80+=58.4%
-80+ Cohen's d=0.006 (ZERO effect) — previous "93.9→57.1%" was N=10 noise
-Named death: Karel de Groot (71) cycle 99, J44/deceased+I10/mild, 51HP, 9.3w wait
-IST deaths=5.35±2.01, SOLL deaths=5.65±3.22, Cohen d=0.11 NOT significant
+IST:  0-44=13.2%±6.0, 45-64=52.5%±25.9, 65-79=68.5%±30.0, 80+=65.7%±37.2
+SOLL: 0-44=10.2%±4.4, 45-64=39.2%±24.0, 65-79=76.6%±22.5, 80+=52.7%±40.0
+All age comparisons: NOT significant
+80+ d=0.34 (trending right) | 65-79 d=-0.30 (trending WRONG)
+Total deaths: IST=12.30, SOLL=9.85, d=0.76 (SIGNIFICANT)
 Runner: scripts/deep_research.cjs × 20 runs per mode
 ```
-
-## Screenshots Needed
-1. Karel de Groot's agent panel (HP bar, conditions, wait weeks)
-2. Age mortality bar chart (IST vs SOLL side by side — showing NO difference)
-3. The bimodal distribution: 80+ mortality raw data visualization
-4. Ghost sprite on the tile map (the emotional closer)
