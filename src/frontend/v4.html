@@ -2092,6 +2092,25 @@ const MEDICATIONS = {
 };
 
 // ═══ Sprint 28: Triage Priority — severity-based queue ordering ═════════════
+// Base clinical triage priority (IST) — severity + HP only
+// This is what Dutch hospitals do TODAY: sicker patients get seen first
+// No AI augmentation, no digital literacy bias, no Digital Twin data
+function getBaseTriagePriority(agent) {
+  const severityScore = { critical: 100, severe: 75, moderate: 50, mild: 25 };
+  let priority = 0;
+  if (agent.conditions) {
+    agent.conditions.forEach(c => {
+      const s = severityScore[c.severity] || 0;
+      if (s > priority) priority = s;
+    });
+  }
+  if (agent.hp < 20) priority += 50;
+  else if (agent.hp < 40) priority += 25;
+  if (agent.emergencyAdmission) priority += 200;
+  return priority;
+}
+
+// SOLL triage priority — extends base with AI-specific factors
 function getTriagePriority(agent) {
   const severityScore = { critical: 100, severe: 75, moderate: 50, mild: 25 };
   let priority = 0;
@@ -2105,15 +2124,17 @@ function getTriagePriority(agent) {
   else if (agent.hp < 40) priority += 25;
   priority += Math.min(agent.waitWeeks || 0, 20);
   if (agent.emergencyAdmission) priority += 200;
-  // SOLL optimization bias: AI triage favors patients with cleaner data profiles
-  // This creates measurable divergence — patients with higher digital literacy
-  // and fewer comorbidities get subtly prioritized (better prediction confidence)
+  // SOLL-only: AI triage adds Digital Twin risk data + digital literacy bias
   if (mode === 'SOLL' && !fairnessGuardrailActive) {
     const dl = typeof agent.digitalLiteracy === 'number' ? agent.digitalLiteracy : 0.5;
-    priority += Math.round(dl * 15); // up to +15 for high digital literacy
+    priority += Math.round(dl * 15);
     const comorbCount = (agent.conditions || []).length;
-    if (comorbCount >= 3) priority -= 10; // complex cases deprioritized
+    if (comorbCount >= 3) priority -= 10;
     else if (comorbCount >= 2) priority -= 5;
+  }
+  // SOLL: Digital Twin risk score adds precision
+  if (mode === 'SOLL' && agent.digitalTwinRisk) {
+    priority += Math.round(agent.digitalTwinRisk.riskPct * 0.3);
   }
   return priority;
 }
@@ -3183,26 +3204,29 @@ function transitionDiseaseState(conditionCode, currentState, waitWeeks, treeknor
   const currentIdx = states.indexOf(currentState);
 
   // Treatment effect: ketenzorg/proactive care slows progression
-  // Increases self-stay probability, reduces worse-state transitions
-  // Allows possible improvement (one state back) for mild/moderate
+  // Severity-scaled: stronger deceleration for sicker patients (clinical reality)
+  // Also adds improvement chance (one state back) for treatable states
   if (receivingTreatment && currentState !== 'deceased' && currentState !== 'healthy') {
-    const TREATMENT_DECELERATION = 0.20; // 20% shift toward stability
-    const IMPROVEMENT_CHANCE = 0.05;     // 5% chance of improving one state
+    // Severity-scaled deceleration: sicker patients benefit MORE from treatment
+    const DECEL_BY_SEVERITY = { mild: 0.15, moderate: 0.25, severe: 0.35, critical: 0.45 };
+    const IMPROVE_BY_SEVERITY = { mild: 0.08, moderate: 0.06, severe: 0.03, critical: 0.01 };
+    const deceleration = DECEL_BY_SEVERITY[currentState] || 0.20;
+    const improvementChance = IMPROVE_BY_SEVERITY[currentState] || 0.05;
 
     if (currentIdx < states.length - 1) {
       // Reduce worse-state probabilities
       const worseStates = states.slice(currentIdx + 1);
       let totalRedistributed = 0;
       for (const ws of worseStates) {
-        const reduction = (row[ws] || 0) * TREATMENT_DECELERATION;
+        const reduction = (row[ws] || 0) * deceleration;
         row[ws] = (row[ws] || 0) - reduction;
         totalRedistributed += reduction;
       }
       // Add improvement chance (can move one state better)
       if (currentIdx > 0) {
         const betterState = states[currentIdx - 1];
-        row[betterState] = (row[betterState] || 0) + IMPROVEMENT_CHANCE;
-        totalRedistributed -= IMPROVEMENT_CHANCE;
+        row[betterState] = (row[betterState] || 0) + improvementChance;
+        totalRedistributed -= improvementChance;
       }
       // Remainder goes to self-stay (stability)
       row[currentState] = (row[currentState] || 0) + totalRedistributed;
@@ -3250,6 +3274,13 @@ function calculateHPDrain(condition, severity, waitWeeks, params, agent) {
   // Passive drain (untreated condition, even within Treeknorm)
   let drain = db.hpDrainPerTick * params.drain;
 
+  // Treatment reduces HP drain: use condition-specific mortalityRisk ratio
+  // If agent is receiving ketenzorg or has active medication, drain is reduced
+  if (agent && agent.receivingKetenzorg && db.mortalityRisk) {
+    const treatmentRatio = db.mortalityRisk.treated / db.mortalityRisk.untreated;
+    drain *= treatmentRatio; // e.g., I25: 0.005/0.04 = 0.125 → 87.5% drain reduction
+  }
+
   // Additional drain from Treeknorm violation
   if (waitWeeks > params.tree) {
     const overdue = waitWeeks - params.tree;
@@ -3293,10 +3324,18 @@ function buildDrainBreakdown(agent) {
     if (!db) return;
     var sevMult = SEVERITY_MULTIPLIER[cond.severity] || 1.0;
     var baseDrain = db.hpDrainPerTick * p.drain;
+
+    // Show treatment reduction if applicable
+    var treatmentLabel = '';
+    if (agent.receivingKetenzorg && db.mortalityRisk) {
+      var treatmentRatio = db.mortalityRisk.treated / db.mortalityRisk.untreated;
+      baseDrain *= treatmentRatio;
+      treatmentLabel = ' <span style="color:#4CAF50">💊 −' + Math.round((1 - treatmentRatio) * 100) + '%</span>';
+    }
     baseDrainTotal += baseDrain;
 
     rows += '<div class="ac-row"><span class="k">• ' + (db.name || cond.code) + '</span><span class="v">' +
-      'Base: ' + baseDrain.toFixed(3) + '/tick (' + cond.severity + ')</span></div>';
+      'Base: ' + baseDrain.toFixed(3) + '/tick (' + cond.severity + ')' + treatmentLabel + '</span></div>';
 
     if (agent.waitWeeks > p.tree) {
       var overdue = agent.waitWeeks - p.tree;
@@ -6180,10 +6219,12 @@ function tick(){
 
     // === DISEASE STATE PROGRESSION (every 4 ticks ≈ 1 sim week) ===
     if (cycle % 4 === 0 && a.conditions && a.conditions.length > 0) {
-      // Treatment effect: ketenzorg (within 200 cycles) or active hospital care in SOLL mode
-      const ketenzorgActive = a.receivingKetenzorg && (cycle - (a.lastKetenzorgCycle || 0)) < 200;
+      // Treatment effect: ketenzorg (persistent for chronic conditions) or active hospital care in SOLL mode
+      // Once ketenzorg is initiated, chronic care management continues indefinitely (real-world: diabetes mgmt, cardiac rehab, COPD monitoring)
+      const ketenzorgActive = a.receivingKetenzorg === true;
       const hospitalCare = mode === 'SOLL' && (a.behaviorState === 'at_hospital' || a.behaviorState === 'recovering');
-      const isBeingTreated = ketenzorgActive || hospitalCare;
+      const hasMedication = a.medications && a.medications.length > 0;
+      const isBeingTreated = ketenzorgActive || hospitalCare || hasMedication;
       for (const cond of a.conditions) {
         const oldState = cond.severity;
         const newState = transitionDiseaseState(cond.code, cond.severity, a.waitWeeks, p.tree, isBeingTreated);
@@ -6210,13 +6251,16 @@ function tick(){
       }
     }
 
-    // ═══ Sprint 28: Emergency Pathway — critical patients bypass GP ═══
+    // ═══ Sprint 28: Emergency Pathway (SEH) — critical/severe patients bypass GP ═══
+    // In both IST and SOLL, Dutch hospitals have a Spoedeisende Hulp (ER)
+    // Critical patients with low HP, OR severe patients with very low HP → emergency admission
     if (a.conditions && a.conditions.length > 0 && a.behaviorState !== 'at_hospital' && a.behaviorState !== 'emergency' && a.behaviorState !== 'dead') {
       const worstSev = a.conditions.reduce((w, c) => {
         const order = { mild: 1, moderate: 2, severe: 3, critical: 4 };
         return (order[c.severity] || 0) > (order[w] || 0) ? c.severity : w;
       }, 'mild');
-      if (worstSev === 'critical' && !a.referredToHospital && a.hp < 30) {
+      const isEmergency = (worstSev === 'critical' && a.hp < 30) || (worstSev === 'severe' && a.hp < 15);
+      if (isEmergency && !a.referredToHospital) {
         a.referredToHospital = true;
         a.emergencyAdmission = true;
         a.behaviorState = 'emergency';
@@ -6784,20 +6828,24 @@ function tick(){
     });
   });
 
-  // Hospital queue: serve 1 per 2 ticks — Sprint 28: triage priority ordering
+  // Hospital queue: serve 1 per 2 ticks
+  // Both IST and SOLL use clinical triage — Dutch hospitals don't use pure FIFO
+  // IST: Basic clinical triage (severity + HP — the way real hospitals work today)
+  // SOLL: AI-enhanced triage (Digital Twin data, digital literacy, bias mechanisms)
   if (cycle % 2 === 0) {
     const hq = QUEUES.hospital;
     if (hq && hq.agents.length > 0) {
-      // IST: FIFO queue (first in, first out) — no reordering
-      // SOLL: Severity-based triage priority (highest first)
-      if (mode === 'SOLL') {
-        hq.agents.sort((idA, idB) => {
-          const agA = agents.find(a => a.id === idA);
-          const agB = agents.find(a => a.id === idB);
-          if (!agA || !agB) return 0;
+      // Both modes sort by clinical priority; SOLL adds AI-specific factors via getTriagePriority
+      hq.agents.sort((idA, idB) => {
+        const agA = agents.find(a => a.id === idA);
+        const agB = agents.find(a => a.id === idB);
+        if (!agA || !agB) return 0;
+        if (mode === 'SOLL') {
           return getTriagePriority(agB) - getTriagePriority(agA);
-        });
-      }
+        }
+        // IST: basic clinical triage (severity + HP only, no AI augmentation)
+        return getBaseTriagePriority(agB) - getBaseTriagePriority(agA);
+      });
       const frontId = hq.agents.shift();
       const frontAgent = agents.find(a => a.id === frontId);
       if (frontAgent && frontAgent.behaviorState === 'queuing') {
