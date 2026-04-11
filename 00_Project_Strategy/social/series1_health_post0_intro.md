@@ -25,7 +25,7 @@ I built it because I was tired of the vibes.
 
 "AI is overhyped." Compared to what? The system that's already producing a 301,000-worker shortage by 2035?
 
-Both sides argue with anecdotes and intuition. I wanted a machine that produces numbers. Not predictions — *outputs*. Run it, measure it, break it, run it again. Forty times. With statistics.
+Both sides argue with anecdotes and intuition. I wanted a machine that produces numbers. Not predictions — *outputs*. Run it, measure it, break it, run it again. Two hundred times. With statistics.
 
 ---
 
@@ -103,7 +103,7 @@ Spoiler: some do. Some spectacularly don't. And one mechanism turned out to matt
 
 Every finding in this series comes from the same protocol:
 
-- **20 independent runs per mode** (IST and SOLL)
+- **100 independent runs per mode** (IST and SOLL) — 200 total simulations
 - **3,000 cycles per run** — roughly 10 simulated years
 - **Welch's t-test** for significance (unequal variances)
 - **Cohen's d** for effect size (how big is the difference, not just "is it nonzero")
@@ -132,17 +132,17 @@ What I *can* promise: I report every finding honestly. When the data contradicts
 
 Over the next five posts, I'll walk through what happened — in the order I discovered it:
 
-1. **The first death.** Hendrik Veenstra, 70, dead at cycle 71. The aggregate finding: 20% fewer total deaths in SOLL. The first significant mortality result I ever found — and why it took me months.
+1. **The first death.** Hendrik Veenstra, 70, dead at cycle 71. The aggregate: ~7% fewer deaths in SOLL. Not statistically significant. AI didn't save the patients.
 
-2. **The admin tax.** GP burnout drops 73%. Admin waste drops 83%. Deaths barely move. Fixing the workforce doesn't fix the patients — not by itself.
+2. **The admin tax.** GP burnout drops 77%. Admin waste drops 83%. Deaths barely move. Fixing the workforce doesn't fix the patients — not by itself.
 
 3. **The queue.** FIFO kills the elderly at 5× the rate of the young. Same rules. Radically different graves. AI triage doesn't fix it.
 
-4. **The bias.** I optimized for throughput. The system pushed back against the elderly. The fairness guardrail fired in every single AI run.
+4. **The bias.** I optimized for throughput. The system pushed back against the elderly. The guardrail fired in 97% of runs — and it actually worked. Bias is significantly lower.
 
-5. **The one thing that worked.** 176 proactive alerts per run. Ketenzorg tripled. None of it mattered — until I changed how disease responds to treatment. One parameter shift. Twenty percent fewer deaths.
+5. **The treatment gap.** 167 proactive alerts per run. Ketenzorg tripled. Deaths still didn't drop. The model taught me: detection without treatment that changes disease trajectories is just documentation of decline.
 
-The code is on GitHub. The simulation runs in a browser. The research runner produces 40 trials of statistical output in under a minute.
+The code is on GitHub. The simulation runs in a browser. The research runner produces 200 trials of statistical output in minutes.
 
 I'm looking for healthcare professionals, researchers, and skeptics. Especially skeptics.
 

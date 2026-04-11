@@ -26,14 +26,14 @@ That was the problem.
 
 ---
 
-Here are the mortality rates from 20 IST runs, broken down by age:
+Here are the mortality rates from 100 IST runs, broken down by age:
 
 | Age Group | Approximate N | Mortality Rate | 95% CI |
 |-----------|:---:|:---:|:---:|
-| 0–44 | ~30 | 13.2% | [10.4%, 16.0%] |
-| 45–64 | ~7 | 52.5% | [40.4%, 64.6%] |
-| 65–79 | ~4 | 68.5% | [54.5%, 82.6%] |
-| 80+ | ~3 | **65.7%** | [48.3%, 83.1%] |
+| 0–44 | ~30 | 13.2% | [11.9%, 14.6%] |
+| 45–64 | ~7 | 39.1% | [34.2%, 44.0%] |
+| 65–79 | ~4 | 65.8% | [59.3%, 72.3%] |
+| 80+ | ~3 | **64.7%** | [56.5%, 72.8%] |
 
 A 5× difference between youngest and oldest. Same queue. Same rules. Same Treeknorm.
 
@@ -53,27 +53,25 @@ Here's what happened:
 
 | Age Group | IST Mortality | SOLL Mortality | Cohen's d | Significant? |
 |-----------|:---:|:---:|:---:|:---:|
-| 0–44 | 13.2% | 10.2% | 0.57 | ❌ No |
-| 45–64 | 52.5% | 39.2% | 0.53 | ❌ No |
-| 65–79 | 68.5% | **76.6%** | -0.30 | ❌ No |
-| 80+ | 65.7% | 52.7% | 0.34 | ❌ No |
+| 0–44 | 13.2% | 12.1% | 0.20 | ❌ No |
+| 45–64 | 39.1% | 36.9% | 0.10 | ❌ No |
+| 65–79 | 65.8% | 62.3% | 0.11 | ❌ No |
+| 80+ | 64.7% | 60.7% | 0.09 | ❌ No |
 
-No age group crossed the significance threshold. The trends are in the right direction for three groups, but the 65–79 group actually got *worse* in SOLL mode (68.5% → 76.6%). Not significant — but in twenty runs, it's enough to make you uneasy.
-
-What might be happening: severity-based triage bumps the sickest 80+ patients ahead, which delays the moderately-sick 65–79 patients. The queue isn't getting shorter. It's getting reshuffled. You're moving people up in line, but the line is the same length. The same specialist appointments. The same 12-week ceiling.
+No age group crossed the significance threshold. Every group trends in the right direction — including 65–79, which at N=20 had looked *worse* in SOLL (a result that turned out to be noise). At N=100, the picture is consistent: small improvements everywhere, none significant anywhere.
 
 ---
 
 The variance tells a story the averages hide.
 
-Look at the 80+ mortality data across 20 IST runs:
+Look at the 80+ mortality data across 100 IST runs — I'll show a sample:
 ```
-100, 83, 50, 80, 33, 100, 50, 83, 100, 33, 0, 0, 100, 0, 50, 100, 100, 100, 50, 100
+100, 83, 50, 80, 33, 100, 50, 83, 100, 33, 0, 0, 100, 0, 50, 100, 100, 100, 50, 100 ...
 ```
 
-It's almost binary. With ~3 elderly agents per run, a single death swings the percentage by 33 points. This makes age-stratified elderly mortality the least reliable metric in the simulation — and the most emotionally compelling one. A danger combination.
+It's almost binary. With ~3 elderly agents per run, a single death swings the percentage by 33 points. Even at N=100, the standard deviation is 41% — nearly as wide as the mean (64.7%). This makes age-stratified elderly mortality the least reliable metric in the simulation — and the most emotionally compelling one. A danger combination.
 
-I learned this the hard way. In an earlier 10-run analysis, I reported that 80+ mortality dropped from 93.9% to 57.1% — a dramatic headline. With 20 runs and proper statistics, that finding dissolved. It was noise amplified by small samples.
+I learned this the hard way. In an earlier 20-run analysis, I reported a "significant" total mortality reduction of 20%. With 100 runs, it shrank to 7% and lost significance. The headline dissolves. The replication fails.
 
 **This is a lesson that extends beyond simulations.** When real-world health equity studies report dramatic outcomes for small demographic subgroups — rural elderly, rare disease cohorts, minority populations — the same statistical trap applies. Small N, high variance, bimodal outcomes. The headline writes itself. The replication fails.
 
@@ -96,18 +94,17 @@ Next: I tried to make the AI triage fair. I added digital literacy bonuses and c
 
 ---
 
-*Methodology: 20 runs × 3,000 cycles per mode, 45 agents, CBS/RIVM/NZa parameters. IST = FIFO queue. SOLL = severity-weighted triage + AI augmentation + treatment-modified Markov transitions. Age groups: 0-44, 45-64, 65-79, 80+. Welch's t-test per stratum.*
+*Methodology: 100 runs × 3,000 cycles per mode, 45 agents, CBS/RIVM/NZa parameters. IST = FIFO queue. SOLL = severity-weighted triage + AI augmentation + treatment-modified Markov transitions. Age groups: 0-44, 45-64, 65-79, 80+. Welch's t-test per stratum.*
 
-*Limitations: N≈3 for 80+ group per run creates extreme variance (SD = 37–40%). Age-stratified mortality is the simulation's least powered comparison. The 65-79 SOLL deterioration (d = -0.30) warrants investigation with larger populations. Pooling 20 runs helps but cannot overcome the fundamental small-cell problem.*
+*Limitations: N≈3 for 80+ group per run creates extreme variance (SD = 41%). Age-stratified mortality is the simulation's least powered comparison. Even at 100 runs, no age group reaches significance. The 20-run false positive (total deaths d=0.76) illustrates the replication risk.*
 
 ---
 
-## Data Source (20×3000 cycles, post-treatment-fix)
+## Data Source (100×3000 cycles, post-treatment-fix)
 ```
-IST:  0-44=13.2%±6.0, 45-64=52.5%±25.9, 65-79=68.5%±30.0, 80+=65.7%±37.2
-SOLL: 0-44=10.2%±4.4, 45-64=39.2%±24.0, 65-79=76.6%±22.5, 80+=52.7%±40.0
-All age comparisons: NOT significant
-80+ d=0.34 (trending right) | 65-79 d=-0.30 (trending WRONG)
-Total deaths: IST=12.30, SOLL=9.85, d=0.76 (SIGNIFICANT)
-Runner: scripts/deep_research.cjs × 20 runs per mode
+IST:  0-44=13.2%±6.4, 45-64=39.1%±23.4, 65-79=65.8%±32.8, 80+=64.7%±41.1
+SOLL: 0-44=12.1%±5.4, 45-64=36.9%±22.8, 65-79=62.3%±33.9, 80+=60.7%±44.1
+All age comparisons: NOT significant (d = 0.09 to 0.20)
+Total deaths: IST=11.71, SOLL=10.90, d=0.24 (NOT significant)
+Runner: scripts/deep_research.cjs × 100 runs per mode
 ```

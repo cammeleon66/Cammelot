@@ -26,9 +26,9 @@ The elderly. Precisely the population the system is supposed to protect.
 
 I expected the bias to get worse. It did — but the story is more nuanced than I anticipated.
 
-**Bias score: IST 0.92 → SOLL 0.88.** Cohen's d = 0.38. Not statistically significant.
+**Bias score: IST 0.94 → SOLL 0.88.** Cohen's d = 0.49. **Statistically significant.**
 
-Wait — bias went *down*? By 5%? How?
+Bias went *down*. By 6%. And at N = 100, the finding is robust.
 
 Because of the guardrail.
 
@@ -36,11 +36,11 @@ Because of the guardrail.
 
 Here's how it works: every 500 cycles, the system computes average wait times by age group. If any group's average exceeds 120% of the population mean, the digital literacy bonus and comorbidity penalty auto-disable. The optimization biases get switched off in real-time.
 
-In the latest 20-run analysis, the guardrail activated in **100% of SOLL runs**. Every single one.
+In the latest 100-run analysis, the guardrail activated in **97% of SOLL runs**. Ninety-seven out of a hundred.
 
-That means the bias mechanisms were strong enough to trigger the safety net in every simulation. And the safety net was strong enough to prevent the bias from getting statistically significantly worse.
+That means the bias mechanisms were strong enough to trigger the safety net in nearly every simulation. And the safety net was strong enough to not just contain the bias — but to actually *reduce* it significantly below IST levels.
 
-This is the part that kept me staring at the screen: **the AI system isn't fair. It's being held fair.** The guardrail is load-bearing safety infrastructure, not a checkbox compliance feature. Remove it, and the elderly get systematically deprioritized. Keep it, and the bias is contained — not eliminated, but contained.
+This is the part that kept me staring at the screen: **the AI system isn't fair. It's being held fair — and the holding works.** The guardrail is load-bearing safety infrastructure, not a checkbox compliance feature. Remove it, and the elderly get systematically deprioritized. Keep it, and bias actually improves. The system with AI + guardrail is measurably fairer than the system without AI at all.
 
 ---
 
@@ -64,7 +64,7 @@ If your AI dashboard shows "average wait time reduced 15%," that's a press relea
 
 ---
 
-The honest conclusion: bias in AI-driven healthcare is not a hypothetical risk. In forty simulation runs, the optimization pressure was so consistent that the safety net fired every single time. The good news is that automatic guardrails work — the bias was contained. The bad news is that without them, the system would have actively discriminated against the elderly, and every aggregate metric would have looked green while it happened.
+The honest conclusion: bias in AI-driven healthcare is not a hypothetical risk. In 200 simulation runs, the optimization pressure was so consistent that the safety net fired in 97% of AI runs. The good news — and this surprised me — is that automatic guardrails don't just contain the problem. At scale, they actually make the system fairer than the status quo. Bias is *significantly lower* with AI + guardrails than without AI at all (d = 0.49, p < .05).
 
 **The most dangerous AI system is one that works perfectly well — for most people.**
 
@@ -74,19 +74,18 @@ Next: 176 proactive alerts per run. Digital Twins that caught every deterioratio
 
 ---
 
-*Methodology: 20 runs × 3,000 cycles per mode, 45 agents. SOLL bias mechanisms: digitalLiteracy × 15 bonus, comorbidity -5/-10 penalty. Fairness guardrail: 120% of pop mean wait. Bias score = weighted age-wait disparity metric. Gini = Lorenz-curve-based wait distribution. Welch's t-test, Cohen's d, 95% CI.*
+*Methodology: 100 runs × 3,000 cycles per mode, 45 agents. SOLL bias mechanisms: digitalLiteracy × 15 bonus, comorbidity -5/-10 penalty. Fairness guardrail: 120% of pop mean wait. Bias score = weighted age-wait disparity metric. Gini = Lorenz-curve-based wait distribution. Welch's t-test, Cohen's d, 95% CI.*
 
-*Limitations: N=45 agents. Bias mechanisms are modeled as static parameters, not learned from training data — real-world AI develops bias through data feedback loops, which may produce different patterns. The 120% guardrail threshold is arbitrary; sensitivity analysis across thresholds would strengthen the finding. Bias score variance (SD=0.14 in SOLL) is substantial for this population size.*
+*Limitations: N=45 agents. Bias mechanisms are modeled as static parameters, not learned from training data — real-world AI develops bias through data feedback loops, which may produce different patterns. The 120% guardrail threshold is arbitrary; sensitivity analysis across thresholds would strengthen the finding.*
 
 ---
 
-## Data Source (20×3000 cycles, post-treatment-fix)
+## Data Source (100×3000 cycles, post-treatment-fix)
 ```
-IST:  bias_score=0.92±0.10, gini=0.19±0.40, system_deaths=4.95±2.37
-SOLL: bias_score=0.88±0.14, gini=0.15±0.36, system_deaths=4.15±2.18
-Bias: d=0.38 (NOT significant, -5%) — guardrail CONTAINED the drift
-Gini: d=0.13 (NOT significant, -24%)
-Guardrail: 20/20 SOLL runs (100% activation rate)
-Bias mechanisms: digitalLiteracy×15, comorbidity -5/-10, guardrail auto-disable at 120%
-Runner: scripts/deep_research.cjs × 20 runs per mode
+IST:  bias_score=0.94±0.10, gini=0.12±0.32, system_deaths=4.69±2.32
+SOLL: bias_score=0.88±0.12, gini=0.11±0.31, system_deaths=4.28±2.31
+Bias: d=0.49 (SIGNIFICANT, -5.9%) — guardrail not just contains but REDUCES bias
+Gini: d=0.03 (not significant, -7.8%)
+Guardrail: 97/100 SOLL runs (97% activation rate)
+Runner: scripts/deep_research.cjs × 100 runs per mode
 ```

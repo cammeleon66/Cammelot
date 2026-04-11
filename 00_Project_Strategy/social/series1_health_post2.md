@@ -26,9 +26,9 @@ In SOLL mode, ambient documentation reduces the admin load from 30% to under 5%.
 
 The effect was the strongest signal in the entire simulation.
 
-**Burnout: IST 7.7% → SOLL 2.1%. Cohen's d = 1.06. Significant.**
+**Burnout: IST 7.1% → SOLL 1.6%. Cohen's d = 1.17. Significant.**
 
-That's a 73% reduction. In 20 IST runs, burnout averaged 7.7% with wild variance (SD = 7.3%) — some runs spiked much higher. In 20 SOLL runs, it held flat around 2.1% with tight consistency (SD = 1.5%). The distributions barely overlap.
+That's a 77% reduction. In 100 IST runs, burnout averaged 7.1% with wild variance (SD = 6.4%) — some runs spiked much higher. In 100 SOLL runs, it held flat around 1.6% with tight consistency (SD = 1.7%). The distributions barely overlap.
 
 [📸 Screenshot: Side-by-side — IST burnout climbing vs SOLL flat at 2%]
 
@@ -46,7 +46,7 @@ Here's where I expected the story to go: freed from paperwork, Dr. Bakker would 
 
 Here's what actually happened: deaths barely moved.
 
-System deaths: IST 4.95 → SOLL 4.15. Cohen's d = 0.35. Not significant.
+System deaths: IST 4.69 → SOLL 4.28. Cohen's d = 0.18. Not significant.
 
 The GP got better. The patients didn't — not from the admin fix alone. Why? Because Dr. Bakker's freed time flows downstream, but the downstream bottleneck is the specialist queue. She can refer Hendrik Veenstra to cardiology faster. But cardiology still has a 12-week Treeknorm ceiling. The referral arrives sooner; the appointment doesn't.
 
@@ -68,18 +68,18 @@ Next post: I discovered that a "fair" first-in-first-out queue — the kind most
 
 ---
 
-*Methodology: 20 runs × 3,000 cycles per mode, 45 agents (CBS demographics). NZa 2025 tariffs. Burnout = weighted average across 3 GPs. Admin waste is deterministic. Welch's t-test, Cohen's d, 95% CI. Treatment-modified Markov transitions active in SOLL.*
+*Methodology: 100 runs × 3,000 cycles per mode, 45 agents (CBS demographics). NZa 2025 tariffs. Burnout = weighted average across 3 GPs. Admin waste is deterministic. Welch's t-test, Cohen's d, 95% CI. Treatment-modified Markov transitions active in SOLL.*
 
 *Limitations: The GP time freed by AI is modeled as capacity restoration, not as dynamically reallocated consultation time. Real GPs might use the freed time differently (more consultations, longer consultations, breaks). N=45 agents limits statistical power for downstream mortality effects. Burnout is a percentage threshold, not a validated clinical burnout instrument.*
 
 ---
 
-## Data Source (20×3000 cycles, post-treatment-fix)
+## Data Source (100×3000 cycles, post-treatment-fix)
 ```
-IST:  burnout=7.67%±7.29, admin=€33,561, system_deaths=4.95±2.37
-SOLL: burnout=2.10%±1.50, admin=€5,594, system_deaths=4.15±2.18
-Burnout: d=1.06 (SIGNIFICANT) | System deaths: d=0.35 (trending, not significant)
+IST:  burnout=7.09%±6.35, admin=€33,561, system_deaths=4.69±2.32
+SOLL: burnout=1.63%±1.74, admin=€5,594, system_deaths=4.28±2.31
+Burnout: d=1.17 (SIGNIFICANT) | System deaths: d=0.18 (trending, not significant)
 Admin savings: €27,967/run (deterministic, NZa tariffs)
 MTVP: €3.23/patient/quarter (IZA) | Regular consult: €12.43 (NZa 2025)
-Runner: scripts/deep_research.cjs × 20 runs per mode
+Runner: scripts/deep_research.cjs × 100 runs per mode
 ```
