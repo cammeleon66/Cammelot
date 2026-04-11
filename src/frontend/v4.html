@@ -818,8 +818,7 @@ body.embed-mode #app{display:block!important}
 </head>
 <body>
 <div id="load"><div class="castle-anim">🏰</div><h1>CAMMELOT</h1><p>A virtual town where healthcare meets AI</p><div class="ldbar"><div class="ldf"></div></div><div class="load-progress" id="load-progress">Initializing...</div><div class="load-fact" id="load-fact"></div><div class="load-tip">💡 Click any citizen to see their story</div></div>
-<div id="intro-overlay"><div class="intro-text" id="intro-text"></div></div>
-<div id="attract-overlay"><div class="attract-prompt">Click anywhere to interact</div><div class="attract-ticker" id="attract-ticker"></div></div>
+<!-- Sprint 29: Intro overlay disabled for cleaner startup -->
 
 <div id="app">
   <div id="top">
@@ -862,7 +861,7 @@ body.embed-mode #app{display:block!important}
         <button class="cb stop" id="btn-reset" title="Reset simulation">↺ Reset</button>
         <button class="cb warn" id="btn-gazette" title="The Cammelot Gazette">📰 Gazette</button>
         <button class="cb" id="btn-stats" title="Statistics">📊 Stats</button>
-        <button class="cb" id="btn-taximeter" title="Toggle Admin Waste Meter">💰</button>
+        <button class="cb" id="btn-taximeter" title="Toggle Admin Waste Meter" style="opacity:0.4">💰</button>
         <button class="cb" id="btn-more" title="More tools">⋯ More</button>
         <div id="more-menu" class="more-dropdown" style="display:none">
           <button class="cb" id="btn-heatmap">🗺 Heatmap</button>
@@ -1181,7 +1180,7 @@ let modeTransitionTimer = 0;
 let modeTransitionTarget = '';
 
 // ── Sprint S2: Admin Waste Taxi Meter Globals ──
-let taxiMeterVisible = true;
+let taxiMeterVisible = false;
 let taxiMeterDisplayed = 0;
 let taxiMeterFlash = 0;
 let mouseWorldFX = 0, mouseWorldFY = 0; // fractional mouse coords for tooltips
@@ -3878,7 +3877,7 @@ function initCharSprites() {
 // ═══ CHARACTER DRAWING ═══
 function drawAgent(e){
   const worldW=mapImgW, worldH=mapImgH;
-  const wx=e.x*worldW, wy=e.y*worldH;
+  const wx=(e.x + (e._drawOffX || 0))*worldW, wy=(e.y + (e._drawOffY || 0))*worldH;
   const sx=(wx-camX)*zoom, sy=(wy-camY)*zoom;
   const s=zoom;
   const isG=e.hp<=0;
@@ -4875,6 +4874,26 @@ function render(){
     const sy = (a.y * mapImgH - camY) * zoom;
     return sx > -50 && sx < cv.width + 50 && sy > -50 && sy < cv.height + 50;
   });
+
+  // Sprint 29: Spread overlapping sprites — add draw offset for agents too close together
+  const SPREAD_DIST = 0.008; // minimum distance in world coords before spreading
+  visibleAgents.forEach(a => { a._drawOffX = 0; a._drawOffY = 0; });
+  for (let i = 0; i < visibleAgents.length; i++) {
+    for (let j = i + 1; j < visibleAgents.length; j++) {
+      const a = visibleAgents[i], b = visibleAgents[j];
+      const dx = a.x - b.x, dy = a.y - b.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < SPREAD_DIST) {
+        const angle = dist > 0.0001 ? Math.atan2(dy, dx) : (i * 2.1); // deterministic if exact same pos
+        const push = (SPREAD_DIST - dist) * 0.6;
+        a._drawOffX += Math.cos(angle) * push;
+        a._drawOffY += Math.sin(angle) * push;
+        b._drawOffX -= Math.cos(angle) * push;
+        b._drawOffY -= Math.sin(angle) * push;
+      }
+    }
+  }
+
   visibleAgents.sort((a, b) => a.y - b.y).forEach(drawAgent);
 
   // ── Sprint 16: Heatmap overlay (after agents, before grave markers) ──
@@ -4983,7 +5002,7 @@ function drawAdminTaxiMeter() {
   const boxW = 220;
   const boxH = 64;
   const bx = cv.width - boxW - padding;
-  const by = cv.height - boxH - padding - 40; // above cbar
+  const by = cv.height - boxH - padding - 90; // above event ticker + cbar
 
   // Background
   cx.save();
@@ -9484,28 +9503,15 @@ if(hasSave){
 } else {
   startNewGame();
 }
-// Sprint 17.1: Fade loading screen, then optionally play intro
+// Sprint 17.1: Fade loading screen — intro pan & wizard removed (Sprint 29: cleaner startup)
 setTimeout(()=>{
   stopLoadingAnimation();
   document.getElementById('load').classList.add('go');
-  // Sprint 17.2: Intro pan for first-time visitors
-  if(!hasSave){
-    playIntroPan(()=>{
-      if(!localStorage.getItem('cammelot_wizard_done'))showWizard();
-    });
-  }
 },1600);
-// Sprint 6: Show wizard for returning visitors
-if(hasSave){
-  setTimeout(() => {
-    if (!localStorage.getItem('cammelot_wizard_done')) {
-      showWizard();
-    }
-  }, 1800);
-}
 } // end non-embed block
 // Sprint 17.3: Start attract mode timer
-resetAttractTimer();
+// Sprint 29: Attract mode disabled for cleaner UX
+// resetAttractTimer();
 window.addEventListener('resize',()=>{userZoomed=false;zoom=1;render();});
 window.addEventListener('beforeunload',saveGame);
 
