@@ -9,8 +9,8 @@
       "status": "active",
       "isolation": "worktree",
       "worktreePath": "C:\\Users\\Public\\camelot-qa",
-      "lastHeartbeat": "2026-04-02T06:59:00Z",
-      "lastResult": { "total": 109, "passed": 109, "failed": 0, "vetoTriggered": false },
+      "lastHeartbeat": "2026-04-11T09:47:00Z",
+      "lastResult": { "total": 131, "passed": 131, "failed": 0, "vetoTriggered": false },
       "vetoActive": false
     },
     "merlin": {
@@ -18,9 +18,10 @@
       "status": "active",
       "isolation": "main",
       "worktreePath": "C:\\Users\\Public\\Cammelot",
-      "lastHeartbeat": "2026-04-02T06:59:00Z",
-      "lastResult": { "sprintsComplete": 3, "featuresDelivered": 15, "testsPass": 109 },
-      "pausedByVeto": false
+      "lastHeartbeat": "2026-04-11T09:47:00Z",
+      "lastResult": { "sprintsComplete": 29, "featuresDelivered": 73, "testsPass": 135 },
+      "pausedByVeto": false,
+      "currentSprint": "Sprint 23 COMPLETE — Next: Sprint 24 (Go Live)"
     },
     "mordred": {
       "role": "Security Sentinel",

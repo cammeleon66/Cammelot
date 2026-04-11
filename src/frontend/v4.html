@@ -797,6 +797,23 @@ body.dark-mode .pg-population{color:#a08060;border-color:rgba(255,179,0,.08)}
 body.dark-mode .pg-slider-minmax{color:#a08060}
 body.dark-mode .pg-presets-label,body.dark-mode .pg-scenarios-label{color:#a08060}
 /* ═══ END SPRINT 22 CSS ═══ */
+/* ═══ SPRINT 26.3: EMBED MODE CSS ═══ */
+body.embed-mode #panel{display:none!important}
+body.embed-mode #cbar{display:none!important}
+body.embed-mode #chatlog{display:none!important}
+body.embed-mode #wizard-overlay{display:none!important}
+body.embed-mode .save-overlay{display:none!important}
+body.embed-mode #attract-overlay{display:none!important}
+body.embed-mode #intro-overlay{display:none!important}
+body.embed-mode #load{display:none!important}
+body.embed-mode #main{grid-template-columns:1fr!important}
+body.embed-mode #game-wrap{width:100vw!important;height:100vh!important}
+body.embed-mode #top{position:fixed;top:0;left:0;right:0;z-index:100}
+body.embed-mode #top .mode-tog,body.embed-mode #top .sub{display:none!important}
+body.embed-mode #app{display:block!important}
+.embed-watermark{position:fixed;bottom:8px;right:8px;font-size:11px;opacity:0.6;color:white;text-decoration:none;z-index:9999;font-family:'Press Start 2P',monospace;text-shadow:1px 1px 2px rgba(0,0,0,.7);pointer-events:auto}
+.embed-watermark:hover{opacity:1}
+/* ═══ END SPRINT 26.3 CSS ═══ */
 </style>
 </head>
 <body>
@@ -1145,6 +1162,8 @@ const QUEUES = {
 const GRAVE_MARKERS = []; // {x, y, name, age, cause, waitWeeks, cycle, conditions}
 
 // ── Sim ──
+// Sprint 26.3: Embed mode detection from URL parameters (?embed=true)
+const EMBED_MODE = new URLSearchParams(window.location.search).get('embed') === 'true';
 let cycle=0,mode='IST',autoTimer=null;
 const M={IST:{admin:.3,sick:.08,tree:12,ai:1,drain:1},SOLL:{admin:.05,sick:.05,tree:4,ai:1.34,drain:.3}};
 const M_ORIG={IST:{admin:.3,sick:.08,tree:12,ai:1,drain:1},SOLL:{admin:.05,sick:.05,tree:4,ai:1.34,drain:.3}};
@@ -2316,6 +2335,21 @@ const SOCIAL_DIALOGUES = {
     "The hospital wait is terrible now!","Dr. de Jong looks exhausted.",
     "They say the system is 'under pressure'. I say it's broken.",
     "In SOLL mode it would be different, they say..."
+  ],
+  // Sprint 28.2: Word-of-mouth experience sharing
+  wordOfMouth: [
+    "{name} told me the hospital queue is terrible...",
+    "I heard {name} waited {weeks} weeks for {specialty}!",
+    "{name} said the wait nearly killed them...",
+    "Did you hear about {name}? Still waiting after {weeks} weeks!",
+    "{name} warned me not to get sick right now..."
+  ],
+  protest: [
+    "This system is failing us!",
+    "We demand shorter waits!",
+    "How many more have to suffer?",
+    "Fix our healthcare!",
+    "Enough waiting — people are dying!"
   ]
 };
 // ── Sprint 25: Age-appropriate dialogue pools ──
@@ -2447,6 +2481,11 @@ function pickDialogue(a, b, rng) {
   // ── Sprint 27: Context-aware dialogue (priority check) ──
   const ctxLine = getContextDialogue(a) || getContextDialogue(b);
   if (ctxLine) return ctxLine;
+  // ── Sprint 28.1: Memory-based dialogue (30% chance for adults with memories) ──
+  if (rng() < 0.3) {
+    const memLine = getMemoryDialogue(a) || getMemoryDialogue(b);
+    if (memLine) return memLine;
+  }
   // ── Sprint 27: Friend-specific dialogue ──
   const areFriends = a.friendIds && a.friendIds.includes(b.id);
   if (areFriends && rng() < 0.5) {
@@ -2684,6 +2723,66 @@ function generateThoughts(conditions, hp, age, waitWeeks) {
   return ['Managing my condition day by day.','The GP said to come back next month.','At least the medication works.'];
 }
 
+// ═══ Sprint 28.1: Agent Memory & Personality System ═══
+const PERSONALITY_TRAITS = ['stoic', 'anxious', 'optimistic', 'stubborn', 'social'];
+const PERSONALITY_ICONS = { stoic: '💪', anxious: '😰', optimistic: '😊', stubborn: '😤', social: '🗣️' };
+const MAX_MEMORIES = 5;
+
+function getPersonalityTrait(agentId) {
+  var hash = 0;
+  for (var i = 0; i < agentId.length; i++) {
+    hash = ((hash << 5) - hash) + agentId.charCodeAt(i);
+    hash |= 0;
+  }
+  return PERSONALITY_TRAITS[Math.abs(hash) % PERSONALITY_TRAITS.length];
+}
+
+function addMemory(agent, type, text, importance) {
+  if (!agent.memory) agent.memory = [];
+  importance = Math.max(1, Math.min(10, importance || 5));
+  agent.memory.push({ cycle: cycle, type: type, text: text, importance: importance });
+  if (agent.memory.length > MAX_MEMORIES) {
+    // Evict lowest-importance entry
+    var minIdx = 0;
+    for (var i = 1; i < agent.memory.length; i++) {
+      if (agent.memory[i].importance < agent.memory[minIdx].importance) minIdx = i;
+    }
+    agent.memory.splice(minIdx, 1);
+  }
+}
+
+function getMemoryDialogue(agent) {
+  if (!agent.memory || agent.memory.length === 0) return null;
+  var trait = agent.personality || 'stoic';
+  // Pick most recent high-importance memory
+  var sorted = agent.memory.slice().sort(function(a, b) { return b.importance - a.importance; });
+  var mem = sorted[0];
+  if (trait === 'anxious') {
+    if (mem.type === 'death_nearby') return "I remember when someone died waiting. I'm scared.";
+    if (mem.type === 'long_wait') return "Last time I waited " + mem.text + ". I can't do this again.";
+    if (mem.type === 'worsened') return "My condition keeps getting worse... I'm so worried.";
+    return "I keep thinking about what happened... it worries me.";
+  }
+  if (trait === 'optimistic') {
+    if (mem.type === 'treated') return "The specialist treated me well last time. I feel hopeful.";
+    if (mem.type === 'recovered') return "I got through it before, I'll get through it again.";
+    return "Things will get better, I just know it.";
+  }
+  if (trait === 'stubborn') {
+    if (mem.type === 'referred') return "They want to send me to yet another specialist. The system is broken.";
+    if (mem.type === 'long_wait') return "I've been waiting too long. This system doesn't care about us.";
+    return "I don't trust the system anymore.";
+  }
+  if (trait === 'social') {
+    if (mem.type === 'death_nearby') return "Did you hear about what happened? Someone passed away waiting...";
+    if (mem.type === 'worsened') return "I was talking to my neighbour — we're both struggling.";
+    return "My friend told me about their experience at the hospital.";
+  }
+  // stoic — fewer references
+  if (mem.type === 'worsened' && mem.importance >= 7) return "It is what it is. My condition changed.";
+  return null;
+}
+
 // ── Road position picker ──
 // ── Sprint 29: Water zone boundary check (uses NO_WALK_ZONES from first definition) ──
 function snapOutOfWater(x, y) {
@@ -2818,7 +2917,15 @@ function spawnAgent(index, age, gender, surname) {
     // Sprint 27: Family & social properties
     partnerId: null, familyId: null, childrenIds: [], friendIds: [],
     // Sprint S4: Digital literacy attribute
-    digitalLiteracy: age < 45 ? 0.7 + Math.random() * 0.3 : age < 65 ? 0.4 + Math.random() * 0.4 : age < 80 ? 0.15 + Math.random() * 0.35 : 0.05 + Math.random() * 0.15
+    digitalLiteracy: age < 45 ? 0.7 + Math.random() * 0.3 : age < 65 ? 0.4 + Math.random() * 0.4 : age < 80 ? 0.15 + Math.random() * 0.35 : 0.05 + Math.random() * 0.15,
+    // Sprint 28.1: Personality & Memory
+    personality: getPersonalityTrait(id),
+    memory: [],
+    // Sprint 28.2: Emergent social dynamics
+    grievingFor: null,
+    isProtesting: false,
+    heardExperiences: [],
+    systemAnxiety: 0
   };
 }
 
@@ -3045,7 +3152,7 @@ function transitionDiseaseState(conditionCode, currentState, waitWeeks, treeknor
 // HP_drain = drainRate × (t_wait - T_Treeknorm) × severityMultiplier × (1 + adminBurden)
 const SEVERITY_MULTIPLIER = { healthy:0, mild:0.5, moderate:1.0, severe:2.0, critical:4.0 };
 
-function calculateHPDrain(condition, severity, waitWeeks, params) {
+function calculateHPDrain(condition, severity, waitWeeks, params, agent) {
   // params = p (the current mode's M.IST or M.SOLL)
   const db = DISEASE_DB[condition.code];
   if (!db) return 0;
@@ -3060,6 +3167,9 @@ function calculateHPDrain(condition, severity, waitWeeks, params) {
     // 3 HP per week overdue × severity × admin burden (from CLAUDE.md Section 4.3)
     drain += (3 * overdue * sevMult * (1 + params.admin)) * 0.05; // scaled per-tick
   }
+
+  // Sprint 28.1: Optimistic personality — 0.9× drain multiplier
+  if (agent && agent.personality === 'optimistic') drain *= 0.9;
 
   return drain;
 }
@@ -3635,6 +3745,7 @@ function drawAgent(e){
   const isInPain = !isG && e.hp > 20 && e.hp <= 50;
   const isCritical = !isG && e.hp > 0 && e.hp <= 20;
   const isGrieving = !isG && (e.grievingTimer || 0) > 0;
+  const isProtesting = !isG && e.isProtesting;
 
   // Happy bounce
   if (isHappy && isMoving) {
@@ -3796,6 +3907,8 @@ function drawAgent(e){
   if (isGrieving) {
     emojiToShow = '💔';
     e.grievingTimer--;
+  } else if (isProtesting) {
+    emojiToShow = '❗';
   } else if (isCritical) {
     // ❗ already shown by state bubble above
   } else if (isInPain && frameCount % 150 < 30) {
@@ -4427,13 +4540,18 @@ function render(){
         const cdist = Math.sqrt(cdx * cdx + cdy * cdy);
         // Sprint 27: Friends/family have 3x chat probability
         const areFriendsOrFamily = (a.friendIds && a.friendIds.includes(b.id)) || (a.familyId && a.familyId === b.familyId);
-        const chatProb = areFriendsOrFamily ? 0.009 : 0.003;
+        // Sprint 28.1: Social personality boosts chat probability (25% vs 15%)
+        const socialBoost = (a.personality === 'social' || b.personality === 'social') ? 1.67 : 1.0;
+        const chatProb = (areFriendsOrFamily ? 0.009 : 0.003) * socialBoost;
         if (cdist < 0.03 && Math.random() < chatProb) {
           const chatRng = seededRandom(hashCode(a.id + b.id + Math.floor(Date.now() / 1000)));
           const line = pickDialogue(a, b, chatRng);
           a.chatPartner = b.id; a.chatTimer = 120; a.chatBubbleText = line;
           b.chatPartner = a.id; b.chatTimer = 120; b.chatBubbleText = line;
           logEvent('social_chat', a, 'Chatted with ' + b.name);
+          // ── Sprint 28.2: Word-of-mouth healthcare experience sharing ──
+          shareExperience(a, b);
+          shareExperience(b, a);
           activeChatCount++;
           break;
         }
@@ -4464,7 +4582,7 @@ function render(){
         // Path complete
         e.pathComplete = true;
         // If going somewhere specific, wait for tick() to handle arrival
-        if(e.behaviorState==='going_to_gp'||e.behaviorState==='going_to_hospital'||e.behaviorState==='queuing') return;
+        if(e.behaviorState==='going_to_gp'||e.behaviorState==='going_to_hospital'||e.behaviorState==='queuing'||e.behaviorState==='protesting') return;
         // Default roaming: idle then pick new random destination
         e.idleUntil = now + 2000 + Math.random() * 6000;
         const fromIdx = nearestWaypointIdx(e.x, e.y);
@@ -4901,6 +5019,9 @@ function selectAgent(a){
 
   // Dynamic thought based on behavioral state
   let thought=a.thoughts[(a.currentThought||0)%a.thoughts.length];
+  // Sprint 28.1: Memory-based thoughts override generic ones
+  var memThought = getMemoryDialogue(a);
+  if (memThought && a.behaviorState === 'roaming') thought = memThought;
   if(a.behaviorState==='going_to_gp') thought="I need to see my doctor. These symptoms worry me...";
   else if(a.behaviorState==='queuing') thought="Waiting in the queue... I hope they see me soon.";
   else if(a.behaviorState==='at_gp') thought="The doctor is examining me. I hope it's treatable.";
@@ -4937,6 +5058,26 @@ function selectAgent(a){
       <span class="bio-personality">${bio.personality}</span>
       <div class="bio-backstory">${bio.backstory}</div>
     </div>`;
+  }
+
+  // ── Sprint 28.1: Personality & Memory display ──
+  if(isPatient && a.personality){
+    const pIcon = PERSONALITY_ICONS[a.personality] || '🧠';
+    const pLabel = a.personality.charAt(0).toUpperCase() + a.personality.slice(1);
+    html+=`<div class="ac-section"><h4>🧠 Personality & Memory</h4>
+      <div class="ac-row"><span class="k">Trait</span><span class="v"><span style="background:rgba(100,180,255,.15);padding:2px 8px;border-radius:8px;font-weight:bold">${pIcon} ${pLabel}</span></span></div>`;
+    if(a.memory && a.memory.length > 0){
+      html+=`<div style="margin-top:6px"><strong style="color:var(--ink2);font-size:11px">Memories</strong>`;
+      var sortedMem = a.memory.slice().sort(function(x,y){ return y.cycle - x.cycle; });
+      sortedMem.forEach(function(mem){
+        var impColor = mem.importance >= 8 ? '#e65100' : mem.importance >= 5 ? '#cc0' : '#888';
+        html+=`<div class="ac-row" style="font-size:11px"><span class="k" style="color:#888">C${mem.cycle}</span><span class="v" style="color:${impColor}">${mem.text} <span style="opacity:.5">(${mem.importance}/10)</span></span></div>`;
+      });
+      html+=`</div>`;
+    } else {
+      html+=`<div class="ac-row" style="font-size:11px;color:#888"><span class="k">Memories</span><span class="v">None yet</span></div>`;
+    }
+    html+=`</div>`;
   }
 
   // ── Sprint S4: Digital Literacy display ──
@@ -5591,6 +5732,122 @@ function initAgentBehaviors(){
   });
 }
 
+// ═══ Sprint 28.2: EMERGENT SOCIAL DYNAMICS ═══
+
+// Word-of-mouth: speaker shares bad healthcare experience with listener
+function shareExperience(speaker, listener) {
+  if (speaker.age <= 12 || listener.age <= 12) return;
+  // 30% chance the speaker shares a bad experience
+  if (Math.random() > 0.30) return;
+  // Speaker must have a reason to share: long wait, high waitWeeks, or heard experiences
+  const hasBadExperience = speaker.waitWeeks > 6 || (speaker.conditions && speaker.conditions.length > 0 && speaker.hp < 60);
+  const hasHeardBad = speaker.heardExperiences && speaker.heardExperiences.length > 0;
+  if (!hasBadExperience && !hasHeardBad) return;
+
+  if (!listener.heardExperiences) listener.heardExperiences = [];
+  // Don't duplicate recent experiences (limit to 10)
+  if (listener.heardExperiences.length >= 10) listener.heardExperiences.shift();
+
+  if (hasBadExperience) {
+    const weeks = Math.round(speaker.waitWeeks);
+    const specialty = speaker.conditions && speaker.conditions[0] ? speaker.conditions[0].name : 'treatment';
+    const memory = 'I heard ' + speaker.name + ' waited ' + weeks + ' weeks for ' + specialty;
+    listener.heardExperiences.push({ from: speaker.name, weeks: weeks, specialty: specialty, cycle: cycle });
+    // Increase listener's system anxiety (+0.05 per word-of-mouth event)
+    listener.systemAnxiety = Math.min(1.0, (listener.systemAnxiety || 0) + 0.05);
+    // Override the chat bubble to show word-of-mouth dialogue
+    const templates = SOCIAL_DIALOGUES.wordOfMouth;
+    const tmpl = templates[Math.floor(Math.random() * templates.length)];
+    listener.chatBubbleText = tmpl.replace('{name}', speaker.name).replace('{weeks}', '' + weeks).replace('{specialty}', specialty);
+    addHistory(listener, 'word_of_mouth', memory);
+  } else if (hasHeardBad) {
+    // Pass along secondhand info
+    const hearsay = speaker.heardExperiences[Math.floor(Math.random() * speaker.heardExperiences.length)];
+    const memory = 'I heard ' + hearsay.from + ' waited ' + hearsay.weeks + ' weeks for ' + hearsay.specialty;
+    listener.heardExperiences.push({ from: hearsay.from, weeks: hearsay.weeks, specialty: hearsay.specialty, cycle: cycle });
+    listener.systemAnxiety = Math.min(1.0, (listener.systemAnxiety || 0) + 0.05);
+    listener.chatBubbleText = speaker.name + ' told me the hospital queue is terrible...';
+    addHistory(listener, 'word_of_mouth', memory);
+  }
+}
+
+// Grieving behavior: process per-agent each tick
+function processGrieving(agent) {
+  if (agent.hp <= 0) return;
+  if ((agent.grievingTimer || 0) > 0) {
+    agent.grievingTimer--;
+    // Grieving speech bubble (occasional)
+    if (agent.grievingTimer % 40 === 0 && agent.grievingFor && !(agent.chatTimer > 0)) {
+      const deadName = agent.grievingFor;
+      const lines = [
+        "I can't believe " + deadName + " is gone...",
+        "They waited too long...",
+        "Rest in peace, " + deadName + "...",
+        deadName + " deserved better from this system..."
+      ];
+      agent.chatBubbleText = lines[Math.floor(Math.random() * lines.length)];
+      agent.chatTimer = 60;
+    }
+    // Clear grieving state when timer expires
+    if (agent.grievingTimer <= 0) {
+      agent.grievingFor = null;
+    }
+  }
+}
+
+// Community protest: check once per tick
+let protestActive = false;
+function checkCommunityProtest() {
+  const hospitalQueue = QUEUES.hospital ? QUEUES.hospital.agents.length : 0;
+  const gpQueues = (QUEUES.gp1_bldg ? QUEUES.gp1_bldg.agents.length : 0) + (QUEUES.gp2_bldg ? QUEUES.gp2_bldg.agents.length : 0);
+  const totalQueue = hospitalQueue + gpQueues;
+
+  // Hysteresis: activate at 20, deactivate at 15
+  if (totalQueue > 20) protestActive = true;
+  else if (totalQueue < 15) protestActive = false;
+
+  if (!protestActive) {
+    // Clear protest state on all agents
+    agents.forEach(a => {
+      if (a.isProtesting) {
+        a.isProtesting = false;
+        if (a.behaviorState === 'protesting') a.behaviorState = 'roaming';
+      }
+    });
+    return;
+  }
+
+  // 15% of idle agents join the protest
+  const idleAgents = agents.filter(a =>
+    a.hp > 0 &&
+    (a.type === 'patient' || a.type === 'citizen') &&
+    !a.insideBuilding &&
+    a.behaviorState === 'roaming' &&
+    !a.isProtesting &&
+    (a.chatTimer || 0) <= 0 &&
+    a.age > 12
+  );
+
+  idleAgents.forEach(a => {
+    if (Math.random() < 0.15 / 4) { // spread over ticks, ~15% per 4 ticks
+      a.isProtesting = true;
+      a.behaviorState = 'protesting';
+      // Walk toward hospital entrance with some scatter
+      const scatter = { x: DESTINATIONS.hospital.entrance.x + (Math.random() - 0.5) * 0.06, y: DESTINATIONS.hospital.entrance.y + (Math.random() - 0.5) * 0.04 };
+      sendAgentTo(a, scatter);
+    }
+  });
+
+  // Protesting agents show protest speech bubbles
+  agents.forEach(a => {
+    if (a.isProtesting && a.hp > 0 && (a.chatTimer || 0) <= 0 && Math.random() < 0.02) {
+      const lines = SOCIAL_DIALOGUES.protest;
+      a.chatBubbleText = lines[Math.floor(Math.random() * lines.length)];
+      a.chatTimer = 80;
+    }
+  });
+}
+
 // ═══ SIMULATION ═══
 function tick(){
   cycle++; const p=M[mode];
@@ -5653,17 +5910,28 @@ function tick(){
           say(a.name,`I waited too long... ${Math.round(a.waitWeeks)} weeks. The system failed me.`,'ghost');
           say('SYSTEM',`MORTALITY: ${a.name} (${a.age}) — after ${Math.round(a.waitWeeks)} weeks.`,'alert');
         }
-        // ── Sprint 4 + Sprint 27: Grieving — nearby agents react, friends grieve longer ──
+        // ── Sprint 4 + Sprint 27 + Sprint 28.2: Grieving — nearby agents react, friends/memories grieve longer ──
         agents.forEach(nb => {
           if (nb.id === a.id || nb.hp <= 0 || nb.insideBuilding) return;
           const gdx = nb.x - a.x, gdy = nb.y - a.y;
-          const isNearby = Math.sqrt(gdx * gdx + gdy * gdy) < 0.05;
+          const dist = Math.sqrt(gdx * gdx + gdy * gdy);
+          const isNearby = dist < 0.08; // Sprint 28.2: expanded proximity to 0.08
           const isFriend = nb.friendIds && nb.friendIds.includes(a.id);
           const isFamily = nb.familyId && nb.familyId === a.familyId;
+          // Sprint 28.2: Check if dead agent was in their heard experiences (memory)
+          const hasMemory = nb.heardExperiences && nb.heardExperiences.some(e => e.from === a.name);
           if (isFamily || isFriend) {
-            nb.grievingTimer = isFamily ? 300 : 240; // family grieves longest, friends next
+            nb.grievingTimer = isFamily ? 300 : 240;
+            nb.grievingFor = a.name;
+            addMemory(nb, 'death_nearby', a.name + ' passed away', isFamily ? 10 : 8);
+          } else if (hasMemory) {
+            nb.grievingTimer = 50;
+            nb.grievingFor = a.name;
+            addMemory(nb, 'death_nearby', a.name + ' died waiting', 7);
           } else if (isNearby) {
-            nb.grievingTimer = 120;
+            nb.grievingTimer = 30;
+            nb.grievingFor = a.name;
+            addMemory(nb, 'death_nearby', a.name + ' died nearby', 5);
           }
         });
         // Sprint 15: Death chime
@@ -5698,6 +5966,9 @@ function tick(){
             logEvent('worsened', a, cond.code + ': ' + oldState + '→' + newState);
           }
           addHistory(a, 'worsened', `${cond.name} progressed to ${newState}`);
+          // Sprint 28.1: Memory for disease state change
+          var worsenImportance = newState === 'critical' ? 9 : newState === 'severe' ? 7 : 5;
+          addMemory(a, 'worsened', cond.name + ' progressed to ' + newState, worsenImportance);
         }
       }
     }
@@ -5925,8 +6196,12 @@ function tick(){
         // Dementia (F03) care-seeking delay — takes twice as long to decide
         const hasDementia=a.conditions.some(c=>c.code==='F03');
         const gpThreshold=hasDementia?40:20;
+        // Sprint 28.1: Personality affects HP threshold for seeking GP
+        let hpThresholdSevere = 90, hpThresholdModerate = 75, hpThresholdBase = 60;
+        if (a.personality === 'anxious') { hpThresholdSevere = 95; hpThresholdModerate = 85; hpThresholdBase = 70; }
+        else if (a.personality === 'stoic') { hpThresholdSevere = 80; hpThresholdModerate = 65; hpThresholdBase = 50; }
         const needsGP=hasConds && timeSinceGP>gpThreshold && (
-          (severe && a.hp<90) || (moderate && a.hp<75) || (a.hp<60)
+          (severe && a.hp<hpThresholdSevere) || (moderate && a.hp<hpThresholdModerate) || (a.hp<hpThresholdBase)
         );
         if(needsGP){
           a.behaviorState='going_to_gp'; a.pathComplete=false;
@@ -5934,13 +6209,19 @@ function tick(){
           addHistory(a,'feeling_sick','I don\'t feel well... I should see '+(a.gpName||'a doctor')+'.');
           sendAgentTo(a, getGPDest(a.gpName).entrance);
           a.bubbleTimer=80;
+          addMemory(a, 'feeling_sick', 'Went to GP with HP ' + Math.round(a.hp), 3);
+        }
+        // Sprint 28.1: Anxious agents show worry bubbles more often; stoic agents show fewer
+        if (a.personality === 'anxious' && hasConds && Math.random() < 0.008 && (a.chatTimer || 0) <= 0) {
+          a.chatBubbleText = getMemoryDialogue(a) || 'I can\'t stop worrying about my health...';
+          a.chatTimer = 60;
         }
         // Passive drain for untreated conditions (uses DISEASE_DB + comorbidity)
         if(hasConds && !a.healingTicksLeft){
           let totalDrain = 0;
           const comorbMult = getComorbidityMultiplier(a.conditions);
           for (const cond of a.conditions) {
-            totalDrain += calculateHPDrain(cond, cond.severity, a.waitWeeks, p);
+            totalDrain += calculateHPDrain(cond, cond.severity, a.waitWeeks, p, a);
           }
           a.hp = Math.max(0, a.hp - totalDrain * comorbMult);
         }
@@ -5948,6 +6229,7 @@ function tick(){
         if(a.waitWeeks > p.tree && !a.treeknormViolationLogged){
           a.treeknormViolationLogged = true;
           logEvent('treeknorm_violation', a, 'Wait: ' + Math.round(a.waitWeeks) + 'w (limit: ' + p.tree + 'w)');
+          addMemory(a, 'long_wait', Math.round(a.waitWeeks) + ' weeks waiting', 8);
         }
         break;
       }
@@ -5981,7 +6263,7 @@ function tick(){
           let totalDrain = 0;
           const comorbMult = getComorbidityMultiplier(a.conditions);
           for (const cond of a.conditions) {
-            totalDrain += calculateHPDrain(cond, cond.severity, a.waitWeeks, p);
+            totalDrain += calculateHPDrain(cond, cond.severity, a.waitWeeks, p, a);
           }
           a.hp = Math.max(0, a.hp - totalDrain * comorbMult);
           // Sprint S3: Treeknorm violation detection
@@ -6003,7 +6285,9 @@ function tick(){
 
           const severe=a.conditions.some(c=>c.severity==='severe'||c.severity==='critical');
           const moderate=a.conditions.some(c=>c.severity==='moderate');
-          if(severe || (moderate && a.hp<60)){
+          // Sprint 28.1: Stubborn personality may skip referral (5% chance)
+          const stubbornSkip = a.personality === 'stubborn' && !severe && Math.random() < 0.05;
+          if((severe || (moderate && a.hp<60)) && !stubbornSkip){
             // Refer to hospital
             a.insideBuilding=null; a.behaviorState='going_to_hospital';
             a.referredToHospital=true; a.pathComplete=false;
@@ -6012,6 +6296,7 @@ function tick(){
             a.x=gpDest.entrance.x; a.y=gpDest.entrance.y;
             logEvent('referred', a, a.conditions.map(c=>c.code).join(','));
             addHistory(a,'referred',(a.gpName||'GP')+' referred me to the hospital. Specialist care needed.');
+            addMemory(a, 'referred', 'Referred to hospital by ' + (a.gpName||'GP'), 6);
             say(a.gpName||'GP',`Referring ${a.name} to hospital — needs specialist care.`);
             sendAgentTo(a, DESTINATIONS.hospital.entrance);
             // Sprint 10: FHIR Encounter + A2A referral
@@ -6045,6 +6330,7 @@ function tick(){
             a.x=gpDest.entrance.x; a.y=gpDest.entrance.y;
             logEvent('gp_treated', a, 'Conditions treated at GP');
             addHistory(a,'gp_treated','GP prescribed medication. Should start feeling better.');
+            addMemory(a, 'treated', 'GP prescribed treatment for my condition', 4);
             say(a.gpName||'GP',`${a.name}: condition manageable. Prescribed treatment.`);
             createFHIRResource('Encounter', a.id, { class: 'gp_treatment', serviceProvider: a.gpName||'GP', outcome: 'treated' });
             a.path=[]; a.pathIdx=0; a.idleUntil=performance.now()+1500;
@@ -6107,7 +6393,7 @@ function tick(){
         let totalDrain = 0;
         const comorbMult = getComorbidityMultiplier(a.conditions);
         for (const cond of a.conditions) {
-          totalDrain += calculateHPDrain(cond, cond.severity, a.waitWeeks, p);
+          totalDrain += calculateHPDrain(cond, cond.severity, a.waitWeeks, p, a);
         }
         a.hp = Math.max(0, a.hp - totalDrain * comorbMult);
         // Sprint S3: Treeknorm violation detection
@@ -6177,6 +6463,7 @@ function tick(){
           logEvent('treated', a, 'Treatment complete');
           logEvent('discharged', a, 'HP: ' + Math.round(a.hp));
           addHistory(a,'treated','Treatment complete! Specialist helped. Feeling much better.');
+          addMemory(a, 'treated', 'Treated at hospital — feeling better', 7);
           say('Hospital',`${a.name} treated & discharged. Recovery underway.`);
           createFHIRResource('Encounter', a.id, { class: 'hospital_discharge', outcome: 'discharged', hpBefore: hpBefore, hpAfter: Math.round(a.hp) });
           // Track discharged patients for hospital dashboard
@@ -6205,12 +6492,16 @@ function tick(){
           a.behaviorState='roaming';
           if(a.actionHistory?.length>0 && a.actionHistory[a.actionHistory.length-1].type!=='recovered'){
             addHistory(a,'recovered','Feeling much better. Grateful for the care.');
+            addMemory(a, 'recovered', 'Recovered after treatment — feeling well', 6);
           }
         }
         break;
       }
 
       case 'dead': return;
+
+      // Sprint 28.2: Protesting agents idle near hospital — no GP/treatment behavior
+      case 'protesting': break;
     }
 
     // Update visual state
@@ -6438,6 +6729,18 @@ function tick(){
   // ═══ Sprint 23: Burnout Cascade Processing ═══
   processBurnoutCascade();
 
+  // ═══ Sprint 28.2: Emergent Social Dynamics ═══
+  agents.forEach(a => {
+    if ((a.type === 'patient' || a.type === 'citizen') && a.hp > 0) {
+      processGrieving(a);
+      // Word-of-mouth anxiety causes slight HP drain modifier
+      if ((a.systemAnxiety || 0) > 0 && a.conditions && a.conditions.length > 0) {
+        a.hp = Math.max(1, a.hp - a.systemAnxiety * 0.02);
+      }
+    }
+  });
+  checkCommunityProtest();
+
   updateUI();
   updateTicker(); // Sprint 6
   if (timelineVisible) drawTimeline(); // Sprint 16
@@ -6458,6 +6761,7 @@ function resetSim(){
   EVENT_LOG.length=0;
   HOSPITAL_DISCHARGED.length=0;
   GRAVE_MARKERS.length=0;
+  protestActive=false; // Sprint 28.2
   FHIR_STORE.length=0;
   A2A_MESSAGES.length=0;
   TIMELINE_SNAPSHOTS.length=0; // Sprint 16
@@ -6492,6 +6796,8 @@ function resetSim(){
     // Sprint 27: Reset social state (preserve family/friend links)
     a.chatPartner=null; a.chatTimer=0; a.chatBubbleText='';
     a.grievingTimer=0;
+    // Sprint 28.2: Reset social dynamics state
+    a.grievingFor=null; a.isProtesting=false; a.heardExperiences=[]; a.systemAnxiety=0;
     a.treeknormViolationLogged=false; // Sprint S3
     // Sprint S4: Re-randomize digitalLiteracy based on age
     var dlAge = a.age || 40;
@@ -6656,6 +6962,12 @@ function generateShareURL(){
 
 function applyURLParams(){
   var params=new URLSearchParams(window.location.search);
+  // Sprint 26.3: Embed mode parameters
+  if(EMBED_MODE){
+    var embedMode=params.get('mode');
+    if(embedMode==='soll'||embedMode==='SOLL'){mode='SOLL';}
+    else if(embedMode==='ist'||embedMode==='IST'){mode='IST';}
+  }
   if(params.has('admin')){
     M[mode].admin=parseFloat(params.get('admin'))||M[mode].admin;
     M[mode].sick=parseFloat(params.get('sick'))||M[mode].sick;
@@ -8468,6 +8780,7 @@ function loadGame(){
       a.chatTimer = 0;
       a.chatBubbleText = '';
       a.grievingTimer = 0;
+      a.grievingFor = null; a.isProtesting = false; a.heardExperiences = []; a.systemAnxiety = 0;
     });
     initCharSprites();
     setMode(mode);
@@ -8827,10 +9140,44 @@ function closeWizard() {
   }
 }
 
-// ═══ STARTUP (Sprint 3 — Save-aware, Sprint 17 — Loading Screen) ═══
+// ═══ STARTUP (Sprint 3 — Save-aware, Sprint 17 — Loading Screen, Sprint 26.3 — Embed Mode) ═══
 startLoadingAnimation();
 // Sprint 22: Apply URL parameters if present
 applyURLParams();
+
+// Sprint 26.3: Embed mode — apply body class, add watermark, auto-start
+if(EMBED_MODE){
+  document.body.classList.add('embed-mode');
+  // Add watermark
+  var watermark=document.createElement('a');
+  watermark.className='embed-watermark';
+  watermark.href=window.location.origin+window.location.pathname;
+  watermark.target='_blank';
+  watermark.rel='noopener';
+  watermark.textContent='🏰 Cammelot';
+  watermark.id='embed-watermark';
+  document.body.appendChild(watermark);
+  // Responsive canvas sizing
+  var embedResizeObs=new ResizeObserver(function(){userZoomed=false;zoom=1;render();});
+  var gwEl=document.getElementById('game-wrap');
+  if(gwEl)embedResizeObs.observe(gwEl);
+  // Auto-start: skip save prompt, wizard, intro — just go
+  stopLoadingAnimation();
+  document.getElementById('load').classList.add('go');
+  startNewGame();
+  // Apply embed speed parameter
+  var embedParams=new URLSearchParams(window.location.search);
+  var embedSpeed=parseInt(embedParams.get('speed'),10);
+  if(embedSpeed>0){
+    var interval=Math.max(10,Math.round(100/embedSpeed));
+    autoTimer=setInterval(tick,interval);
+  } else {
+    autoTimer=setInterval(tick,100);
+  }
+  // Apply embed cycle fast-forward
+  var embedCycle=parseInt(embedParams.get('cycle'),10);
+  if(embedCycle>0){for(var i=0;i<embedCycle&&i<10000;i++)tick();}
+} else {
 const hasSave=localStorage.getItem('cammelot_save');
 if(hasSave){
   // Start render loop but show save prompt
@@ -8860,6 +9207,7 @@ if(hasSave){
     }
   }, 1800);
 }
+} // end non-embed block
 // Sprint 17.3: Start attract mode timer
 resetAttractTimer();
 window.addEventListener('resize',()=>{userZoomed=false;zoom=1;render();});

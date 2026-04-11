@@ -185,4 +185,31 @@ describe('E2E Simulation Checks', () => {
     assert.ok(v4.includes('GP Burnout visual'), 'GP burnout visual comment exists');
     assert.ok(v4.includes('Burned out GPs walk slower'), 'GP burnout speed reduction exists');
   });
+
+  // ── Sprint 26.3: Embed Widget Mode ──
+  it('should have embed mode in v4.html', () => {
+    const v4 = fs.readFileSync(path.join(ROOT, 'src', 'frontend', 'v4.html'), 'utf8');
+    assert.ok(v4.includes('EMBED_MODE'), 'Embed mode detection exists');
+    assert.ok(v4.includes('embed=true'), 'Embed URL parameter check exists');
+    assert.ok(v4.includes('cammelot') && v4.includes('watermark'), 'Watermark exists');
+  });
+
+  // ── Sprint 28.2: Emergent Social Dynamics ──
+  it('should have emergent social dynamics in v4.html', () => {
+    const v4 = fs.readFileSync(path.join(ROOT, 'src', 'frontend', 'v4.html'), 'utf8');
+    assert.ok(v4.includes('grievingTimer'), 'Grieving mechanic exists');
+    assert.ok(v4.includes('isProtesting'), 'Protest mechanic exists');
+    assert.ok(v4.includes('word-of-mouth') || v4.includes('wordOfMouth') || v4.includes('shareExperience'), 'Word-of-mouth exists');
+  });
+
+  // ── Sprint 28.1: Agent Memory & Personality ──
+  it('should have agent memory system in v4.html', () => {
+    const v4 = fs.readFileSync(path.join(ROOT, 'src', 'frontend', 'v4.html'), 'utf8');
+    assert.ok(v4.includes('addMemory'), 'addMemory function exists');
+    assert.ok(v4.includes('personality'), 'personality attribute exists');
+    assert.ok(v4.includes('PERSONALITY_TRAITS'), 'PERSONALITY_TRAITS constant exists');
+    assert.ok(v4.includes('getPersonalityTrait'), 'getPersonalityTrait function exists');
+    assert.ok(v4.includes('getMemoryDialogue'), 'getMemoryDialogue function exists');
+    assert.ok(v4.includes('MAX_MEMORIES'), 'MAX_MEMORIES constant exists');
+  });
 });
