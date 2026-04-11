@@ -840,6 +840,7 @@ body.embed-mode #app{display:block!important}
       <div class="ts"><div class="n" id="hTree">0</div><div class="l">Treeknorm ❌</div></div>
       <div class="ts"><div class="n" id="hDW">0</div><div class="l">Deaths/Wk</div></div>
       <div class="ts" style="display:none"><div class="n" id="hPA">0</div><div class="l">🔮 Alerts</div></div>
+      <div class="ts"><span class="sl">ER</span><span id="hER" class="n">🚑 0</span></div>
     </div>
     <button class="cb" id="btn-about" title="About Cammelot" style="margin-left:4px;padding:4px 8px;font-size:14px;border:1px solid rgba(255,179,0,.2);background:rgba(0,0,0,.3);border-radius:5px;cursor:pointer;color:var(--parchment)">❓</button>
     <button class="cb" id="btn-tours" title="Guided Tours" style="padding:4px 8px;font-size:14px;border:1px solid rgba(255,179,0,.2);background:rgba(0,0,0,.3);border-radius:5px;cursor:pointer;color:var(--parchment)">📚</button>
@@ -1188,6 +1189,14 @@ let previousDeathCount = 0; // track death count changes for flash effect
 
 // ── Sprint S5: Proactive Alert Counter ──
 let proactiveAlertCount = 0;
+
+// ── Blog-Ready Sprint: ER Admission Counter ──
+let erAdmissionCount = 0;
+
+// ── Blog-Ready Sprint: Ketenzorg Intervention Tracking ──
+let ketenzorgInterventions = 0;
+const KETENZORG_TARIFFS = { E11: 63.36, J44: 50.19, I25: 27.17 };
+let ketenzorgCostEur = 0;
 
 // ── Sprint S5: ER Pressure constant ──
 const HOSPITAL_DAY_COST_EUR = 850;
@@ -6527,6 +6536,7 @@ function tick(){
           a.stateTimer = 5 + Math.floor(Math.random() * 6);
           a.queueBuilding = null;
           a.queueType = null;
+          erAdmissionCount++;
           logEvent('admitted', a, 'Emergency admission');
           addHistory(a, 'entered_hospital', '🚑 Emergency admission — bypassed queue.');
           say('Hospital', `🚑 ${a.name} — EMERGENCY admission. Immediate treatment.`, 'alert');
@@ -6720,6 +6730,7 @@ function tick(){
         frontAgent.stateTimer = 5 + Math.floor(Math.random() * 6);
         frontAgent.queueBuilding = null;
         frontAgent.queueType = null;
+        erAdmissionCount++;
         logEvent('admitted', frontAgent, 'Hospital');
         addHistory(frontAgent, 'entered_hospital', 'Arrived at hospital. Being seen by specialist.');
         say('Hospital', `${frontAgent.name} admitted. Beginning treatment.`);
@@ -6811,7 +6822,22 @@ function tick(){
           logEvent('feeling_sick', a, 'Digital Twin alert: ' + a.digitalTwinRisk.riskPct + '% risk');
           addHistory(a,'feeling_sick','Digital Twin says I\'m at ' + a.digitalTwinRisk.riskPct + '% risk. Going to GP now.');
           sendAgentTo(a, getGPDest(a.gpName).entrance);
-          if(mode === 'SOLL') proactiveAlertCount++;
+          if(mode === 'SOLL'){
+            proactiveAlertCount++;
+            if(proactiveAlertCount <= 5 || proactiveAlertCount % 10 === 0){
+              showToast('🔮 Digital Twin Alert: ' + a.name + ' (' + a.age + ') — ' + a.digitalTwinRisk.riskPct + '% risk detected', 3000);
+            }
+          }
+          // Ketenzorg intervention tracking
+          if(a.conditions && a.conditions.length > 0){
+            a.conditions.forEach(function(c){
+              if(KETENZORG_TARIFFS[c.code]){
+                ketenzorgInterventions++;
+                ketenzorgCostEur += KETENZORG_TARIFFS[c.code];
+                logEvent('ketenzorg', a, 'Ketenzorg intervention (' + c.code + '): €' + KETENZORG_TARIFFS[c.code].toFixed(2));
+              }
+            });
+          }
         }
       }
     });
@@ -6908,6 +6934,8 @@ function resetSim(){
   cycle=0; S={res:6,msgs:0,waste:0};
   taxiMeterDisplayed=0; taxiMeterFlash=0; // Sprint S2
   proactiveAlertCount=0; // Sprint S5
+  erAdmissionCount=0; // Blog-Ready Sprint
+  ketenzorgInterventions=0; ketenzorgCostEur=0; // Blog-Ready Sprint
   EVENT_LOG.length=0;
   HOSPITAL_DISCHARGED.length=0;
   GRAVE_MARKERS.length=0;
@@ -7922,6 +7950,7 @@ function buildBiasHTML() {
     }
   }
   html += '<div class="stats-row" title="Measures inequality of care access. 0 = equal, 1 = unequal"><span class="sk">Gini Coefficient</span><span class="sv" style="color:' + giniColor + '">Gini: ' + gini.toFixed(2) + ' ' + giniLabel + (giniSparkline ? ' ' + giniSparkline : '') + '</span></div>';
+  html += '<canvas id="gini-timeline-canvas" width="300" height="80" style="display:block;margin:4px 0 6px;width:100%;max-width:300px;height:80px"></canvas>';
 
   // ── Sprint S4: Composite Bias Score display ──
   var bs = BIAS_DATA.currentBiasScore || 0;
@@ -8070,6 +8099,70 @@ function drawAgeBiasChart() {
     ctx.textAlign = 'center';
     ctx.fillText('Treeknorm ' + treeThreshold + 'w', treeX, H - 2);
   }
+}
+
+// ═══ Blog-Ready Sprint: Gini Timeline Canvas Chart ═══
+function drawGiniTimelineChart() {
+  var canvas = document.getElementById('gini-timeline-canvas');
+  if (!canvas) return;
+  var ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  var W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  var history = BIAS_DATA.giniHistory;
+  if (history.length < 2) return;
+
+  // Subtle gradient background
+  var grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, 'rgba(30,30,60,0.3)');
+  grad.addColorStop(1, 'rgba(10,10,30,0.5)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Warning threshold dashed line at 0.3
+  var threshY = H - (0.3 * H);
+  ctx.strokeStyle = '#cc0';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 3]);
+  ctx.beginPath();
+  ctx.moveTo(0, threshY);
+  ctx.lineTo(W, threshY);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#cc0';
+  ctx.font = '7px monospace';
+  ctx.textAlign = 'right';
+  ctx.fillText('0.3', W - 2, threshY - 2);
+
+  // Draw line chart
+  var len = history.length;
+  var stepX = W / (len - 1);
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  for (var i = 0; i < len; i++) {
+    var x = i * stepX;
+    var y = H - (history[i] * H);
+    if (i === 0) ctx.moveTo(x, y);
+    else {
+      // Color segments based on value
+      var val = history[i];
+      ctx.strokeStyle = val < 0.2 ? '#4a4' : val <= 0.4 ? '#cc0' : '#c44';
+      ctx.lineTo(x, y);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+    }
+  }
+
+  // Axis labels
+  ctx.fillStyle = 'rgba(255,255,255,0.4)';
+  ctx.font = '7px monospace';
+  ctx.textAlign = 'left';
+  ctx.fillText('0', 2, H - 2);
+  ctx.fillText('1', 2, 8);
+  ctx.textAlign = 'center';
+  ctx.fillText('Gini over time', W / 2, H - 2);
 }
 
 // ═══ ROI DASHBOARD (Sprint 12) ═══
@@ -8304,6 +8397,7 @@ function toggleStats(){
   gw.appendChild(overlay);
   // Sprint S3: Draw age bias canvas chart after DOM insertion
   drawAgeBiasChart();
+  drawGiniTimelineChart();
   // CSP-safe: bind close button after DOM insertion
   const closeBtn=overlay.querySelector('#stats-close-btn');
   if(closeBtn) closeBtn.addEventListener('click',function(){this.closest('.stats-overlay').remove();statsVisible=false;});
@@ -8598,6 +8692,13 @@ function updateUI(){
     } else {
       hPAEl.closest('.ts').style.display = 'none';
     }
+  }
+
+  // ── Blog-Ready Sprint: ER Admission Counter ──
+  var hEREl = document.getElementById('hER');
+  if (hEREl) {
+    hEREl.textContent = '🚑 ' + erAdmissionCount;
+    hEREl.className = 'n ' + (erAdmissionCount > 20 ? 'r' : erAdmissionCount > 5 ? 'y' : 'g');
   }
 
   // ── Sprint 23: System Overload — amber flash when all GPs burned out ──
@@ -10043,6 +10144,11 @@ function generateWeeklyReport() {
       treeknormCost: treeknormCost,
       savingsPotential: savingsPotential
     },
+    ketenzorg: {
+      interventions: ketenzorgInterventions,
+      costEur: Math.round(ketenzorgCostEur),
+      savedEur: Math.round(preventableDeaths > 0 ? (preventableDeaths * SIM_PREVENTABLE_DEATH_EUR) : 0)
+    },
     bias: {
       gini: Math.round(gini * 1000) / 1000,
       ageInequity: Math.round(ageInequity * 10) / 10,
@@ -10113,6 +10219,16 @@ function showWeeklyReport() {
       html += ' · Treeknorm Cost: €' + r.financial.treeknormCost.toLocaleString();
       html += '<br>💡 Savings Potential (SOLL): <b style="color:var(--green)">€' + r.financial.savingsPotential.toLocaleString() + '</b>';
       html += '</div></div>';
+
+      // Ketenzorg section
+      if (r.ketenzorg) {
+        html += '<div style="margin-bottom:6px"><div style="font-weight:600;font-size:11px;color:var(--parchment);margin-bottom:3px">🩺 KETENZORG (Integrated Chronic Care)</div>';
+        html += '<div style="font-size:11px;color:var(--parchment);opacity:.85">';
+        html += 'Interventions: <b>' + r.ketenzorg.interventions + '</b>';
+        html += ' · Cost: <b style="color:var(--gold)">€' + r.ketenzorg.costEur.toLocaleString() + '</b>';
+        html += ' · Potential Savings: <b style="color:var(--green)">€' + r.ketenzorg.savedEur.toLocaleString() + '</b>';
+        html += '</div></div>';
+      }
 
       // Bias section
       html += '<div style="margin-bottom:6px"><div style="font-weight:600;font-size:11px;color:var(--parchment);margin-bottom:3px">⚖ EQUITY CHECK</div>';

@@ -212,4 +212,28 @@ describe('E2E Simulation Checks', () => {
     assert.ok(v4.includes('getMemoryDialogue'), 'getMemoryDialogue function exists');
     assert.ok(v4.includes('MAX_MEMORIES'), 'MAX_MEMORIES constant exists');
   });
+
+  // ── Blog-Ready Sprint: Gini Timeline Chart ──
+  it('should have Gini timeline canvas chart in v4.html', () => {
+    const v4 = fs.readFileSync(path.join(ROOT, 'src', 'frontend', 'v4.html'), 'utf8');
+    assert.ok(v4.includes('gini-timeline-canvas'), 'Gini timeline canvas element exists');
+  });
+
+  // ── Blog-Ready Sprint: Ketenzorg Tracking ──
+  it('should have Ketenzorg intervention tracking in v4.html', () => {
+    const v4 = fs.readFileSync(path.join(ROOT, 'src', 'frontend', 'v4.html'), 'utf8');
+    assert.ok(v4.includes('ketenzorgInterventions'), 'Ketenzorg interventions counter exists');
+  });
+
+  // ── Blog-Ready Sprint: ER Admission Counter ──
+  it('should have ER admission counter in v4.html', () => {
+    const v4 = fs.readFileSync(path.join(ROOT, 'src', 'frontend', 'v4.html'), 'utf8');
+    assert.ok(v4.includes('erAdmissionCount'), 'ER admission counter exists');
+  });
+
+  // ── Blog-Ready Sprint: Digital Twin Alert Toast ──
+  it('should have Digital Twin alert toast in v4.html', () => {
+    const v4 = fs.readFileSync(path.join(ROOT, 'src', 'frontend', 'v4.html'), 'utf8');
+    assert.ok(v4.includes('Digital Twin Alert'), 'Digital Twin Alert toast exists');
+  });
 });

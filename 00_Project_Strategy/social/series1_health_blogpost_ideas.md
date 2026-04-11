@@ -5,13 +5,13 @@ Format: hook → research question → simulation setup → findings → policy 
 
 ---
 
-## Post 1 — Launch (done, see series1_health_post1.md)
+## Post 1 — Launch ✅ (see series1_health_post1.md)
 **"You don't get to be a skeptic without an alternative."**
 Introduction to Cammelot, IST vs SOLL framing, the zorginfarct numbers.
 
 ---
 
-## Post 2 — The Admin Tax
+## Post 2 — The Admin Tax ✅ (see series1_health_post2.md)
 **"What if the biggest killer in Dutch healthcare isn't a disease?"**
 
 Research question: What is the measurable impact of the 30% GP administrative burden on patient outcomes?
@@ -24,7 +24,7 @@ Research question: What is the measurable impact of the 30% GP administrative bu
 
 ---
 
-## Post 3 — The Waiting List Is Not Neutral
+## Post 3 — The Waiting List Is Not Neutral ✅ (see series1_health_post3.md)
 **"A 12-week wait hits a 72-year-old very differently than a 35-year-old."**
 
 Research question: Do Treeknorm violations disproportionately impact older patients and specific conditions?
@@ -37,7 +37,7 @@ Research question: Do Treeknorm violations disproportionately impact older patie
 
 ---
 
-## Post 4 — Does AI Make Inequality Worse?
+## Post 4 — Does AI Make Inequality Worse? ✅ (see series1_health_post4.md)
 **"I asked 5,000 AI agents to run the Dutch healthcare system. The inequality got worse before it got better."**
 
 Research question: In a fully agentic SOLL system, does AI-driven triage reduce or amplify disparities in care outcomes across age, condition, and neighborhood?
@@ -50,7 +50,7 @@ Research question: In a fully agentic SOLL system, does AI-driven triage reduce 
 
 ---
 
-## Post 5 — The Digital Twin Triage Bet
+## Post 5 — The Digital Twin Triage Bet ✅ (see series1_health_post5.md)
 **"What if your GP's AI assistant knew you were heading for heart failure 6 weeks before you did?"**
 
 Research question: Can proactive digital twin risk scoring reduce ER pressure and preventable mortality by 30%+ through early primary care intervention?

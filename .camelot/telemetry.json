@@ -1,0 +1,103 @@
+{
+  "fleet": "cammelot-hive-mind",
+  "commander": "Fleet Commander (Opus 4.6)",
+  "initialized": "2026-04-11T10:16:56Z",
+  "branch": "feature/agentic-overhaul",
+  "fleetStatus": "GREEN",
+
+  "council": {
+    "lancelot": {
+      "role": "Lead Builder",
+      "status": "idle",
+      "principles": ["DRY", "SOLID", "surgical-precision"],
+      "scope": ["src/**/*.js", "src/frontend/*.html", "config/**/*.js", "tests/**/*.js"],
+      "lastAction": null,
+      "approved": true
+    },
+    "creative-director": {
+      "role": "Aesthetics & UX",
+      "status": "idle",
+      "scope": ["UI/UX", "Tailwind", "micro-interactions", "visual-wow"],
+      "lastReview": null,
+      "approved": true
+    },
+    "surgeon": {
+      "role": "Medical Reviewer",
+      "status": "idle",
+      "domain": ["clinical-safety", "medical-terminology", "patient-data-integrity", "ICD-10", "FHIR-R4"],
+      "vetoAuthority": true,
+      "vetoScope": "clinical_accuracy",
+      "lastAudit": null,
+      "approved": true
+    },
+    "socrates": {
+      "role": "Critical Peer / Strategic Skeptic",
+      "status": "idle",
+      "scope": ["technical-debt", "architecture", "scalability", "alternatives"],
+      "lastChallenge": null,
+      "approved": true
+    }
+  },
+
+  "guardians": {
+    "mordred": {
+      "role": "Security Sentinel",
+      "status": "scanning",
+      "vetoAuthority": true,
+      "vetoScope": "owasp_top10",
+      "lastScan": null,
+      "findings": [],
+      "vetoActive": false,
+      "approved": true
+    },
+    "notary": {
+      "role": "Compliance Monitor",
+      "status": "idle",
+      "scope": ["HIPAA", "GDPR", "medical-standards", "data-handling"],
+      "complianceLog": "docs/COMPLIANCE_LOG.md",
+      "lastEntry": null,
+      "approved": true
+    },
+    "steward": {
+      "role": "Token Governor",
+      "status": "active",
+      "tokenBudget": 180000,
+      "compactTrigger": 180000,
+      "currentEstimate": "~45k",
+      "recursionKillEnabled": true,
+      "approved": true
+    }
+  },
+
+  "infrastructure": {
+    "galahad": {
+      "role": "QA Swarm",
+      "status": "idle",
+      "isolation": "worktree",
+      "worktreePath": "C:\\Users\\Public\\camelot-qa",
+      "lastResult": { "total": 138, "passed": 138, "failed": 0, "vetoTriggered": false },
+      "approved": true
+    }
+  },
+
+  "vetoProtocol": {
+    "circuitBreaker": {
+      "enabled": true,
+      "vetoAgents": ["galahad", "mordred", "surgeon"],
+      "onVeto": "Lancelot halts immediately. Last change reverted. Human notified.",
+      "precedence": ["mordred", "surgeon", "galahad"]
+    },
+    "rulesFile": "swarm.rules.json"
+  },
+
+  "operationalProtocol": {
+    "thinkPlanExecuteVerify": true,
+    "planDimensions": ["aesthetic", "clinical", "structural"],
+    "seerProtocol": "Generate Zod/API mocks first so Creative Director can build UI while Lancelot builds logic",
+    "approvalRequired": true
+  },
+
+  "currentObjective": null,
+  "architecturalPlan": null,
+  "lastUpdated": "2026-04-11T10:16:56Z"
+}
