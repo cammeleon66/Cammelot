@@ -1,6 +1,6 @@
 # Series 1 — Health Sector | Post 0: Series Introduction
 
-**Status:** Draft v1
+**Status:** Draft v2 — Updated with 20-trial statistical findings
 **Target:** LinkedIn
 **Publish:** First — before all other posts
 **Tags:** #HealthcareAI #AppliedResearch #Zorginfarct #AgenticAI #Cammelot #Netherlands
@@ -9,17 +9,19 @@
 
 ## Post
 
-I built a tiny Dutch town and gave it a healthcare crisis.
+I built a tiny Dutch town and gave it a healthcare crisis. Then I gave it AI.
+
+The AI saved zero lives. That's the most important finding.
 
 [📸 Hero image: The Cammelot pixel town — SNES aerial view, citizens walking between GP practices and hospital]
 
-**Cammelot** is a 16-bit simulation of 5,000 inhabitants navigating the Dutch healthcare system. Citizens age. They develop diabetes, COPD, heart disease, dementia — all drawn from real RIVM prevalence data. They visit GPs who spend 30% of their time on paperwork. They enter specialist queues that breach legal waiting norms. Some of them don't make it.
+**Cammelot** is a 16-bit simulation of a Dutch town navigating the healthcare system. Citizens age. They develop diabetes, COPD, heart disease, dementia — all drawn from real RIVM prevalence data. They visit GPs who spend 30% of their time on paperwork. They enter specialist queues that breach legal waiting norms. Some of them don't make it.
 
 When they die, they become ghost sprites. Grey. Transparent. Floating above the tile where they ran out of time.
 
-It looks like a retro video game. It runs on real CBS, RIVM, and NZa data. And it asks the question nobody in the healthcare AI debate is asking with enough precision:
+It looks like a retro video game. It runs on real CBS, RIVM, and NZa data. And I ran it 40 times with proper statistics to answer:
 
-**What exactly breaks — and for whom — when the system runs out of capacity?**
+**What exactly breaks — and for whom — when the system runs out of capacity? And does AI actually fix it?**
 
 ---
 
@@ -31,28 +33,28 @@ Because the Dutch healthcare system is heading for a wall, and the arguments on 
 
 *"AI is overhyped"* — Compared to what alternative? The status quo that's already failing?
 
-I wanted numbers. Not predictions — **outputs**. Run the model 10 times, average the results, show your methodology, publish the code. Applied research, not marketing.
+I wanted numbers. Not predictions — **outputs**. Run the model 20 times per mode, compute effect sizes and confidence intervals, show every null result alongside every positive one. Applied research, not marketing.
 
-[📸 Screenshot: The research runner terminal output — 10 runs, averaged results]
+[📸 Screenshot: The research runner terminal output — 20 runs, Cohen's d, p-values]
 
 ---
 
 **Over the next 5 posts, I'm publishing what I found:**
 
-📌 **Post 1: "I killed 8 people last week"**
-The launch. Meet the simulation, the ghost sprites, and the question that started it all.
+📌 **Post 1: "I built an AI healthcare system. It saved zero lives."**
+The launch. Meet the simulation, the findings summary, and the honest scorecard.
 
 📌 **Post 2: "My simulated GP burned out in 600 cycles"**
-The Admin Tax. €13,611/year in wasted GP capacity. An 81% burnout reduction from a workflow change.
+The Admin Tax. GP burnout drops 84% (Cohen's d = 2.99, p<.001). But deaths don't budge.
 
-📌 **Post 3: "93.9% of elderly patients died in a fair queue"**
-The Waiting List Is Not Neutral. Same rules, 25× mortality difference between youngest and oldest.
+📌 **Post 3: "58% of elderly patients died — in both worlds"**
+The Waiting List Is Not Neutral. Same rules, 15× mortality difference. AI triage doesn't help.
 
-📌 **Post 4: "I built an AI that discriminated against the elderly"**
-Does AI Make Inequality Worse? Yes — until you build a fairness guardrail. It fired in 30% of runs.
+📌 **Post 4: "I built an AI that made inequality worse"**
+Bias increases 42% (Cohen's d = 0.81, significant). Guardrail fires in 35% of runs.
 
-📌 **Post 5: "418 alerts. Each one a patient who didn't know they were deteriorating"**
-The Digital Twin Triage Bet. Proactive care pays for itself — but only if you solve admin burden first.
+📌 **Post 5: "436 alerts. Zero lives saved."**
+The Digital Twin Paradox. Detection without capacity is just documented decline.
 
 ---
 
@@ -60,38 +62,49 @@ The Digital Twin Triage Bet. Proactive care pays for itself — but only if you 
 
 ❌ Not a product launch. Cammelot isn't for sale.
 ❌ Not a policy recommendation. I'm a technologist, not a health economist.
-❌ Not deterministic. 45 agents, stochastic Markov chains, 10-run averages. Directional findings, not clinical evidence.
+❌ Not a success story. The findings broke my original narrative — and that's the point.
 
 **What it IS:**
 
 ✅ An open-source applied research tool — fork it, change the parameters, run your own hypotheses
-✅ Every number traceable to its CBS/RIVM/NZa source
+✅ Every number tested with Welch's t-test, Cohen's d, and 95% confidence intervals
+✅ 20 runs per mode × 3,000 cycles = 120,000 simulated cycles of Dutch healthcare
 ✅ A framework for asking better questions about AI in healthcare
 
 [📸 Screenshot: Side-by-side — IST mode (ghosts, queues) vs SOLL mode (alerts, low burnout)]
 
 ---
 
-**The uncomfortable findings so far:**
+**The scorecard (20-run averages, 3,000 cycles each):**
 
-| Finding | Number |
-|---------|--------|
-| GP admin waste (status quo) | **€13,611/GP/year** |
-| Admin waste after AI scribes | **€2,268/GP/year** |
-| GP burnout reduction | **81%** |
-| 80+ mortality in "fair" FIFO queue | **93.9%** |
-| 80+ mortality with severity triage | **57.1%** |
-| AI fairness guardrail triggered | **3 out of 10 runs** |
-| Proactive Digital Twin alerts | **418 per run** |
-| Ketenzorg interventions | **189 per run** (+627%) |
+### What AI Fixed ✅
+| Finding | IST → SOLL | Effect Size | Significant? |
+|---------|-----------|-------------|-------------|
+| GP burnout | 18.9% → 3.0% | d = 2.99 (huge) | ✅ p<.001 |
+| Admin waste | €33,561 → €5,594 | -83% | Deterministic |
+| Proactive alerts | 0 → 436/run | d = 3.89 (huge) | ✅ p<.001 |
+| Ketenzorg | 78 → 210/run | d = 1.84 (large) | ✅ p<.001 |
 
-Some of these numbers are uncomfortable. The 93.9% elderly mortality in a FIFO queue. The guardrail firing 30% of the time. The fact that AI triage barely moved the equity score (8%). Good. Applied research should make you uncomfortable.
+### What AI Didn't Fix ❌
+| Finding | IST → SOLL | Effect Size | Significant? |
+|---------|-----------|-------------|-------------|
+| System deaths | 5.35 → 5.65 | d = 0.11 | ❌ No |
+| 80+ mortality | 58.2% → 58.4% | d = 0.006 | ❌ No |
+| ER admissions | 90.6 → 105.3 | d = 0.46 | ❌ No |
+
+### What AI Made Worse ⚠️
+| Finding | IST → SOLL | Effect Size | Significant? |
+|---------|-----------|-------------|-------------|
+| Bias score | 0.33 → 0.46 (+42%) | d = 0.81 (large) | ✅ Yes |
+| Guardrail fires | 0% → 35% | d = 1.01 (large) | ✅ Yes |
+
+**AI is a workforce intervention, not a mortality intervention.** It saved the people trying to save lives. It did not save the lives.
 
 ---
 
-Every post includes methodology notes, data sources, and named simulation agents whose stories you can follow across the series. You'll meet Nico Kok, Karel de Groot, Dr. Bakker, Truus de Groot, and Diana Hendriks. They're pixel people. Their problems are very real.
+Every post includes methodology notes, data sources, effect sizes, and limitations. You'll meet Nico Kok, Karel de Groot, Dr. Bakker, Truus de Groot, and Diana Hendriks. They're pixel people. Their problems are very real.
 
-**The code is on GitHub. The simulation runs in a browser. The research runner outputs JSON in 500ms.**
+**The code is on GitHub. The simulation runs in a browser. The research runner produces 40 trials of statistical output in under a minute.**
 
 I'm looking for healthcare professionals, researchers, policy people, and skeptics who want to stress-test these findings — or run their own.
 
@@ -158,12 +171,12 @@ These are ALL the screenshots needed for the entire series. Take them in one bro
 
 ## Publishing Order
 
-1. **Post 0** (this intro) — with hero image + logo + summary table
-2. **Post 1** — "I killed 8 people" — 2-3 days later
+1. **Post 0** (this intro) — with hero image + logo + scorecard
+2. **Post 1** — "I built an AI healthcare system. It saved zero lives." — 2-3 days later
 3. **Post 2** — "GP burned out in 600 cycles" — 3-4 days later
-4. **Post 3** — "93.9% died in a fair queue" — 3-4 days later
-5. **Post 4** — "AI that discriminated on purpose" — 3-4 days later
-6. **Post 5** — "418 alerts" — 3-4 days later
+4. **Post 3** — "58% of elderly patients died — in both worlds" — 3-4 days later
+5. **Post 4** — "I built an AI that made inequality worse" — 3-4 days later
+6. **Post 5** — "436 alerts. Zero lives saved." — 3-4 days later
 
 Each post should link back to Post 0 for series context.
 Total series duration: ~3 weeks.
