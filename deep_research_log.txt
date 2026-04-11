@@ -1,0 +1,44 @@
+=== Deep Research: 20 runs ├ù 3000 cycles per mode ===
+
+IST run 1/20... 1115ms
+IST run 2/20... 1081ms
+IST run 3/20... 1234ms
+IST run 4/20... 1101ms
+IST run 5/20... 1229ms
+IST run 6/20... 1143ms
+IST run 7/20... 1315ms
+IST run 8/20... 1268ms
+IST run 9/20... 1334ms
+IST run 10/20... 1146ms
+IST run 11/20... 1225ms
+IST run 12/20... 1296ms
+IST run 13/20... 1063ms
+IST run 14/20... 1192ms
+IST run 15/20... 761ms
+IST run 16/20... 1223ms
+IST run 17/20... 1204ms
+IST run 18/20... 1215ms
+IST run 19/20... 1223ms
+IST run 20/20... 1167ms
+SOLL run 1/20... 1249ms
+SOLL run 2/20... 764ms
+SOLL run 3/20... 719ms
+SOLL run 4/20... 1134ms
+SOLL run 5/20... 1211ms
+SOLL run 6/20... 1138ms
+SOLL run 7/20... 1125ms
+SOLL run 8/20... 1151ms
+SOLL run 9/20... 1173ms
+SOLL run 10/20... 995ms
+SOLL run 11/20... 1142ms
+SOLL run 12/20... 1194ms
+SOLL run 13/20... 1076ms
+SOLL run 14/20... 805ms
+SOLL run 15/20... 1044ms
+SOLL run 16/20... 1162ms
+SOLL run 17/20... 1148ms
+SOLL run 18/20... 1331ms
+SOLL run 19/20... 1239ms
+SOLL run 20/20... 1149ms
+
+=== Complete. 40 total runs. ===

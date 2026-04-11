@@ -994,35 +994,35 @@ gameWrap.addEventListener('drop', e => {
 // Zones where agents should NOT walk (water + buildings + forest)
 // These must match the actual map2 image layout
 const NO_WALK_ZONES = [
-  // Rivers — map2 has rivers running through the map
-  { x1:.00, y1:.20, x2:.22, y2:.38 },  // river upper-left
-  { x1:.00, y1:.50, x2:.20, y2:.70 },  // river lower-left
-  { x1:.50, y1:.22, x2:.72, y2:.34 },  // river upper-right
-  { x1:.50, y1:.55, x2:.72, y2:.70 },  // river lower-right
-  { x1:.72, y1:.62, x2:.98, y2:.78 },  // river far-right bottom
-  { x1:.22, y1:.28, x2:.50, y2:.32 },  // river crossing top
-  { x1:.22, y1:.58, x2:.50, y2:.62 },  // river crossing bottom
+  // Rivers — matched to actual map2.jpeg water positions
+  { x1:.00, y1:.22, x2:.20, y2:.35 },  // river upper-left
+  { x1:.15, y1:.48, x2:.25, y2:.58 },  // river mid-left
+  { x1:.48, y1:.28, x2:.55, y2:.38 },  // river upper-center
+  { x1:.60, y1:.38, x2:.70, y2:.48 },  // river center-right
+  { x1:.65, y1:.55, x2:.75, y2:.65 },  // river lower-right
+  { x1:.30, y1:.65, x2:.55, y2:.72 },  // river bottom-center
   // Forest/dense areas
-  { x1:.24, y1:.35, x2:.42, y2:.50 },  // dense forest center
+  { x1:.30, y1:.42, x2:.48, y2:.55 },  // park/forest center
   // Buildings (don't walk through them)
-  { x1:.26, y1:.02, x2:.48, y2:.22 },  // hospital
-  { x1:.56, y1:.06, x2:.68, y2:.22 },  // GP clinic
+  { x1:.25, y1:.01, x2:.46, y2:.20 },  // hospital
+  { x1:.55, y1:.12, x2:.69, y2:.25 },  // GP de Jong
+  { x1:.03, y1:.59, x2:.15, y2:.71 },  // GP Bakker
   { x1:.72, y1:.26, x2:.96, y2:.50 },  // farm fields right
   { x1:.38, y1:.45, x2:.58, y2:.58 },  // park/cemetery center
 ];
 
 // Building zones — agents inside are hidden on map
 const BUILDINGS = [
-  { id:'hospital', x1:.26, y1:.03, x2:.46, y2:.22, label:'Cammelot Hospital' },
-  { id:'gp1_bldg', x1:.56, y1:.08, x2:.66, y2:.22, label:'GP de Jong' },
-  { id:'gp2_bldg', x1:.18, y1:.38, x2:.26, y2:.46, label:'GP Bakker' },
+  { id:'hospital', x1:.25, y1:.02, x2:.45, y2:.20, label:'Cammelot Hospital' },
+  { id:'gp1_bldg', x1:.56, y1:.13, x2:.68, y2:.25, label:'GP de Jong' },
+  { id:'gp2_bldg', x1:.04, y1:.60, x2:.14, y2:.70, label:'GP Bakker' },
 ];
 
 // Key destinations for agent pathfinding
 const DESTINATIONS = {
-  gp_collins:  { entrance:{x:.62,y:.23}, building:'gp1_bldg' },
-  gp_bennett:  { entrance:{x:.22,y:.42}, building:'gp2_bldg' },
-  hospital:    { entrance:{x:.38,y:.23}, building:'hospital' },
+  gp_collins:  { entrance:{x:.62,y:.26}, building:'gp1_bldg' },
+  gp_bennett:  { entrance:{x:.09,y:.71}, building:'gp2_bldg' },
+  hospital:    { entrance:{x:.35,y:.21}, building:'hospital' },
 };
 function getGPDest(gpName){
   if(gpName && gpName.includes('Bakker')) return DESTINATIONS.gp_bennett;
@@ -1054,9 +1054,11 @@ const ROAD_WAYPOINTS = [
   // === Vertical road RIGHT (x ≈ 0.72) ===
   {x:.72,y:.08},{x:.72,y:.15},{x:.72,y:.22},{x:.72,y:.35},{x:.72,y:.42},{x:.72,y:.50},{x:.72,y:.65},{x:.72,y:.72},{x:.72,y:.88},
   // Near hospital entrance
-  {x:.35,y:.23},{x:.38,y:.23},{x:.42,y:.23},
-  // Near GP entrance 
-  {x:.58,y:.23},{x:.62,y:.23},
+  {x:.35,y:.21},{x:.38,y:.21},{x:.42,y:.21},
+  // Near GP de Jong entrance 
+  {x:.58,y:.26},{x:.62,y:.26},
+  // Near GP Bakker entrance
+  {x:.09,y:.71},{x:.09,y:.72},{x:.15,y:.72},
   // Side streets
   {x:.08,y:.27},{x:.12,y:.27},{x:.70,y:.27},
   {x:.08,y:.54},{x:.12,y:.54},{x:.88,y:.54},
