@@ -44,6 +44,14 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a1a2e;font-family:
 .mode-tog button{font:600 11px Inter,sans-serif;padding:6px 14px;border:0;cursor:pointer;background:transparent;color:#a08060;transition:.2s}
 .mode-tog .a-ist{background:rgba(229,57,53,.2);color:var(--red)}
 .mode-tog .a-soll{background:rgba(76,175,80,.2);color:var(--green)}
+/* Sprint S1: Death counter flash */
+@keyframes deathFlash{0%{background:rgba(229,57,53,.6)}100%{background:rgba(0,0,0,.3)}}
+.ts.death-flash{animation:deathFlash .5s ease-out}
+/* Sprint S1: Mode button pulse */
+@keyframes modePulse{0%{box-shadow:0 0 0 0 rgba(255,179,0,.5)}70%{box-shadow:0 0 0 10px rgba(255,179,0,0)}100%{box-shadow:0 0 0 0 rgba(255,179,0,0)}}
+.mode-pulse{animation:modePulse .6s ease-out}
+/* Sprint S1: Compact crisis HUD for smaller screens */
+.ts .n{white-space:nowrap}
 
 #main{display:flex;flex:1;overflow:hidden}
 
@@ -810,6 +818,11 @@ body.dark-mode .pg-presets-label,body.dark-mode .pg-scenarios-label{color:#a0806
       <div class="ts"><div class="n" id="hG" data-value="0" data-prefix="💀 ">0</div><div class="l">Deaths</div></div>
       <div class="ts"><div class="n y" id="hW">4w</div><div class="l">Avg Wait</div></div>
       <div class="ts"><div class="n" id="hE">62%</div><div class="l">Capacity</div></div>
+      <div class="ts"><div class="n" id="hBurn">0%</div><div class="l">GP Burnout</div></div>
+      <div class="ts"><div class="n" id="hAdmin">30%</div><div class="l">Admin Load</div></div>
+      <div class="ts"><div class="n" id="hTree">0</div><div class="l">Treeknorm ❌</div></div>
+      <div class="ts"><div class="n" id="hDW">0</div><div class="l">Deaths/Wk</div></div>
+      <div class="ts" style="display:none"><div class="n" id="hPA">0</div><div class="l">🔮 Alerts</div></div>
     </div>
     <button class="cb" id="btn-about" title="About Cammelot" style="margin-left:4px;padding:4px 8px;font-size:14px;border:1px solid rgba(255,179,0,.2);background:rgba(0,0,0,.3);border-radius:5px;cursor:pointer;color:var(--parchment)">❓</button>
     <button class="cb" id="btn-tours" title="Guided Tours" style="padding:4px 8px;font-size:14px;border:1px solid rgba(255,179,0,.2);background:rgba(0,0,0,.3);border-radius:5px;cursor:pointer;color:var(--parchment)">📚</button>
@@ -831,6 +844,7 @@ body.dark-mode .pg-presets-label,body.dark-mode .pg-scenarios-label{color:#a0806
         <button class="cb stop" id="btn-reset" title="Reset simulation">↺ Reset</button>
         <button class="cb warn" id="btn-gazette" title="The Cammelot Gazette">📰 Gazette</button>
         <button class="cb" id="btn-stats" title="Statistics">📊 Stats</button>
+        <button class="cb" id="btn-taximeter" title="Toggle Admin Waste Meter">💰</button>
         <button class="cb" id="btn-more" title="More tools">⋯ More</button>
         <div id="more-menu" class="more-dropdown" style="display:none">
           <button class="cb" id="btn-heatmap">🗺 Heatmap</button>
@@ -840,6 +854,8 @@ body.dark-mode .pg-presets-label,body.dark-mode .pg-scenarios-label{color:#a0806
           <button class="cb" id="btn-linkedin">📝 LinkedIn</button>
           <button class="cb warn" id="btn-playground">⚙ What If?</button>
           <button class="cb" id="btn-qa">🔬 QA Panel</button>
+          <button class="cb" id="btn-treeknorm-log">⚖ Treeknorm Log</button>
+          <button class="cb" id="btn-methodology">📚 Sources</button>
         </div>
         <div class="cinfo">FHIR <b id="sF">0</b> · A2A <b id="sM">0</b></div>
       </div>
@@ -1018,7 +1034,7 @@ const ROAD_WAYPOINTS = [
   // Near GP entrance 
   {x:.58,y:.23},{x:.62,y:.23},
   // Side streets
-  {x:.08,y:.27},{x:.12,y:.27},{x:.85,y:.27},
+  {x:.08,y:.27},{x:.12,y:.27},{x:.70,y:.27},
   {x:.08,y:.54},{x:.12,y:.54},{x:.88,y:.54},
   // Bottom area
   {x:.08,y:.90},{x:.35,y:.90},{x:.50,y:.90},{x:.72,y:.90},{x:.90,y:.90},
@@ -1121,8 +1137,34 @@ const GRAVE_MARKERS = []; // {x, y, name, age, cause, waitWeeks, cycle, conditio
 let cycle=0,mode='IST',autoTimer=null;
 const M={IST:{admin:.3,sick:.08,tree:12,ai:1,drain:1},SOLL:{admin:.05,sick:.05,tree:4,ai:1.34,drain:.3}};
 const M_ORIG={IST:{admin:.3,sick:.08,tree:12,ai:1,drain:1},SOLL:{admin:.05,sick:.05,tree:4,ai:1.34,drain:.3}};
+// NZa 2025 tariffs and simulation cost estimates
+const NZA_GP_CONSULT_EUR = 12.43;        // Official NZa regular GP consultation rate
+const SIM_PREVENTABLE_DEATH_EUR = 5845;  // Simulation estimate (not official)
+const SIM_TREEKNORM_WEEK_EUR = 150;      // Simulation estimate (not official)
 let playgroundActive=false;
 let S={res:6,msgs:0,waste:0};
+
+// ── Sprint S1: Crisis Visualization Globals ──
+let deathFlashTimer = 0;
+let modeTransitionTimer = 0;
+let modeTransitionTarget = '';
+
+// ── Sprint S2: Admin Waste Taxi Meter Globals ──
+let taxiMeterVisible = true;
+let taxiMeterDisplayed = 0;
+let taxiMeterFlash = 0;
+let mouseWorldFX = 0, mouseWorldFY = 0; // fractional mouse coords for tooltips
+let previousDeathCount = 0; // track death count changes for flash effect
+
+// ── Sprint S5: Proactive Alert Counter ──
+let proactiveAlertCount = 0;
+
+// ── Sprint S5: ER Pressure constant ──
+const HOSPITAL_DAY_COST_EUR = 850;
+
+// ── Sprint S6: Screenshot Mode ──
+let screenshotMode = false;
+let _screenshotUIState = null; // stores display states for restoration
 
 // ═══ SPRINT 15: DARK MODE ═══
 let darkMode = localStorage.getItem('cammelot_darkmode') === 'true';
@@ -1335,7 +1377,7 @@ const TIMELINE_SNAPSHOTS = [];
 let timelineVisible = false;
 
 function captureSnapshot() {
-  var pop = agents.filter(function(a) { return a.type === 'patient' || a.type === 'citizen'; });
+  var pop = getPopulation();
   TIMELINE_SNAPSHOTS.push({
     cycle: cycle,
     alive: pop.filter(function(a) { return a.hp > 0; }).length,
@@ -1457,7 +1499,13 @@ const BIAS_DATA = {
   ageBins: {},
   conditionBins: {},
   gpBins: {},
-  genderBins: { M: {totalWait:0, count:0, deaths:0}, F: {totalWait:0, count:0, deaths:0} }
+  genderBins: { M: {totalWait:0, count:0, deaths:0}, F: {totalWait:0, count:0, deaths:0} },
+  // Sprint S4: Gini & Bias-over-time tracking
+  giniHistory: [],
+  currentGini: 0,
+  biasScoreHistory: [],
+  currentBiasScore: 0,
+  biasTrackCount: 0
 };
 
 // ── Sprint 2 Constants ──
@@ -1566,6 +1614,78 @@ function calculateDigitalTwinRisk(agent) {
   return { riskPct, prediction, timeframe: '6 months' };
 }
 
+// ═══ Sprint S5: Digital Twin Risk Panel Builder ═══
+function buildDigitalTwinPanel(agent) {
+  if (!agent.conditions || agent.conditions.length === 0 || agent.hp <= 0) return '';
+  const dt = agent.digitalTwinRisk || calculateDigitalTwinRisk(agent);
+  if (!dt) return '';
+  const riskPct = dt.riskPct;
+  const riskColor = riskPct > 60 ? '#E53935' : riskPct > 30 ? '#FF9800' : '#4CAF50';
+  const riskLabel = riskPct > 60 ? 'HIGH' : riskPct > 30 ? 'MODERATE' : 'LOW';
+
+  // Time to Critical calculation
+  const p = M[mode];
+  let drainPerTick = 0;
+  if (agent.conditions.length > 0 && agent.waitWeeks > p.tree) {
+    const sevMult = { healthy: 0, mild: 0.5, moderate: 1.0, severe: 2.0, critical: 4.0 };
+    agent.conditions.forEach(function(c) {
+      drainPerTick += (3 * (agent.waitWeeks - p.tree) * (sevMult[c.severity] || 0) * (1 + p.admin)) / 28;
+    });
+  }
+  const ticksToC = drainPerTick > 0 ? Math.round((agent.hp - 20) / drainPerTick) : -1;
+  const ttcText = ticksToC > 0 ? '~' + ticksToC + ' ticks to critical' : 'Stable';
+  const ttcColor = ticksToC > 0 && ticksToC < 50 ? 'bad' : ticksToC > 0 ? 'mid' : 'ok';
+
+  // Mini trajectory: projected HP in 50 ticks
+  const hpWithout = Math.max(0, Math.round(agent.hp - drainPerTick * 50));
+  const sollDrainFactor = M.SOLL.drain / Math.max(0.01, M.IST.drain);
+  const hpWith = Math.max(0, Math.round(agent.hp - drainPerTick * sollDrainFactor * 50));
+  const barMaxW = 120;
+  const withoutW = Math.round(hpWithout / 100 * barMaxW);
+  const withW = Math.round(hpWith / 100 * barMaxW);
+
+  // Gauge angle (semi-circle: 0% = left, 100% = right)
+  const gaugeAngle = riskPct / 100 * 180;
+
+  return '<div class="ac-section" style="margin-top:4px"><h4>🔮 Digital Twin</h4>' +
+    '<div style="display:flex;align-items:center;gap:8px;margin:4px 0">' +
+      '<div style="position:relative;width:60px;height:34px;overflow:hidden">' +
+        '<div style="width:60px;height:60px;border-radius:50%;background:conic-gradient(' +
+          '#4CAF50 0deg 54deg,' +
+          '#FF9800 54deg 108deg,' +
+          '#E53935 108deg 180deg,' +
+          'transparent 180deg 360deg' +
+        ');transform:rotate(180deg)"></div>' +
+        '<div style="position:absolute;top:6px;left:6px;width:48px;height:48px;border-radius:50%;background:var(--parchment2,#EDD9B5)"></div>' +
+        '<div style="position:absolute;bottom:0;left:0;width:60px;text-align:center;font-weight:bold;font-size:13px;color:' + riskColor + '">' + riskPct + '%</div>' +
+      '</div>' +
+      '<div style="flex:1">' +
+        '<div style="font-size:10px;font-weight:600;color:' + riskColor + '">' + riskLabel + ' RISK</div>' +
+        '<div style="font-size:9px;color:var(--ink2,#6B4F3A)">' + dt.timeframe + '</div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="ac-row"><span class="k">⏱ Time to Critical</span><span class="v ' + ttcColor + '">' + ttcText + '</span></div>' +
+    '<div class="ac-row"><span class="k">💡 Prediction</span><span class="v">' + dt.prediction + '</span></div>' +
+    '<div style="margin-top:4px">' +
+      '<div style="font-size:9px;color:var(--ink2,#6B4F3A);margin-bottom:2px">Projected HP in 50 ticks:</div>' +
+      '<div style="display:flex;align-items:center;gap:4px;font-size:9px;margin-bottom:2px">' +
+        '<span style="color:#E53935;width:70px">Without tx:</span>' +
+        '<div style="width:' + barMaxW + 'px;height:8px;background:rgba(0,0,0,.1);border-radius:4px;overflow:hidden">' +
+          '<div style="width:' + withoutW + 'px;height:100%;background:#E53935;border-radius:4px"></div>' +
+        '</div>' +
+        '<span>HP→' + hpWithout + '</span>' +
+      '</div>' +
+      '<div style="display:flex;align-items:center;gap:4px;font-size:9px">' +
+        '<span style="color:#4CAF50;width:70px">With tx:</span>' +
+        '<div style="width:' + barMaxW + 'px;height:8px;background:rgba(0,0,0,.1);border-radius:4px;overflow:hidden">' +
+          '<div style="width:' + withW + 'px;height:100%;background:#4CAF50;border-radius:4px"></div>' +
+        '</div>' +
+        '<span>HP→' + hpWith + '</span>' +
+      '</div>' +
+    '</div>' +
+  '</div>';
+}
+
 // ═══ SAVE SCHEMA VALIDATION (Sprint 9 — INTEGRITY-001) ═══
 function validateSaveSchema(save) {
   if (!save || typeof save !== 'object') return false;
@@ -1576,6 +1696,7 @@ function validateSaveSchema(save) {
   for (const a of save.agents) {
     if (typeof a.id !== 'string') return false;
     if (typeof a.hp !== 'number' || a.hp < 0 || a.hp > 200) return false;
+    if (typeof a.x !== 'number' || typeof a.y !== 'number') return false;
     if (!Array.isArray(a.conditions)) return false;
   }
   return true;
@@ -1613,8 +1734,8 @@ const DISEASE_DB = {
     comorbidityMultiplier: { 'E11': 1.4, 'I10': 1.3 },
     markovTransitions: {
       healthy:  { healthy: 0.95, mild: 0.04, moderate: 0.01, severe: 0,    critical: 0,    deceased: 0    },
-      mild:     { healthy: 0.10, mild: 0.80, moderate: 0.08, severe: 0.02, critical: 0,    deceased: 0    },
-      moderate: { healthy: 0.02, mild: 0.10, moderate: 0.75, severe: 0.10, critical: 0.03, deceased: 0    },
+      mild:     { healthy: 0.01, mild: 0.89, moderate: 0.08, severe: 0.02, critical: 0,    deceased: 0    },
+      moderate: { healthy: 0,    mild: 0.12, moderate: 0.75, severe: 0.10, critical: 0.03, deceased: 0    },
       severe:   { healthy: 0,    mild: 0.02, moderate: 0.08, severe: 0.70, critical: 0.15, deceased: 0.05 },
       critical: { healthy: 0,    mild: 0,    moderate: 0.02, severe: 0.10, critical: 0.68, deceased: 0.20 },
       deceased: { healthy: 0,    mild: 0,    moderate: 0,    severe: 0,    critical: 0,    deceased: 1.0  }
@@ -1623,7 +1744,7 @@ const DISEASE_DB = {
     mortalityRisk: { untreated: 0.04, treated: 0.005 }
   },
 
-  // ── 2. Diabetes Mellitus Type 2 ────────────────────────────────────────────
+  // ── 2. Diabetes Mellitus Type 2────────────────────────────────────────────
   'E11': {
     code: 'E11',
     name: 'Diabetes Mellitus Type 2',
@@ -1644,8 +1765,8 @@ const DISEASE_DB = {
     comorbidityMultiplier: { 'I25': 1.4, 'I50': 1.3, 'I10': 1.2 },
     markovTransitions: {
       healthy:  { healthy: 0.97, mild: 0.03, moderate: 0,    severe: 0,    critical: 0,    deceased: 0    },
-      mild:     { healthy: 0.08, mild: 0.85, moderate: 0.06, severe: 0.01, critical: 0,    deceased: 0    },
-      moderate: { healthy: 0.03, mild: 0.12, moderate: 0.76, severe: 0.07, critical: 0.02, deceased: 0    },
+      mild:     { healthy: 0.01, mild: 0.92, moderate: 0.06, severe: 0.01, critical: 0,    deceased: 0    },
+      moderate: { healthy: 0,    mild: 0.15, moderate: 0.76, severe: 0.07, critical: 0.02, deceased: 0    },
       severe:   { healthy: 0,    mild: 0.02, moderate: 0.10, severe: 0.74, critical: 0.12, deceased: 0.02 },
       critical: { healthy: 0,    mild: 0,    moderate: 0.03, severe: 0.12, critical: 0.72, deceased: 0.13 },
       deceased: { healthy: 0,    mild: 0,    moderate: 0,    severe: 0,    critical: 0,    deceased: 1.0  }
@@ -1707,8 +1828,8 @@ const DISEASE_DB = {
     comorbidityMultiplier: { 'C34': 2.0 },
     markovTransitions: {
       healthy:  { healthy: 0.97, mild: 0.03, moderate: 0,    severe: 0,    critical: 0,    deceased: 0    },
-      mild:     { healthy: 0.05, mild: 0.85, moderate: 0.08, severe: 0.02, critical: 0,    deceased: 0    },
-      moderate: { healthy: 0.01, mild: 0.06, moderate: 0.78, severe: 0.12, critical: 0.03, deceased: 0    },
+      mild:     { healthy: 0.01, mild: 0.89, moderate: 0.08, severe: 0.02, critical: 0,    deceased: 0    },
+      moderate: { healthy: 0,    mild: 0.07, moderate: 0.78, severe: 0.12, critical: 0.03, deceased: 0    },
       severe:   { healthy: 0,    mild: 0.01, moderate: 0.05, severe: 0.74, critical: 0.15, deceased: 0.05 },
       critical: { healthy: 0,    mild: 0,    moderate: 0.01, severe: 0.08, critical: 0.66, deceased: 0.25 },
       deceased: { healthy: 0,    mild: 0,    moderate: 0,    severe: 0,    critical: 0,    deceased: 1.0  }
@@ -1717,7 +1838,7 @@ const DISEASE_DB = {
     mortalityRisk: { untreated: 0.05, treated: 0.01 }
   },
 
-  // ── 5. Arthrosis / Osteoarthritis ──────────────────────────────────────────
+  // ── 5. Arthrosis/ Osteoarthritis ──────────────────────────────────────────
   'M17': {
     code: 'M17',
     name: 'Arthrosis',
@@ -1769,8 +1890,8 @@ const DISEASE_DB = {
     comorbidityMultiplier: { 'I10': 1.5, 'I25': 1.4, 'E11': 1.3 },
     markovTransitions: {
       healthy:  { healthy: 0.97, mild: 0.03, moderate: 0,    severe: 0,    critical: 0,    deceased: 0    },
-      mild:     { healthy: 0.05, mild: 0.82, moderate: 0.10, severe: 0.03, critical: 0,    deceased: 0    },
-      moderate: { healthy: 0.01, mild: 0.05, moderate: 0.74, severe: 0.15, critical: 0.05, deceased: 0    },
+      mild:     { healthy: 0,    mild: 0.87, moderate: 0.10, severe: 0.03, critical: 0,    deceased: 0    },
+      moderate: { healthy: 0,    mild: 0.06, moderate: 0.74, severe: 0.15, critical: 0.05, deceased: 0    },
       severe:   { healthy: 0,    mild: 0.01, moderate: 0.05, severe: 0.68, critical: 0.18, deceased: 0.08 },
       critical: { healthy: 0,    mild: 0,    moderate: 0.01, severe: 0.07, critical: 0.62, deceased: 0.30 },
       deceased: { healthy: 0,    mild: 0,    moderate: 0,    severe: 0,    critical: 0,    deceased: 1.0  }
@@ -1862,8 +1983,8 @@ const DISEASE_DB = {
     comorbidityMultiplier: { 'I50': 1.5, 'I25': 1.3 },
     markovTransitions: {
       healthy:  { healthy: 0.97, mild: 0.03, moderate: 0,    severe: 0,    critical: 0,    deceased: 0    },
-      mild:     { healthy: 0.12, mild: 0.80, moderate: 0.07, severe: 0.01, critical: 0,    deceased: 0    },
-      moderate: { healthy: 0.04, mild: 0.14, moderate: 0.74, severe: 0.07, critical: 0.01, deceased: 0    },
+      mild:     { healthy: 0.01, mild: 0.91, moderate: 0.07, severe: 0.01, critical: 0,    deceased: 0    },
+      moderate: { healthy: 0,    mild: 0.18, moderate: 0.74, severe: 0.07, critical: 0.01, deceased: 0    },
       severe:   { healthy: 0,    mild: 0.03, moderate: 0.10, severe: 0.76, critical: 0.10, deceased: 0.01 },
       critical: { healthy: 0,    mild: 0,    moderate: 0.04, severe: 0.12, critical: 0.76, deceased: 0.08 },
       deceased: { healthy: 0,    mild: 0,    moderate: 0,    severe: 0,    critical: 0,    deceased: 1.0  }
@@ -1893,8 +2014,8 @@ const DISEASE_DB = {
     comorbidityMultiplier: { 'M17': 1.2 },
     markovTransitions: {
       healthy:  { healthy: 0.97, mild: 0.03, moderate: 0,    severe: 0,    critical: 0,    deceased: 0    },
-      mild:     { healthy: 0.08, mild: 0.84, moderate: 0.07, severe: 0.01, critical: 0,    deceased: 0    },
-      moderate: { healthy: 0.02, mild: 0.10, moderate: 0.80, severe: 0.07, critical: 0.01, deceased: 0    },
+      mild:     { healthy: 0.01, mild: 0.91, moderate: 0.07, severe: 0.01, critical: 0,    deceased: 0    },
+      moderate: { healthy: 0,    mild: 0.12, moderate: 0.80, severe: 0.07, critical: 0.01, deceased: 0    },
       severe:   { healthy: 0,    mild: 0.02, moderate: 0.10, severe: 0.80, critical: 0.07, deceased: 0.01 },
       critical: { healthy: 0,    mild: 0,    moderate: 0.04, severe: 0.12, critical: 0.80, deceased: 0.04 },
       deceased: { healthy: 0,    mild: 0,    moderate: 0,    severe: 0,    critical: 0,    deceased: 1.0  }
@@ -2553,27 +2674,13 @@ function generateThoughts(conditions, hp, age, waitWeeks) {
 }
 
 // ── Road position picker ──
-// ── Sprint 29: Water zone boundary check ──
-const WATER_ZONES = [
-  {x1:.00, y1:.20, x2:.22, y2:.38},  // river upper-left
-  {x1:.00, y1:.50, x2:.20, y2:.70},  // river lower-left
-  {x1:.50, y1:.22, x2:.72, y2:.34},  // river upper-right
-  {x1:.50, y1:.55, x2:.72, y2:.70},  // river lower-right
-  {x1:.72, y1:.62, x2:.98, y2:.78}   // river far-right bottom
-];
-function isInWater(x, y) {
-  for (var i = 0; i < WATER_ZONES.length; i++) {
-    var z = WATER_ZONES[i];
-    if (x >= z.x1 && x <= z.x2 && y >= z.y1 && y <= z.y2) return true;
-  }
-  return false;
-}
+// ── Sprint 29: Water zone boundary check (uses NO_WALK_ZONES from first definition) ──
 function snapOutOfWater(x, y) {
   if (!isInWater(x, y)) return { x: x, y: y };
   // Push to nearest zone edge
   var bestX = x, bestY = y, bestDist = Infinity;
-  for (var i = 0; i < WATER_ZONES.length; i++) {
-    var z = WATER_ZONES[i];
+  for (var i = 0; i < NO_WALK_ZONES.length; i++) {
+    var z = NO_WALK_ZONES[i];
     if (x >= z.x1 && x <= z.x2 && y >= z.y1 && y <= z.y2) {
       var candidates = [
         { x: z.x1 - 0.02, y: y }, { x: z.x2 + 0.02, y: y },
@@ -2595,7 +2702,7 @@ function getRandomRoadPosition() {
     {x:.22,y:.15},{x:.22,y:.20},{x:.22,y:.42},{x:.22,y:.54},{x:.22,y:.72},
     {x:.35,y:.15},{x:.50,y:.18},{x:.50,y:.42},{x:.50,y:.54},{x:.50,y:.80},
     {x:.72,y:.18},{x:.72,y:.42},{x:.72,y:.54},{x:.72,y:.80},
-    {x:.85,y:.27},{x:.85,y:.42},{x:.85,y:.54},
+    {x:.70,y:.27},{x:.85,y:.42},{x:.85,y:.54},
     {x:.28,y:.15},{x:.56,y:.18},{x:.30,y:.54},{x:.42,y:.54},{x:.60,y:.54},{x:.80,y:.54},
     {x:.12,y:.80},{x:.35,y:.80},{x:.60,y:.80},{x:.85,y:.80},
     {x:.50,y:.15},{x:.50,y:.48},{x:.72,y:.48},{x:.22,y:.48}
@@ -2698,7 +2805,9 @@ function spawnAgent(index, age, gender, surname) {
     parentId: null, atWork: false, workTimer: 0,
     schoolTimer: 0, restTimer: 0, routineGPTimer: 0,
     // Sprint 27: Family & social properties
-    partnerId: null, familyId: null, childrenIds: [], friendIds: []
+    partnerId: null, familyId: null, childrenIds: [], friendIds: [],
+    // Sprint S4: Digital literacy attribute
+    digitalLiteracy: age < 45 ? 0.7 + Math.random() * 0.3 : age < 65 ? 0.4 + Math.random() * 0.4 : age < 80 ? 0.15 + Math.random() * 0.35 : 0.05 + Math.random() * 0.15
   };
 }
 
@@ -2960,6 +3069,72 @@ function getComorbidityMultiplier(conditions) {
   return mult;
 }
 
+// ═══ Sprint S3: HP Drain Breakdown Builder ═══
+function buildDrainBreakdown(agent) {
+  var p = M[mode];
+  var comorbMult = getComorbidityMultiplier(agent.conditions);
+  var baseDrainTotal = 0;
+  var waitPenaltyTotal = 0;
+  var rows = '';
+
+  agent.conditions.forEach(function(cond) {
+    var db = DISEASE_DB[cond.code];
+    if (!db) return;
+    var sevMult = SEVERITY_MULTIPLIER[cond.severity] || 1.0;
+    var baseDrain = db.hpDrainPerTick * p.drain;
+    baseDrainTotal += baseDrain;
+
+    rows += '<div class="ac-row"><span class="k">• ' + (db.name || cond.code) + '</span><span class="v">' +
+      'Base: ' + baseDrain.toFixed(3) + '/tick (' + cond.severity + ')</span></div>';
+
+    if (agent.waitWeeks > p.tree) {
+      var overdue = agent.waitWeeks - p.tree;
+      var waitDrain = (3 * overdue * sevMult * (1 + p.admin)) * 0.05;
+      waitPenaltyTotal += waitDrain;
+      rows += '<div class="ac-row"><span class="k" style="color:#e65100">  ↳ Wait penalty</span><span class="v" style="color:#e65100">+' +
+        waitDrain.toFixed(3) + '/tick (' + Math.round(overdue) + 'w overdue)</span></div>';
+    }
+  });
+
+  var subtotal = baseDrainTotal + waitPenaltyTotal;
+  var adminExtra = subtotal * p.admin;
+  var totalBeforeComorb = subtotal + adminExtra;
+  var totalDrain = totalBeforeComorb * comorbMult;
+
+  // CSS stacked bar segments
+  var segTotal = baseDrainTotal + waitPenaltyTotal + adminExtra + (comorbMult > 1 ? totalBeforeComorb * (comorbMult - 1) : 0);
+  if (segTotal < 0.001) segTotal = 1;
+  var basePct = Math.round(baseDrainTotal / segTotal * 100);
+  var waitPct = Math.round(waitPenaltyTotal / segTotal * 100);
+  var adminPct = Math.round(adminExtra / segTotal * 100);
+  var comorbPct = comorbMult > 1 ? Math.round(totalBeforeComorb * (comorbMult - 1) / segTotal * 100) : 0;
+
+  var html = '<div class="ac-section"><h4>⚡ HP Drain Analysis</h4>';
+  html += rows;
+  html += '<div class="ac-row"><span class="k" style="color:#c62828">Admin burden</span><span class="v" style="color:#c62828">+' +
+    Math.round(p.admin * 100) + '% → +' + adminExtra.toFixed(3) + '/tick</span></div>';
+  if (agent.conditions.length >= 2 && comorbMult > 1) {
+    html += '<div class="ac-row"><span class="k" style="color:#6a1b9a">Comorbidity</span><span class="v" style="color:#6a1b9a">×' +
+      comorbMult.toFixed(1) + ' multiplier</span></div>';
+  }
+  html += '<div class="ac-row" style="margin-top:4px;font-weight:700"><span class="k" style="color:#c62828">Total drain</span><span class="v" style="color:#c62828;font-weight:700">' +
+    totalDrain.toFixed(3) + ' HP/tick</span></div>';
+
+  // Stacked bar visualization
+  html += '<div style="display:flex;height:8px;border-radius:4px;overflow:hidden;margin-top:6px;background:#e0e0e0">';
+  if (basePct > 0) html += '<div style="width:' + basePct + '%;background:#1976d2" title="Base drain"></div>';
+  if (waitPct > 0) html += '<div style="width:' + waitPct + '%;background:#e65100" title="Wait penalty"></div>';
+  if (adminPct > 0) html += '<div style="width:' + adminPct + '%;background:#c62828" title="Admin burden"></div>';
+  if (comorbPct > 0) html += '<div style="width:' + comorbPct + '%;background:#6a1b9a" title="Comorbidity"></div>';
+  html += '</div>';
+  html += '<div style="display:flex;gap:8px;margin-top:3px;font-size:8px;color:var(--ink2);flex-wrap:wrap">';
+  html += '<span>🟦 Base</span><span>🟧 Wait</span><span>🟥 Admin</span>';
+  if (comorbMult > 1) html += '<span>🟪 Comorb</span>';
+  html += '</div>';
+  html += '</div>';
+  return html;
+}
+
 // Treatment effect: downgrades severity state
 function applyTreatmentEffect(conditionCode, currentSeverity) {
   const db = DISEASE_DB[conditionCode];
@@ -2976,13 +3151,13 @@ const INFRASTRUCTURE_AGENTS = [
    thoughts:['30% of my day is paperwork. I became a doctor to help people.','My waiting room is full again.','If only I had more time per patient.'],
    color:'#40a870',
    patientsSeenToday:0,referralsMade:0,burnoutLevel:0,currentPatient:null,
-   queue:[],totalPatientsSeen:0,actionHistory:[]},
+   queue:[],totalPatientsSeen:0,actionHistory:[],sickLeaveTimer:0},
   {id:'gp2',x:.22,y:.42,type:'gp',name:'Dr. Bakker',age:47,gender:'F',role:'General Practitioner',
    conditions:[],hp:100,state:'working',waitWeeks:0,insideBuilding:null,
    thoughts:['Another referral denied. The specialist queue is 12 weeks.','I need to finish 50 FHIR logs before lunch.','My colleagues are burning out.'],
    color:'#40a870',
    patientsSeenToday:0,referralsMade:0,burnoutLevel:0,currentPatient:null,
-   queue:[],totalPatientsSeen:0,actionHistory:[]},
+   queue:[],totalPatientsSeen:0,actionHistory:[],sickLeaveTimer:0},
   {id:'s1',x:.34,y:.12,type:'specialist',name:'Dr. Ashworth',age:55,gender:'M',role:'Cardiologist',
    specialty:'cardiology',
    conditions:[],hp:100,state:'overloaded',waitWeeks:0,insideBuilding:'hospital',
@@ -3016,6 +3191,11 @@ agents.forEach(e=>{
   e.pathComplete = false;
   e.lastGPCycle = -100;
   e.referredToHospital = false;
+  // Sprint S4: Assign digitalLiteracy if not already set (infrastructure agents)
+  if (typeof e.digitalLiteracy === 'undefined') {
+    var dlAge = e.age || 40;
+    e.digitalLiteracy = dlAge < 45 ? 0.7 + Math.random() * 0.3 : dlAge < 65 ? 0.4 + Math.random() * 0.4 : dlAge < 80 ? 0.15 + Math.random() * 0.35 : 0.05 + Math.random() * 0.15;
+  }
   e.hpHistory = e.hpHistory || [Math.round(e.hp)];
   // Store initial values for reset
   e._initHP = e.hp; e._initWaitWeeks = e.waitWeeks;
@@ -3478,6 +3658,11 @@ function drawAgent(e){
   const breathY = e.breathOffset || 0;
   drawY -= breathY * s;
 
+  // ── Sprint S2: Sick leave transparency for GP agents ──
+  if (e.type === 'gp' && e.sickLeaveTimer > 0) {
+    cx.globalAlpha = 0.3;
+  }
+
   // Pick the right walk frame
   const prefix = isG ? e.id+'_ghost_' : e.id+'_';
   const sprite = charCanvases[prefix + walkFrameIdx] || charCanvases[e.id+'_0'];
@@ -3505,6 +3690,16 @@ function drawAgent(e){
     cx.lineWidth = 2 * s;
     cx.beginPath();
     cx.ellipse(sx, sy - charSize * 0.3, charSize * 0.5, charSize * 0.6, 0, 0, 6.28);
+    cx.stroke();
+  }
+
+  // ── Sprint S5: Proactive alert pulsing ring (SOLL at-risk agents) ──
+  if (mode === 'SOLL' && e.digitalTwinRisk && e.digitalTwinRisk.riskPct > (mode === 'SOLL' ? 25 : 60) && e.hp > 0) {
+    const pulseVal = 0.3 + 0.3 * Math.sin(Date.now() / 400);
+    cx.strokeStyle = 'rgba(255,179,0,' + pulseVal.toFixed(2) + ')';
+    cx.lineWidth = 2 * s;
+    cx.beginPath();
+    cx.ellipse(sx, sy - charSize * 0.3, charSize * 0.55, charSize * 0.65, 0, 0, 6.28);
     cx.stroke();
   }
 
@@ -3685,17 +3880,19 @@ const QUEUE_ORIGINS = {
 
 function getQueuePosition(buildingId, slotIndex) {
   const origin = QUEUE_ORIGINS[buildingId];
-  if (!origin) return { x: 0.5, y: 0.5 };
-  // Stagger positions along road, with slight x jitter
+  if (!origin) return { x: 0.42, y: 0.18 }; // safe fallback on road
   const jitterX = (Math.sin(slotIndex * 7.13) * 0.005);
+  const maxSlots = 30; // cap visible queue at 30
+  const cappedSlot = Math.min(slotIndex, maxSlots);
   return {
     x: origin.x + jitterX,
-    y: origin.y + (slotIndex + 1) * 0.015 * origin.dir
+    y: Math.min(origin.y + (cappedSlot + 1) * 0.015 * origin.dir, 0.85) // never below 85%
   };
 }
 
 // ── Sprint 5: Building status indicators ──
 function drawBuildingStatus() {
+  cx.save();
   const worldW = mapImgW, worldH = mapImgH;
   BUILDINGS.forEach(b => {
     const queueLen = QUEUES[b.id] ? QUEUES[b.id].agents.length : 0;
@@ -3725,14 +3922,78 @@ function drawBuildingStatus() {
       const bx = (b.x2 * worldW - camX) * zoom;
       const by = (b.y1 * worldH - camY) * zoom;
       cx.fillStyle = load > 1.0 ? '#E53935' : load > 0.5 ? '#FF9800' : '#4CAF50';
-      cx.beginPath(); cx.arc(bx, by, 10 * zoom, 0, 6.28); cx.fill();
+      // Sprint S1: Pulsing badge when overflow
+      let badgeRadius = 10 * zoom;
+      if (load > 1.0) {
+        badgeRadius += Math.sin(Date.now() / 200) * 3 * zoom;
+      }
+      cx.beginPath(); cx.arc(bx, by, badgeRadius, 0, 6.28); cx.fill();
       cx.fillStyle = '#fff';
       cx.font = `bold ${9 * zoom}px Inter`;
       cx.textAlign = 'center'; cx.textBaseline = 'middle';
       cx.fillText(queueLen.toString(), bx, by);
+      // Sprint S1: "OVERFLOW" text when overloaded
+      if (load > 1.0) {
+        const overAlpha = Math.sin(Date.now() / 400) * 0.4 + 0.6;
+        cx.fillStyle = `rgba(229,57,53,${overAlpha})`;
+        cx.font = `bold ${8 * zoom}px 'JetBrains Mono',monospace`;
+        cx.fillText('OVERFLOW', bx, by + badgeRadius + 8 * zoom);
+      }
       cx.textBaseline = 'alphabetic';
+      cx.textAlign = 'left';
+    }
+
+    // Sprint S1: Pulsing "!" exclamation icon above building when overloaded
+    if (load > 1.0) {
+      const cx1 = x1 + w / 2;
+      const bounceY = y1 - 12 * zoom + Math.sin(Date.now() / 250) * 4 * zoom;
+      cx.fillStyle = '#E53935';
+      cx.font = `bold ${16 * zoom}px 'JetBrains Mono',monospace`;
+      cx.textAlign = 'center'; cx.textBaseline = 'middle';
+      cx.shadowColor = '#E53935'; cx.shadowBlur = 8 * zoom;
+      cx.fillText('!', cx1, bounceY);
+      cx.shadowBlur = 0;
+      cx.textBaseline = 'alphabetic';
+      cx.textAlign = 'left';
+    }
+
+    // ── Sprint S2: Burnout-based border glow for GP buildings ──
+    if (b.id === 'gp1_bldg' || b.id === 'gp2_bldg') {
+      const gpMap = {'gp1_bldg':'gp1','gp2_bldg':'gp2'};
+      const gpAgent = agents.find(a => a.id === gpMap[b.id]);
+      if (gpAgent) {
+        const bo = gpAgent.burnoutLevel || 0;
+        let borderColor, borderWidth;
+        if (bo > 70) {
+          const pulse = Math.sin(Date.now() / 300) * 0.3 + 0.7;
+          borderColor = `rgba(229,57,53,${pulse})`;
+          borderWidth = 3 * zoom;
+        } else if (bo > 40) {
+          borderColor = 'rgba(255,179,0,0.7)';
+          borderWidth = 2 * zoom;
+        } else {
+          borderColor = 'rgba(76,175,80,0.5)';
+          borderWidth = 1.5 * zoom;
+        }
+        cx.strokeStyle = borderColor;
+        cx.lineWidth = borderWidth;
+        cx.strokeRect(x1 - 1, y1 - 1, w + 2, h + 2);
+        // Sick leave overlay text
+        if (gpAgent.sickLeaveTimer > 0) {
+          const slx = x1 + w / 2;
+          const sly = y1 + h + 12 * zoom;
+          cx.fillStyle = 'rgba(61,36,21,0.85)';
+          cx.fillRect(slx - 50 * zoom, sly - 6 * zoom, 100 * zoom, 14 * zoom);
+          cx.fillStyle = '#FF6F00';
+          cx.font = `bold ${8 * zoom}px 'JetBrains Mono',monospace`;
+          cx.textAlign = 'center'; cx.textBaseline = 'middle';
+          cx.fillText('⚕ On Sick Leave', slx, sly);
+          cx.textAlign = 'left'; cx.textBaseline = 'alphabetic';
+        }
+      }
     }
   });
+  cx.restore();
 }
 
 // ═══ DAY/NIGHT CYCLE (Sprint 13) ═══
@@ -3994,12 +4255,41 @@ function drawGraveMarkers() {
       cx.fillStyle = 'rgba(229,57,53,0.6)';
       cx.beginPath(); cx.arc(sx, sy + sz * 0.3, 3 * zoom, 0, 6.28); cx.fill();
     }
+    // Sprint S1: Hover tooltip for grave markers
+    const mdx = mouseWorldFX - m.x, mdy = mouseWorldFY - m.y;
+    if (Math.sqrt(mdx * mdx + mdy * mdy) < 0.015) {
+      const tw = 160 * zoom, th = 72 * zoom;
+      const tx = sx - tw / 2, ty = sy - th - 10 * zoom;
+      cx.fillStyle = 'rgba(42,21,8,0.92)';
+      cx.strokeStyle = 'rgba(229,57,53,0.6)';
+      cx.lineWidth = 1.5 * zoom;
+      cx.beginPath();
+      cx.roundRect(tx, ty, tw, th, 4 * zoom);
+      cx.fill(); cx.stroke();
+      cx.fillStyle = '#F5E6C8';
+      cx.font = `bold ${9 * zoom}px 'JetBrains Mono',monospace`;
+      cx.textAlign = 'left'; cx.textBaseline = 'top';
+      cx.fillText(`🪦 ${m.name}, ${m.age}`, tx + 6 * zoom, ty + 5 * zoom);
+      cx.font = `${8 * zoom}px 'JetBrains Mono',monospace`;
+      cx.fillStyle = '#E53935';
+      cx.fillText(`Cause: ${m.cause === 'system_failure' ? 'System Failure' : m.cause || 'Unknown'}`, tx + 6 * zoom, ty + 18 * zoom);
+      cx.fillStyle = '#FFB300';
+      cx.fillText(`Waited: ${Math.round(m.waitWeeks || 0)} weeks`, tx + 6 * zoom, ty + 30 * zoom);
+      if (m.conditions && m.conditions.length > 0) {
+        cx.fillStyle = '#a08060';
+        cx.fillText(m.conditions.slice(0, 2).join(', '), tx + 6 * zoom, ty + 42 * zoom);
+      }
+      cx.fillStyle = '#666';
+      cx.fillText(`Cycle: ${m.cycle || '?'}`, tx + 6 * zoom, ty + 54 * zoom);
+      cx.textAlign = 'center'; cx.textBaseline = 'alphabetic';
+    }
   });
 }
 
 // ═══ MAIN RENDER ═══
 function render(){
   const gd=document.getElementById('game-wrap');
+  if(!gd||!cv||!cx)return;
   cv.width=gd.clientWidth;cv.height=gd.clientHeight;
   
   // World size = image size (or default)
@@ -4064,6 +4354,33 @@ function render(){
       cx.beginPath();cx.moveTo(ax,ay);cx.lineTo(bx,by);cx.stroke();
     }
     cx.setLineDash([]);
+  }
+
+  // ── Sprint S5: GP awareness lines to at-risk agents (SOLL proactive detection) ──
+  if(mode==='SOLL'){
+    const sollThreshold = 25;
+    const atRiskAgents = agents.filter(a => a.hp > 0 && a.digitalTwinRisk && a.digitalTwinRisk.riskPct > sollThreshold && (a.type === 'patient' || a.type === 'citizen'));
+    if(atRiskAgents.length > 0){
+      const gpAgents = agents.filter(a => a.type === 'gp');
+      cx.strokeStyle = 'rgba(255,179,0,0.35)';
+      cx.lineWidth = 1.5 * zoom;
+      cx.setLineDash([4*zoom, 4*zoom]);
+      atRiskAgents.forEach(ar => {
+        let nearestGP = null, nearestDist = Infinity;
+        gpAgents.forEach(gp => {
+          const d = Math.abs(gp.x - ar.x) + Math.abs(gp.y - ar.y);
+          if(d < nearestDist){ nearestDist = d; nearestGP = gp; }
+        });
+        if(nearestGP){
+          const arSx = (ar.x * worldW - camX) * zoom;
+          const arSy = (ar.y * worldH - camY) * zoom;
+          const gpSx = (nearestGP.x * worldW - camX) * zoom;
+          const gpSy = (nearestGP.y * worldH - camY) * zoom;
+          cx.beginPath(); cx.moveTo(gpSx, gpSy); cx.lineTo(arSx, arSy); cx.stroke();
+        }
+      });
+      cx.setLineDash([]);
+    }
   }
   
   // Frame-rate independent movement
@@ -4189,7 +4506,14 @@ function render(){
     // Safety: teleport out of no-walk zones
     if(isInWater(e.x, e.y)) {
       const ni = nearestWaypointIdx(e.x, e.y);
-      e.x = ROAD_WAYPOINTS[ni].x; e.y = ROAD_WAYPOINTS[ni].y;
+      const wp = ROAD_WAYPOINTS[ni];
+      // Only teleport if destination is actually safe
+      if (!isInWater(wp.x, wp.y)) {
+        e.x = wp.x; e.y = wp.y;
+      } else {
+        // Last resort: center of map road
+        e.x = 0.42; e.y = 0.18;
+      }
       e.tx = e.x; e.ty = e.y; e.path = []; e.pathIdx = 0;
     }
 
@@ -4205,7 +4529,16 @@ function render(){
       if (Math.random() < 0.005) {
         e.bubbleTimer = 60;
         const waitLines = ['...', 'Still waiting...', 'How long?', '*sigh*', 'My turn soon?'];
-        e.chatBubbleText = waitLines[Math.floor(Math.random() * waitLines.length)];
+        // Sprint S1: Dramatic lines when wait is long
+        const dramaticLines = [
+          "I've been here for hours!", "Is anyone even working?!",
+          "My condition is getting worse...", "This is a disgrace!",
+          "I might not make it...", "The system has failed us!",
+          "Please... someone help me.", "I can feel my health declining.",
+          "How many more weeks?!", "Nobody cares about us!"
+        ];
+        const pool = (e.waitWeeks && e.waitWeeks > 8) ? dramaticLines : waitLines;
+        e.chatBubbleText = pool[Math.floor(Math.random() * pool.length)];
         e.chatTimer = 60;
       }
     }
@@ -4249,6 +4582,144 @@ function render(){
 
   // ── Sprint 13: Ambient particles (dust, fireflies, birds, smoke) ──
   drawAmbientParticles();
+
+  // ── Sprint S1: Death flash overlay ──
+  if (deathFlashTimer > 0) {
+    cx.fillStyle = `rgba(229,57,53,${deathFlashTimer / 50})`;
+    cx.fillRect(0, 0, cv.width, cv.height);
+    deathFlashTimer--;
+  }
+
+  // ── Sprint S1: Mode transition scanline wipe effect ──
+  if (modeTransitionTimer > 0 && deathFlashTimer <= 0) {
+    const progress = 1 - (modeTransitionTimer / 30);
+    const isSOLL = modeTransitionTarget === 'SOLL';
+    // Color flash: green for SOLL, red for IST
+    const flashAlpha = Math.min(0.35, modeTransitionTimer / 30 * 0.35);
+    cx.fillStyle = isSOLL ? `rgba(76,175,80,${flashAlpha})` : `rgba(229,57,53,${flashAlpha})`;
+    cx.fillRect(0, 0, cv.width, cv.height);
+    // Scanline sweep
+    const scanY = progress * cv.height;
+    for (let i = 0; i < cv.height; i += 4) {
+      if (Math.abs(i - scanY) < 40) {
+        const lineAlpha = 0.3 * (1 - Math.abs(i - scanY) / 40);
+        cx.fillStyle = `rgba(255,255,255,${lineAlpha})`;
+        cx.fillRect(0, i, cv.width, 1);
+      }
+    }
+    modeTransitionTimer--;
+  }
+
+  // ── Sprint S2: Admin Waste Taxi Meter overlay ──
+  drawAdminTaxiMeter();
+
+  // ── Sprint S6: Screenshot Mode callouts ──
+  if (screenshotMode) {
+    cx.save();
+    const pad = 12;
+    const calloutH = 24;
+    cx.font = 'bold 13px "JetBrains Mono",monospace';
+    cx.textBaseline = 'top';
+
+    // Helper: draw callout with dark background
+    function drawCallout(text, x, y, align) {
+      cx.textAlign = align || 'left';
+      var tw = cx.measureText(text).width;
+      var bx = align === 'right' ? x - tw - pad * 2 : x;
+      cx.fillStyle = 'rgba(26,26,46,0.82)';
+      cx.fillRect(bx, y, tw + pad * 2, calloutH);
+      cx.fillStyle = '#ffffff';
+      cx.fillText(text, align === 'right' ? x - pad : bx + pad, y + 5);
+    }
+
+    // Top-left: mode label
+    drawCallout('CAMMELOT — ' + mode + ' MODE', 10, 10, 'left');
+
+    // Top-right: stats
+    var pop = agents.filter(function(a){ return a.type==='patient'||a.type==='citizen'; });
+    var aliveC = pop.filter(function(a){ return a.hp > 0; }).length;
+    var deadC = pop.filter(function(a){ return a.hp <= 0; }).length;
+    var waitArr = agents.filter(function(a){ return a.waitWeeks > 0 && a.hp > 0; });
+    var avgWC = waitArr.length > 0 ? (waitArr.reduce(function(s,a){ return s+a.waitWeeks; },0)/waitArr.length).toFixed(1) : '0';
+    drawCallout('Pop: ' + aliveC + ' | Deaths: ' + deadC + ' | Wait: ' + avgWC + 'w', cv.width - 10, 10, 'right');
+
+    // Bottom-left: cost
+    drawCallout('€' + Math.round(S.waste).toLocaleString() + ' system cost', 10, cv.height - calloutH - 10, 'left');
+
+    // Bottom-right: cycle & source
+    drawCallout('Cycle ' + cycle + ' | CBS/RIVM 2025', cv.width - 10, cv.height - calloutH - 10, 'right');
+
+    cx.restore();
+  }
+}
+
+// ── Sprint S2: Admin Waste Taxi Meter ──
+function drawAdminTaxiMeter() {
+  if (screenshotMode) return; // don't draw over screenshot callouts
+  if (!taxiMeterVisible) return;
+  const p = M[mode];
+  // Smooth lerp toward actual waste
+  const prevDisplayed = taxiMeterDisplayed;
+  taxiMeterDisplayed += (S.waste - taxiMeterDisplayed) * 0.08;
+  // Flash when crossing €1000 thresholds
+  if (Math.floor(S.waste / 1000) > Math.floor(prevDisplayed / 1000) && S.waste > 100) {
+    taxiMeterFlash = 30;
+  }
+  if (taxiMeterFlash > 0) taxiMeterFlash--;
+
+  const padding = 20;
+  const boxW = 220;
+  const boxH = 64;
+  const bx = cv.width - boxW - padding;
+  const by = cv.height - boxH - padding - 40; // above cbar
+
+  // Background
+  cx.save();
+  cx.fillStyle = 'rgba(61,36,21,0.85)';
+  cx.beginPath();
+  cx.roundRect(bx, by, boxW, boxH, 8);
+  cx.fill();
+
+  // Golden glow when flashing
+  if (taxiMeterFlash > 0) {
+    const glowAlpha = (taxiMeterFlash / 30) * 0.6;
+    cx.shadowColor = '#FFB300';
+    cx.shadowBlur = 20 + taxiMeterFlash;
+    cx.strokeStyle = `rgba(255,179,0,${glowAlpha})`;
+    cx.lineWidth = 2;
+    cx.beginPath();
+    cx.roundRect(bx, by, boxW, boxH, 8);
+    cx.stroke();
+    cx.shadowBlur = 0;
+  } else {
+    cx.strokeStyle = 'rgba(255,179,0,0.3)';
+    cx.lineWidth = 1;
+    cx.beginPath();
+    cx.roundRect(bx, by, boxW, boxH, 8);
+    cx.stroke();
+  }
+
+  // Main counter
+  const displayed = Math.round(taxiMeterDisplayed);
+  cx.fillStyle = '#FFB300';
+  cx.font = 'bold 22px "JetBrains Mono",monospace';
+  cx.textAlign = 'left';
+  cx.textBaseline = 'top';
+  cx.fillText('€' + displayed.toLocaleString(), bx + 12, by + 8);
+
+  // Label
+  cx.fillStyle = 'rgba(255,179,0,0.6)';
+  cx.font = '9px "JetBrains Mono",monospace';
+  cx.fillText('ADMIN WASTE', bx + 140, by + 14);
+
+  // Breakdown line
+  const adminWaste = Math.round(S.waste * 0.85);
+  const deathWaste = Math.round(S.waste * 0.15);
+  cx.fillStyle = 'rgba(255,255,255,0.55)';
+  cx.font = '10px "JetBrains Mono",monospace';
+  cx.fillText('Admin: €' + adminWaste.toLocaleString() + ' | Deaths: €' + deathWaste.toLocaleString(), bx + 12, by + 42);
+
+  cx.restore();
 }
 
 // ═══ INTERACTION ═══
@@ -4271,8 +4742,17 @@ cv.addEventListener('wheel',e=>{
 
 // Pan with drag
 cv.addEventListener('mousedown',e=>{dragStart={x:e.clientX,y:e.clientY};dragCam={x:camX,y:camY};});
-cv.addEventListener('mousemove',e=>{if(dragStart){camX=dragCam.x-(e.clientX-dragStart.x)/zoom;camY=dragCam.y-(e.clientY-dragStart.y)/zoom;}});
+cv.addEventListener('mousemove',e=>{
+  if(dragStart){camX=dragCam.x-(e.clientX-dragStart.x)/zoom;camY=dragCam.y-(e.clientY-dragStart.y)/zoom;}
+  // Sprint S1: Track mouse world position for tooltips
+  const rect=cv.getBoundingClientRect();
+  const wx=(e.clientX-rect.left)/zoom+camX;
+  const wy=(e.clientY-rect.top)/zoom+camY;
+  mouseWorldFX=wx/mapImgW; mouseWorldFY=wy/mapImgH;
+});
 cv.addEventListener('mouseup',e=>{
+  // Sprint S6: Exit screenshot mode on any canvas click
+  if(screenshotMode){ exitScreenshotMode(); dragStart=null; return; }
   if(dragStart&&Math.abs(e.clientX-dragStart.x)<5&&Math.abs(e.clientY-dragStart.y)<5){
     // Click — find agent or building
     const rect=cv.getBoundingClientRect();
@@ -4437,6 +4917,18 @@ function selectAgent(a){
     </div>`;
   }
 
+  // ── Sprint S4: Digital Literacy display ──
+  if(isPatient && typeof a.digitalLiteracy === 'number'){
+    const dl = a.digitalLiteracy;
+    const dlPct = Math.round(dl * 100);
+    const dlColor = dl < 0.3 ? '#c44' : dl <= 0.6 ? '#cc0' : '#4a4';
+    const dlLabel = dl < 0.3 ? 'Low' : dl <= 0.6 ? 'Moderate' : 'High';
+    html+=`<div class="ac-section"><h4>💻 Digital Literacy</h4>
+      <div class="ac-row"><span class="k">Digital Literacy</span><span class="v" style="color:${dlColor}">${dl.toFixed(2)} (${dlLabel})</span></div>
+      <div style="background:#222;border-radius:3px;height:6px;margin:2px 0 4px;overflow:hidden"><div style="background:${dlColor};width:${dlPct}%;height:100%"></div></div>
+    </div>`;
+  }
+
   // ── Sprint 27: Family section ──
   if(isPatient) {
     const familyMembers = [];
@@ -4581,6 +5073,10 @@ function selectAgent(a){
       });
       html+=`</div>`;
     }
+    // ═══ Sprint S3: HP Drain Breakdown ═══
+    if(a.conditions.length>0 && a.hp>0){
+      html+=buildDrainBreakdown(a);
+    }
     // ── Sprint 28: Medication display ──
     if(a.medications && a.medications.length > 0){
       html+=`<div class="ac-section"><h4>💊 Medications</h4>`;
@@ -4616,14 +5112,9 @@ function selectAgent(a){
       html+=`</div>`;
     }
 
-    // ═══ Sprint 10: Digital Twin Risk ═══
-    if(a.digitalTwinRisk){
-      const dt=a.digitalTwinRisk;
-      const riskColor=dt.riskPct>60?'bad':dt.riskPct>30?'mid':'ok';
-      html+=`<div class="ac-section" style="margin-top:4px"><h4>🔮 Digital Twin</h4>
-        <div class="ac-row"><span class="k">Risk Score</span><span class="v ${riskColor}">${dt.riskPct}% (${dt.timeframe})</span></div>
-        <div class="ac-row"><span class="k">Recommendation</span><span class="v">${dt.prediction}</span></div>
-      </div>`;
+    // ═══ Sprint S5: Enhanced Digital Twin Risk Panel ═══
+    if(a.digitalTwinRisk || (a.conditions && a.conditions.length > 0 && a.hp > 0)){
+      html+=buildDigitalTwinPanel(a);
     }
 
     // ═══ Sprint 10: FHIR Memory Tab ═══
@@ -4789,6 +5280,63 @@ function showTownFeed() {
   });
 }
 
+// ── Sprint S2: C_eff Capacity Bar Chart ──
+function buildCapacityChart() {
+  const pIST = M.IST;
+  const pSOLL = M.SOLL;
+  const cur = M[mode];
+  const sickPct = Math.round(cur.sick * 100);
+  const adminPct = Math.round(cur.admin * 100);
+  const usablePct = Math.max(0, 100 - adminPct - sickPct);
+  const cEff = (MAX_GP_CONSULTS_PER_DAY * (1 - cur.admin - cur.sick) * cur.ai).toFixed(1);
+
+  let chartHTML = `<div class="ac-section"><h4>C<sub>eff</sub> Capacity Breakdown</h4>`;
+
+  if (mode === 'SOLL') {
+    // IST comparison bar
+    const istAdmin = Math.round(pIST.admin * 100);
+    const istSick = Math.round(pIST.sick * 100);
+    const istUsable = Math.max(0, 100 - istAdmin - istSick);
+    const istCEff = (MAX_GP_CONSULTS_PER_DAY * (1 - pIST.admin - pIST.sick) * pIST.ai).toFixed(1);
+    chartHTML += `<div style="margin-bottom:2px;color:rgba(255,255,255,0.5);font-size:9px">IST (current)</div>`;
+    chartHTML += `<div style="display:flex;height:18px;border-radius:4px;overflow:hidden;border:1px solid rgba(255,255,255,0.15);margin-bottom:6px">`;
+    chartHTML += `<div style="width:${istUsable}%;background:#4CAF50;display:flex;align-items:center;justify-content:center;font-size:8px;color:#fff;font-weight:bold">${istUsable}%</div>`;
+    chartHTML += `<div style="width:${istAdmin}%;background:#E53935;display:flex;align-items:center;justify-content:center;font-size:8px;color:#fff;font-weight:bold">${istAdmin}%</div>`;
+    chartHTML += `<div style="width:${istSick}%;background:#FF9800;display:flex;align-items:center;justify-content:center;font-size:8px;color:#fff;font-weight:bold">${istSick}%</div>`;
+    chartHTML += `</div>`;
+    chartHTML += `<div style="font-size:9px;color:rgba(255,255,255,0.4);margin-bottom:8px">C<sub>eff</sub> = ${MAX_GP_CONSULTS_PER_DAY} × (1 - ${istAdmin}% - ${istSick}%) × ${pIST.ai}× = ${istCEff} slots/day</div>`;
+
+    chartHTML += `<div style="margin-bottom:2px;color:rgba(255,255,255,0.5);font-size:9px">SOLL (target)</div>`;
+  }
+
+  // Current mode bar
+  chartHTML += `<div style="display:flex;height:22px;border-radius:4px;overflow:hidden;border:1px solid rgba(255,255,255,0.2);margin-bottom:6px">`;
+  chartHTML += `<div style="width:${usablePct}%;background:#4CAF50;display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;font-weight:bold;transition:width 0.5s">${usablePct}%</div>`;
+  chartHTML += `<div style="width:${adminPct}%;background:#E53935;display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;font-weight:bold;transition:width 0.5s">${adminPct}%</div>`;
+  chartHTML += `<div style="width:${sickPct}%;background:#FF9800;display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;font-weight:bold;transition:width 0.5s">${sickPct}%</div>`;
+  chartHTML += `</div>`;
+
+  // Legend
+  chartHTML += `<div style="display:flex;gap:10px;font-size:9px;margin-bottom:4px">`;
+  chartHTML += `<span><span style="display:inline-block;width:8px;height:8px;background:#4CAF50;border-radius:2px"></span> Usable</span>`;
+  chartHTML += `<span><span style="display:inline-block;width:8px;height:8px;background:#E53935;border-radius:2px"></span> Admin</span>`;
+  chartHTML += `<span><span style="display:inline-block;width:8px;height:8px;background:#FF9800;border-radius:2px"></span> Sick</span>`;
+  chartHTML += `</div>`;
+
+  // Formula
+  chartHTML += `<div style="font-size:10px;color:rgba(255,255,255,0.6);font-family:'JetBrains Mono',monospace">`;
+  chartHTML += `C<sub>eff</sub> = ${MAX_GP_CONSULTS_PER_DAY} × (1 - ${adminPct}% - ${sickPct}%) × ${cur.ai}× = <b style="color:#FFB300">${cEff} slots/day</b>`;
+  chartHTML += `</div>`;
+
+  // AI multiplier badge in SOLL
+  if (mode === 'SOLL') {
+    chartHTML += `<div style="margin-top:4px"><span style="background:rgba(76,175,80,0.25);border:1px solid #4CAF50;border-radius:4px;padding:2px 8px;font-size:10px;color:#4CAF50;font-weight:bold">×${cur.ai} AI</span></div>`;
+  }
+
+  chartHTML += `</div>`;
+  return chartHTML;
+}
+
 // ═══ BUILDING DASHBOARD (Sprint 2) ═══
 function selectBuilding(building){
   selectedAgent=null;
@@ -4806,7 +5354,7 @@ function selectBuilding(building){
     const p=M[mode];
     const adminPct=Math.round(p.admin*100);
     const effectiveCap=Math.round(MAX_GP_CONSULTS_PER_DAY*(1-p.admin));
-    const burnout=Math.min(100,Math.round((p.admin*100)+(gp.queue?gp.queue.length*5:0)+(gp.patientsSeenToday||0)*2));
+    const burnout=calculateBurnout(gp, p);
     const burnLabel=burnout>70?'High 🔴':burnout>40?'Medium ⚠':'Low ✅';
     const burnClass=burnout>70?'bad':burnout>40?'mid':'ok';
 
@@ -4838,6 +5386,9 @@ function selectBuilding(building){
         <div class="ac-row"><span class="k">Burnout Risk</span><span class="v ${burnClass}">${burnLabel}</span></div>
         <div class="hp-outer"><div class="hp-inner ${burnout>70?'r':burnout>40?'y':'g'}" style="width:${burnout}%"></div><div class="hp-label">Burnout ${burnout}%</div></div>
       </div>`;
+
+    // Sprint S2: C_eff Capacity Bar Chart
+    html += buildCapacityChart();
 
     if(atGP.length>0||goingToGP.length>0){
       html+=`<div class="ac-section"><h4>Active Patients</h4>`;
@@ -4946,6 +5497,25 @@ function selectBuilding(building){
 }
 
 // ═══ HELPER FUNCTIONS ═══
+
+function calculateBurnout(agent, params) {
+  return Math.min(100, Math.round(
+    (params.admin * 100) +
+    (agent.queue ? agent.queue.length : 0) * 5 +
+    (agent.patientsSeenToday || 0) * 2
+  ));
+}
+
+function getPopulation() {
+  return agents.filter(a => a.type === 'patient' || a.type === 'citizen');
+}
+
+// Sprint 6 — XSS-005: Text sanitization for any innerHTML contexts
+function sanitizeText(s) {
+  if (typeof s !== 'string') return '';
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
 function addHistory(agent, type, text){
   if(!agent.actionHistory) agent.actionHistory=[];
   agent.actionHistory.push({cycle, type, text, hp:Math.max(0,Math.round(agent.hp))});
@@ -4962,8 +5532,11 @@ function sendAgentTo(agent, target){
       const wp=ROAD_WAYPOINTS[p[1]];
       agent.tx=wp.x; agent.ty=wp.y;
     } else {
-      agent.x=target.x; agent.y=target.y;
-      agent.tx=target.x; agent.ty=target.y;
+      // Pathfinding failed — snap to nearest valid waypoint instead of raw target
+      const safeIdx = nearestWaypointIdx(target.x, target.y);
+      agent.x = ROAD_WAYPOINTS[safeIdx].x;
+      agent.y = ROAD_WAYPOINTS[safeIdx].y;
+      agent.tx = agent.x; agent.ty = agent.y;
       agent.pathComplete=true;
     }
   } else { agent.pathComplete=true; }
@@ -4990,6 +5563,9 @@ function initAgentBehaviors(){
 // ═══ SIMULATION ═══
 function tick(){
   cycle++; const p=M[mode];
+  // Sprint: Bound memory arrays to prevent leaks
+  if (EVENT_LOG.length > 1000) EVENT_LOG.splice(0, EVENT_LOG.length - 1000);
+  if (GRAVE_MARKERS.length > 500) GRAVE_MARKERS.splice(0, GRAVE_MARKERS.length - 500);
   // Sprint 16: Capture timeline snapshot every 50 cycles
   if (cycle % 50 === 0) captureSnapshot();
   agents.forEach(a=>{
@@ -5000,6 +5576,22 @@ function tick(){
     a.hpHistory.push(Math.round(a.hp));
     if(a.hpHistory.length > 200) a.hpHistory.shift();
 
+    // Sprint S1: Queue leave animation (agents depart queue gradually after SOLL switch)
+    if (a.queueLeaveTimer && a.queueLeaveTimer > 0) {
+      a.queueLeaveTimer--;
+      if (a.queueLeaveTimer <= 0) {
+        // Remove from queue, send back to roaming
+        Object.values(QUEUES).forEach(function(q) {
+          q.agents = q.agents.filter(function(aid) { return aid !== a.id; });
+        });
+        a.behaviorState = 'roaming';
+        a.queueBuilding = null;
+        a.queueType = null;
+        a.waitWeeks = Math.max(0, a.waitWeeks - 2); // partial wait reduction
+        delete a.queueLeaveTimer;
+      }
+    }
+
     // --- DEATH CHECK ---
     if(a.hp<=0){
       if(a.state!=='dead'){
@@ -5008,6 +5600,8 @@ function tick(){
         if(!a.causeOfDeath) a.causeOfDeath='system_failure';
         // ── Sprint 5: Ghost float-up and grave marker ──
         a.ghostFloatTimer = 90;
+        // Sprint S1: Trigger death screen flash
+        deathFlashTimer = 15;
         GRAVE_MARKERS.push({
           x: a.x, y: a.y, name: a.name, age: a.age,
           cause: a.causeOfDeath, waitWeeks: a.waitWeeks || 0,
@@ -5319,6 +5913,11 @@ function tick(){
           }
           a.hp = Math.max(0, a.hp - totalDrain * comorbMult);
         }
+        // Sprint S3: Treeknorm violation detection for roaming agents
+        if(a.waitWeeks > p.tree && !a.treeknormViolationLogged){
+          a.treeknormViolationLogged = true;
+          logEvent('treeknorm_violation', a, 'Wait: ' + Math.round(a.waitWeeks) + 'w (limit: ' + p.tree + 'w)');
+        }
         break;
       }
 
@@ -5345,13 +5944,20 @@ function tick(){
         // Wait in queue — processed by queue service logic below
         // HP drain while waiting (if going to hospital via queue)
         if(a.queueType==='hospital'){
-          a.waitWeeks += 0.25 / p.ai;
+          // Sprint S4: Scale AI efficiency by digital literacy
+          var effectiveAI = 1 + (p.ai - 1) * (a.digitalLiteracy || 1);
+          a.waitWeeks += 0.25 / effectiveAI;
           let totalDrain = 0;
           const comorbMult = getComorbidityMultiplier(a.conditions);
           for (const cond of a.conditions) {
             totalDrain += calculateHPDrain(cond, cond.severity, a.waitWeeks, p);
           }
           a.hp = Math.max(0, a.hp - totalDrain * comorbMult);
+          // Sprint S3: Treeknorm violation detection
+          if (a.waitWeeks > p.tree && !a.treeknormViolationLogged) {
+            a.treeknormViolationLogged = true;
+            logEvent('treeknorm_violation', a, 'Wait: ' + Math.round(a.waitWeeks) + 'w (limit: ' + p.tree + 'w)');
+          }
         }
         break;
       }
@@ -5395,7 +6001,7 @@ function tick(){
               if(!gpAgent.actionHistory)gpAgent.actionHistory=[];
               gpAgent.actionHistory.push({cycle,action:'referred',patientName:a.name,detail:a.conditions.map(c=>c.code).join(',')});
               if(gpAgent.actionHistory.length>50)gpAgent.actionHistory.shift();
-              gpAgent.burnoutLevel=Math.min(100,Math.round((p.admin*100)+(gpAgent.queue?gpAgent.queue.length:0)*5+(gpAgent.patientsSeenToday||0)*2));
+              gpAgent.burnoutLevel=calculateBurnout(gpAgent, p);
             }
           } else if(a.conditions.length>0){
             // Treat at GP level
@@ -5417,7 +6023,7 @@ function tick(){
               if(!gpAgent.actionHistory)gpAgent.actionHistory=[];
               gpAgent.actionHistory.push({cycle,action:'treated',patientName:a.name,detail:a.conditions.map(c=>c.code).join(',')});
               if(gpAgent.actionHistory.length>50)gpAgent.actionHistory.shift();
-              gpAgent.burnoutLevel=Math.min(100,Math.round((p.admin*100)+(gpAgent.queue?gpAgent.queue.length:0)*5+(gpAgent.patientsSeenToday||0)*2));
+              gpAgent.burnoutLevel=calculateBurnout(gpAgent, p);
             }
           } else {
             // Healthy checkup
@@ -5438,7 +6044,9 @@ function tick(){
 
       // ── Sprint 28: Emergency transport — rush to hospital, skip queue ──
       case 'emergency': {
-        a.waitWeeks += 0.1 / p.ai;
+        // Sprint S4: Scale AI efficiency by digital literacy
+        var effectiveAI_e = 1 + (p.ai - 1) * (a.digitalLiteracy || 1);
+        a.waitWeeks += 0.1 / effectiveAI_e;
         if(a.pathComplete){
           // Emergency patients skip queue — go directly to treatment
           // Remove from queue if somehow added
@@ -5460,13 +6068,20 @@ function tick(){
 
       case 'going_to_hospital': {
         // HP drain while waiting/traveling (uses DISEASE_DB + Treeknorm formula)
-        a.waitWeeks += 0.25 / p.ai;
+        // Sprint S4: Scale AI efficiency by digital literacy
+        var effectiveAI_h = 1 + (p.ai - 1) * (a.digitalLiteracy || 1);
+        a.waitWeeks += 0.25 / effectiveAI_h;
         let totalDrain = 0;
         const comorbMult = getComorbidityMultiplier(a.conditions);
         for (const cond of a.conditions) {
           totalDrain += calculateHPDrain(cond, cond.severity, a.waitWeeks, p);
         }
         a.hp = Math.max(0, a.hp - totalDrain * comorbMult);
+        // Sprint S3: Treeknorm violation detection
+        if (a.waitWeeks > p.tree && !a.treeknormViolationLogged) {
+          a.treeknormViolationLogged = true;
+          logEvent('treeknorm_violation', a, 'Wait: ' + Math.round(a.waitWeeks) + 'w (limit: ' + p.tree + 'w)');
+        }
         if(a.pathComplete){
           // Sprint 5: Join hospital queue instead of entering immediately
           if(QUEUES.hospital && !QUEUES.hospital.agents.includes(a.id)){
@@ -5578,6 +6193,10 @@ function tick(){
   ['gp1_bldg', 'gp2_bldg'].forEach(bldgId => {
     const q = QUEUES[bldgId];
     if (!q || q.agents.length === 0) return;
+    // Sprint S2: Skip queue processing if GP is on sick leave
+    const gpSickMap = {'gp1_bldg':'gp1','gp2_bldg':'gp2'};
+    const gpForQueue = agents.find(a => a.id === gpSickMap[bldgId]);
+    if (gpForQueue && gpForQueue.sickLeaveTimer > 0) return;
     // Check admin blocking (random chance based on admin burden)
     if (Math.random() < p.admin * 0.3) return; // admin delay
     // Serve front of queue
@@ -5652,12 +6271,37 @@ function tick(){
     });
   });
 
-  S.res+=2; S.msgs++; S.waste+=12.43*p.admin;
+  S.res+=2; S.msgs++; S.waste+=NZA_GP_CONSULT_EUR*p.admin;
 
   // Weekly GP reset (every 28 ticks ≈ 1 sim week)
   if(cycle % 28 === 0){
     agents.filter(g=>g.type==='gp').forEach(g=>{g.patientsSeenToday=0;});
   }
+
+  // ── Sprint S2: GP Burnout & Sick Leave Mechanic ──
+  agents.filter(g => g.type === 'gp').forEach(gp => {
+    if (gp.sickLeaveTimer > 0) {
+      // Currently on sick leave — decrement timer, reduce burnout
+      gp.sickLeaveTimer--;
+      gp.burnoutLevel = Math.max(0, (gp.burnoutLevel || 0) - 3);
+      if (gp.sickLeaveTimer <= 0) {
+        // Sick leave ends
+        gp.sickLeaveTimer = 0;
+        gp.burnoutLevel = 30;
+        gp.state = 'working';
+        logEvent('sick_leave_end', gp, gp.name + ' has returned from sick leave.');
+        say(gp.name, 'Back from sick leave. Feeling better. Ready to see patients again.');
+      }
+    } else {
+      // Check if burnout triggers sick leave
+      if ((gp.burnoutLevel || 0) > 80 && Math.random() < 0.015) {
+        gp.sickLeaveTimer = 15 + Math.floor(Math.random() * 11); // 15-25 ticks
+        gp.state = 'sick_leave';
+        logEvent('sick_leave', gp, gp.name + ' is on sick leave due to burnout (' + gp.burnoutLevel + '%).');
+        say(gp.name, 'Burnout has hit hard. I need to take sick leave. My patients will have to wait...');
+      }
+    }
+  });
 
   // Chat dialogue
   if(cycle%8===0){
@@ -5683,14 +6327,17 @@ function tick(){
       agentPlan(a);
       // Digital Twin risk assessment
       a.digitalTwinRisk = calculateDigitalTwinRisk(a);
+      // Sprint S5: Lower alert threshold in SOLL mode (proactive detection)
+      const alertThreshold = mode === 'SOLL' ? 25 : 60;
       // High risk from Digital Twin speeds up GP seeking
-      if(a.digitalTwinRisk && a.digitalTwinRisk.riskPct > 60 && a.behaviorState === 'roaming' && a.conditions.length > 0){
+      if(a.digitalTwinRisk && a.digitalTwinRisk.riskPct > alertThreshold && a.behaviorState === 'roaming' && a.conditions.length > 0){
         const timeSinceGP = cycle - (a.lastGPCycle || -100);
         if(timeSinceGP > 10){
           a.behaviorState='going_to_gp'; a.pathComplete=false;
           logEvent('feeling_sick', a, 'Digital Twin alert: ' + a.digitalTwinRisk.riskPct + '% risk');
           addHistory(a,'feeling_sick','Digital Twin says I\'m at ' + a.digitalTwinRisk.riskPct + '% risk. Going to GP now.');
           sendAgentTo(a, getGPDest(a.gpName).entrance);
+          if(mode === 'SOLL') proactiveAlertCount++;
         }
       }
     });
@@ -5764,6 +6411,8 @@ function resetSim(){
   var playBtn = document.getElementById('btn-play');
   if (playBtn) playBtn.textContent = '▶ Play';
   cycle=0; S={res:6,msgs:0,waste:0};
+  taxiMeterDisplayed=0; taxiMeterFlash=0; // Sprint S2
+  proactiveAlertCount=0; // Sprint S5
   EVENT_LOG.length=0;
   HOSPITAL_DISCHARGED.length=0;
   GRAVE_MARKERS.length=0;
@@ -5772,8 +6421,12 @@ function resetSim(){
   TIMELINE_SNAPSHOTS.length=0; // Sprint 16
   GAZETTE_HISTORY.length=0; TREND_DATA.periods.length=0; lastGazetteCycle=0; mayorBubbleTimer=0; mayorBubbleText=''; // Sprint 19
   MOMENTS.items.length=0; MOMENTS.queueRecord=0; // Sprint 20
+  // Sprint S4: Clear Gini & bias history
+  BIAS_DATA.giniHistory.length=0; BIAS_DATA.currentGini=0;
+  BIAS_DATA.biasScoreHistory.length=0; BIAS_DATA.currentBiasScore=0;
+  BIAS_DATA.biasTrackCount=0;
   Object.values(QUEUES).forEach(q => { q.agents = []; q.positions = []; });
-  try{localStorage.removeItem('cammelot_save');}catch(e){}
+  try{localStorage.removeItem('cammelot_save');}catch(e){console.warn('Cammelot:', e.message || e);}
   agents.forEach(a=>{
     a.hp=a._initHP; a.waitWeeks=a._initWaitWeeks;
     a.conditions=JSON.parse(JSON.stringify(a._initConditions));
@@ -5794,10 +6447,15 @@ function resetSim(){
     // Sprint 27: Reset social state (preserve family/friend links)
     a.chatPartner=null; a.chatTimer=0; a.chatBubbleText='';
     a.grievingTimer=0;
+    a.treeknormViolationLogged=false; // Sprint S3
+    // Sprint S4: Re-randomize digitalLiteracy based on age
+    var dlAge = a.age || 40;
+    a.digitalLiteracy = dlAge < 45 ? 0.7 + Math.random() * 0.3 : dlAge < 65 ? 0.4 + Math.random() * 0.4 : dlAge < 80 ? 0.15 + Math.random() * 0.35 : 0.05 + Math.random() * 0.15;
     // Reset GP/specialist tracking
     if(a.type==='gp'||a.type==='specialist'){
       a.patientsSeenToday=0; a.referralsMade=0; a.burnoutLevel=0;
       a.currentPatient=null; a.queue=[]; a.totalPatientsSeen=0;
+      a.sickLeaveTimer=0; // Sprint S2
     }
   });
   selectedAgent=null; showTownFeed();
@@ -5807,18 +6465,39 @@ function resetSim(){
 
 function setMode(m){
   mode=m;
+  // Sprint S1: Trigger mode transition animation
+  modeTransitionTimer = 30;
+  modeTransitionTarget = m;
   // Restore original values for the selected mode
   M[m].admin=M_ORIG[m].admin;M[m].sick=M_ORIG[m].sick;M[m].tree=M_ORIG[m].tree;M[m].ai=M_ORIG[m].ai;M[m].drain=M_ORIG[m].drain;
   playgroundActive=false;
   document.getElementById('bi').className=m==='IST'?'a-ist':'';
   document.getElementById('bs').className=m==='SOLL'?'a-soll':'';
   document.body.classList.toggle('soll',m==='SOLL');
-  say('SYSTEM',m==='IST'?'IST mode — Current crisis (C_eff 62%)':'SOLL mode — AI-native future (C_eff 83%)','sys');
+  // C_eff percentage = (1 - admin - sick) as percentage of total capacity (before AI multiplier)
+  // IST: (1 - 0.30 - 0.08) = 0.62 = 62%
+  // SOLL: (1 - 0.05 - 0.05) = 0.90 → with AI: effective throughput = 0.90 × 1.34 = 1.21 (capped display at 90%)
+  say('SYSTEM',m==='IST'?'IST mode — Current crisis. 62% effective GP capacity (30% lost to admin, 8% sick leave).':'SOLL mode — AI-native future. 90% base capacity × 1.34 AI multiplier.','sys');
   document.getElementById('hE').textContent=m==='IST'?'⚕ 62%':'⚕ 83%';
   document.getElementById('hE').className='n '+(m==='IST'?'r':'g');
   document.getElementById('oA').textContent=Math.round(M[m].admin*100)+'%';
   document.getElementById('oS').textContent=Math.round(M[m].sick*100)+'%';
   document.getElementById('oT').textContent=M[m].tree+' weeks';
+  // Sprint S1: Mode button pulse effect
+  var activeBtn = m === 'IST' ? document.getElementById('bi') : document.getElementById('bs');
+  activeBtn.classList.add('mode-pulse');
+  setTimeout(function(){ activeBtn.classList.remove('mode-pulse'); }, 600);
+  // Sprint S1: Queue shrink animation when switching to SOLL
+  if (m === 'SOLL') {
+    Object.values(QUEUES).forEach(function(q) {
+      // Mark agents at the back of the queue for gradual removal
+      var excess = Math.floor(q.agents.length * 0.3); // shrink 30%
+      for (var i = q.agents.length - 1; i >= 0 && excess > 0; i--, excess--) {
+        var qAgent = agents.find(function(a) { return a.id === q.agents[i]; });
+        if (qAgent) qAgent.queueLeaveTimer = 5 + (q.agents.length - 1 - i) * 2; // stagger departure
+      }
+    });
+  }
   // Update playground sliders if panel is open
   updatePlaygroundSliders();
   var ci=document.querySelector('.pg-custom-indicator');
@@ -5886,7 +6565,7 @@ function saveScenario(name){
   if(!name||!name.trim())return;
   var scenarios=getSavedScenarios();
   scenarios.push({name:name.trim(),params:{admin:M[mode].admin,sick:M[mode].sick,tree:M[mode].tree,ai:M[mode].ai,drain:M[mode].drain},created:Date.now()});
-  try{localStorage.setItem('cammelot_scenarios',JSON.stringify(scenarios));}catch(e){}
+  try{localStorage.setItem('cammelot_scenarios',JSON.stringify(scenarios));}catch(e){console.warn('Cammelot:', e.message || e);}
   refreshScenarioDropdown();
   if(typeof showToast==='function')showToast('💾 Scenario "'+name.trim()+'" saved!');
 }
@@ -6502,7 +7181,7 @@ function say(w,t,c=''){
 
 // ═══ AGENTIC QA CHECKS (Sprint 11) ═══
 function runQAChecks() {
-  const pop = agents.filter(a => a.type === 'patient' || a.type === 'citizen');
+  const pop = getPopulation();
   const alive = pop.filter(a => a.hp > 0);
   const dead = pop.filter(a => a.hp <= 0);
   const checks = [];
@@ -6595,6 +7274,66 @@ function showQAPanel() {
 }
 
 // ═══ BIAS TRACKER FUNCTIONS (Sprint 11) ═══
+
+// ── Sprint S4: Gini Coefficient Calculator ──
+function calculateGiniCoefficient(values) {
+  if (!values || values.length === 0) return 0;
+  var n = values.length;
+  var sorted = values.slice().sort(function(a, b) { return a - b; });
+  var sum = 0;
+  for (var i = 0; i < n; i++) sum += sorted[i];
+  if (sum === 0) return 0;
+  var weightedSum = 0;
+  for (var i = 0; i < n; i++) weightedSum += (i + 1) * sorted[i];
+  return (2 * weightedSum) / (n * sum) - (n + 1) / n;
+}
+
+// ── Sprint S4: Composite Bias Score Calculator ──
+function calculateCompositeBiasScore() {
+  // Age disparity: max(avgWait per ageBin) / min(avgWait per ageBin)
+  var ageAvgs = [];
+  Object.values(BIAS_DATA.ageBins).forEach(function(b) {
+    if (b.count > 0) ageAvgs.push(b.totalWait / b.count);
+  });
+  var ageDisparity = 0;
+  if (ageAvgs.length > 1) {
+    var ageMin = Math.min.apply(null, ageAvgs);
+    var ageMax = Math.max.apply(null, ageAvgs);
+    ageDisparity = ageMin > 0 ? ageMax / ageMin : (ageMax > 0 ? ageMax : 0);
+  }
+
+  // Condition disparity: variance of death rates across conditions
+  var condRates = [];
+  Object.values(BIAS_DATA.conditionBins).forEach(function(b) {
+    if (b.count > 0) condRates.push(b.deaths / b.count);
+  });
+  var condVariance = 0;
+  if (condRates.length > 1) {
+    var condMean = condRates.reduce(function(s, v) { return s + v; }, 0) / condRates.length;
+    condVariance = condRates.reduce(function(s, v) { return s + (v - condMean) * (v - condMean); }, 0) / condRates.length;
+  }
+
+  // GP disparity: max(avgWait per GP) / min(avgWait per GP)
+  var gpAvgs = [];
+  Object.values(BIAS_DATA.gpBins).forEach(function(b) {
+    if (b.count > 0) gpAvgs.push(b.totalWait / b.count);
+  });
+  var gpDisparity = 0;
+  if (gpAvgs.length > 1) {
+    var gpMin = Math.min.apply(null, gpAvgs);
+    var gpMax = Math.max.apply(null, gpAvgs);
+    gpDisparity = gpMin > 0 ? gpMax / gpMin : (gpMax > 0 ? gpMax : 0);
+  }
+
+  // Normalize ratios to 0-1 range (cap at 5x disparity → 1.0)
+  var normAge = Math.min(1, Math.max(0, (ageDisparity - 1) / 4));
+  var normCond = Math.min(1, condVariance * 100); // scale small variance to 0-1
+  var normGP = Math.min(1, Math.max(0, (gpDisparity - 1) / 4));
+
+  // Composite = weighted average
+  return 0.4 * normAge + 0.3 * normCond + 0.3 * normGP;
+}
+
 function trackBiasData() {
   // Reset bins each tracking cycle to get current snapshot
   BIAS_DATA.ageBins = {};
@@ -6602,7 +7341,7 @@ function trackBiasData() {
   BIAS_DATA.gpBins = {};
   BIAS_DATA.genderBins = { M: {totalWait:0, count:0, deaths:0}, F: {totalWait:0, count:0, deaths:0} };
 
-  agents.filter(a => a.type === 'patient' || a.type === 'citizen').forEach(function(a) {
+  getPopulation().forEach(function(a) {
     // Age bin
     var ageBin = a.age >= 80 ? '80+' : a.age >= 65 ? '65-79' : a.age >= 45 ? '45-64' : '0-44';
     if (!BIAS_DATA.ageBins[ageBin]) BIAS_DATA.ageBins[ageBin] = {totalWait:0, count:0, deaths:0};
@@ -6633,24 +7372,72 @@ function trackBiasData() {
       if (a.hp <= 0) BIAS_DATA.genderBins[a.gender].deaths++;
     }
   });
+
+  // ── Sprint S4: Compute Gini coefficient on waitWeeks ──
+  var waitValues = agents.filter(function(a) { return (a.type === 'patient' || a.type === 'citizen') && a.hp > 0; }).map(function(a) { return a.waitWeeks || 0; });
+  var gini = calculateGiniCoefficient(waitValues);
+  BIAS_DATA.giniHistory.push(gini);
+  if (BIAS_DATA.giniHistory.length > 100) BIAS_DATA.giniHistory.shift();
+  BIAS_DATA.currentGini = gini;
+
+  // ── Sprint S4: Compute composite bias score ──
+  var biasScore = calculateCompositeBiasScore();
+  BIAS_DATA.biasScoreHistory.push(biasScore);
+  if (BIAS_DATA.biasScoreHistory.length > 100) BIAS_DATA.biasScoreHistory.shift();
+  BIAS_DATA.currentBiasScore = biasScore;
+
+  // ── Sprint S4: Digital literacy improvement — every 4th call (200 cycles) ──
+  BIAS_DATA.biasTrackCount = (BIAS_DATA.biasTrackCount || 0) + 1;
+  if (BIAS_DATA.biasTrackCount % 4 === 0) {
+    agents.forEach(function(a) {
+      if ((a.type === 'patient' || a.type === 'citizen') && a.hp > 0 && typeof a.digitalLiteracy === 'number' && a.digitalLiteracy < 0.5) {
+        a.digitalLiteracy = Math.min(1.0, a.digitalLiteracy + 0.02);
+      }
+    });
+  }
 }
 
 function buildBiasHTML() {
   var html = '<hr class="stats-divider"><div class="stats-group"><h4>📊 Bias Analysis (DIB Method)</h4>';
+
+  // ── Sprint S4: Gini Coefficient display ──
+  var gini = BIAS_DATA.currentGini || 0;
+  var giniColor = gini < 0.2 ? '#4a4' : gini <= 0.4 ? '#cc0' : '#c44';
+  var giniLabel = gini < 0.2 ? '✓' : gini <= 0.4 ? '⚠' : '⛔';
+  var giniSparkline = '';
+  if (BIAS_DATA.giniHistory.length >= 2) {
+    var gLast8 = BIAS_DATA.giniHistory.slice(-8);
+    var gMax = Math.max.apply(null, gLast8);
+    var gBlocks = '▁▂▃▄▅▆▇█';
+    if (gMax === 0) { giniSparkline = '▁▁▁▁▁▁▁▁'; } else {
+      giniSparkline = gLast8.map(function(v) { var idx = Math.round((v / gMax) * 7); return gBlocks.charAt(Math.min(7, Math.max(0, idx))); }).join('');
+    }
+  }
+  html += '<div class="stats-row" title="Measures inequality of care access. 0 = equal, 1 = unequal"><span class="sk">Gini Coefficient</span><span class="sv" style="color:' + giniColor + '">Gini: ' + gini.toFixed(2) + ' ' + giniLabel + (giniSparkline ? ' ' + giniSparkline : '') + '</span></div>';
+
+  // ── Sprint S4: Composite Bias Score display ──
+  var bs = BIAS_DATA.currentBiasScore || 0;
+  var bsColor = bs < 0.2 ? '#4a4' : bs <= 0.4 ? '#cc0' : '#c44';
+  var bsLabel = bs < 0.2 ? '✓' : bs <= 0.4 ? '⚠' : '⛔';
+  var bsSparkline = '';
+  if (BIAS_DATA.biasScoreHistory.length >= 2) {
+    var bLast8 = BIAS_DATA.biasScoreHistory.slice(-8);
+    var bMax = Math.max.apply(null, bLast8);
+    var bBlocks = '▁▂▃▄▅▆▇█';
+    if (bMax === 0) { bsSparkline = '▁▁▁▁▁▁▁▁'; } else {
+      bsSparkline = bLast8.map(function(v) { var idx = Math.round((v / bMax) * 7); return bBlocks.charAt(Math.min(7, Math.max(0, idx))); }).join('');
+    }
+  }
+  html += '<div class="stats-row" title="Higher = more unequal care distribution"><span class="sk">Bias Score</span><span class="sv" style="color:' + bsColor + '">Score: ' + bs.toFixed(2) + ' ' + bsLabel + (bsSparkline ? ' ' + bsSparkline : '') + '</span></div>';
+
   // Calculate global avg wait
   var allWait = 0, allCount = 0;
   Object.values(BIAS_DATA.ageBins).forEach(function(b) { allWait += b.totalWait; allCount += b.count; });
   var globalAvgWait = allCount > 0 ? allWait / allCount : 0;
 
-  // Age bins
-  html += '<div style="margin-top:6px;font-size:10px;font-weight:700;color:var(--ink2)">By Age Group</div>';
-  Object.keys(BIAS_DATA.ageBins).sort().forEach(function(k) {
-    var b = BIAS_DATA.ageBins[k];
-    var avg = b.count > 0 ? b.totalWait / b.count : 0;
-    var deathRate = b.count > 0 ? (b.deaths / b.count * 100).toFixed(1) : '0';
-    var disparity = globalAvgWait > 0 && avg > globalAvgWait * 1.5;
-    html += '<div class="stats-row"><span class="sk">' + k + '</span><span class="sv ' + (disparity ? 'sr' : '') + '">Wait: ' + avg.toFixed(1) + 'w · Deaths: ' + deathRate + '%' + (disparity ? ' ⚠' : '') + '</span></div>';
-  });
+  // Age bins — Sprint S3: Canvas bar chart replaces text rows
+  html += '<div style="margin-top:6px;font-size:10px;font-weight:700;color:var(--ink2)">Average Wait by Age Group</div>';
+  html += '<canvas id="age-bias-canvas" width="300" height="120" style="display:block;margin:4px 0 6px;width:100%;max-width:300px;height:120px"></canvas>';
 
   // Gender
   html += '<div style="margin-top:6px;font-size:10px;font-weight:700;color:var(--ink2)">By Gender</div>';
@@ -6692,6 +7479,91 @@ function buildBiasHTML() {
   return html;
 }
 
+// ═══ Sprint S3: Age Bias Bar Chart Renderer ═══
+function drawAgeBiasChart() {
+  var canvas = document.getElementById('age-bias-canvas');
+  if (!canvas) return;
+  var ctx = canvas.getContext('2d');
+  var W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  var bins = BIAS_DATA.ageBins;
+  var groups = ['0-44', '45-64', '65-79', '80+'];
+  var data = groups.map(function(g) {
+    var b = bins[g] || { totalWait: 0, count: 0, deaths: 0 };
+    return { label: g, avg: b.count > 0 ? b.totalWait / b.count : 0, deaths: b.deaths, count: b.count };
+  });
+
+  var maxWait = Math.max.apply(null, data.map(function(d) { return d.avg; }));
+  if (maxWait < 1) maxWait = 1;
+  var p = M[mode];
+  var treeThreshold = p.tree;
+
+  var labelW = 45;
+  var rightPad = 10;
+  var barAreaW = W - labelW - rightPad;
+  var barH = Math.floor((H - 8) / groups.length) - 4;
+  var yStart = 4;
+
+  // Scale: pixels per week
+  var scaleMax = Math.max(maxWait, treeThreshold + 2);
+  var pxPerWeek = barAreaW / scaleMax;
+
+  for (var i = 0; i < data.length; i++) {
+    var d = data[i];
+    var y = yStart + i * (barH + 4);
+    var barW = Math.max(1, d.avg * pxPerWeek);
+    var deathRate = d.count > 0 ? d.deaths / d.count : 0;
+
+    // Bar color: green < 4w, yellow 4-12w, red > 12w
+    var r, g2, b2;
+    if (d.avg <= 4) { r = 76; g2 = 175; b2 = 80; }
+    else if (d.avg <= 12) {
+      var t = (d.avg - 4) / 8;
+      r = Math.round(76 + (255 - 76) * t);
+      g2 = Math.round(175 + (193 - 175) * t);
+      b2 = Math.round(80 + (7 - 80) * t);
+    } else { r = 229; g2 = 57; b2 = 53; }
+
+    // Main bar
+    ctx.fillStyle = 'rgb(' + r + ',' + g2 + ',' + b2 + ')';
+    ctx.fillRect(labelW, y, barW, barH);
+
+    // Death rate overlay (red segment on right end)
+    if (deathRate > 0 && barW > 2) {
+      var deathW = Math.max(2, barW * Math.min(deathRate, 1));
+      ctx.fillStyle = 'rgba(229,57,53,0.6)';
+      ctx.fillRect(labelW + barW - deathW, y, deathW, barH);
+    }
+
+    // Label: "0-44: 3.2w (0 deaths)"
+    ctx.fillStyle = '#3d2b1f';
+    ctx.font = '9px monospace';
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'right';
+    ctx.fillText(d.label, labelW - 4, y + barH / 2);
+    ctx.textAlign = 'left';
+    ctx.fillText(d.avg.toFixed(1) + 'w (' + d.deaths + ' deaths)', labelW + barW + 4, y + barH / 2);
+  }
+
+  // Treeknorm dashed line
+  var treeX = labelW + treeThreshold * pxPerWeek;
+  if (treeX > labelW && treeX < W - rightPad) {
+    ctx.strokeStyle = '#e53935';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 3]);
+    ctx.beginPath();
+    ctx.moveTo(treeX, 0);
+    ctx.lineTo(treeX, H);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#e53935';
+    ctx.font = '8px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('Treeknorm ' + treeThreshold + 'w', treeX, H - 2);
+  }
+}
+
 // ═══ ROI DASHBOARD (Sprint 12) ═══
 function buildROIHTML() {
   var p = M[mode];
@@ -6699,22 +7571,22 @@ function buildROIHTML() {
 
   // Admin waste: GP hours × rate × admin%
   var gpHoursPerCycle = gps.length * 0.25;
-  var adminWasteEUR = Math.round(gpHoursPerCycle * p.admin * 12.43 * cycle);
+  var adminWasteEUR = Math.round(gpHoursPerCycle * p.admin * NZA_GP_CONSULT_EUR * cycle);
 
   // Preventable deaths cost
   var sysDeaths = EVENT_LOG.filter(function(e) { return e.type === 'died'; }).length;
-  var preventableDeathCostEUR = sysDeaths * 5845;
+  var preventableDeathCostEUR = sysDeaths * SIM_PREVENTABLE_DEATH_EUR;
 
   // Treeknorm violation cost
   var treeViolationWeeks = agents.filter(function(a) { return a.waitWeeks > p.tree && a.hp > 0; })
     .reduce(function(s, a) { return s + (a.waitWeeks - p.tree); }, 0);
-  var treeViolationCostEUR = Math.round(treeViolationWeeks * 150);
+  var treeViolationCostEUR = Math.round(treeViolationWeeks * SIM_TREEKNORM_WEEK_EUR);
 
   // Total system cost
   var totalCostEUR = adminWasteEUR + preventableDeathCostEUR + treeViolationCostEUR;
 
   // SOLL comparison
-  var sollAdmin = Math.round(gpHoursPerCycle * 0.05 * 12.43 * cycle);
+  var sollAdmin = Math.round(gpHoursPerCycle * 0.05 * NZA_GP_CONSULT_EUR * cycle);
   var savings = adminWasteEUR - sollAdmin;
 
   return '<hr class="stats-divider">' +
@@ -6724,6 +7596,47 @@ function buildROIHTML() {
       '<div class="stats-row"><span class="sk">Treeknorm Violation Cost</span><span class="sv ' + (treeViolationCostEUR > 0 ? 'sr' : '') + '">€' + treeViolationCostEUR.toLocaleString() + '</span></div>' +
       '<div class="stats-row"><span class="sk"><b>Total System Cost</b></span><span class="sv sr"><b>€' + totalCostEUR.toLocaleString() + '</b></span></div>' +
       '<div class="stats-row"><span class="sk">SOLL Savings (admin alone)</span><span class="sv sg">€' + savings.toLocaleString() + '</span></div>' +
+      '<div style="font-size:8px;color:var(--ink2);margin-top:6px;font-style:italic">* €5,845/death and €150/week are simulation estimates, not official NZa tariffs.</div>' +
+    '</div>';
+}
+
+// ═══ Sprint S5: ER Pressure Comparison ═══
+function buildERPressureHTML() {
+  var totalPop = agents.filter(function(a) { return a.type === 'patient' || a.type === 'citizen'; }).length;
+  var admittedEvents = EVENT_LOG.filter(function(e) { return e.type === 'admitted'; }).length;
+  var istRate = totalPop > 0 ? (admittedEvents / totalPop * 100) : 0;
+  var sollRate = istRate * 0.75; // SOLL reduces by ~25% via proactive care
+  var reductionPct = istRate > 0 ? Math.round((1 - sollRate / istRate) * 100) : 25;
+  var avgStayDays = HOSPITAL_DISCHARGED.length > 0 ? 5 : 3; // default 3 if no data
+  var projectedSollAdmissions = Math.round(admittedEvents * 0.75);
+  var savedAdmissions = admittedEvents - projectedSollAdmissions;
+  var eurSaved = savedAdmissions * HOSPITAL_DAY_COST_EUR * avgStayDays;
+  var maxBarW = 180;
+  var istBarW = Math.min(maxBarW, Math.round(istRate / Math.max(istRate, 1) * maxBarW));
+  var sollBarW = Math.min(maxBarW, Math.round(sollRate / Math.max(istRate, 1) * maxBarW));
+  if (istRate === 0) { istBarW = 0; sollBarW = 0; }
+
+  return '<hr class="stats-divider">' +
+    '<div class="stats-group"><h4>🏥 ER Pressure</h4>' +
+      '<div style="margin:4px 0">' +
+        '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;font-size:11px">' +
+          '<span style="width:45px;color:var(--red,#E53935);font-weight:600">IST</span>' +
+          '<div style="width:' + maxBarW + 'px;height:14px;background:rgba(0,0,0,.08);border-radius:3px;overflow:hidden">' +
+            '<div style="width:' + istBarW + 'px;height:100%;background:#E53935;border-radius:3px;transition:width .3s"></div>' +
+          '</div>' +
+          '<span>' + istRate.toFixed(1) + '%</span>' +
+        '</div>' +
+        '<div style="display:flex;align-items:center;gap:6px;font-size:11px">' +
+          '<span style="width:45px;color:var(--green,#4CAF50);font-weight:600">SOLL</span>' +
+          '<div style="width:' + maxBarW + 'px;height:14px;background:rgba(0,0,0,.08);border-radius:3px;overflow:hidden">' +
+            '<div style="width:' + sollBarW + 'px;height:100%;background:#4CAF50;border-radius:3px;transition:width .3s"></div>' +
+          '</div>' +
+          '<span>' + sollRate.toFixed(1) + '%</span>' +
+        '</div>' +
+      '</div>' +
+      '<div class="stats-row"><span class="sk">SOLL reduces ER pressure by</span><span class="sv sg">' + reductionPct + '%</span></div>' +
+      '<div class="stats-row"><span class="sk">Admissions avoided (projected)</span><span class="sv sg">' + savedAdmissions + '</span></div>' +
+      '<div class="stats-row"><span class="sk">€ Saved (×€' + HOSPITAL_DAY_COST_EUR + '/day ×' + avgStayDays + 'd)</span><span class="sv sg">€' + eurSaved.toLocaleString() + '</span></div>' +
     '</div>';
 }
 
@@ -6792,6 +7705,81 @@ function exportSimData(format) {
   URL.revokeObjectURL(url);
 }
 
+// ═══ Sprint S3: Treeknorm Violation Log ═══
+function showTreeknormLog() {
+  selectedAgent = null;
+  var d = document.getElementById('agent-detail');
+  document.querySelector('.panel-header').textContent = '⚖ TREEKNORM LOG';
+
+  var violations = EVENT_LOG.filter(function(e) { return e.type === 'treeknorm_violation'; });
+  var deaths = EVENT_LOG.filter(function(e) { return e.type === 'died'; });
+  var deathIds = new Set(deaths.map(function(e) { return e.agentId; }));
+
+  // Build enriched violation list
+  var entries = violations.map(function(v) {
+    var agent = agents.find(function(a) { return a.id === v.agentId; });
+    var isDead = agent ? agent.hp <= 0 : deathIds.has(v.agentId);
+    var isResolved = agent ? (agent.waitWeeks === 0 && agent.hp > 0) : false;
+    var overdue = 0;
+    var match = v.detail.match(/Wait:\s*(\d+)w/);
+    if (match) overdue = parseInt(match[1]);
+    return {
+      agentId: v.agentId,
+      name: v.agentName,
+      age: agent ? agent.age : '?',
+      condition: agent && agent.conditions.length > 0 ? agent.conditions.map(function(c) { return c.code; }).join(', ') : '—',
+      overdue: overdue,
+      hpAtViolation: v.hp,
+      cycle: v.cycle,
+      isDead: isDead,
+      isResolved: isResolved,
+      currentHp: agent ? Math.round(agent.hp) : 0
+    };
+  });
+
+  // Sort by overdue weeks (worst first)
+  entries.sort(function(a, b) { return b.overdue - a.overdue; });
+
+  var totalViolations = entries.length;
+  var resolved = entries.filter(function(e) { return e.isResolved; }).length;
+  var deathCount = entries.filter(function(e) { return e.isDead; }).length;
+
+  var html = '<div style="padding:4px 0 8px">';
+  html += '<div style="font-size:11px;font-weight:700;margin-bottom:6px;color:var(--ink)">⚖ Treeknorm Violation Log</div>';
+  html += '<div style="font-size:10px;margin-bottom:8px;color:var(--ink2)">' +
+    totalViolations + ' violations | ' + resolved + ' resolved | ' + deathCount + ' resulted in death</div>';
+
+  if (entries.length === 0) {
+    html += '<div class="ad-empty"><div class="hint">⚖</div>No Treeknorm violations yet.<br>Run the simulation to track<br>wait time breaches.</div>';
+  } else {
+    entries.forEach(function(e) {
+      var outcome = e.isDead ? '💀' : '✅';
+      var outcomeColor = e.isDead ? 'color:#c62828' : 'color:#2e7d32';
+      html += '<div class="feed-entry ' + (e.isDead ? 'feed-death' : 'feed-warn') + '" data-agent="' + e.agentId + '" style="cursor:pointer">';
+      html += '<span class="fe-icon">⚖</span>';
+      html += '<span class="fe-name" style="cursor:pointer;text-decoration:underline">' + e.name + '</span>';
+      html += '<span class="fe-text">Age ' + e.age + ' · ' + e.condition + ' · ' + e.overdue + 'w overdue · HP@violation: ' + e.hpAtViolation + ' <span style="' + outcomeColor + '">' + outcome + '</span></span>';
+      html += '<span class="fe-cycle">C' + e.cycle + '</span>';
+      html += '</div>';
+    });
+  }
+  html += '</div>';
+
+  setPanelContent(function() {
+    d.innerHTML = html;
+    // Event delegation: click agent name to select
+    d.addEventListener('click', function handler(ev) {
+      var entry = ev.target.closest('.feed-entry[data-agent]');
+      if (entry) {
+        var agentId = entry.getAttribute('data-agent');
+        var agent = agents.find(function(a) { return a.id === agentId; });
+        if (agent) selectAgent(agent);
+      }
+      d.removeEventListener('click', handler);
+    });
+  });
+}
+
 // ═══ STATS DASHBOARD (Sprint 3 — Epic 4.3) ═══
 let statsVisible=false;
 
@@ -6806,6 +7794,8 @@ function toggleStats(){
   overlay.addEventListener('click',function(e){if(e.target===overlay){overlay.remove();statsVisible=false;}});
   overlay.innerHTML=buildStatsHTML();
   gw.appendChild(overlay);
+  // Sprint S3: Draw age bias canvas chart after DOM insertion
+  drawAgeBiasChart();
   // CSP-safe: bind close button after DOM insertion
   const closeBtn=overlay.querySelector('#stats-close-btn');
   if(closeBtn) closeBtn.addEventListener('click',function(){this.closest('.stats-overlay').remove();statsVisible=false;});
@@ -6816,11 +7806,74 @@ function toggleStats(){
   if(exportCsvBtn) exportCsvBtn.addEventListener('click',function(){exportSimData('csv');});
 }
 
+// ═══ SPRINT 6: METHODOLOGY & SOURCES PANEL ═══
+function showMethodology(){
+  const gw=document.getElementById('game-wrap');
+  const existing=gw.querySelector('.methodology-overlay');
+  if(existing){existing.remove();return;}
+  const overlay=document.createElement('div');
+  overlay.className='stats-overlay methodology-overlay';
+  overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remove();});
+  overlay.innerHTML='<div class="stats-panel" style="max-width:540px;padding:0">' +
+    '<div class="stats-header" style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:2px solid var(--frame2);background:rgba(0,0,0,.08)">' +
+    '<h3 style="margin:0;font-size:14px;color:var(--ink)">📚 Methodology &amp; Sources</h3>' +
+    '<button class="stats-close" id="methodology-close-btn" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--ink2);padding:2px 6px">✕</button></div>' +
+    '<div style="padding:10px 14px;font-size:11px;line-height:1.5;color:var(--ink)">' +
+
+    '<details open><summary style="font-weight:700;font-size:12px;cursor:pointer;margin-bottom:4px">🏘 Demographics (CBS 2024)</summary>' +
+    '<div class="stats-row"><span class="sk">Population</span><span class="sv">5,000 agents (CBS scaled)</span></div>' +
+    '<div class="stats-row"><span class="sk">Seniors 65+</span><span class="sv">20% (CBS vergrijzing 2025)</span></div>' +
+    '<div class="stats-row"><span class="sk">Chronic prevalence 75+</span><span class="sv">96% ≥1 condition (RIVM)</span></div>' +
+    '<div class="stats-row"><span class="sk">Natural mortality</span><span class="sv">~48/year (CBS 2024)</span></div>' +
+    '<div style="margin:4px 0 8px"><a href="https://www.cbs.nl/" target="_blank" rel="noopener" style="color:#42A5F5;font-size:10px">🔗 cbs.nl</a></div></details>' +
+
+    '<details><summary style="font-weight:700;font-size:12px;cursor:pointer;margin-bottom:4px">🩺 Conditions (RIVM 2024)</summary>' +
+    '<div class="stats-row"><span class="sk">Arthrosis M17</span><span class="sv">1.6M prevalence</span></div>' +
+    '<div class="stats-row"><span class="sk">Diabetes E11</span><span class="sv">1.2M prevalence</span></div>' +
+    '<div class="stats-row"><span class="sk">COPD J44</span><span class="sv">600K+</span></div>' +
+    '<div class="stats-row"><span class="sk">Heart Disease I25</span><span class="sv">Chronic ischemic</span></div>' +
+    '<div class="stats-row"><span class="sk">Dementia F03</span><span class="sv">300K+</span></div>' +
+    '<div style="margin:4px 0 8px"><a href="https://www.volksgezondheidenzorg.info/" target="_blank" rel="noopener" style="color:#42A5F5;font-size:10px">🔗 volksgezondheidenzorg.info</a></div></details>' +
+
+    '<details><summary style="font-weight:700;font-size:12px;cursor:pointer;margin-bottom:4px">💶 Financial (NZa 2025)</summary>' +
+    '<div class="stats-row"><span class="sk">GP consultation</span><span class="sv">€12.43</span></div>' +
+    '<div class="stats-row"><span class="sk">Preventable death</span><span class="sv">€5,845 saved</span></div>' +
+    '<div class="stats-row"><span class="sk">Treeknorm violation</span><span class="sv">€150/week</span></div>' +
+    '<div class="stats-row"><span class="sk">Hospital day</span><span class="sv">€850</span></div>' +
+    '<div class="stats-row"><span class="sk">MTVP</span><span class="sv">€3.23/patient/quarter</span></div>' +
+    '<div style="margin:4px 0 8px"><a href="https://www.nza.nl/" target="_blank" rel="noopener" style="color:#42A5F5;font-size:10px">🔗 nza.nl</a></div>' +
+    '<p style="font-size:9px;color:#999;margin-top:6px;font-style:italic">Note: GP consultation rate (€12.43) is an official NZa tariff. "Preventable death cost" (€5,845) and "Treeknorm violation cost" (€150/week) are simulation estimates for illustration — they are not official regulatory penalties.</p></details>' +
+
+    '<details><summary style="font-weight:700;font-size:12px;cursor:pointer;margin-bottom:4px">⏱ Wait Times (Treeknorm)</summary>' +
+    '<div class="stats-row"><span class="sk">Diagnostics max</span><span class="sv">4 weeks</span></div>' +
+    '<div class="stats-row"><span class="sk">Treatment max</span><span class="sv">7–12 weeks</span></div>' +
+    '<div class="stats-row"><span class="sk">Current reality</span><span class="sv">12+ weeks ophthalmology</span></div>' +
+    '<div style="margin:4px 0 8px"><a href="https://www.rijksoverheid.nl/" target="_blank" rel="noopener" style="color:#42A5F5;font-size:10px">🔗 rijksoverheid.nl</a></div></details>' +
+
+    '<details><summary style="font-weight:700;font-size:12px;cursor:pointer;margin-bottom:4px">🏥 IZA Parameters</summary>' +
+    '<div class="stats-row"><span class="sk">Transformation budget</span><span class="sv">€2.8B</span></div>' +
+    '<div class="stats-row"><span class="sk">Staff shortfall 2025</span><span class="sv">66,400</span></div>' +
+    '<div class="stats-row"><span class="sk">Staff shortfall 2035</span><span class="sv">301,000</span></div>' +
+    '<div class="stats-row"><span class="sk">Hybrid care target</span><span class="sv">70% by 2026</span></div>' +
+    '<div style="margin:4px 0 8px"><a href="https://www.dejuistezorgopdejuisteplek.nl/" target="_blank" rel="noopener" style="color:#42A5F5;font-size:10px">🔗 dejuistezorgopdejuisteplek.nl</a></div></details>' +
+
+    '<details><summary style="font-weight:700;font-size:12px;cursor:pointer;margin-bottom:4px">🔬 Simulation Formulas</summary>' +
+    '<div style="font-family:monospace;font-size:10px;background:rgba(0,0,0,.06);padding:6px;border-radius:4px;margin:4px 0">' +
+    'C_eff = C_total × (1 - L_admin - V_sick) × E_ai<br><br>' +
+    'HP_drain = drainRate × (waitWeeks - tree) × severityMult × (1 + adminBurden)<br><br>' +
+    'Gini = standard formula on wait time distribution</div></details>' +
+
+    '</div></div>';
+  gw.appendChild(overlay);
+  const closeBtn=overlay.querySelector('#methodology-close-btn');
+  if(closeBtn) closeBtn.addEventListener('click',function(){this.closest('.stats-overlay').remove();});
+}
+
 function buildStatsHTML(){
   const p=M[mode];
   const alive=agents.filter(a=>a.hp>0&&(a.type==='patient'||a.type==='citizen'));
   const dead=agents.filter(a=>(a.type==='patient'||a.type==='citizen')&&a.hp<=0);
-  const totalPop=agents.filter(a=>a.type==='patient'||a.type==='citizen').length;
+  const totalPop=getPopulation().length;
   const atHosp=agents.filter(a=>a.behaviorState==='at_hospital'&&a.type!=='specialist'&&a.type!=='gp');
   const recovering=agents.filter(a=>a.behaviorState==='recovering');
   const atGP=agents.filter(a=>a.behaviorState==='at_gp');
@@ -6861,7 +7914,7 @@ function buildStatsHTML(){
 
   // Cost calculations (CLAUDE.md Section 5.4)
   const adminWaste=Math.round(S.waste);
-  const preventableDeathCost=sysDeath*5845;
+  const preventableDeathCost=sysDeath*SIM_PREVENTABLE_DEATH_EUR;
   const totalCost=adminWaste+preventableDeathCost;
 
   return `<div class="stats-panel">
@@ -6918,6 +7971,7 @@ function buildStatsHTML(){
       <div style="text-align:center;padding:8px 0 4px;font-size:9px;color:var(--ink2)">Mode: ${mode} · C_eff: ${mode==='IST'?'62':'83'}% · Admin: ${Math.round(p.admin*100)}%</div>
 
       ${buildROIHTML()}
+      ${buildERPressureHTML()}
       ${buildComparisonHTML()}
       ${buildBiasHTML()}
 
@@ -6941,7 +7995,7 @@ function updateUI(){
   var timeEl = document.getElementById('hC');
   if(timeEl) timeEl.textContent = cycle + ' ' + (todPhases[tod.phase]||'') + ' ' + (seasonIcons[season]||'') + ' ' + (weatherIcons[WEATHER.current]||'');
   // Sprint 7: Human-readable stats
-  var pop=agents.filter(function(a){return a.type==='patient'||a.type==='citizen';});
+  var pop=getPopulation();
   var alive=pop.filter(function(a){return a.hp>0;}).length;
   var dead=pop.filter(function(a){return a.hp<=0;}).length;
   var sysDeath=EVENT_LOG.filter(function(e){return e.type==='died';}).length;
@@ -6949,6 +8003,8 @@ function updateUI(){
   var waiting=agents.filter(function(a){return a.waitWeeks>0&&a.hp>0;});
   var avgWait=waiting.length>0?(waiting.reduce(function(s,a){return s+a.waitWeeks;},0)/waiting.length).toFixed(1):'0';
   var eff=mode==='IST'?'62':'83';
+  var effBase = Math.round((1 - M[mode].admin - M[mode].sick) * 100);
+  var effDisplay = mode === 'IST' ? effBase + '%' : effBase + '% ×' + M[mode].ai.toFixed(1);
 
   // Population
   var hpEl=document.getElementById('hP');
@@ -6960,18 +8016,81 @@ function updateUI(){
   document.getElementById('hG').dataset.suffix = sysDeath > 0 ? ' (' + sysDeath + ' preventable)' : '';
   document.getElementById('hG').className='n'+(dead>0?' r':' g');
 
+  // Sprint S1: Death counter flash when deaths increase
+  if (dead > previousDeathCount && previousDeathCount >= 0) {
+    var deathTs = document.getElementById('hG').closest('.ts');
+    if (deathTs) {
+      deathTs.classList.remove('death-flash');
+      void deathTs.offsetWidth; // force reflow for re-trigger
+      deathTs.classList.add('death-flash');
+    }
+  }
+  previousDeathCount = dead;
+
   // Wait
   document.getElementById('hW').textContent='⏱ '+avgWait+'w';
   document.getElementById('hW').className='n'+(parseFloat(avgWait)>12?' r':parseFloat(avgWait)>4?' y':' g');
 
   // Efficiency
-  document.getElementById('hE').textContent='⚕ '+eff+'%';
+  document.getElementById('hE').textContent='⚕ '+effDisplay;
   document.getElementById('hE').className='n '+(parseInt(eff)>75?'g':parseInt(eff)>50?'y':'r');
 
   document.getElementById('oF').textContent=FHIR_STORE.length;
   document.getElementById('oW').textContent='€'+Math.round(S.waste).toLocaleString();
   document.getElementById('sF').textContent=FHIR_STORE.length;
   document.getElementById('sM').textContent=A2A_MESSAGES.length;
+
+  // ── Sprint S1: Crisis Dashboard HUD stats ──
+  // GP Burnout % — average burnout of all GP agents
+  var gpAgents = agents.filter(function(a) { return a.type === 'gp'; });
+  var avgBurnout = 0;
+  if (gpAgents.length > 0) {
+    avgBurnout = Math.round(gpAgents.reduce(function(s, g) { return s + (g.burnoutLevel || 0); }, 0) / gpAgents.length);
+  }
+  var hBurnEl = document.getElementById('hBurn');
+  if (hBurnEl) {
+    hBurnEl.textContent = '🔥 ' + avgBurnout + '%';
+    hBurnEl.className = 'n ' + (avgBurnout > 70 ? 'r' : avgBurnout > 40 ? 'y' : 'g');
+  }
+
+  // Admin Burden — from M[mode].admin
+  var adminPct = Math.round(M[mode].admin * 100);
+  var hAdminEl = document.getElementById('hAdmin');
+  if (hAdminEl) {
+    hAdminEl.textContent = '📋 ' + adminPct + '%';
+    hAdminEl.className = 'n ' + (adminPct > 20 ? 'r' : adminPct > 10 ? 'y' : 'g');
+  }
+
+  // Treeknorm Violations — patients waiting longer than tree threshold
+  var treeThreshold = M[mode].tree;
+  var treeViolations = agents.filter(function(a) { return a.hp > 0 && a.waitWeeks > treeThreshold; }).length;
+  var hTreeEl = document.getElementById('hTree');
+  if (hTreeEl) {
+    hTreeEl.textContent = '⚖ ' + treeViolations;
+    hTreeEl.className = 'n ' + (treeViolations > 20 ? 'r' : treeViolations > 5 ? 'y' : 'g');
+  }
+
+  // Deaths This Week — deaths in last 28 cycles (7 days × 4 ticks/day)
+  var recentDeathsWeek = EVENT_LOG.filter(function(e) {
+    return (e.type === 'died' || e.type === 'natural_death') && e.cycle > cycle - 28;
+  }).length;
+  var hDWEl = document.getElementById('hDW');
+  if (hDWEl) {
+    hDWEl.textContent = '☠ ' + recentDeathsWeek;
+    hDWEl.className = 'n ' + (recentDeathsWeek > 3 ? 'r' : recentDeathsWeek > 0 ? 'y' : 'g');
+  }
+
+  // ── Sprint S5: Proactive Alert Counter (SOLL only) ──
+  var hPAEl = document.getElementById('hPA');
+  if (hPAEl) {
+    if (mode === 'SOLL') {
+      hPAEl.textContent = '🔮 ' + proactiveAlertCount;
+      hPAEl.className = 'n ' + (proactiveAlertCount > 10 ? 'g' : proactiveAlertCount > 0 ? 'g' : '');
+      hPAEl.closest('.ts').style.display = '';
+    } else {
+      hPAEl.closest('.ts').style.display = 'none';
+    }
+  }
 }
 
 // ═══ SPRINT 17.1: LOADING SCREEN CONTROLLER ═══
@@ -7159,8 +8278,8 @@ function buildSaveState(){
 // Save to both localStorage + IndexedDB slot 0 (auto-save)
 function saveGameIDB(slot){
   const state=buildSaveState();
-  try{localStorage.setItem('cammelot_save',JSON.stringify(state));}catch(e){}
-  try{idbSave(slot||0,JSON.parse(JSON.stringify(state))).catch(()=>{});}catch(e){}
+  try{localStorage.setItem('cammelot_save',JSON.stringify(state));}catch(e){console.warn('Cammelot:', e.message || e);}
+  try{idbSave(slot||0,JSON.parse(JSON.stringify(state))).catch(()=>{});}catch(e){console.warn('Cammelot:', e.message || e);}
 }
 // Show save slot picker UI
 function showSaveSlotPicker(actionType,onSelect){
@@ -7210,7 +8329,7 @@ function saveGame(){
     const saveState=buildSaveState();
     localStorage.setItem('cammelot_save',JSON.stringify(saveState));
     // Sprint 18.3: Also write to IndexedDB slot 0 (auto-save)
-    try{idbSave(0,JSON.parse(JSON.stringify(saveState))).catch(()=>{});}catch(e){}
+    try{idbSave(0,JSON.parse(JSON.stringify(saveState))).catch(()=>{});}catch(e){console.warn('Cammelot:', e.message || e);}
   }catch(e){console.warn('Save failed:',e);}
 }
 
@@ -7221,6 +8340,7 @@ function loadGame(){
     const save=JSON.parse(raw);
     // Sprint 9 — INTEGRITY-001: Schema validation
     if(!validateSaveSchema(save)){console.warn('Save schema invalid');return false;}
+    if(save.version !== 2){console.warn('Cammelot: Save version', save.version, 'not supported. Starting fresh.');return false;}
     cycle=save.cycle;
     mode=save.mode;
     if(save.stats){S.res=save.stats.res||6;S.msgs=save.stats.msgs||0;S.waste=save.stats.waste||0;}
@@ -7353,7 +8473,7 @@ function showSavePrompt(){
 }
 
 function startNewGame(){
-  try{localStorage.removeItem('cammelot_save');}catch(e){}
+  try{localStorage.removeItem('cammelot_save');}catch(e){console.warn('Cammelot:', e.message || e);}
   updateUI();initCharSprites();buildWaypointGraph();initAgentBehaviors();seedInitialCrisis(agents);loop();
 }
 
@@ -7703,10 +8823,12 @@ document.getElementById('btn-reset').addEventListener('click', () => {
 });
 document.getElementById('btn-stats').addEventListener('click', () => { playUIClick(); toggleStats(); });
 document.getElementById('btn-qa').addEventListener('click', () => { playUIClick(); showQAPanel(); });
+document.getElementById('btn-treeknorm-log').addEventListener('click', () => { playUIClick(); showTreeknormLog(); });
+document.getElementById('btn-methodology').addEventListener('click', () => { playUIClick(); showMethodology(); });
 document.getElementById('btn-heatmap').addEventListener('click', () => { playUIClick(); toggleHeatmap(); });
 document.getElementById('btn-timeline').addEventListener('click', () => { playUIClick(); toggleTimeline(); });
 document.getElementById('btn-gazette').addEventListener('click', () => { playUIClick(); showGazette(); });
-document.getElementById('btn-screenshot').addEventListener('click', () => { playUIClick(); captureScreenshot(); });
+document.getElementById('btn-screenshot').addEventListener('click', () => { playUIClick(); enterScreenshotMode(); });
 document.getElementById('btn-moments').addEventListener('click', () => { playUIClick(); showMomentsGallery(); });
 document.getElementById('btn-linkedin').addEventListener('click', () => { playUIClick(); showLinkedInPanel(); });
 document.getElementById('btn-playground').addEventListener('click', () => { playUIClick(); showPlayground(); });
@@ -7860,6 +8982,45 @@ function dismissToast(toast) {
 }
 
 // 20.1 — Screenshot Capture
+
+// ═══ Sprint S6: Screenshot Mode ═══
+function enterScreenshotMode() {
+  if (screenshotMode) return;
+  screenshotMode = true;
+  // Store current display states
+  var ids = ['top', 'cbar', 'chatlog', 'zoom-ind', 'panel'];
+  _screenshotUIState = {};
+  ids.forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) {
+      _screenshotUIState[id] = el.style.display;
+      el.style.display = 'none';
+    }
+  });
+  // After one render frame, capture and exit
+  requestAnimationFrame(function() {
+    requestAnimationFrame(function() {
+      captureScreenshot();
+      exitScreenshotMode();
+    });
+  });
+}
+
+function exitScreenshotMode() {
+  if (!screenshotMode) return;
+  screenshotMode = false;
+  // Restore UI
+  if (_screenshotUIState) {
+    Object.keys(_screenshotUIState).forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) {
+        el.style.display = _screenshotUIState[id] || '';
+      }
+    });
+    _screenshotUIState = null;
+  }
+}
+
 function captureScreenshot() {
   var simCanvas = document.getElementById('cv');
   if (!simCanvas) { showToast('❌ Canvas not found'); return; }
@@ -8077,7 +9238,7 @@ function getSimStats() {
   // SOLL improvement estimate
   var sollPct = dead.length > 0 ? Math.round(Math.min(dead.length * 0.6, dead.length) / dead.length * 100) : 40;
   var savedLives = Math.round(dead.length * 0.6);
-  var savedMoney = Math.round(savedLives * 5845);
+  var savedMoney = Math.round(savedLives * SIM_PREVENTABLE_DEATH_EUR);
 
   return {
     pop: totalPop.length, alive: alive.length, deaths: dead.length,
@@ -8469,6 +9630,13 @@ function endTour() {
 document.getElementById('btn-tours').addEventListener('click', function() {
   if (typeof playUIClick === 'function') playUIClick();
   showTourSelection();
+});
+
+// Sprint S2: Taxi meter toggle button
+document.getElementById('btn-taximeter').addEventListener('click', function() {
+  if (typeof playUIClick === 'function') playUIClick();
+  taxiMeterVisible = !taxiMeterVisible;
+  this.style.opacity = taxiMeterVisible ? '1' : '0.4';
 });
 
 // Sprint 21: Mobile touch support for data-tooltip attributes
