@@ -2526,7 +2526,6 @@ function generatePortrait(id, looks, age, gender, hp) {
   const isCritical = hp > 0 && hp < 20;
   const isSick = hp >= 20 && hp < 50;
 
-  // Parse skin color to RGB for manipulation
   function hexToRgb(hex) {
     const r = parseInt(hex.slice(1,3),16), gr = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
     return [r, gr, b];
@@ -2538,92 +2537,126 @@ function generatePortrait(id, looks, age, gender, hp) {
   let skinRgb = hexToRgb(looks.skin);
   let skinColor = looks.skin;
   if (isSick) {
-    // Paler skin
     skinRgb = skinRgb.map(v => Math.min(255, v + 30));
     skinColor = rgbToHex(...skinRgb);
   } else if (isCritical) {
-    // Very pale
     skinRgb = skinRgb.map(v => Math.min(255, v + 55));
     skinColor = rgbToHex(...skinRgb);
   }
 
+  const skinDark = rgbToHex(skinRgb[0] - 35, skinRgb[1] - 35, skinRgb[2] - 30);
   const px = (x, y, w, h, col) => { g.fillStyle = col; g.fillRect(x, y, w, h); };
 
-  // Face shape — rounded
-  px(16, 8, 32, 40, skinColor);  // main face
-  px(12, 12, 40, 32, skinColor); // wider middle
-  px(20, 6, 24, 4, skinColor);   // forehead
-  px(14, 44, 36, 8, skinColor);  // chin area
-  // Round corners
-  px(14, 10, 4, 4, skinColor);
-  px(46, 10, 4, 4, skinColor);
-  px(14, 42, 4, 4, skinColor);
-  px(46, 42, 4, 4, skinColor);
+  // ── GBC-style portrait: big round head, huge eyes ──
+  // Face shape — round, GBC proportions (head fills most of 64×64)
+  px(12, 10, 40, 44, skinColor);   // core face
+  px(8, 14, 48, 36, skinColor);    // wider middle
+  px(16, 6, 32, 8, skinColor);     // forehead
+  px(16, 50, 32, 8, skinColor);    // chin
+  // Rounded corners
+  px(10, 12, 4, 4, skinColor);
+  px(50, 12, 4, 4, skinColor);
+  px(10, 48, 4, 4, skinColor);
+  px(50, 48, 4, 4, skinColor);
 
-  // Eyes — 3x3 with white + pupil
+  // ── Eyes — BIG Pokemon-style (dominant feature) ──
   // Left eye
-  px(18, 22, 10, 8, '#FFFFFF');
-  px(22, 24, 4, 4, '#1A1A2A');  // pupil
-  px(24, 24, 2, 2, '#FFFFFF');  // highlight
+  px(14, 24, 14, 12, '#FFFFFF');    // white
+  px(14, 24, 14, 3, '#1A1A2A');    // eyelid top
+  px(20, 28, 6, 8, '#1A1A2A');     // pupil
+  px(22, 28, 3, 3, '#FFFFFF');     // highlight
   // Right eye
-  px(36, 22, 10, 8, '#FFFFFF');
-  px(40, 24, 4, 4, '#1A1A2A');  // pupil
-  px(42, 24, 2, 2, '#FFFFFF');  // highlight
-  // Eyelids
-  px(18, 22, 10, 2, '#1A1A2A');
-  px(36, 22, 10, 2, '#1A1A2A');
+  px(36, 24, 14, 12, '#FFFFFF');    // white
+  px(36, 24, 14, 3, '#1A1A2A');    // eyelid top
+  px(40, 28, 6, 8, '#1A1A2A');     // pupil
+  px(42, 28, 3, 3, '#FFFFFF');     // highlight
+
+  // Nose — subtle, just a shadow pixel
+  px(30, 38, 4, 3, skinDark);
 
   // Mouth
   if (isSick || isCritical) {
-    // Droopy mouth
-    px(26, 40, 12, 2, '#C08070');
-    px(24, 38, 4, 2, '#C08070');
+    px(24, 44, 16, 2, '#C08070');
+    px(22, 43, 4, 2, '#C08070');   // droopy
   } else {
-    // Normal/smile
-    px(26, 38, 12, 2, '#C08070');
-    px(28, 40, 8, 2, '#C08070');
+    px(24, 44, 16, 2, '#C08070');
+    px(26, 46, 12, 2, '#C08070');  // slight smile
   }
 
   // Critical: reddish cheeks
   if (isCritical) {
     g.fillStyle = 'rgba(229, 57, 53, 0.3)';
-    g.fillRect(12, 32, 10, 6);
-    g.fillRect(42, 32, 10, 6);
+    g.fillRect(10, 36, 10, 6);
+    g.fillRect(44, 36, 10, 6);
   }
 
   // Elderly: wrinkle lines + glasses chance
   if (age >= 65) {
     const wrinkleColor = rgbToHex(skinRgb[0] - 25, skinRgb[1] - 25, skinRgb[2] - 20);
-    px(18, 30, 8, 1, wrinkleColor); // under left eye
-    px(38, 30, 8, 1, wrinkleColor); // under right eye
-    px(22, 44, 4, 1, wrinkleColor); // laugh line left
-    px(38, 44, 4, 1, wrinkleColor); // laugh line right
-    // Glasses for some elderly (deterministic from ID)
+    px(16, 34, 8, 1, wrinkleColor);  // under left eye
+    px(40, 34, 8, 1, wrinkleColor);  // under right eye
+    px(22, 48, 4, 1, wrinkleColor);  // laugh line left
+    px(38, 48, 4, 1, wrinkleColor);  // laugh line right
+    // Glasses for some elderly
     const rng = seededRandom(hashCode(id) + 99);
     if (rng() < 0.4) {
       g.strokeStyle = '#3A3A5A';
       g.lineWidth = 2;
-      g.strokeRect(16, 20, 14, 12);
-      g.strokeRect(34, 20, 14, 12);
-      g.beginPath(); g.moveTo(30, 26); g.lineTo(34, 26); g.stroke(); // bridge
+      g.strokeRect(12, 22, 18, 16);
+      g.strokeRect(34, 22, 18, 16);
+      g.beginPath(); g.moveTo(30, 30); g.lineTo(34, 30); g.stroke();
     }
   }
 
-  // Hair — mapped from hType
+  // ── Hair — GBC 8-type system ──
   const hc = looks.hair;
   switch(looks.hType) {
-    case 0: px(12,2,40,12,hc); px(10,6,6,18,hc); px(48,6,6,18,hc); break;
-    case 1: px(10,0,44,14,hc); px(8,6,8,20,hc); px(48,6,8,20,hc); px(18,-2,28,6,hc); break;
-    case 2: px(12,2,40,12,hc); px(10,4,6,20,hc); px(48,4,6,20,hc); break;
-    case 3: px(10,0,44,10,hc); px(6,4,8,30,hc); px(50,4,8,30,hc); px(8,34,8,10,hc); px(48,34,8,10,hc); break;
-    case 4: px(8,-2,48,10,hc); px(14,0,36,14,hc); px(10,6,6,18,hc); px(48,6,6,18,hc); break;
-    case 5: px(10,0,44,14,hc); px(6,4,10,22,hc); px(48,4,10,22,hc); break;
-    case 6: px(8,0,48,12,hc); px(4,6,10,24,hc); px(50,6,10,24,hc); px(8,0,48,4,'#C83030'); break;
-    case 7: px(12,2,40,12,hc); px(10,4,6,18,hc); px(48,4,6,18,hc); px(18,-2,6,6,hc); px(30,-2,6,6,hc); px(42,-2,6,6,hc); break;
-    case 8: px(8,-2,48,16,hc); px(4,2,10,24,hc); px(50,2,10,24,hc); px(12,-4,40,6,hc); break;
-    case 9: px(8,0,48,10,'#FFF'); px(4,4,10,26,'#FFF'); px(50,4,10,26,'#FFF'); px(8,0,48,4,'#C83030'); px(8,10,48,4,'#C83030'); break;
-    case 10: px(12,2,40,12,hc); px(8,4,10,20,hc); px(46,4,10,20,hc); px(6,24,8,18,hc); px(50,24,8,18,hc); break;
-    case 11: px(12,2,40,12,hc); px(10,4,6,18,hc); px(48,4,6,18,hc); px(18,-4,28,8,hc); break;
+    case 0: // Short crop
+      px(10, 4, 44, 12, hc);
+      px(8, 8, 6, 16, hc);
+      px(50, 8, 6, 16, hc);
+      break;
+    case 1: // Medium with bangs
+      px(8, 2, 48, 14, hc);
+      px(6, 8, 8, 18, hc);
+      px(50, 8, 8, 18, hc);
+      px(14, 12, 16, 6, hc); // bangs over forehead
+      break;
+    case 2: // Buzz/bald
+      px(14, 4, 36, 10, hc);
+      px(10, 6, 6, 8, hc);
+      px(48, 6, 6, 8, hc);
+      break;
+    case 3: // Long straight (female)
+      px(8, 2, 48, 12, hc);
+      px(4, 6, 10, 36, hc);
+      px(50, 6, 10, 36, hc);
+      px(4, 42, 10, 12, hc);
+      px(50, 42, 10, 12, hc);
+      break;
+    case 4: // Cap/hat
+      px(6, 0, 52, 14, hc);
+      px(4, 12, 56, 4, hc); // brim
+      px(8, 2, 48, 6, rgbToHex(...hexToRgb(hc).map(v => Math.min(255, v + 30))));
+      break;
+    case 5: // Ponytail
+      px(10, 2, 44, 12, hc);
+      px(6, 8, 8, 16, hc);
+      px(50, 8, 8, 16, hc);
+      px(50, 14, 10, 6, hc); // ponytail bump
+      px(56, 18, 6, 14, hc); // ponytail tail
+      break;
+    case 6: // Curly/afro
+      px(4, 0, 56, 16, hc);
+      px(2, 6, 8, 28, hc);
+      px(54, 6, 8, 28, hc);
+      px(6, -2, 52, 6, hc); // extra volume top
+      break;
+    case 7: // Elderly/thin
+      px(14, 4, 36, 8, hc);
+      px(10, 6, 8, 8, hc);
+      px(46, 6, 8, 8, hc);
+      break;
   }
 
   // Dead: apply greyscale
@@ -2643,28 +2676,30 @@ function generatePortrait(id, looks, age, gender, hp) {
 
 // ═══ END SPRINT 4 DATA ═══
 
-// ── Procedural LOOKS generator ──
+// ── Procedural LOOKS generator (GBC-style: 8 hair types) ──
 function generateLooks(id, age, gender) {
   const seed = hashCode(id);
   const rng = seededRandom(seed);
   const SKIN_TONES = ['#E0C0A0','#D4A574','#C09060','#B87848','#A86838','#906838'];
   const HAIR_YOUNG = ['#1A1A1A','#4A3020','#8B4513','#C87030','#6A3020','#904828'];
   const HAIR_OLD = ['#A0A0A0','#B0B0B0','#D0D0D0','#E0E0E0'];
-  const MALE_HTYPES = [0,2,4,7,9];
-  const FEMALE_HTYPES = [1,3,5,6,8,10,11];
+  // GBC hair types: 0=short crop, 1=bangs, 2=buzz, 3=long straight, 4=cap, 5=ponytail, 6=curly/afro, 7=elderly thin
+  const MALE_HTYPES = [0,2,4,7];
+  const FEMALE_HTYPES = [1,3,5,6];
   const SHIRTS = ['#5A7A4A','#3A6A8A','#8A6AA8','#C06080','#7A5A3A','#4A8A4A','#8A50A0','#E0D8C8','#C04838','#3878A0','#D05868','#58A868','#6A5A4A'];
-  // ── Sprint 28: Brighter clothing for children ──
+  // Brighter clothing for children
   const SHIRTS_CHILD = ['#FF6B6B','#4ECDC4','#FFE66D','#95E1D3','#F38181','#AA96DA','#FCE38A','#EAFFD0','#FF9A76','#67C7EB'];
-  const PANTS_C = ['#4A3A2A','#2A3A4A','#5A4A6A','#4A3A5A','#3A2A1A','#5A4A3A','#3A2A4A','#7A6A5A','#4A4038','#3A3A5A','#4A4A4A'];
   const skin = SKIN_TONES[Math.floor(rng() * SKIN_TONES.length)];
-  // ── Sprint 28: Grey/white hair for elderly (70+) ──
-  const hairColors = age >= 70 ? HAIR_OLD : age >= 65 ? HAIR_OLD : HAIR_YOUNG;
+  const hairColors = age >= 65 ? HAIR_OLD : HAIR_YOUNG;
   const hair = hairColors[Math.floor(rng() * hairColors.length)];
-  const hTypes = gender === 'M' ? MALE_HTYPES : FEMALE_HTYPES;
-  const hType = hTypes[Math.floor(rng() * hTypes.length)];
+  let hTypes = gender === 'M' ? MALE_HTYPES : FEMALE_HTYPES;
+  // Elderly get type 7 (thin/receding) with high probability
+  let hType;
+  if (age >= 70 && rng() < 0.6) { hType = 7; }
+  else { hType = hTypes[Math.floor(rng() * hTypes.length)]; }
   const shirtPalette = age <= 12 ? SHIRTS_CHILD : SHIRTS;
   const shirt = shirtPalette[Math.floor(rng() * shirtPalette.length)];
-  const pants = PANTS_C[Math.floor(rng() * PANTS_C.length)];
+  const pants = '#3A3040'; // neutral dark — GBC 3-color rule
   return { skin, hair, hType, shirt, pants, coat: null };
 }
 
@@ -3558,15 +3593,15 @@ function drawTile(x,y,t){
   }
 }
 
-// ═══ CHARACTER SYSTEM — Pokemon Gen3 Overworld Style ═══
-// Chibi proportions: big head (~60% of height), small body, clean pixel look
+// ═══ CHARACTER SYSTEM — Game Boy Color Style (Pokemon Gen 2 / Zelda: Oracle of Ages) ═══
+// 16×16 logical grid, huge heads (~60%), minimal body, 3-color design, asymmetric walk frames
 
 const LOOKS = {};
 // Infrastructure agents keep their handcrafted looks
-LOOKS['gp1'] = { skin:'#E0C0A0', hair:'#904828', hType:2, shirt:'#FFFFFF', pants:'#2A3A4A', coat:'#FFFFFF' };
-LOOKS['gp2'] = { skin:'#B87848', hair:'#1A1210', hType:5, shirt:'#FFFFFF', pants:'#2A3A4A', coat:'#FFFFFF' };
-LOOKS['s1']  = { skin:'#D4A574', hair:'#2A2A2A', hType:2, shirt:'#4888B8', pants:'#2A3040', coat:'#4888B8' };
-LOOKS['s2']  = { skin:'#906838', hair:'#0A0A0A', hType:6, shirt:'#4888B8', pants:'#2A3040', coat:'#4888B8' };
+LOOKS['gp1'] = { skin:'#E0C0A0', hair:'#904828', hType:0, shirt:'#FFFFFF', pants:'#3A3040', coat:'#FFFFFF' };
+LOOKS['gp2'] = { skin:'#B87848', hair:'#1A1210', hType:5, shirt:'#FFFFFF', pants:'#3A3040', coat:'#FFFFFF' };
+LOOKS['s1']  = { skin:'#D4A574', hair:'#2A2A2A', hType:2, shirt:'#4888B8', pants:'#3A3040', coat:'#4888B8' };
+LOOKS['s2']  = { skin:'#906838', hair:'#0A0A0A', hType:6, shirt:'#4888B8', pants:'#3A3040', coat:'#4888B8' };
 // Generate looks for all spawned citizens/patients
 agents.forEach(a => {
   if (!LOOKS[a.id]) LOOKS[a.id] = generateLooks(a.id, a.age, a.gender);
@@ -3578,99 +3613,214 @@ const CHAR_PX = 48; // higher res for crisp scaling
 
 function renderCharToCanvas(id, walkFrame) {
   // walkFrame: 0=stand, 1=left step, 2=right step
+  // GBC-style 16×16 logical grid (Pokemon Gen 2 / Zelda: Oracle of Ages proportions)
   const look = LOOKS[id];
   if(!look) return null;
   const c = document.createElement('canvas');
   c.width = CHAR_PX; c.height = CHAR_PX;
   const g = c.getContext('2d');
-  const u = CHAR_PX / 24; // unit: 24 logical units
-  
+  const u = CHAR_PX / 16; // 3px per logical unit — chunky GBC pixels
+
   const px = (x,y,w,h,col) => { g.fillStyle=col; g.fillRect(Math.round(x*u),Math.round(y*u),Math.round(w*u),Math.round(h*u)); };
-  
-  // === LEGS (walk animation) ===
-  const legY = 16;
-  if(walkFrame === 0) {
-    // Standing — legs side by side
-    px(7,legY,3,4, look.pants);
-    px(12,legY,3,4, look.pants);
-    px(7,legY+4,3,1, '#2A1A0A');
-    px(12,legY+4,3,1, '#2A1A0A');
-  } else if(walkFrame === 1) {
-    // Left step — left leg forward, right leg back
-    px(7,legY,3,5, look.pants);
-    px(12,legY+1,3,3, look.pants);
-    px(7,legY+5,3,1, '#2A1A0A');
-    px(12,legY+4,3,1, '#2A1A0A');
+
+  // ── Darken helper for outline/shadow tones ──
+  function darken(hex, amt) {
+    const r = Math.max(0, parseInt(hex.slice(1,3),16) - amt);
+    const gr = Math.max(0, parseInt(hex.slice(3,5),16) - amt);
+    const b = Math.max(0, parseInt(hex.slice(5,7),16) - amt);
+    return '#' + [r,gr,b].map(v => v.toString(16).padStart(2,'0')).join('');
+  }
+
+  const skinDark = darken(look.skin, 40);
+  const shirtDark = darken(look.shirt, 50);
+  const shoeDark = '#2A1A0A';
+  const pantsDark = '#2A2030';
+
+  // ════════════════════════════════════════════
+  // LEGS / FEET (rows 13-15) — draw first (behind body)
+  // ════════════════════════════════════════════
+  if (walkFrame === 0) {
+    // Standing — two legs with 1px gap
+    px(5, 13, 2, 2, look.pants);   // left leg
+    px(9, 13, 2, 2, look.pants);   // right leg
+    px(5, 15, 2, 1, shoeDark);     // left shoe
+    px(9, 15, 2, 1, shoeDark);     // right shoe
+  } else if (walkFrame === 1) {
+    // Left step — left forward, right back
+    px(5, 13, 2, 2, look.pants);   // left leg (forward — same y)
+    px(9, 13, 2, 2, look.pants);   // right leg
+    px(4, 15, 3, 1, shoeDark);     // left shoe (wider, pushed left)
+    px(9, 15, 2, 1, shoeDark);     // right shoe
+    // Slight body shift
   } else {
-    // Right step — right leg forward, left leg back
-    px(7,legY+1,3,3, look.pants);
-    px(12,legY,3,5, look.pants);
-    px(7,legY+4,3,1, '#2A1A0A');
-    px(12,legY+5,3,1, '#2A1A0A');
+    // Right step — right forward, left back
+    px(5, 13, 2, 2, look.pants);   // left leg
+    px(9, 13, 2, 2, look.pants);   // right leg
+    px(5, 15, 2, 1, shoeDark);     // left shoe
+    px(9, 15, 3, 1, shoeDark);     // right shoe (wider, pushed right)
   }
-  
-  // === BODY ===
-  px(6,10,10,6, look.shirt); // torso
-  px(4,11,2,4, look.shirt); // left arm
-  px(16,11,2,4, look.shirt); // right arm
-  px(4,15,2,1, look.skin); // left hand
-  px(16,15,2,1, look.skin); // right hand
-  // Arm swing during walk
-  if(walkFrame === 1) { px(4,10,2,6, look.shirt); px(4,16,2,1, look.skin); px(16,12,2,3, look.shirt); }
-  if(walkFrame === 2) { px(4,12,2,3, look.shirt); px(16,10,2,6, look.shirt); px(16,16,2,1, look.skin); }
-  // Coat for doctors
-  if(look.coat) {
-    px(3,10,3,7, look.coat); px(16,10,3,7, look.coat);
-    px(7,10,1,6, '#D0D0D8'); px(14,10,1,6, '#D0D0D8');
+
+  // ════════════════════════════════════════════
+  // BODY / ARMS (rows 10-12)
+  // ════════════════════════════════════════════
+  px(4, 10, 8, 3, look.shirt);    // torso — 8 wide, 3 tall
+
+  // Arms + hands (walk animation)
+  if (walkFrame === 0) {
+    // Idle — slightly asymmetric (left arm 1px lower)
+    px(3, 10, 1, 3, look.shirt);   // left arm
+    px(12, 10, 1, 3, look.shirt);  // right arm
+    px(3, 12, 1, 1, look.skin);    // left hand (1px lower)
+    px(12, 12, 1, 1, look.skin);   // right hand
+  } else if (walkFrame === 1) {
+    // Left step — right arm forward, left arm back
+    px(3, 11, 1, 2, look.shirt);   // left arm (back — 1px down)
+    px(12, 10, 1, 3, look.shirt);  // right arm (forward)
+    px(3, 12, 1, 1, look.skin);    // left hand
+    px(12, 12, 1, 1, look.skin);   // right hand
+  } else {
+    // Right step — left arm forward, right arm back
+    px(3, 10, 1, 3, look.shirt);   // left arm (forward)
+    px(12, 11, 1, 2, look.shirt);  // right arm (back — 1px down)
+    px(3, 12, 1, 1, look.skin);    // left hand
+    px(12, 12, 1, 1, look.skin);   // right hand
   }
-  
-  // === HEAD ===
-  px(5,2,12,10, look.skin); // main face
-  px(4,3,14,8, look.skin); // wider
-  px(7,1,8,1, look.skin); // top
-  
-  // Eyes — big Pokemon-style
-  px(6,5,4,4, '#FFFFFF'); // left white
-  px(12,5,4,4, '#FFFFFF'); // right white
-  px(8,6,2,3, '#1A1A2A'); // left pupil
-  px(14,6,2,3, '#1A1A2A'); // right pupil
-  px(6,5,4,1, '#1A1A2A'); // left eyelid
-  px(12,5,4,1, '#1A1A2A'); // right eyelid
-  px(9,6,1,1, '#FFFFFF'); // left highlight
-  px(15,6,1,1, '#FFFFFF'); // right highlight
-  
-  // Mouth
-  px(9,10,4,1, '#C08070');
-  
-  // Hair
+
+  // Doctor white coat overlay
+  if (look.coat) {
+    px(3, 10, 1, 4, look.coat);    // left coat flap over arm
+    px(12, 10, 1, 4, look.coat);   // right coat flap over arm
+    px(4, 12, 8, 2, look.coat);    // coat bottom extends below torso
+    // Coat lapel lines
+    px(6, 10, 1, 3, '#D0D0D8');
+    px(9, 10, 1, 3, '#D0D0D8');
+    // Red cross on chest (doctor identifier)
+    if (look.coat === '#FFFFFF') {
+      px(7, 11, 2, 1, '#E03030');  // horizontal cross bar
+      px(7, 10, 1, 2, '#E03030');  // vertical cross bar (centered)
+    }
+    // Stethoscope for specialists (colored coat)
+    if (look.coat !== '#FFFFFF') {
+      px(7, 10, 1, 1, '#888888');  // stethoscope at neck
+    }
+  }
+
+  // ════════════════════════════════════════════
+  // HEAD (rows 1-10) — BIG, ~60% of sprite. GBC standard.
+  // ════════════════════════════════════════════
+  // Main head mass (round shape, wider in middle)
+  px(4, 3, 8, 7, look.skin);       // core face block
+  px(3, 4, 10, 5, look.skin);      // wider middle section
+  px(5, 2, 6, 1, look.skin);       // top of head
+  px(5, 10, 6, 1, look.skin);      // chin (rounded bottom)
+
+  // ── Eyes — large, expressive (Pokemon-style) ──
+  // Left eye: white 2×3, pupil 1×2, highlight 1×1
+  px(4, 5, 3, 3, '#FFFFFF');        // left eye white
+  px(6, 6, 1, 2, '#1A1A2A');       // left pupil
+  px(5, 6, 1, 1, '#1A1A2A');       // left pupil wide
+  px(5, 5, 1, 1, '#1A1A2A');       // left eyelid top
+  px(6, 5, 1, 1, '#1A1A2A');       // left eyelid
+  px(4, 5, 1, 1, '#1A1A2A');       // left eyelid corner
+  px(5, 6, 1, 1, '#FFFFFF');       // left highlight
+
+  // Right eye: mirror
+  px(9, 5, 3, 3, '#FFFFFF');        // right eye white
+  px(10, 6, 1, 2, '#1A1A2A');      // right pupil
+  px(9, 6, 1, 1, '#1A1A2A');       // right pupil wide
+  px(9, 5, 1, 1, '#1A1A2A');       // right eyelid
+  px(10, 5, 1, 1, '#1A1A2A');      // right eyelid
+  px(11, 5, 1, 1, '#1A1A2A');      // right eyelid corner
+  px(10, 6, 1, 1, '#FFFFFF');      // right highlight
+
+  // No mouth — too small at this scale (follows Mario/Pokemon convention)
+  // Nose hint — single darker pixel between eyes
+  px(8, 7, 1, 1, skinDark);
+
+  // ── HAIR — 8 distinct GBC styles ──
+  const hc = look.hair;
   switch(look.hType) {
-    case 0: px(4,0,14,4,look.hair);px(4,0,2,6,look.hair);px(16,0,2,6,look.hair);break;
-    case 1: px(4,0,14,4,look.hair);px(3,2,2,6,look.hair);px(17,2,2,6,look.hair);px(8,-1,6,2,look.hair);break;
-    case 2: px(4,0,14,4,look.hair);px(4,0,2,7,look.hair);px(16,0,2,7,look.hair);break;
-    case 3: px(4,0,14,3,look.hair);px(3,1,2,10,look.hair);px(17,1,2,10,look.hair);px(3,11,3,3,look.hair);px(16,11,3,3,look.hair);break;
-    case 4: px(3,-1,16,3,'#5A4030');px(5,-2,12,2,'#5A4030');px(4,2,14,2,look.hair);px(4,2,2,6,look.hair);px(16,2,2,6,look.hair);break;
-    case 5: px(4,0,14,4,look.hair);px(3,1,3,8,look.hair);px(16,1,3,8,look.hair);break;
-    case 6: px(3,0,16,4,look.hair);px(2,2,3,8,look.hair);px(17,2,3,8,look.hair);px(3,0,16,1,'#C83030');break;
-    case 7: px(4,0,14,4,look.hair);px(4,0,2,6,look.hair);px(16,0,2,6,look.hair);px(7,-1,2,2,look.hair);px(11,-1,2,2,look.hair);px(15,-1,2,2,look.hair);break;
-    case 8: px(3,-1,16,5,look.hair);px(2,0,3,8,look.hair);px(17,0,3,8,look.hair);px(4,-2,14,2,look.hair);break;
-    case 9: px(3,0,16,3,'#FFF');px(2,1,3,9,'#FFF');px(17,1,3,9,'#FFF');px(3,0,16,1,'#C83030');px(3,3,16,1,'#C83030');break;
-    case 10: px(4,0,14,4,look.hair);px(3,1,3,7,look.hair);px(16,1,3,7,look.hair);px(3,8,2,6,look.hair);px(17,8,2,6,look.hair);break;
-    case 11: px(4,0,14,4,look.hair);px(4,0,2,6,look.hair);px(16,0,2,6,look.hair);px(7,-2,8,3,look.hair);break;
+    case 0: // Short crop (male default) — 2 rows on top, no sides
+      px(4, 1, 8, 2, hc);
+      px(3, 2, 10, 1, hc);
+      break;
+    case 1: // Medium with bangs — 3 rows, fringe over forehead
+      px(4, 1, 8, 2, hc);
+      px(3, 2, 10, 2, hc);
+      px(4, 3, 4, 1, hc);           // fringe hangs over left forehead
+      px(3, 3, 1, 3, hc);           // left sideburn
+      px(12, 3, 1, 3, hc);          // right sideburn
+      break;
+    case 2: // Buzz/bald — 1 row on very top only
+      px(5, 1, 6, 1, hc);
+      px(4, 2, 8, 1, hc);
+      break;
+    case 3: // Long straight (female) — top + flows down sides past head
+      px(4, 1, 8, 2, hc);
+      px(3, 2, 10, 2, hc);
+      px(3, 3, 1, 8, hc);           // left hair flows down
+      px(12, 3, 1, 8, hc);          // right hair flows down
+      px(2, 5, 1, 5, hc);           // left hair extends beyond head
+      px(13, 5, 1, 5, hc);          // right hair extends beyond head
+      break;
+    case 4: // Cap/hat — solid block on top (Pokemon trainer style)
+      px(3, 0, 10, 3, hc);          // hat body
+      px(2, 2, 12, 1, hc);          // hat brim (wider)
+      px(4, 3, 8, 1, darken(hc, 30)); // brim shadow on forehead
+      break;
+    case 5: // Ponytail — top hair + small bump on one side
+      px(4, 1, 8, 2, hc);
+      px(3, 2, 10, 1, hc);
+      px(3, 3, 1, 3, hc);           // left sideburn
+      px(12, 3, 1, 3, hc);          // right sideburn
+      px(12, 2, 2, 1, hc);          // ponytail bump right side
+      px(13, 3, 1, 3, hc);          // ponytail tail
+      break;
+    case 6: // Curly/afro — larger mass, extends beyond head
+      px(3, 0, 10, 3, hc);
+      px(2, 1, 12, 3, hc);
+      px(2, 3, 1, 5, hc);           // left volume
+      px(13, 3, 1, 5, hc);          // right volume
+      px(3, 0, 1, 1, hc);           // top-left poof
+      px(12, 0, 1, 1, hc);          // top-right poof
+      break;
+    case 7: // Elderly/thin — 1 row on top, receding
+      px(5, 1, 5, 1, hc);
+      px(4, 2, 2, 1, hc);           // thin left side
+      px(10, 2, 2, 1, hc);          // thin right side
+      break;
   }
-  
-  // 1px dark outline — use a silhouette copy to avoid self-draw artifacts
+
+  // ── Elderly glasses (deterministic from ID) ──
+  // Inline RNG to avoid collision — hash + offset
+  const elderRng = seededRandom(hashCode(id) + 99);
+  const ageLooksVal = elderRng();
+  // We can't know age here easily, but LOOKS won't have grey hair unless elderly
+  // Check if hair color is grey-ish (elderly indicator)
+  const hairR = parseInt(hc.slice(1,3),16);
+  const hairG = parseInt(hc.slice(3,5),16);
+  if (hairR > 140 && hairG > 140 && ageLooksVal < 0.4) {
+    // Tiny glasses — 2×1 rectangles at eye level
+    px(4, 5, 3, 1, '#3A3A5A');     // left lens frame
+    px(9, 5, 3, 1, '#3A3A5A');     // right lens frame
+    px(7, 5, 2, 1, '#3A3A5A');     // bridge
+  }
+
+  // ════════════════════════════════════════════
+  // 1px dark outline — compositing trick (preserved from original)
+  // ════════════════════════════════════════════
   const outlineSrc = document.createElement('canvas');
   outlineSrc.width = CHAR_PX; outlineSrc.height = CHAR_PX;
   const og = outlineSrc.getContext('2d');
   og.drawImage(c, 0, 0);
   og.globalCompositeOperation = 'source-in';
-  og.fillStyle = 'rgba(20,10,5,.5)';
+  og.fillStyle = 'rgba(20,10,5,.55)';
   og.fillRect(0, 0, CHAR_PX, CHAR_PX);
   g.globalCompositeOperation = 'destination-over';
   g.drawImage(outlineSrc, -1, 0); g.drawImage(outlineSrc, 1, 0);
   g.drawImage(outlineSrc, 0, -1); g.drawImage(outlineSrc, 0, 1);
   g.globalCompositeOperation = 'source-over';
-  
+
   return c;
 }
 
