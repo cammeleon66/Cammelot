@@ -227,6 +227,25 @@ const startTime = Date.now();
 // Set mode
 global._setMode(runMode);
 
+// Tracking: individual agent timelines + death log + Gini rolling avg
+const agentTimelines = {}; // id → [{cycle, hp, state, waitWeeks}]
+const deathLog = []; // [{name, age, cycle, cause, conditions, waitWeeks, hp_history}]
+const giniRolling = []; // smoothed Gini values (50-cycle rolling avg)
+const giniRaw = [];
+
+// Identify interesting agents to track: elderly, multi-morbid, or with lethal conditions
+const LETHAL_CODES = ['I25','I50','C34','J44','F03'];
+const trackAgents = (global._agents || []).filter(a => {
+  if (a.type !== 'patient' && a.type !== 'citizen') return false;
+  if (a.age >= 65) return true;
+  if (a.conditions && a.conditions.length >= 2) return true;
+  if (a.conditions && a.conditions.some(c => LETHAL_CODES.includes(c.code))) return true;
+  return false;
+});
+for (const a of trackAgents) {
+  agentTimelines[a.id] = [];
+}
+
 for (let i = 0; i < nCycles; i++) {
   try { global._tick(); } catch(e) {
     if (i === 0) {
@@ -234,6 +253,46 @@ for (let i = 0; i < nCycles; i++) {
       process.stderr.write(e.stack?.split('\n').slice(0,3).join('\n') + '\n');
       process.exit(1);
     }
+  }
+
+  // Sample agent HP every 10 cycles
+  if (i % 10 === 0) {
+    for (const a of trackAgents) {
+      if (agentTimelines[a.id]) {
+        agentTimelines[a.id].push({
+          cycle: i,
+          hp: Math.round(a.hp),
+          state: a.behaviorState,
+          waitWeeks: Math.round((a.waitWeeks || 0) * 10) / 10,
+        });
+      }
+    }
+  }
+
+  // Capture deaths as they happen
+  for (const a of trackAgents) {
+    if (a.hp <= 0 && agentTimelines[a.id] && !agentTimelines[a.id]._dead) {
+      agentTimelines[a.id]._dead = true;
+      deathLog.push({
+        name: a.name,
+        age: a.age,
+        cycle: i,
+        cause: a.causeOfDeath || 'unknown',
+        conditions: (a.conditions || []).map(c => c.code + '/' + c.severity),
+        waitWeeks: Math.round((a.waitWeeks || 0) * 10) / 10,
+        hp_at_death: 0,
+      });
+    }
+  }
+
+  // Gini tracking (every 10 cycles)
+  if (i % 10 === 0) {
+    const g = (global._BIAS_DATA || {}).currentGini || 0;
+    giniRaw.push(g);
+    // 50-sample rolling average
+    const window = giniRaw.slice(-5);
+    const avg = window.reduce((s,v) => s+v, 0) / window.length;
+    giniRolling.push(Math.round(avg * 1000) / 1000);
   }
 }
 
@@ -296,6 +355,41 @@ const results = {
   weekly_reports_count: WEEKLY_REPORTS.length,
   preventable_death_cost_eur: systemDead.length * 5845,
   total_admin_waste_annual_per_gp: Math.round(365 * 12.43 * ((M[runMode]||{}).admin||0.3) * 30 / nCycles * nCycles / 3),
+
+  // Named death reports
+  death_reports: [
+    ...deathLog,
+    // Also capture deaths from non-tracked agents
+    ...allDead.filter(a => !deathLog.find(d => d.name === a.name)).map(a => ({
+      name: a.name, age: a.age, cycle: '?',
+      cause: a.causeOfDeath || 'unknown',
+      conditions: (a.conditions||[]).map(c => c.code+'/'+c.severity),
+      waitWeeks: Math.round((a.waitWeeks||0)*10)/10,
+    }))
+  ].sort((a,b) => (a.cycle === '?' ? 9999 : a.cycle) - (b.cycle === '?' ? 9999 : b.cycle)),
+
+  // Individual agent journeys (most interesting agents)
+  agent_stories: Object.entries(agentTimelines)
+    .filter(([id, timeline]) => timeline.length > 0)
+    .map(([id, timeline]) => {
+      const a = (global._agents||[]).find(ag => ag.id === id);
+      if (!a) return null;
+      return {
+        name: a.name, age: a.age, 
+        conditions: (a.conditions||[]).map(c => c.name + ' (' + c.code + '/' + c.severity + ')'),
+        outcome: a.hp <= 0 ? (a.causeOfDeath === 'natural' ? 'died_natural' : 'died_system') : 'survived',
+        final_hp: Math.round(a.hp),
+        max_wait_weeks: Math.round(Math.max(...timeline.map(t => t.waitWeeks)) * 10) / 10,
+        hp_timeline: timeline.filter((_,i) => i % 3 === 0).map(t => t.hp), // every 30 cycles
+        key_moments: timeline.filter(t => 
+          t.hp < 50 || t.waitWeeks > 4 || t.state === 'dead' || t.state === 'emergency'
+        ).slice(0, 10),
+      };
+    }).filter(Boolean)
+    .sort((a,b) => a.final_hp - b.final_hp), // most dramatic first
+
+  // Smoothed Gini timeline
+  gini_rolling_avg: giniRolling,
   diagnostics: {
     agents_with_conditions: withConditions.length,
     agents_low_hp: lowHP.length,

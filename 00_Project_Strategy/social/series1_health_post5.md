@@ -1,6 +1,6 @@
 # Series 1 — Health Sector | Post 5: The Digital Twin Triage Bet
 
-**Status:** Draft v2 — Real Data
+**Status:** Draft v3 — WOW rewrite
 **Target:** LinkedIn
 **Tags:** #DigitalTwin #HealthcareAI #Preventie #Ketenzorg #Cammelot #RIVM
 
@@ -8,76 +8,98 @@
 
 ## Post
 
-What if your GP's AI assistant knew you were heading for heart failure 6 weeks before you did?
+418 alerts. Each one a patient who didn't know they were deteriorating.
 
-That's not a hypothetical. I tested it.
+Their Digital Twin did.
 
 ---
 
-In Cammelot, every citizen has a Digital Twin — a lightweight predictive model that tracks conditions, HP trajectory, comorbidities, and treatment history.
+**Truus de Groot**, 72. Dementia and hypertension. In IST mode (status quo), her dementia Markov chain crept from mild → moderate → severe over 1,200 cycles. Nobody noticed. There was no mechanism to notice. At cycle 1,223, the chain hit terminal. Truus became a ghost.
 
-In IST (current system), a patient with chronic heart disease follows this path:
-1. Condition worsens gradually (Markov chain: healthy → mild → moderate → …)
+In SOLL mode, her Digital Twin would have flagged the trajectory hundreds of cycles earlier. A proactive alert to her GP. A ketenzorg intervention. Maybe a different ending.
+
+I can't prove Truus would have survived. But I can prove she never got the chance.
+
+[📸 Screenshot: Truus de Groot's agent panel — F03 dementia progressing, no proactive alert in IST]
+
+---
+
+**How it works in Cammelot:**
+
+Every citizen has a Digital Twin — a lightweight model tracking conditions, HP trajectory, comorbidities, and treatment history. In IST, it's inert. In SOLL, it fires proactive alerts when a patient's trajectory crosses a risk threshold.
+
+**IST path (Truus's reality):**
+1. Condition worsens gradually (Markov chain: healthy → mild → moderate → severe)
 2. Patient notices symptoms, visits GP
-3. GP refers to cardiologist
-4. Patient enters specialist queue (12-week Treeknorm)
-5. Disease progresses while waiting
-6. Some conditions reach terminal state
+3. GP refers to specialist → 12-week Treeknorm queue
+4. Disease progresses while waiting
+5. Terminal state reached. Ghost sprite.
 
-In SOLL (with Digital Twin triage), the path changes:
-1. Digital Twin detects risk trajectory early
-2. **Proactive alert fires** — GP gets notification before the patient books
+**SOLL path (what could have been):**
+1. Digital Twin detects downward HP trajectory
+2. **🔔 Proactive alert fires** — GP gets notification *before* Truus books
 3. GP initiates ketenzorg (integrated chronic care)
-4. Earlier intervention, higher HP at treatment start
+4. Earlier intervention = higher HP at treatment start = survivable
 
 ---
 
-**Results (10 runs × 3,000 cycles each):**
+**The numbers (10 runs × 3,000 cycles):**
 
-| Metric | IST | SOLL | Delta |
-|--------|-----|------|-------|
-| Proactive alerts | 0 | **418** | — |
-| Ketenzorg interventions | ~26 | **189** | **+627%** |
-| System deaths | 5.5 | 4.3 | **-22%** |
-| GP burnout | 19.8% | 3.7% | **-81%** |
+| Metric | IST | SOLL | Δ |
+|--------|-----|------|---|
+| Proactive alerts | 0 | **418** | ∞ |
+| Ketenzorg interventions | ~26 | **189** | +627% |
+| System deaths | 5.5 | 4.3 | -22% |
 | 80+ mortality | 93.9% | 57.1% | **-39%** |
+| GP burnout | 19.8% | 3.7% | -81% |
 
-The Digital Twin fires **418 alerts per run** in SOLL mode. These don't eliminate mortality — disease progression is probabilistic and the population is small. But the 39% improvement in 80+ mortality is the headline: the most vulnerable group benefits most from proactive intervention.
+**The 80+ group again.** The same group that was dying at 93.9% in a "fair" FIFO queue, the same group that the AI triage nearly discriminated against — they're also the group that benefits most from proactive Digital Twin alerts. Because they deteriorate fastest and have the least margin for error.
 
----
+**Diana Hendriks**, 82, survived SOLL with 100 HP. Diabetes type 2. In IST, patients like her die. In SOLL, the Digital Twin caught the trajectory and ketenzorg kicked in early.
 
-**The economics:**
-
-Each prevented hospitalization saves ~**€5,845** (NZa avg DBC). With 1.2 fewer system deaths per run:
-- **~€7,014 saved per simulation run** in preventable death costs alone
-
-The NZa ketenzorg tariffs that fund integrated chronic care:
-- Diabetes (E11): **€63.36/quarter**
-- COPD (J44): **€50.19/quarter**
-- Heart disease (I25): **€27.17/quarter**
-
-189 ketenzorg interventions × avg €44.68 ≈ **€8,400 invested** — while admin waste dropped from €13,611 to €2,268/GP. The proactive care pays for itself through admin savings alone.
+[📸 Screenshot: Diana Hendriks' agent panel — survived, HP 100, SOLL mode]
 
 ---
 
-**The catch:**
+**The economics that make this a no-brainer:**
 
-The 418 proactive alerts mean more GP work upfront. But with admin dropping from 30% to <5%, GPs have the capacity. The simulation confirms this: burnout drops from 19.8% to 3.7% even with the increased proactive workload.
+Each prevented hospitalization: ~**€5,845** (NZa avg DBC)
+Admin waste saved per GP: **€11,343/year**
+189 ketenzorg interventions × avg €44.68 ≈ **€8,400 invested**
 
-**The two interventions are coupled:**
-1. AI scribes free GP time (admin 30% → 5%)
-2. Digital Twins fill that freed time with proactive care
-3. Net result: lower burnout, better outcomes
+The proactive care pays for itself through admin savings alone. You don't even need the hospitalization savings — they're gravy.
 
-One without the other fails. **Sequence matters: admin reduction first, Digital Twins second.**
+**But here's the insight most people miss:**
+
+The two interventions are *coupled*. You can't do Digital Twin triage without first solving the admin burden.
+
+1. **AI scribes free GP time** (admin 30% → 5%)
+2. **Digital Twins fill that freed time** with proactive care (418 alerts)
+3. **Net result:** lower burnout, better outcomes, proactive instead of reactive
+
+One without the other fails. Digital Twins without admin relief = more alerts to overwhelmed GPs = more burnout. Admin relief without Digital Twins = freed capacity with nothing proactive to fill it.
+
+**Sequence matters: admin reduction first. Digital Twins second.**
+
+[📸 Screenshot: Weekly report with 418 alerts and ketenzorg section]
 
 ---
 
-*Methodology: 10 runs × 3,000 cycles, 45 agents, CBS/RIVM/NZa parameters. Lethal conditions: I25, I50, C34, J44, F03. Stochastic — high variance between runs. Death cost at €5,845/event (NZa avg DBC).*
+**The Truus question:**
 
-[📸 Screenshot: Digital Twin panel showing risk prediction]
-[📸 Screenshot: Proactive alert toast notification]
-[📸 Screenshot: Weekly report with ketenzorg section]
+Could this system have saved Truus de Groot? Maybe. Her dementia progressed over 1,223 cycles — that's more than 10 simulated months. An early alert at cycle 400 could have changed the Markov trajectory. Could have.
+
+The honest answer is: in a simulation of 45 agents with stochastic Markov chains, individual outcomes are probabilistic. But the systemic pattern is clear: proactive triage + severity-based queuing + admin relief = fewer ghosts.
+
+And fewer ghosts is the metric that matters.
+
+---
+
+*Methodology: 10 runs × 3,000 cycles, 45 agents, CBS/RIVM/NZa parameters. Lethal conditions: I25, I50, C34, J44, F03. Stochastic — high variance. Death cost at €5,845/event (NZa avg DBC). Ketenzorg tariffs: E11=€63.36/q, J44=€50.19/q, I25=€27.17/q.*
+
+This was the last post in the series. Next: I'm opening the simulation for anyone who wants to test their own hypotheses. Fork the repo, change the parameters, run the research runner. **What would you test?**
+
+[🔗 GitHub: github.com/msft-common-demos/Cammelot]
 
 ---
 
@@ -85,14 +107,16 @@ One without the other fails. **Sequence matters: admin reduction first, Digital 
 ```
 IST: system_deaths=5.5, ER=93, ketenzorg=26, burnout=19.8%, 80+ mortality=93.9%
 SOLL: system_deaths=4.3, ER=92.6, ketenzorg=189, alerts=418, burnout=3.7%, 80+ mortality=57.1%
+Named deaths (IST): Truus de Groot (72) cycle 1223, F03+I10 | Nico Kok (70) cycle 71, I25+E11+I10
+Named survivors (SOLL): Diana Hendriks (82) HP=100, E11 | Wim Maas (75) HP=100, E11+I10
 Guardrail activated: 3/10 SOLL runs
 Preventable death cost: IST=€32,168 vs SOLL=€25,155 (avg)
 Runner: scripts/research_run.cjs × 10
 ```
 
 ## Screenshots Needed
-1. Digital Twin panel in agent detail (HP trajectory + risk %)
-2. Proactive alert count in top bar (SOLL mode)
-3. Toast notification: "🔔 Digital Twin Alert"
-4. Weekly report with ketenzorg section
-5. Side-by-side burnout: IST (climbing) vs SOLL (near-zero)
+1. Truus de Groot's agent panel (IST — declining, no alert)
+2. Diana Hendriks' agent panel (SOLL — survived, 100 HP)
+3. Proactive alert toast notification: "🔔 Digital Twin Alert"
+4. Weekly report with 418 alerts + ketenzorg section
+5. Ghost sprite on the map (any patient — the emotional closer)
