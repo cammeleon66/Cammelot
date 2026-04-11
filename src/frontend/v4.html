@@ -3170,22 +3170,49 @@ function seedInitialCrisis(agentList) {
 // ═══ DISEASE ENGINE (ported from disease_engine.js) ═══════════════════════
 
 // Markov state transition using condition-specific matrices from DISEASE_DB
-function transitionDiseaseState(conditionCode, currentState, waitWeeks, treeknormWeeks) {
+// receivingTreatment: boolean — if true, slows disease progression (ketenzorg/proactive care effect)
+function transitionDiseaseState(conditionCode, currentState, waitWeeks, treeknormWeeks, receivingTreatment) {
   const db = DISEASE_DB[conditionCode];
   if (!db || !db.markovTransitions) return currentState;
 
   const baseRow = db.markovTransitions[currentState];
   if (!baseRow) return currentState;
 
-  // Adjust transitions if wait exceeds Treeknorm (acceleration)
   let row = { ...baseRow };
+  const states = ['healthy','mild','moderate','severe','critical','deceased'];
+  const currentIdx = states.indexOf(currentState);
+
+  // Treatment effect: ketenzorg/proactive care slows progression
+  // Increases self-stay probability, reduces worse-state transitions
+  // Allows possible improvement (one state back) for mild/moderate
+  if (receivingTreatment && currentState !== 'deceased' && currentState !== 'healthy') {
+    const TREATMENT_DECELERATION = 0.20; // 20% shift toward stability
+    const IMPROVEMENT_CHANCE = 0.05;     // 5% chance of improving one state
+
+    if (currentIdx < states.length - 1) {
+      // Reduce worse-state probabilities
+      const worseStates = states.slice(currentIdx + 1);
+      let totalRedistributed = 0;
+      for (const ws of worseStates) {
+        const reduction = (row[ws] || 0) * TREATMENT_DECELERATION;
+        row[ws] = (row[ws] || 0) - reduction;
+        totalRedistributed += reduction;
+      }
+      // Add improvement chance (can move one state better)
+      if (currentIdx > 0) {
+        const betterState = states[currentIdx - 1];
+        row[betterState] = (row[betterState] || 0) + IMPROVEMENT_CHANCE;
+        totalRedistributed -= IMPROVEMENT_CHANCE;
+      }
+      // Remainder goes to self-stay (stability)
+      row[currentState] = (row[currentState] || 0) + totalRedistributed;
+    }
+  }
+
+  // Adjust transitions if wait exceeds Treeknorm (acceleration)
   if (waitWeeks > treeknormWeeks && currentState !== 'deceased') {
     const overdue = waitWeeks - treeknormWeeks;
     const acceleration = Math.min(overdue * 0.02, 0.35); // Sprint 29: boosted acceleration
-
-    // Reduce self-stay probability, increase worse-state probabilities
-    const states = ['healthy','mild','moderate','severe','critical','deceased'];
-    const currentIdx = states.indexOf(currentState);
 
     if (currentIdx < states.length - 1) {
       const selfStay = Math.max(row[currentState] - acceleration, 0.10);
@@ -3193,7 +3220,6 @@ function transitionDiseaseState(conditionCode, currentState, waitWeeks, treeknor
       row = { ...row };
       row[currentState] = selfStay;
 
-      // Distribute to worse states
       const worseStates = states.slice(currentIdx + 1);
       const perState = redistributed / worseStates.length;
       for (const ws of worseStates) {
@@ -3205,7 +3231,6 @@ function transitionDiseaseState(conditionCode, currentState, waitWeeks, treeknor
   // Sample from probability distribution
   const r = Math.random();
   let cumulative = 0;
-  const states = ['healthy','mild','moderate','severe','critical','deceased'];
   for (const s of states) {
     cumulative += (row[s] || 0);
     if (r <= cumulative) return s;
@@ -6155,9 +6180,13 @@ function tick(){
 
     // === DISEASE STATE PROGRESSION (every 4 ticks ≈ 1 sim week) ===
     if (cycle % 4 === 0 && a.conditions && a.conditions.length > 0) {
+      // Treatment effect: ketenzorg (within 200 cycles) or active hospital care in SOLL mode
+      const ketenzorgActive = a.receivingKetenzorg && (cycle - (a.lastKetenzorgCycle || 0)) < 200;
+      const hospitalCare = mode === 'SOLL' && (a.behaviorState === 'at_hospital' || a.behaviorState === 'recovering');
+      const isBeingTreated = ketenzorgActive || hospitalCare;
       for (const cond of a.conditions) {
         const oldState = cond.severity;
-        const newState = transitionDiseaseState(cond.code, cond.severity, a.waitWeeks, p.tree);
+        const newState = transitionDiseaseState(cond.code, cond.severity, a.waitWeeks, p.tree, isBeingTreated);
         if (newState !== cond.severity) {
           cond.severity = newState;
           createFHIRResource('Condition', a.id, { code: cond.code, name: cond.name, clinicalStatus: newState, priorStatus: oldState });
@@ -6889,6 +6918,11 @@ function tick(){
                 logEvent('ketenzorg', a, 'Ketenzorg intervention (' + c.code + '): €' + KETENZORG_TARIFFS[c.code].toFixed(2));
               }
             });
+            // Mark agent as receiving treatment — slows Markov progression (SOLL only)
+            if (mode === 'SOLL') {
+              a.receivingKetenzorg = true;
+              a.lastKetenzorgCycle = cycle;
+            }
           }
         }
       }
