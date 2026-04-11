@@ -5,6 +5,12 @@ Format: hook → research question → simulation setup → findings → policy 
 
 ---
 
+## Post 0 — Series Introduction ✅ (see series1_health_post0_intro.md)
+**"I built a tiny Dutch town and gave it a healthcare crisis."**
+Meta-introduction: what Cammelot is, summary table of findings, series roadmap, visual hook.
+
+---
+
 ## Post 1 — Launch ✅ (see series1_health_post1.md)
 **"You don't get to be a skeptic without an alternative."**
 Introduction to Cammelot, IST vs SOLL framing, the zorginfarct numbers.
