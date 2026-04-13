@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cammelot — Simulation Replay</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #1a1a2e; color: #e0e0e0; font-family: 'Press Start 2P', monospace; font-size: 10px; overflow: hidden; height: 100vh; }
+#app { display: flex; height: 100vh; }
+#map-area { flex: 1; position: relative; overflow: hidden; }
+canvas { display: block; image-rendering: pixelated; image-rendering: crisp-edges; }
+#sidebar { width: 260px; background: #16213e; border-left: 3px solid #0f3460; display: flex; flex-direction: column; overflow: hidden; }
+.panel { padding: 8px; border-bottom: 2px solid #0f3460; }
+.panel-title { color: #e94560; font-size: 8px; margin-bottom: 6px; text-transform: uppercase; }
+.stat-row { display: flex; justify-content: space-between; margin: 3px 0; font-size: 8px; }
+.stat-val { color: #53d8fb; }
+.mode-badge { display: inline-block; padding: 3px 8px; font-size: 8px; border-radius: 2px; font-weight: bold; }
+.mode-IST { background: #e94560; color: white; }
+.mode-SOLL { background: #4ecca3; color: #1a1a2e; }
+#controls { background: #16213e; border-top: 3px solid #0f3460; padding: 8px; position: absolute; bottom: 0; left: 0; right: 260px; }
+#timeline-bar { width: 100%; height: 20px; background: #0f3460; position: relative; cursor: pointer; border-radius: 2px; margin: 4px 0; }
+#timeline-progress { height: 100%; background: #e94560; border-radius: 2px; transition: width 0.1s; }
+#timeline-markers { position: absolute; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; }
+.marker { position: absolute; width: 3px; height: 100%; top: 0; opacity: 0.8; }
+.marker-death { background: #ff0000; }
+.marker-alert { background: #ffff00; }
+.marker-ketenzorg { background: #4ecca3; }
+#btn-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+button { background: #0f3460; color: #e0e0e0; border: 2px solid #53d8fb; padding: 4px 10px; font-family: 'Press Start 2P', monospace; font-size: 8px; cursor: pointer; }
+button:hover { background: #53d8fb; color: #1a1a2e; }
+button.active { background: #e94560; border-color: #e94560; }
+#speed-label, #cycle-label { font-size: 8px; color: #53d8fb; }
+#event-feed { flex: 1; overflow-y: auto; padding: 6px; font-size: 7px; line-height: 1.6; }
+.ev { padding: 2px 0; border-bottom: 1px solid #0f3460; }
+.ev-death { color: #e94560; }
+.ev-alert { color: #ffdd57; }
+.ev-referral { color: #53d8fb; }
+.ev-treeknorm { color: #ff8c00; }
+.ev-default { color: #888; }
+#agent-detail { padding: 8px; font-size: 8px; min-height: 80px; }
+#agent-detail .name { color: #53d8fb; font-size: 10px; margin-bottom: 4px; }
+#agent-detail .field { margin: 2px 0; }
+#caption-bar { position: absolute; bottom: 70px; left: 10px; right: 270px; background: rgba(26,26,46,0.9); border: 2px solid #e94560; padding: 6px 10px; font-size: 9px; color: #ffdd57; text-align: center; display: none; }
+#load-screen { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #1a1a2e; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; }
+#load-screen h1 { color: #e94560; font-size: 16px; margin-bottom: 20px; }
+#load-screen p { color: #53d8fb; font-size: 10px; margin-bottom: 20px; }
+#load-screen input[type=file] { color: #e0e0e0; }
+#load-screen .or { color: #888; margin: 10px 0; font-size: 8px; }
+#load-screen button { font-size: 10px; padding: 8px 16px; }
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #16213e; }
+::-webkit-scrollbar-thumb { background: #0f3460; border-radius: 3px; }
+</style>
+</head>
+<body>
+<div id="load-screen">
+  <h1>🏰 CAMMELOT REPLAY</h1>
+  <p>Load a recorded simulation to watch it unfold</p>
+  <input type="file" id="file-input" accept=".json">
+  <div class="or">— or —</div>
+  <button id="load-demo">Load Demo (SOLL 3000 cycles)</button>
+</div>
+
+<div id="app" style="display:none">
+  <div id="map-area">
+    <canvas id="canvas"></canvas>
+    <div id="caption-bar"></div>
+    <div id="controls">
+      <div id="timeline-bar" title="Click to seek">
+        <div id="timeline-progress"></div>
+        <div id="timeline-markers"></div>
+      </div>
+      <div id="btn-row">
+        <button id="btn-play">▶ PLAY</button>
+        <button id="btn-step">⏭ STEP</button>
+        <span id="cycle-label">Cycle 0 / 0</span>
+        <span style="flex:1"></span>
+        <button class="speed" data-speed="0.5">0.5x</button>
+        <button class="speed active" data-speed="1">1x</button>
+        <button class="speed" data-speed="2">2x</button>
+        <button class="speed" data-speed="4">4x</button>
+        <button class="speed" data-speed="8">8x</button>
+      </div>
+    </div>
+  </div>
+  <div id="sidebar">
+    <div class="panel">
+      <div class="panel-title">Simulation Info</div>
+      <div class="stat-row"><span>Mode</span><span id="s-mode" class="stat-val">—</span></div>
+      <div class="stat-row"><span>Cycle</span><span id="s-cycle" class="stat-val">0</span></div>
+      <div class="stat-row"><span>Population</span><span id="s-pop" class="stat-val">0</span></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Live Stats</div>
+      <div class="stat-row"><span>Alive</span><span id="s-alive" class="stat-val">0</span></div>
+      <div class="stat-row"><span>Dead</span><span id="s-dead" class="stat-val">0</span></div>
+      <div class="stat-row"><span>Avg HP</span><span id="s-avghp" class="stat-val">0</span></div>
+      <div class="stat-row"><span>Avg Wait (w)</span><span id="s-avgwait" class="stat-val">0</span></div>
+      <div class="stat-row"><span>Events</span><span id="s-events" class="stat-val">0</span></div>
+    </div>
+    <div class="panel" id="agent-detail">
+      <div class="panel-title">Agent Detail</div>
+      <div style="color:#888">Click an agent on the map</div>
+    </div>
+    <div class="panel" style="flex:1;display:flex;flex-direction:column;min-height:0">
+      <div class="panel-title">Event Feed</div>
+      <div id="event-feed"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══ CAMMELOT REPLAY PLAYER ═══
+(function() {
+  let data = null; // loaded replay JSON
+  let snaps = []; // resolved snapshots (full agent state each frame)
+  let events = [];
+  let buildings = [];
+  let playing = false;
+  let speed = 1;
+  let currentFrame = 0;
+  let lastTick = 0;
+  let selectedAgentId = null;
+  let agentRegistry = {}; // id -> {name, type, age, conditions, ww}
+  const BASE_TICK_MS = 200; // ms per frame at 1x speed
+
+  const canvas = document.getElementById('canvas');
+  const cx = canvas.getContext('2d');
+
+  // ── Load handlers ──
+  document.getElementById('file-input').addEventListener('change', function(e) {
+    const f = e.target.files[0];
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = function(ev) { initReplay(JSON.parse(ev.target.result)); };
+    reader.readAsText(f);
+  });
+
+  document.getElementById('load-demo').addEventListener('click', function() {
+    this.textContent = 'Loading...';
+    // Try loading from relative path
+    fetch('../../scripts/output/replay_soll_3000.json')
+      .then(r => r.ok ? r.json() : fetch('scripts/output/replay_soll_3000.json').then(r2 => r2.json()))
+      .then(d => initReplay(d))
+      .catch(() => { this.textContent = 'Demo not found — use file input'; });
+  });
+
+  // URL param loading
+  const urlReplay = new URLSearchParams(window.location.search).get('replay');
+  if (urlReplay) {
+    fetch(urlReplay).then(r => r.json()).then(d => initReplay(d)).catch(console.error);
+  }
+
+  function initReplay(json) {
+    data = json;
+    events = data.events || [];
+    buildings = (data.map && data.map.buildings) || [];
+    
+    // Build agent registry from agentIndex (or initial_agents fallback)
+    agentRegistry = {};
+    const agentList = data.agentIndex || data.initial_agents || [];
+    agentList.forEach(a => {
+      agentRegistry[a.id] = { name: a.name || a.id, type: a.type || 'citizen', age: a.age || 0, conditions: a.conditions || [] };
+    });
+
+    // Resolve snapshots: expand delta encoding into full frames
+    resolveSnapshots();
+
+    // Setup UI
+    document.getElementById('load-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+    
+    const modeEl = document.getElementById('s-mode');
+    modeEl.textContent = data.metadata.mode;
+    modeEl.className = 'stat-val mode-badge mode-' + data.metadata.mode;
+    document.getElementById('s-pop').textContent = data.metadata.population;
+
+    // Place event markers on timeline
+    placeMarkers();
+    
+    // Size canvas
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    // Draw first frame
+    drawFrame(0);
+    updateStats(0);
+    
+    // Start animation loop
+    requestAnimationFrame(animate);
+  }
+
+  function resolveSnapshots() {
+    snaps = [];
+    let fullState = {}; // id -> agent data
+    
+    for (const snap of data.snapshots) {
+      // Update state from this snapshot's agents
+      for (const a of snap.agents) {
+        fullState[a.id] = { ...fullState[a.id], ...a };
+      }
+      // Clone current full state for this frame
+      snaps.push({
+        cycle: snap.cycle,
+        queues: snap.queues || {},
+        agents: Object.values(fullState).map(a => ({ ...a }))
+      });
+    }
+  }
+
+  function resizeCanvas() {
+    const area = document.getElementById('map-area');
+    canvas.width = area.clientWidth;
+    canvas.height = area.clientHeight - 70; // controls height
+    if (snaps.length > 0) drawFrame(currentFrame);
+  }
+
+  // ── DRAWING ──
+  const COLORS = {
+    grass: '#4a8c3f', grassDark: '#3d7a34', water: '#3498db',
+    road: '#8b7355', building: '#c0392b', hospital: '#e74c3c',
+    gp_bldg: '#2980b9', bg: '#1a1a2e'
+  };
+
+  function drawFrame(frameIdx) {
+    if (frameIdx < 0 || frameIdx >= snaps.length) return;
+    const snap = snaps[frameIdx];
+    const W = canvas.width, H = canvas.height;
+    
+    // Background — grass with subtle grid
+    cx.fillStyle = COLORS.grass;
+    cx.fillRect(0, 0, W, H);
+    
+    // Grass variation
+    const tileW = W / 32, tileH = H / 24;
+    for (let ty = 0; ty < 24; ty++) {
+      for (let tx = 0; tx < 32; tx++) {
+        if ((tx + ty) % 3 === 0) {
+          cx.fillStyle = COLORS.grassDark;
+          cx.fillRect(tx * tileW, ty * tileH, tileW, tileH);
+        }
+      }
+    }
+
+    // Buildings
+    for (const b of buildings) {
+      const bx = b.x1 * W, by = b.y1 * H;
+      const bw = (b.x2 - b.x1) * W, bh = (b.y2 - b.y1) * H;
+      
+      // Shadow
+      cx.fillStyle = 'rgba(0,0,0,0.3)';
+      cx.fillRect(bx + 3, by + 3, bw, bh);
+      
+      // Building body
+      cx.fillStyle = b.id === 'hospital' ? COLORS.hospital : COLORS.gp_bldg;
+      cx.fillRect(bx, by, bw, bh);
+      
+      // Roof highlight
+      cx.fillStyle = 'rgba(255,255,255,0.15)';
+      cx.fillRect(bx, by, bw, bh * 0.25);
+      
+      // Border
+      cx.strokeStyle = '#333';
+      cx.lineWidth = 2;
+      cx.strokeRect(bx, by, bw, bh);
+      
+      // Label
+      cx.fillStyle = '#fff';
+      cx.font = '8px "Press Start 2P"';
+      cx.textAlign = 'center';
+      cx.fillText(b.label, bx + bw/2, by + bh/2 + 3);
+      
+      // Queue indicator
+      const queueSize = snap.queues[b.id] || 0;
+      if (queueSize > 0) {
+        const qx = bx + bw + 4;
+        const qy = by;
+        for (let qi = 0; qi < Math.min(queueSize, 10); qi++) {
+          cx.fillStyle = queueSize > 5 ? '#e94560' : '#ffdd57';
+          cx.fillRect(qx, qy + qi * 6, 4, 4);
+        }
+        if (queueSize > 10) {
+          cx.fillStyle = '#e94560';
+          cx.font = '6px "Press Start 2P"';
+          cx.textAlign = 'left';
+          cx.fillText('+' + (queueSize - 10), qx + 6, qy + 60);
+        }
+      }
+    }
+
+    // Agents
+    for (const a of snap.agents) {
+      drawAgent(a, W, H, snap.cycle);
+    }
+
+    // Cycle indicator top-left
+    cx.fillStyle = 'rgba(0,0,0,0.6)';
+    cx.fillRect(4, 4, 120, 18);
+    cx.fillStyle = '#53d8fb';
+    cx.font = '8px "Press Start 2P"';
+    cx.textAlign = 'left';
+    cx.fillText('Cycle ' + snap.cycle, 8, 16);
+  }
+
+  function drawAgent(a, W, H, cycle) {
+    const ax = a.x * W, ay = a.y * H;
+    const reg = agentRegistry[a.id] || {};
+    const type = reg.type || (a.id.startsWith('gp') ? 'gp' : a.id.startsWith('spec') ? 'specialist' : 'citizen');
+    const hp = a.hp || 0;
+    const isDead = hp <= 0;
+    const size = type === 'gp' || type === 'specialist' ? 8 : 6;
+
+    // Agent color by HP
+    let color;
+    if (isDead) color = 'rgba(128,128,128,0.5)';
+    else if (hp > 80) color = '#4ecca3';
+    else if (hp > 50) color = '#ffdd57';
+    else if (hp > 20) color = '#ff8c00';
+    else color = '#e94560';
+
+    // Draw shape
+    cx.fillStyle = color;
+    if (type === 'gp' || type === 'specialist') {
+      // Square for providers
+      cx.fillRect(ax - size/2, ay - size/2, size, size);
+      cx.strokeStyle = type === 'gp' ? '#2980b9' : '#8e44ad';
+      cx.lineWidth = 1.5;
+      cx.strokeRect(ax - size/2, ay - size/2, size, size);
+    } else {
+      // Circle for patients
+      cx.beginPath();
+      cx.arc(ax, ay, size/2, 0, Math.PI * 2);
+      cx.fill();
+      if (a.id === selectedAgentId) {
+        cx.strokeStyle = '#fff';
+        cx.lineWidth = 2;
+        cx.stroke();
+      }
+    }
+
+    // Ghost cross for dead
+    if (isDead) {
+      cx.strokeStyle = '#888';
+      cx.lineWidth = 1;
+      cx.beginPath();
+      cx.moveTo(ax - 4, ay - 4); cx.lineTo(ax + 4, ay + 4);
+      cx.moveTo(ax + 4, ay - 4); cx.lineTo(ax - 4, ay + 4);
+      cx.stroke();
+    }
+
+    // Wait indicator (red '!' if waiting > 8 weeks)
+    if (a.ww && a.ww > 8 && !isDead) {
+      cx.fillStyle = '#e94560';
+      cx.font = 'bold 10px "Press Start 2P"';
+      cx.textAlign = 'center';
+      cx.fillText('!', ax, ay - size - 2);
+    }
+
+    // Speech bubble
+    if (a.speech && !isDead) {
+      const text = a.speech.length > 40 ? a.speech.substring(0, 37) + '...' : a.speech;
+      cx.font = '6px "Press Start 2P"';
+      const tw = cx.measureText(text).width + 8;
+      const bx = ax - tw/2, by = ay - size - 18;
+      cx.fillStyle = 'rgba(255,255,255,0.92)';
+      cx.fillRect(bx, by, tw, 14);
+      cx.strokeStyle = '#333';
+      cx.lineWidth = 1;
+      cx.strokeRect(bx, by, tw, 14);
+      cx.fillStyle = '#333';
+      cx.textAlign = 'center';
+      cx.fillText(text, ax, by + 10);
+    }
+  }
+
+  // ── STATS ──
+  function updateStats(frameIdx) {
+    const snap = snaps[frameIdx];
+    const agents = snap.agents;
+    const citizens = agents.filter(a => {
+      const t = (agentRegistry[a.id] || {}).type || '';
+      return t === 'citizen' || t === 'patient' || a.id.startsWith('cit-');
+    });
+    const alive = citizens.filter(a => a.hp > 0);
+    const dead = citizens.filter(a => a.hp <= 0);
+    const avgHp = alive.length > 0 ? Math.round(alive.reduce((s,a) => s + a.hp, 0) / alive.length) : 0;
+    const waiting = alive.filter(a => a.ww && a.ww > 0);
+    const avgWait = waiting.length > 0 ? Math.round(waiting.reduce((s,a) => s + a.ww, 0) / waiting.length * 10) / 10 : 0;
+    const eventsUpTo = events.filter(e => e.c <= snap.cycle).length;
+
+    document.getElementById('s-cycle').textContent = snap.cycle;
+    document.getElementById('s-alive').textContent = alive.length;
+    document.getElementById('s-dead').textContent = dead.length;
+    document.getElementById('s-avghp').textContent = avgHp;
+    document.getElementById('s-avgwait').textContent = avgWait;
+    document.getElementById('s-events').textContent = eventsUpTo;
+
+    document.getElementById('cycle-label').textContent = 'Cycle ' + snap.cycle + ' / ' + data.metadata.cycles;
+    document.getElementById('timeline-progress').style.width = (frameIdx / (snaps.length - 1) * 100) + '%';
+
+    // Update event feed
+    updateEventFeed(snap.cycle);
+    
+    // Update agent detail
+    if (selectedAgentId) showAgentDetail(selectedAgentId, snap);
+  }
+
+  function updateEventFeed(upToCycle) {
+    const feed = document.getElementById('event-feed');
+    const relevant = events.filter(e => e.c <= upToCycle).slice(-30);
+    feed.innerHTML = relevant.reverse().map(e => {
+      let cls = 'ev-default';
+      if (e.t === 'death' || e.t === 'ghost') cls = 'ev-death';
+      else if (e.t === 'proactive_alert' || e.t === 'alert') cls = 'ev-alert';
+      else if (e.t === 'referral' || e.t === 'referral_bounced') cls = 'ev-referral';
+      else if (e.t === 'treeknorm_violation') cls = 'ev-treeknorm';
+      const name = e.n || e.id || '';
+      return '<div class="ev ' + cls + '"><b>' + e.c + '</b> ' + e.t + (name ? ' — ' + name : '') + (e.d ? ': ' + e.d : '') + '</div>';
+    }).join('');
+  }
+
+  function showAgentDetail(agentId, snap) {
+    const a = snap.agents.find(a => a.id === agentId);
+    const reg = agentRegistry[agentId] || {};
+    const detail = document.getElementById('agent-detail');
+    if (!a) { detail.innerHTML = '<div class="panel-title">Agent Detail</div><div style="color:#888">Agent not found</div>'; return; }
+    
+    const type = reg.type || 'citizen';
+    const hp = a.hp || 0;
+    const hpColor = hp <= 0 ? '#888' : hp > 80 ? '#4ecca3' : hp > 50 ? '#ffdd57' : hp > 20 ? '#ff8c00' : '#e94560';
+    const conds = (reg.conditions || []).map(c => c.code + '/' + c.severity).join(', ') || 'none';
+    
+    detail.innerHTML = '<div class="panel-title">Agent Detail</div>' +
+      '<div class="name">' + (reg.name || agentId) + '</div>' +
+      '<div class="field">Type: ' + type + '</div>' +
+      '<div class="field">Age: ' + (reg.age || '?') + '</div>' +
+      '<div class="field">HP: <span style="color:' + hpColor + '">' + hp + '</span></div>' +
+      '<div class="field">State: ' + (a.bs || '?') + '</div>' +
+      '<div class="field">Wait: ' + (a.ww || 0) + ' weeks</div>' +
+      '<div class="field">Conditions: ' + conds + '</div>' +
+      (a.speech ? '<div class="field" style="color:#ffdd57">"' + a.speech + '"</div>' : '');
+  }
+
+  // ── CAPTIONS ──
+  let captionTimeout = null;
+  function showCaption(text) {
+    const bar = document.getElementById('caption-bar');
+    bar.textContent = text;
+    bar.style.display = 'block';
+    clearTimeout(captionTimeout);
+    captionTimeout = setTimeout(() => { bar.style.display = 'none'; }, 3000);
+  }
+
+  function checkCaptions(prevCycle, curCycle) {
+    const newEvents = events.filter(e => e.c > prevCycle && e.c <= curCycle);
+    for (const e of newEvents) {
+      if (e.t === 'death' || e.t === 'ghost') {
+        showCaption('☠ Cycle ' + e.c + ': ' + (e.n || 'Unknown') + (e.d ? ' — ' + e.d : ' has died'));
+      } else if (e.t === 'proactive_alert' || e.t === 'alert') {
+        showCaption('⚠ Cycle ' + e.c + ': Alert for ' + (e.n || 'Unknown') + (e.d ? ' — ' + e.d : ''));
+      } else if (e.t === 'treeknorm_violation') {
+        showCaption('⏰ Cycle ' + e.c + ': ' + (e.n || 'Unknown') + ' — ' + (e.d || 'treeknorm exceeded'));
+      }
+    }
+  }
+
+  // ── MARKERS ──
+  function placeMarkers() {
+    const container = document.getElementById('timeline-markers');
+    container.innerHTML = '';
+    const maxCycle = data.metadata.cycles;
+    for (const e of events) {
+      let cls = '';
+      if (e.t === 'death' || e.t === 'ghost') cls = 'marker-death';
+      else if (e.t === 'proactive_alert' || e.t === 'alert') cls = 'marker-alert';
+      else if (e.t === 'ketenzorg') cls = 'marker-ketenzorg';
+      else continue;
+      const pct = (e.c / maxCycle * 100);
+      const m = document.createElement('div');
+      m.className = 'marker ' + cls;
+      m.style.left = pct + '%';
+      m.title = 'Cycle ' + e.c + ': ' + e.t + (e.n ? ' — ' + e.n : '');
+      container.appendChild(m);
+    }
+  }
+
+  // ── PLAYBACK CONTROLS ──
+  document.getElementById('btn-play').addEventListener('click', function() {
+    playing = !playing;
+    this.textContent = playing ? '⏸ PAUSE' : '▶ PLAY';
+    this.classList.toggle('active', playing);
+    if (playing && currentFrame >= snaps.length - 1) currentFrame = 0;
+  });
+
+  document.getElementById('btn-step').addEventListener('click', function() {
+    playing = false;
+    document.getElementById('btn-play').textContent = '▶ PLAY';
+    document.getElementById('btn-play').classList.remove('active');
+    if (currentFrame < snaps.length - 1) {
+      const prevCycle = snaps[currentFrame].cycle;
+      currentFrame++;
+      drawFrame(currentFrame);
+      updateStats(currentFrame);
+      checkCaptions(prevCycle, snaps[currentFrame].cycle);
+    }
+  });
+
+  document.querySelectorAll('.speed').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.speed').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      speed = parseFloat(this.dataset.speed);
+    });
+  });
+
+  document.getElementById('timeline-bar').addEventListener('click', function(e) {
+    const rect = this.getBoundingClientRect();
+    const pct = (e.clientX - rect.left) / rect.width;
+    const prevFrame = currentFrame;
+    currentFrame = Math.round(pct * (snaps.length - 1));
+    currentFrame = Math.max(0, Math.min(snaps.length - 1, currentFrame));
+    drawFrame(currentFrame);
+    updateStats(currentFrame);
+  });
+
+  // Click on canvas to select agent
+  canvas.addEventListener('click', function(e) {
+    if (!snaps.length) return;
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+    const W = canvas.width, H = canvas.height;
+    const snap = snaps[currentFrame];
+    
+    let closest = null, closestDist = 15; // 15px click radius
+    for (const a of snap.agents) {
+      const ax = a.x * W, ay = a.y * H;
+      const dist = Math.sqrt((mx - ax) ** 2 + (my - ay) ** 2);
+      if (dist < closestDist) { closest = a; closestDist = dist; }
+    }
+    
+    selectedAgentId = closest ? closest.id : null;
+    drawFrame(currentFrame);
+    if (closest) showAgentDetail(closest.id, snap);
+    else {
+      document.getElementById('agent-detail').innerHTML = '<div class="panel-title">Agent Detail</div><div style="color:#888">Click an agent on the map</div>';
+    }
+  });
+
+  // ── ANIMATION LOOP ──
+  function animate(ts) {
+    if (playing && snaps.length > 0) {
+      const elapsed = ts - lastTick;
+      if (elapsed > BASE_TICK_MS / speed) {
+        lastTick = ts;
+        const prevCycle = snaps[currentFrame].cycle;
+        currentFrame++;
+        if (currentFrame >= snaps.length) {
+          currentFrame = snaps.length - 1;
+          playing = false;
+          document.getElementById('btn-play').textContent = '▶ PLAY';
+          document.getElementById('btn-play').classList.remove('active');
+        }
+        drawFrame(currentFrame);
+        updateStats(currentFrame);
+        checkCaptions(prevCycle, snaps[currentFrame].cycle);
+      }
+    }
+    requestAnimationFrame(animate);
+  }
+})();
+</script>
+</body>
+</html>
