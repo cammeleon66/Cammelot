@@ -143,7 +143,7 @@ Same five providers. One shared protocol. Data moves with action. No one queries
 
 ### The bigger picture: research and benchmarks
 
-Everything above — the referral mesh, the Agent Cards, the FHIR memory — is what I actually built and ran. What follows is what the same architecture enables but I have not yet implemented in Cammelot. The protocol and data model already support it; the agents don't exist yet.
+Everything above — the referral mesh, the Agent Cards, the FHIR memory — is what I built first. After writing the initial version of this post, I went back and added two new agent types to the simulation: a Research Agent that runs federated population health queries across GP practices, and a Benchmark Agent that collects quality metrics from providers. Both run only in SOLL mode. The Research Agent checks consent flags, enforces k-anonymity (cohort ≥ 10), and logs results as FHIR resources. In a 100-run validation, it completed 30 queries per run, encountered ~52 consent refusals (~5% opt-out rate), and had its diabetes-specific cohort suppressed ~29 times because the town is too small for condition-specific anonymity.
 
 The referral scenario is one interaction type. But the same architecture applies to two things that the current system handles poorly and that data mesh would not improve much either.
 
@@ -213,9 +213,7 @@ I'm flagging this as an open research problem. The architectural pattern works. 
 
 A few things I'm not claiming.
 
-The agentic mesh does not exist as a production system today. What exists is a simulation (Cammelot) that demonstrates the architectural pattern, and a set of open standards (A2A, FHIR R4, SMART-on-FHIR, openEHR) that could be assembled into one.
-
-This is also not easy. The Dutch healthcare landscape has decades of accumulated technical debt, vendor lock-in, and regulatory complexity. An agentic mesh doesn't eliminate any of that. It provides a different integration architecture that might scale better than the current approach of point-to-point connections.
+The agentic mesh does not exist as a production system today. What exists is a simulation (Cammelot) that demonstrates the architectural pattern — including signed agent cards, scoped FHIR access, referral rate limiting, a research agent with consent verification and k-anonymity, and a benchmark agent that collects quality metrics. These are working code, validated across 100 simulation runs. But they operate on 45 synthetic agents, not 12,000 GP practices. The gap between simulation and production is measured in decades of technical debt, vendor lock-in, and regulatory complexity.
 
 Agents don't replace humans. The agents I'm describing are infrastructure, not clinical decision-makers. They move data, flag risks, enforce protocols, and manage queues. The GP still decides. The specialist still treats. The agent handles the plumbing that currently consumes 30% of their time.
 

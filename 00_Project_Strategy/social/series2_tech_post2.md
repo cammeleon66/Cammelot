@@ -68,21 +68,21 @@ Multi-agent systems make this worse, not better. The more autonomous your agents
 
 ---
 
-### What I'd build differently
+### What I built next
 
-If I were designing an A2A healthcare mesh for production (and to be clear, I'm not, this is a simulation), the minimum requirements would be:
+After the Mordred experiment, I added four defences to the simulation:
 
-1. **Signed agent cards.** Ed25519 signatures, verified against a trust registry linked to UZI or BIG-register (Dutch professional registries).
+1. **Signed agent cards.** Each card gets a hash-based signature. GPs verify the signature before trusting a card. Mordred's forged card now fails verification. In production, this would use Ed25519 signatures verified against UZI or BIG-register (Dutch professional registries).
 
-2. **Capacity-enforced referrals.** Hard limits on queue depth, with protocol-level rejection and automatic rerouting.
+2. **Capacity-enforced referrals.** Specialists have hard queue limits (12 for cardiology, 10 for pulmonology). When a specialist is full, the referral bounces back with a machine-readable rejection and the GP auto-routes to the next available specialist.
 
-3. **Scoped FHIR access.** SMART-on-FHIR with patient-level authorization. No agent sees data it doesn't need.
+3. **Scoped FHIR access.** The `queryFHIR()` function now checks who is asking. GPs can see their own patients. Specialists can see patients in their queue. Research agents can only query patients who have given consent. Everyone else gets an empty result.
 
 4. **Anomaly detection on referral patterns.** If a cardiologist suddenly has zero wait time when the national average is 12 weeks, that's a flag, not a feature.
 
-5. **Agent reputation scoring.** Track treatment outcomes per agent. An agent that accepts referrals and never completes treatment gets flagged automatically.
+I haven't built agent reputation scoring yet. That's the one item on this list that requires longitudinal data — tracking treatment outcomes per agent over hundreds of cycles. It's on the backlog.
 
-None of this is novel. It's all adapted from existing security patterns (PKI, OAuth, rate limiting, anomaly detection). The novel part is applying it to a multi-agent healthcare mesh. And the surprising part is how few people building agentic systems are thinking about it.
+None of this is novel. It's all adapted from existing security patterns (PKI, OAuth, rate limiting, anomaly detection). The novel part is applying it to a multi-agent healthcare mesh.
 
 ---
 

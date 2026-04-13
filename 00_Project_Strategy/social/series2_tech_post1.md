@@ -54,7 +54,7 @@ The cardiologist publishes the same format:
 }
 ```
 
-When Dr. de Jong needs to refer a patient with heart disease, she doesn't call the hospital switchboard. She reads the cardiology agent card, checks the wait time, and sends a structured referral message. The referral has a lifecycle: `submitted → working → input-required → completed`. Both sides can track it. No fax machines involved.
+When Dr. de Jong needs to refer a patient with heart disease, she doesn't call the hospital switchboard. She reads the cardiology agent card, verifies its signature (each card is hash-signed; a forged card fails verification), checks the wait time, and sends a structured referral message. If the cardiologist's queue is full, the referral bounces with a machine-readable rejection and Dr. de Jong auto-routes to the next available specialist. The referral has a lifecycle: `submitted → working → input-required → completed`. Both sides can track it. No fax machines involved.
 
 In the simulation, this runs through `sendA2AMessage()`:
 
