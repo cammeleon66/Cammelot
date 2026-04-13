@@ -145,25 +145,65 @@ Same five providers. One shared protocol. Data moves with action. No one queries
 
 The referral scenario is one interaction type. But the same architecture applies to two things that the current system handles poorly and that data mesh would not improve much either.
 
-**Research queries that travel to the data, instead of the other way around.**
+**The Netherlands already tried "bring the question to the data."**
 
-If a university researcher wants to know the average HbA1c trajectory of type 2 diabetes patients who also have COPD in the eastern Netherlands, today that requires: a research protocol, an ethics approval, a data sharing agreement with every participating GP practice and hospital, a data extraction from each system, a de-identification step, a central collection point, and then finally an analysis. This takes months. Sometimes years. By the time the data is assembled, the clinical landscape has changed.
+The concept of sending computation to where data lives, instead of centralising data, is not new. In fact, the Netherlands is one of the pioneers. The Personal Health Train (PHT), developed by Health-RI (the Dutch national health research infrastructure) and DTL (Dutch Techcentre for Life Sciences), explicitly uses this metaphor: data stays at the "station" (the hospital, the GP practice), and the "train" (the analysis) travels to it.
 
-In an agentic mesh, the research query is itself an agent. It carries a signed protocol (approved by the medical ethics committee), a SMART-on-FHIR scope definition (which resource types, which patient cohort), and a consent verification requirement. It travels the mesh. At each GP agent, it presents its credentials. The GP agent checks: does this patient have an active research consent for this type of study? If yes, the agent runs the aggregation locally — on the GP's own data, in the GP's own environment — and returns only the aggregate result. The raw data never leaves the practice.
+The technical implementation is vantage6, an open-source Privacy Enhancing Technology (PET) platform built by IKNL (Integraal Kankercentrum Nederland). It works: a researcher defines an algorithm, the vantage6 server distributes it to participating nodes, each node runs the computation locally on its own data, and only aggregated results return to the researcher. Federated learning, federated statistics, multi-party computation — vantage6 supports all of them. It has been used in oncology research across multiple hospitals.
 
-This is federated computation, not federated governance. The data stays where it is. The question travels. The GP agent doesn't need to understand the research question — it just needs to verify the credentials and run a scoped FHIR query.
+So the idea of "questions traveling to data" already exists in the Dutch healthcare ecosystem. The agentic mesh is not that idea. Or rather, it's an evolution of it.
 
-The same pattern works for **national quality benchmarks**. The Dutch healthcare inspectorate (IGJ) and quality registries currently collect data by asking every provider to submit reports. Each provider formats them differently. The data arrives late. The benchmarks are always retrospective.
+The difference is in what travels. In vantage6, what travels is a containerised algorithm. It runs on data, produces a result, and stops. It has no state, no memory, no ability to discover what other data exists, and no ability to negotiate access on the fly. It's batch computation that happens to be federated.
 
-In an agentic mesh, a benchmark agent carries a standardised measurement definition (say: "percentage of diabetes patients with HbA1c below 53 mmol/mol"). It visits each GP agent. Each GP agent runs the calculation against its own FHIR store and returns one number. The benchmark agent aggregates. No data extraction. No manual reports. No formatting inconsistencies. The benchmark updates in near-real-time instead of once a year.
+In an agentic mesh, what travels is an agent. It can discover other agents (via Agent Cards). It can negotiate (present credentials, request specific FHIR scopes). It can reason about what it finds (is this cohort large enough? does the aggregate make sense given what I already know from three other nodes?). And it maintains state across interactions.
 
-**The open question: who owns the data?**
+Consider a concrete research scenario. A university epidemiologist wants to know the average HbA1c trajectory of type 2 diabetes patients who also have COPD in the eastern Netherlands. Today's process: write a research protocol, obtain METC approval (medical ethics committee), negotiate data sharing agreements with each participating hospital and GP practice, wait for each institution's data manager to extract and de-identify the data, assemble it centrally, and finally run the analysis. Nivel, the Netherlands Institute for Health Services Research, has built an impressive infrastructure for this — their Primary Care Database receives data from hundreds of GP practices. But even Nivel's process requires each practice to participate in the registration, and researchers must formally request access through a governance protocol with steering committees.
 
-This is the thing I do not have a good answer for. When a research agent aggregates results across 200 GP agents, who owns the aggregate? The researcher? The GP practices? The patients who consented? When a benchmark agent produces a national quality score, and that score reveals that a specific region underperforms, who is responsible for the underlying data that produced that conclusion?
+With vantage6, this is faster: the algorithm goes to the data. But the researcher still needs to know in advance which nodes have relevant data. The discovery is manual. The consent verification is separate from the computation. The algorithm can't adapt based on what it finds at the first node.
 
-In a data mesh, ownership is at least theoretically clear: the domain owns its data product. In an agentic mesh, the data never leaves the domain, but the *conclusions* do. Ownership of conclusions derived from federated computation is an unsolved legal question, and it won't be solved by better technology. It needs policy.
+In an agentic mesh, the research agent carries a signed protocol (METC-approved), a SMART-on-FHIR scope definition, and a consent verification requirement. It discovers GP agents on the mesh via their Agent Cards — which advertise, among other things, whether the practice participates in research protocols and what disease populations they serve. The agent visits each relevant node. At each GP agent, it presents credentials. The GP agent checks: does this patient have an active research consent for this study type? If yes, the agent runs the FHIR query locally and returns the aggregate. If the cohort at this node is too small for anonymity (say, fewer than 10 patients), the agent flags it and moves on without returning data.
 
-I'm flagging this as an open problem, not proposing a solution. The architectural pattern works. The governance question around derived data is hard and I don't think anyone has cracked it yet.
+The difference: discovery is automated, consent is verified per-interaction, and the agent can reason about statistical sufficiency as it goes. The raw data never leaves the practice. The agent is stateful — it knows what it has already collected and what it still needs.
+
+**Quality benchmarks: the DICA problem.**
+
+DICA (Dutch Institute for Clinical Auditing) runs 26 quality registries for hospital care. Their tagline is "life saving data," and it's accurate — systematic quality measurement has measurably improved surgical outcomes in the Netherlands. They collect data from hospitals into registries like DSCA (colorectal cancer), DUCA (upper GI cancer), DHFA (hip fracture), and 23 others. Hospitals submit data, DICA analyses it, and the results go back as "mirror sessions" (spiegelsessies) where clinicians compare their outcomes with national benchmarks.
+
+The problem is the data pipeline. Hospitals must extract, format, and submit data to DICA. This is manual work. DICA recently announced that batch costs for PROMs (Patient-Reported Outcome Measures) data submission were fully abolished as of January 2026 — which tells you that the cost of submitting data to quality registries was a real barrier. The benchmarks are retrospective: by the time you learn that your hospital's complication rate is above the national average, the patients have already been treated.
+
+In an agentic mesh, a benchmark agent carries a standardised measurement definition (say: "30-day mortality after colorectal surgery, adjusted for ASA score and tumor stage"). It visits each hospital agent. Each hospital agent runs the calculation against its own FHIR store and returns one number. The benchmark agent aggregates. No data extraction. No manual formatting. No batch submission costs. The benchmark updates continuously instead of annually.
+
+This is not hypothetical extrapolation — it's the logical extension of what Nivel already does for primary care and what DICA does for hospital care, but with the data pipeline replaced by a protocol.
+
+**The EHDS changes the legal landscape — and creates new problems.**
+
+The European Health Data Space (EHDS, Regulation EU 2025/327) entered into force on March 26, 2025. It is the most significant piece of European health data legislation since GDPR. For secondary data use (research, benchmarks, policy), the EHDS mandates that each EU member state establish at least one Health Data Access Body (HDAB). Researchers apply to the HDAB, the HDAB processes the request, data holders are obligated to share, and analysis must happen in "secure processing environments" under HDAB control. Patients can opt out.
+
+The EHDS is designed around centralised access bodies. That's a reasonable architecture when you're coordinating across 27 member states with different legal traditions. But it means the HDAB becomes a bottleneck — every research request goes through a single body per country. The regulation even specifies that data holders can charge fees for the time spent making data available (Article 62), which means the cost doesn't disappear; it shifts.
+
+An agentic mesh is not a replacement for the EHDS — the regulation is law, and compliance isn't optional. But it could be the infrastructure layer that HDABs use to fulfil their mandate. Instead of manually coordinating data extraction from every hospital, an HDAB could dispatch a certified research agent into the mesh. The agent verifies consent (including EHDS opt-out), runs computations locally, and returns only anonymised aggregates. The HDAB remains the governance authority. The agent is the execution mechanism.
+
+The EHDS also explicitly prohibits certain secondary uses: marketing, discrimination in insurance or employment, development of harmful products (Article 54). In a traditional data pipeline, these prohibitions are enforced by policy and audit. In an agentic mesh, they could be enforced at the protocol level — the agent's scope is restricted by its signed credentials, and the receiving agent validates those restrictions before executing any query.
+
+**The security question is not theoretical.**
+
+If you think "sending computation to data nodes" is inherently safe, consider what happened to vantage6 in March 2026. An attacker gained admin access to vantage6's Harbor container registry and injected malware into infrastructure Docker images — including node images, VPN clients, and algorithm base images. The malware was a downloader that, once executed, would fetch additional payloads from the internet. Several infrastructure images that had internet access (VPN clients, SSH tunnels, proxy containers) were compromised. The vantage6 team published an advisory on April 2, 2026, and the investigation is still ongoing.
+
+This is exactly the attack vector that matters for federated computation: the "train" that visits your hospital's data can be tampered with before it arrives. Vantage6 uses Docker containers, and the container registry was the weak point. In an agentic mesh, every agent presents an Agent Card with verifiable credentials. If the card doesn't validate against a trust anchor — say, a certificate from the HDAB or a signed research protocol — the receiving agent refuses the interaction. This is the same pattern from my security red-teaming post (Series 2, T2): the Mordred attack works because a forged Agent Card can bypass trust verification. The defence is protocol-level validation, not perimeter security.
+
+The vantage6 breach is not an argument against federated computation. It's an argument for building trust into the protocol layer rather than relying on infrastructure security alone.
+
+**The open question: who owns derived conclusions?**
+
+This is the thing I genuinely do not have a good answer for, and I don't think anyone else does either.
+
+Under GDPR, the data controller is whoever determines the purposes and means of processing personal data. Each GP practice is the data controller for its patient records. When a researcher sends a federated query and 200 GP agents each return an aggregate (say: mean HbA1c = 52.3 mmol/mol, N=47), the individual aggregates may not constitute personal data — they're statistics. But the researcher's combined analysis might be re-identifiable in small cohorts. Who is the data controller of the combined result?
+
+The EHDS addresses this partially: analysis must happen in secure processing environments, and data must be anonymised (Article 60). But what about the conclusions? When a benchmark agent discovers that Region X has a 30-day surgical mortality rate twice the national average, and that information becomes public, the hospitals in Region X might argue that the benchmark was derived from their data without adequate context. The data stayed in place, but the conclusions traveled — and conclusions have consequences.
+
+In a data mesh, ownership is at least theoretically clear: the domain owns its data product. In an agentic mesh, the data never leaves the domain. But conclusions do. And ownership of conclusions derived from federated computation across hundreds of independent data controllers is an unsolved legal question. The EHDS doesn't fully answer it. The GDPR doesn't cleanly cover it. The Dutch Wgbo (Wet geneeskundige behandelingsovereenkomst — the patient rights law) gives patients rights over their care data, but says nothing about aggregate statistics derived from those data.
+
+I'm flagging this as an open research problem. The architectural pattern works. The governance of derived insights from that pattern is genuinely hard. I'd love to hear from healthcare lawyers and ethicists on this one.
 
 ---
 
@@ -199,7 +239,7 @@ Data mesh told us to decentralise the data. The agentic mesh says to decentralis
 
 ---
 
-*References and sources: Dehghani, Z. "How to Move Beyond a Monolithic Data Lake to a Distributed Data Mesh" (2019, Thoughtworks). A2A Protocol Specification v1.0.0 (Linux Foundation / Google, 2025). FHIR R4 (HL7, 2019). SMART-on-FHIR v2.2.0 (HL7, 2023). IZA — Integraal Zorgakkoord (Dutch Ministry of Health, 2022). NZa market scan waiting times (2024). Wikipedia: Healthcare in the Netherlands — EDIFACT still most common exchange format. Bode et al., Vestues et al., Joshi et al. — empirical data mesh adoption challenges. openEHR Foundation (2003-present). Model Context Protocol (Anthropic, 2024). Nictiz Zibs — 150+ care information building blocks. CBS / RIVM 2025 demographic and prevalence data.*
+*References and sources: Dehghani, Z. "How to Move Beyond a Monolithic Data Lake to a Distributed Data Mesh" (2019, Thoughtworks). A2A Protocol Specification v1.0.0 (Linux Foundation / Google, 2025). FHIR R4 (HL7, 2019). SMART-on-FHIR v2.2.0 (HL7, 2023). IZA — Integraal Zorgakkoord (Dutch Ministry of Health, 2022). NZa market scan waiting times (2024). Bode et al., Vestues et al., Joshi et al. — empirical data mesh adoption challenges. openEHR Foundation (2003-present). Model Context Protocol (Anthropic, 2024). Nictiz Zibs — 150+ care information building blocks. CBS / RIVM 2025 demographic and prevalence data. Health-RI / DTL — Personal Health Train concept (2017-present). Moncada-Torres et al. "VANTAGE6: an open source priVAcy preserviNg federaTed leArninG infrastructurE for Secure Insight eXchange" (AMIA 2020). Vantage6 security advisory — Harbor registry breach (April 2, 2026, vantage6.ai). DICA — Dutch Institute for Clinical Auditing, 26 quality registries (dica.nl). Nivel Primary Care Database — GP registration data from hundreds of practices (nivel.nl). EHDS — Regulation (EU) 2025/327, European Health Data Space (entered into force March 26, 2025). GDPR — Regulation (EU) 2016/679 (2018). Wgbo — Wet geneeskundige behandelingsovereenkomst (Dutch patient rights law). Wegiz — Wet elektronische gegevensuitwisseling in de zorg (electronic data exchange in healthcare). FAIR data principles (Wilkinson et al., Scientific Data, 2016). TEHDAS Joint Action — Towards the European Health Data Space (EU4Health programme).*
 
 *Disclosure: I work at Microsoft. My employer builds and sells AI products and cloud infrastructure. I built Cammelot as a personal applied research project, not a Microsoft product. The code is open source. All opinions are my own.*
 
@@ -218,4 +258,22 @@ SMART-on-FHIR: OAuth-based scoping, v2.2.0
 Integration timeline (anecdotal): 3-18 months per system pair
 Wegiz: Wet elektronische gegevensuitwisseling in de zorg
 Exchange format: EDIFACT (1980s) still dominant
+EHDS: Regulation (EU) 2025/327, entered into force 26 March 2025
+EHDS HDABs: must be established per member state by March 2027
+EHDS full implementation: March 2029 (primary), March 2031 (genomics/imaging)
+EHDS secondary uses: Art. 53 (permitted), Art. 54 (prohibited), Art. 60 (anonymisation)
+EHDS opt-out: Art. 71(1) — natural persons can opt out at any time
+EHDS fees: Art. 62 — data holders may charge for time spent making data available
+GDPR: Regulation (EU) 2016/679, Art. 4 (data controller definition), Art. 6 (lawful bases)
+Wgbo: Wet geneeskundige behandelingsovereenkomst (patient rights, data access)
+Health-RI: Dutch national health research infrastructure (health-ri.nl)
+Personal Health Train: "bring the analysis to the data" (Health-RI / DTL concept)
+Vantage6: open-source PET platform by IKNL (github.com/vantage6/vantage6)
+Vantage6 breach: Harbor registry compromised March 2026, advisory April 2, 2026
+DICA: 26 quality registries for hospital care (dica.nl), "life saving data"
+DICA PROMs batch costs: abolished January 2026
+Nivel: Primary Care Database, ~170 researchers, GP registrations (nivel.nl)
+Nivel governance: steering committees with national associations representatives
+FAIR data: Wilkinson et al. 2016, GO FAIR International (NL/DE/FR)
+TEHDAS: Towards the European Health Data Space, EU4Health programme
 ```
