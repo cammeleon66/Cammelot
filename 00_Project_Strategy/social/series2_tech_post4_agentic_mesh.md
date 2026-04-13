@@ -145,6 +145,14 @@ Same five providers. One shared protocol. Data moves with action. No one queries
 
 Everything above — the referral mesh, the Agent Cards, the FHIR memory — is what I built first. After writing the initial version of this post, I went back and added two new agent types to the simulation: a Research Agent that runs federated population health queries across GP practices, and a Benchmark Agent that collects quality metrics from providers. Both run only in SOLL mode. The Research Agent checks consent flags, enforces k-anonymity (cohort ≥ 10), and logs results as FHIR resources. In a 100-run validation, it completed 30 queries per run, encountered ~52 consent refusals (~5% opt-out rate), and had its diabetes-specific cohort suppressed ~29 times because the town is too small for condition-specific anonymity.
 
+I then ran five targeted experiments (20 runs each, 3000 cycles) to stress-test the claims in this post:
+
+- **Opt-out sensitivity.** Varying opt-out rate from 5% to 50%. At 50%, the research agent encounters 544 consent refusals per run (up from 63 at 5%), but patient outcomes (deaths, wait times, burnout) are statistically unchanged. The research agent is read-only infrastructure — it doesn't affect care delivery.
+- **K-anonymity threshold.** Lowering k from 10 to 3 increased successful research queries from 30 to 42 per run (the diabetes cohort passes more often). At k=20, only population-health queries succeed. This is the privacy-utility tradeoff in practice: stricter thresholds mean less granular science.
+- **Research frequency.** Querying every 50, 100, 200, or 500 cycles — no measurable impact on GP burnout or mortality at any frequency.
+- **Benchmark frequency.** Same result: continuous benchmarking (every 50 cycles) vs. rare benchmarking (every 500) has no mortality impact, but faster benchmarking catches quality problems sooner.
+- **Mordred v2** (see T2). Both forged-card and replay attacks were blocked by signature verification. System metrics were indistinguishable from unattacked baseline.
+
 The referral scenario is one interaction type. But the same architecture applies to two things that the current system handles poorly and that data mesh would not improve much either.
 
 **The Netherlands already tried "bring the question to the data."**

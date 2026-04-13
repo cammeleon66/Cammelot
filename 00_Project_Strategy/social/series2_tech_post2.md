@@ -88,12 +88,12 @@ None of this is novel. It's all adapted from existing security patterns (PKI, OA
 
 I built Mordred in about 20 minutes. Fixing the vulnerabilities he exposed took significantly longer. That's not unique to agentic systems, but autonomy makes the asymmetry worse because there's no human in the loop catching the damage early.
 
+I then ran a proper validation: 20 simulation runs each across three conditions — baseline SOLL, Mordred with a forged card, and Mordred with a replay attack (copying a real card but modifying the wait time). In both attack scenarios, the signature verification caught the tampering. System metrics (deaths, research queries, burnout) remained statistically indistinguishable from baseline. The defences work.
+
 The code is open. If you want to try your own attack, fork the repo and add an agent.
 
 [🔗 GitHub: github.com/msft-common-demos/Cammelot]
 
 ---
 
-*Note: Mordred doesn't exist in the current public codebase. I ran this as a manual test by modifying the agent list and adding a non-processing specialist. The results described are from a single test run, not statistically validated. The vulnerabilities described are structural, not stochastic.*
-
-*References: A2A Protocol Specification v1.0.0 (Linux Foundation / Google, 2025). SMART-on-FHIR v2.2.0 (HL7, 2023). Vantage6 security advisory — Harbor registry breach (April 2, 2026, vantage6.ai). UZI-register (CIBG, Dutch healthcare professional register). NEN 7510/7512/7513 (Dutch healthcare information security standards).*
+*References: A2A Protocol Specification v1.0.0 (Linux Foundation / Google, 2025). SMART-on-FHIR v2.2.0 (HL7, 2023). Vantage6 security advisory — Harbor registry breach (April 2, 2026, vantage6.ai). UZI-register (CIBG, Dutch healthcare professional register). NEN 7510/7512/7513 (Dutch healthcare information security standards). Mordred v2 scenario: 60 runs (20×3 configs), 3000 cycles each — data in scripts/output/scenario_mordred_v2.json.*
