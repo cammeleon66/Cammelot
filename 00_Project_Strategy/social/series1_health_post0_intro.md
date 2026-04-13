@@ -11,7 +11,7 @@
 
 I work at Microsoft. You should assume I'm biased toward AI.
 
-That's exactly why I built a system that could prove me wrong — and in several important ways, did.
+That's exactly why I built a system that could prove me wrong. In several important ways, it did.
 
 ---
 
@@ -25,7 +25,7 @@ I built it because I was tired of the vibes.
 
 "AI is overhyped." Compared to what? The system that's already producing a 301,000-worker shortage by 2035?
 
-Both sides argue with anecdotes and intuition. I wanted a machine that produces numbers. Not predictions — *outputs*. Run it, measure it, break it, run it again. Two hundred times. With statistics.
+Both sides argue with anecdotes and intuition. I wanted a machine that produces numbers. Not predictions. Outputs you can measure. Run it, measure it, break it, run it again. Two hundred times. With statistics.
 
 ---
 
@@ -60,7 +60,7 @@ This is today's Dutch healthcare system, parameterized from CBS, NZa, LHV, and I
 - **30% of GP time** lost to administrative paperwork (NZa/LHV)
 - **8% workforce capacity** lost to sick leave (CBS)
 - **12-week Treeknorm ceiling** for specialist care (NZa)
-- **FIFO queues** — first in, first out, regardless of severity
+- **Basic clinical triage** — severity-based, but without AI enhancement
 - **No proactive monitoring** — problems are detected when patients show up
 - **No AI assistance** — efficiency multiplier is 1.0
 - **Standard disease progression** — Markov chains tick identically for treated and untreated patients
@@ -87,15 +87,15 @@ The effective GP capacity in SOLL: `C_total × (1 - 0.05 - 0.05) × 1.34 = ~121%
 
 ### Wait — that's a lot of changes at once
 
-Yes. And that's deliberate.
+Yes, and that's deliberate.
 
-I'm not testing whether "one AI tool helps." I'm testing what happens when you redesign the system end-to-end. SOLL isn't "IST plus a chatbot." It's a different architecture — the way a Tesla isn't a horse with an engine bolted on.
+I'm not testing whether "one AI tool helps." I'm testing what happens when you redesign the system end-to-end. SOLL isn't "IST plus a chatbot." It's a fundamentally different architecture.
 
 The downside: when SOLL produces better outcomes, you can't point to a single cause. Was it the admin relief? The triage? The Digital Twins? The treatment effect? The Treeknorm reduction?
 
 That's what the five posts in this series are for. Each one isolates a different mechanism and asks: does this specific link in the chain hold?
 
-Spoiler: some do. Some spectacularly don't. And one mechanism turned out to matter more than all the others combined.
+Spoiler: some do. Some don't. And one mechanism turned out to matter more than all the others combined.
 
 ---
 
@@ -132,15 +132,15 @@ What I *can* promise: I report every finding honestly. When the data contradicts
 
 Over the next five posts, I'll walk through what happened — in the order I discovered it:
 
-1. **The first death.** Hendrik Veenstra, 70, dead at cycle 71. The aggregate: ~7% fewer deaths in SOLL. Not statistically significant. AI didn't save the patients.
+1. **The first death.** Hendrik Veenstra, 70, dead at cycle 71. The aggregate: ~3% fewer deaths in SOLL. Not statistically significant. AI didn't save the patients.
 
-2. **The admin tax.** GP burnout drops 77%. Admin waste drops 83%. Deaths barely move. Fixing the workforce doesn't fix the patients — not by itself.
+2. **The admin tax.** GP burnout drops 85%. Admin waste drops 83%. Deaths barely move. Fixing the workforce doesn't fix the patients — not by itself.
 
-3. **The queue.** FIFO kills the elderly at 5× the rate of the young. Same rules. Radically different graves. AI triage doesn't fix it.
+3. **The queue.** Basic triage still kills the elderly at 5× the rate of the young. Same rules, radically different graves. AI-enhanced triage doesn't fix it.
 
 4. **The bias.** I optimized for throughput. The system pushed back against the elderly. The guardrail fired in 97% of runs — and it actually worked. Bias is significantly lower.
 
-5. **The treatment gap.** 167 proactive alerts per run. Ketenzorg tripled. Deaths still didn't drop. The model taught me: detection without treatment that changes disease trajectories is just documentation of decline.
+5. **The treatment gap.** 143 proactive alerts per run. Ketenzorg tripled. Deaths still didn't drop. The model taught me: detection without treatment that changes disease trajectories is just documentation of decline.
 
 The code is on GitHub. The simulation runs in a browser. The research runner produces 200 trials of statistical output in minutes.
 

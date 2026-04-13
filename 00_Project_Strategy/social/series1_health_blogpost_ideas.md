@@ -133,6 +133,25 @@ Research question: Can proactive digital twin risk scoring reduce ER pressure an
 
 ---
 
+#### Post T4 — "The Data Mesh is Dead. Long Live the Agentic Mesh."
+**Hook:** *"In 2019, Zhamak Dehghani told us to decentralise the data. In 2026, I think we need to decentralise the action."*
+
+**Angle:** Deep research piece arguing that data mesh — while a correct diagnosis (central teams are bottlenecks) — is the wrong prescription for healthcare. The Dutch healthcare system has 12,000 GP practices, ~90 hospital orgs, and still runs on EDIFACT (1980s shipping logistics format). Data mesh won't save it because: (1) GPs are not "domain teams" with engineering capacity, (2) clinical schemas are too vast for data contracts, (3) federated governance already exists (it's called regulation). The agentic mesh alternative: agents carry data with action via A2A + FHIR, governance is enforced at protocol level, discovery replaces integration.
+
+**Content:**
+- Data mesh's 3 failures in healthcare context (ownership, contracts, governance)
+- The current Dutch data landscape: EDIFACT, virtual EHR, 11% interoperability, €2.8B IZA spend
+- Agentic mesh: 4 properties (discovery not integration, context travels with action, agents reason about data, governance embedded not federated)
+- Concrete walkthrough: 72-year-old with COPD — today's 5-provider data flow vs agentic mesh flow
+- Honest limitations (simulation not production, not easy, doesn't replace clinicians)
+- The IZA question: €2.8B on connectors vs protocol-level interoperability
+
+**Status:** DRAFT v1 COMPLETE — `series2_tech_post4_agentic_mesh.md`
+
+**Target:** Data architects, healthcare IT, policy, CTO types who know what data mesh is.
+
+---
+
 ### SERIES 3 — Policy & Economics (Government / Policy Audience)
 
 > **Target persona:** Health policy advisors, ministry officials, IZA program managers, health insurers (zorgverzekeraars), municipal health directors, VNG members. They need ammunition for their next memo.
