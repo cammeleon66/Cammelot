@@ -100,7 +100,8 @@ const extractBurnout = (runs) => runs.map(r => {
 const metrics = [
   'system_deaths', 'natural_deaths', 'total_deaths', 'er_admissions',
   'proactive_alerts', 'ketenzorg_interventions', 'admin_waste_eur',
-  'gini', 'bias_score', 'fairness_guardrail'
+  'gini', 'bias_score', 'fairness_guardrail',
+  'research_queries_completed', 'research_opt_out_refusals', 'research_cohort_too_small', 'benchmark_reports_generated'
 ];
 
 const results = {
@@ -119,6 +120,10 @@ const results = {
     population: r.population, proactive_alerts: r.proactive_alerts,
     ketenzorg_interventions: r.ketenzorg_interventions,
     fairness_guardrail: r.fairness_guardrail,
+    research_queries_completed: r.research_queries_completed,
+    research_opt_out_refusals: r.research_opt_out_refusals,
+    research_cohort_too_small: r.research_cohort_too_small,
+    benchmark_reports_generated: r.benchmark_reports_generated,
     gp_burnout: r.gp_burnout,
     death_reports: r.death_reports, agent_stories: (r.agent_stories || []).slice(0, 5)
   }))},

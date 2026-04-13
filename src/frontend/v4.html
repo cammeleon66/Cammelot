@@ -1209,6 +1209,12 @@ let ketenzorgCostEur = 0;
 // ── Blog-Ready Sprint: Fairness Guardrail ──
 let fairnessGuardrailActive = false;
 
+// ── Research & Benchmark Agents (Post-T4) ──
+let researchQueriesCompleted = 0;
+let researchOptOutRefusals = 0;
+let researchCohortTooSmall = 0;
+let benchmarkReportsGenerated = 0;
+
 // ── Sprint S5: ER Pressure constant ──
 const HOSPITAL_DAY_COST_EUR = 850;
 
@@ -1584,7 +1590,18 @@ function createFHIRResource(type, agentId, data) {
   return resource;
 }
 
-function queryFHIR(agentId, type) {
+function queryFHIR(agentId, type, requestingAgentId) {
+  if (requestingAgentId) {
+    var patient = agents.find(a => a.id === agentId);
+    var requester = agents.find(a => a.id === requestingAgentId);
+    if (!requester) return [];
+    var authorized = false;
+    if (requestingAgentId === agentId) authorized = true;
+    else if (requester.type === 'gp' && patient && patient.gpName && (requester.name === patient.gpName || requester.id === patient.gpId)) authorized = true;
+    else if (requester.type === 'specialist' && requester.queue && requester.queue.some(q => q === agentId || (q && q.id === agentId))) authorized = true;
+    else if ((requester.type === 'research' || requester.type === 'benchmark') && patient && patient.researchConsent === true) authorized = true;
+    if (!authorized) return [];
+  }
   return FHIR_STORE.filter(r =>
     r.subject?.reference === 'Patient/' + agentId &&
     (!type || r.resourceType === type)
@@ -1607,6 +1624,39 @@ function sendA2AMessage(from, to, type, payload) {
   A2A_MESSAGES.push(msg);
   if (A2A_MESSAGES.length > 200) A2A_MESSAGES.shift();
   return msg;
+}
+
+// ═══ AGENT CARD SIGNING (Post-T4) ═══
+function hashAgentCard(card) {
+  var str = JSON.stringify({ agentId: card.agentId, role: card.role, skills: card.skills });
+  var hash = 0;
+  for (var i = 0; i < str.length; i++) {
+    hash = ((hash << 5) - hash) + str.charCodeAt(i);
+    hash |= 0;
+  }
+  return 'sig-' + Math.abs(hash).toString(36);
+}
+
+function signAgentCard(agent) {
+  var card = {
+    agentId: agent.id,
+    name: agent.name,
+    role: agent.type,
+    skills: agent.type === 'gp' ? ['triage','referral','chronic_care'] : 
+            agent.type === 'specialist' ? [agent.specialty || 'general'] :
+            agent.type === 'research' ? ['federated_query','aggregation'] :
+            agent.type === 'benchmark' ? ['quality_metrics','comparison'] : [],
+    status: agent.state || 'available',
+    waitTime: { weeks: agent.waitWeeks || 0, queueSize: (agent.queue || []).length },
+    metadata: agent.type === 'gp' ? { admin_load: '30%', max_patients: 2400 } : {}
+  };
+  card.signature = hashAgentCard(card);
+  return card;
+}
+
+function verifyAgentCard(card) {
+  var expected = hashAgentCard(card);
+  return card.signature === expected;
 }
 
 // ═══ COGNITIVE LOOP (Sprint 10) ═══
@@ -3011,7 +3061,8 @@ function spawnAgent(index, age, gender, surname) {
     grievingFor: null,
     isProtesting: false,
     heardExperiences: [],
-    systemAnxiety: 0
+    systemAnxiety: 0,
+    researchConsent: Math.random() >= 0.05
   };
 }
 
@@ -3401,27 +3452,38 @@ const INFRASTRUCTURE_AGENTS = [
    thoughts:['30% of my day is paperwork. I became a doctor to help people.','My waiting room is full again.','If only I had more time per patient.'],
    color:'#40a870',
    patientsSeenToday:0,referralsMade:0,burnoutLevel:0,currentPatient:null,
-   queue:[],totalPatientsSeen:0,actionHistory:[],sickLeaveTimer:0},
+   queue:[],totalPatientsSeen:0,actionHistory:[],sickLeaveTimer:0,agentCard:null},
   {id:'gp2',x:.22,y:.42,type:'gp',name:'Dr. Bakker',age:47,gender:'F',role:'General Practitioner',
    conditions:[],hp:100,state:'working',waitWeeks:0,insideBuilding:null,
    thoughts:['Another referral denied. The specialist queue is 12 weeks.','I need to finish 50 FHIR logs before lunch.','My colleagues are burning out.'],
    color:'#40a870',
    patientsSeenToday:0,referralsMade:0,burnoutLevel:0,currentPatient:null,
-   queue:[],totalPatientsSeen:0,actionHistory:[],sickLeaveTimer:0},
+   queue:[],totalPatientsSeen:0,actionHistory:[],sickLeaveTimer:0,agentCard:null},
   {id:'s1',x:.34,y:.12,type:'specialist',name:'Dr. Ashworth',age:55,gender:'M',role:'Cardiologist',
    specialty:'cardiology',
    conditions:[],hp:100,state:'overloaded',waitWeeks:0,insideBuilding:'hospital',
    thoughts:['My queue is 12 weeks deep. Patients are deteriorating while waiting.','We need more capacity, not more paperwork.'],
    color:'#4090d0',
    patientsSeenToday:0,referralsMade:0,burnoutLevel:0,currentPatient:null,
-   queue:[],totalPatientsSeen:0,actionHistory:[]},
+   queue:[],totalPatientsSeen:0,actionHistory:[],maxQueueCapacity:12,agentCard:null},
   {id:'s2',x:.40,y:.12,type:'specialist',name:'Dr. Pryce',age:48,gender:'F',role:'Pulmonologist',
    specialty:'pulmonology',
    conditions:[],hp:100,state:'overloaded',waitWeeks:0,insideBuilding:'hospital',
    thoughts:['COPD patients like James cannot wait 14 weeks.','The Treeknorm is being violated daily.'],
    color:'#4090d0',
    patientsSeenToday:0,referralsMade:0,burnoutLevel:0,currentPatient:null,
-   queue:[],totalPatientsSeen:0,actionHistory:[]},
+   queue:[],totalPatientsSeen:0,actionHistory:[],maxQueueCapacity:10,agentCard:null},
+  // Research & Benchmark agents (SOLL only — invisible in IST)
+  {id:'research-agent',x:.48,y:.08,type:'research',name:'Research Agent',age:0,gender:'N',role:'Federated Research',
+   conditions:[],hp:100,state:'idle',waitWeeks:0,insideBuilding:null,
+   thoughts:['Querying GP practices for aggregate HbA1c data.','Checking consent flags before each query.'],
+   color:'#9060c0',
+   researchProtocol:'HbA1c trajectory study',researchResults:[],lastQueryCycle:0,agentCard:null},
+  {id:'benchmark-agent',x:.52,y:.08,type:'benchmark',name:'Benchmark Agent',age:0,gender:'N',role:'Quality Benchmark',
+   conditions:[],hp:100,state:'idle',waitWeeks:0,insideBuilding:null,
+   thoughts:['Collecting 30-day treatment completion rates.','Comparing provider outcomes against national average.'],
+   color:'#c06090',
+   benchmarkResults:[],lastBenchmarkCycle:0,agentCard:null},
 ];
 
 // Spawn procedural population + add infrastructure
@@ -3459,6 +3521,10 @@ agents.forEach(e=>{
       createFHIRResource('Condition', e.id, { code: c.code, name: c.name, clinicalStatus: c.severity });
     });
   }
+});
+// Generate signed agent cards for infrastructure agents
+agents.filter(a => a.type === 'gp' || a.type === 'specialist' || a.type === 'research' || a.type === 'benchmark').forEach(a => {
+  a.agentCard = signAgentCard(a);
 });
 let lastFrameTime=performance.now();
 let selectedAgent=null;
@@ -6582,13 +6648,23 @@ function tick(){
             sendAgentTo(a, DESTINATIONS.hospital.entrance);
             // Sprint 10: FHIR Encounter + A2A referral
             createFHIRResource('Encounter', a.id, { class: 'gp_referral', serviceProvider: a.gpName||'GP', outcome: 'referred' });
-            const specialist = agents.find(s => s.type === 'specialist');
+            const allSpecialists = agents.filter(s => s.type === 'specialist');
+            const specialist = allSpecialists
+              .filter(s => (s.queue || []).length < (s.maxQueueCapacity || 10))
+              .sort((a2, b) => (a2.queue || []).length - (b.queue || []).length)[0] || null;
             if(gpAgent && specialist){
               sendA2AMessage(gpAgent, specialist, 'referral', {
                 patientId: a.id, patientName: a.name,
                 conditions: a.conditions.map(c => c.code + '(' + c.severity + ')').join(', '),
                 urgency: severe ? 'urgent' : 'routine'
               });
+            } else if(gpAgent && !specialist){
+              logEvent('referral_bounced', a, 'All specialists at capacity');
+              a.insideBuilding=null; a.behaviorState='recovering';
+              a.healingTicksLeft=12+Math.floor(Math.random()*8);
+              a.waitWeeks=0;
+              a.hp=Math.min(100, a.hp+5);
+              say(gpAgent.name, `No specialist capacity for ${a.name}. Treating at GP level.`);
             }
             // GP tracking
             if(gpAgent){
@@ -6990,10 +7066,90 @@ function tick(){
   // ═══ Sprint 11: Bias tracking (every 50 cycles) ═══
   if(cycle%50===0) trackBiasData();
 
+  // ═══ Research Agent: Federated query (every 100 cycles, SOLL only) ═══
+  if (mode === 'SOLL' && cycle % 100 === 0 && cycle > 0) {
+    var researchAgent = agents.find(a => a.id === 'research-agent');
+    if (researchAgent) {
+      researchAgent.state = 'querying';
+      var patients = agents.filter(a => (a.type === 'patient' || a.type === 'citizen') && a.hp > 0);
+      var consented = 0, refused = 0;
+      var hpSum = 0, hpCount = 0;
+      var hba1cSum = 0, hba1cCount = 0;
+      patients.forEach(function(pt) {
+        if (!pt.researchConsent) { refused++; researchOptOutRefusals++; return; }
+        consented++;
+        var fhirData = queryFHIR(pt.id, 'Observation', 'research-agent');
+        // Broad query: population health (average HP)
+        hpSum += pt.hp; hpCount++;
+        // Specific query: diabetes HbA1c trajectory
+        var diabetesCond = pt.conditions.find(c => c.code === 'E11');
+        if (diabetesCond) {
+          var hba1c = diabetesCond.severity === 'mild' ? 48 + Math.random() * 5 :
+                      diabetesCond.severity === 'moderate' ? 53 + Math.random() * 8 :
+                      diabetesCond.severity === 'severe' ? 61 + Math.random() * 10 : 45 + Math.random() * 3;
+          hba1cSum += hba1c; hba1cCount++;
+        }
+      });
+      // Broad query always succeeds (population HP)
+      if (hpCount >= 10) {
+        var avgHP = Math.round((hpSum / hpCount) * 10) / 10;
+        researchAgent.researchResults.push({ cycle: cycle, metric: 'population_health', value: avgHP, n: hpCount, optOutRate: Math.round(refused / patients.length * 100) });
+        researchQueriesCompleted++;
+        createFHIRResource('Observation', 'research-agent', { code: 'CAMMELOT-RESEARCH', valueQuantity: { value: avgHP, unit: 'HP' }, note: 'Population health N=' + hpCount + ', opt-out=' + refused });
+        logEvent('research_query', researchAgent, 'Population health: mean HP=' + avgHP + ', N=' + hpCount + ', opt-out=' + refused);
+      }
+      // Specific diabetes query: k-anonymity check (cohort >= 10)
+      if (hba1cCount >= 10) {
+        var avgHba1c = Math.round((hba1cSum / hba1cCount) * 10) / 10;
+        researchAgent.researchResults.push({ cycle: cycle, metric: 'mean_hba1c', value: avgHba1c, n: hba1cCount });
+        researchQueriesCompleted++;
+        createFHIRResource('Observation', 'research-agent', { code: 'CAMMELOT-RESEARCH', valueQuantity: { value: avgHba1c, unit: 'mmol/mol' }, note: 'HbA1c N=' + hba1cCount });
+        say('Research Agent', 'Federated query: mean HP=' + avgHP + ', HbA1c=' + avgHba1c + ' (N=' + hba1cCount + ', ' + refused + ' opted out).');
+      } else {
+        if (hba1cCount > 0) { researchCohortTooSmall++; }
+        say('Research Agent', 'Population health: mean HP=' + (hpCount >= 10 ? avgHP : 'N/A') + '. Diabetes cohort too small (N=' + hba1cCount + ') — suppressed.');
+      }
+      if (researchAgent.researchResults.length > 50) researchAgent.researchResults.shift();
+      researchAgent.lastQueryCycle = cycle;
+      researchAgent.state = 'idle';
+    }
+  }
+
+  // ═══ Benchmark Agent: Quality metrics (every 200 cycles, SOLL only) ═══
+  if (mode === 'SOLL' && cycle % 200 === 0 && cycle > 0) {
+    var benchAgent = agents.find(a => a.id === 'benchmark-agent');
+    if (benchAgent) {
+      benchAgent.state = 'collecting';
+      var gpAgents = agents.filter(a => a.type === 'gp');
+      var specAgents = agents.filter(a => a.type === 'specialist');
+      var allPatients = agents.filter(a => (a.type === 'patient' || a.type === 'citizen') && a.hp > 0);
+      // Benchmark 1: Treatment completion rate per specialist
+      var specMetrics = specAgents.map(function(s) {
+        var treated = (s.totalPatientsSeen || 0);
+        var inQueue = (s.queue || []).length;
+        return { id: s.id, name: s.name, treated: treated, queueLen: inQueue, capacity: s.maxQueueCapacity || 10 };
+      });
+      // Benchmark 2: Average wait time across all waiting patients
+      var waitingPatients = allPatients.filter(a => a.waitWeeks > 0);
+      var avgWait = waitingPatients.length > 0 ? Math.round(waitingPatients.reduce(function(sum, a) { return sum + a.waitWeeks; }, 0) / waitingPatients.length * 10) / 10 : 0;
+      // Benchmark 3: GP burnout comparison
+      var gpBurnout = gpAgents.map(function(g) { return { id: g.id, name: g.name, burnout: Math.round(g.burnoutLevel || 0) }; });
+      var report = { cycle: cycle, avgWaitWeeks: avgWait, specialists: specMetrics, gpBurnout: gpBurnout, totalAlive: allPatients.length };
+      benchAgent.benchmarkResults.push(report);
+      if (benchAgent.benchmarkResults.length > 30) benchAgent.benchmarkResults.shift();
+      benchmarkReportsGenerated++;
+      createFHIRResource('Observation', 'benchmark-agent', { code: 'CAMMELOT-BENCHMARK', valueQuantity: { value: avgWait, unit: 'weeks' }, note: 'Avg wait. Alive: ' + allPatients.length });
+      logEvent('benchmark', benchAgent, 'Quality report: avg wait ' + avgWait + 'w, ' + allPatients.length + ' alive');
+      say('Benchmark Agent', 'Quality report #' + benchmarkReportsGenerated + ': avg wait ' + avgWait + ' weeks, ' + allPatients.length + ' patients alive.');
+      benchAgent.lastBenchmarkCycle = cycle;
+      benchAgent.state = 'idle';
+    }
+  }
+
   // ═══ Sprint 29: Dynamic disease acquisition — healthy agents can get sick ═══
   if (cycle % 10 === 0) {
     agents.forEach(function(a) {
-      if (a.type === 'gp' || a.type === 'specialist' || a.hp <= 0) return;
+      if (a.type === 'gp' || a.type === 'specialist' || a.type === 'research' || a.type === 'benchmark' || a.hp <= 0) return;
       var onsetProb = 0;
       if (a.age >= 75) onsetProb = 0.008;
       else if (a.age >= 65) onsetProb = 0.005;
@@ -7071,6 +7227,7 @@ function resetSim(){
   erAdmissionCount=0; // Blog-Ready Sprint
   ketenzorgInterventions=0; ketenzorgCostEur=0; // Blog-Ready Sprint
   fairnessGuardrailActive=false; // Blog-Ready Sprint
+  researchQueriesCompleted=0; researchOptOutRefusals=0; researchCohortTooSmall=0; benchmarkReportsGenerated=0;
   EVENT_LOG.length=0;
   HOSPITAL_DISCHARGED.length=0;
   GRAVE_MARKERS.length=0;
@@ -7122,6 +7279,8 @@ function resetSim(){
       a.sickLeaveTimer=0; // Sprint S2
       a.burnoutCascadeSickLeave=false; // Sprint 23
     }
+    if(a.type==='research'){ a.researchResults=[]; a.lastQueryCycle=0; a.state='idle'; }
+    if(a.type==='benchmark'){ a.benchmarkResults=[]; a.lastBenchmarkCycle=0; a.state='idle'; }
   });
   selectedAgent=null; showTownFeed();
   document.getElementById('chatlog').innerHTML='<div class="cm sys"><span class="w">[SYSTEM]</span> <span class="t">Reset. Click a citizen to inspect.</span></div>';

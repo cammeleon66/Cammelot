@@ -189,9 +189,9 @@ patchedJS = patchedJS.replace(
 // Access eval'd globals — const/let in eval create local scope, need global assignment
 // Patch: expose key variables to global scope
 patchedJS += '\nglobal._agents = agents;\nglobal._EVENT_LOG = EVENT_LOG;\nglobal._BIAS_DATA = BIAS_DATA;\nglobal._M = M;\nglobal._WEEKLY_REPORTS = WEEKLY_REPORTS;\nglobal._S = S;\n';
-patchedJS += 'global._tick = function() { tick(); global._erAdmissionCount = erAdmissionCount; global._proactiveAlertCount = proactiveAlertCount; global._ketenzorgInterventions = ketenzorgInterventions; global._ketenzorgCostEur = ketenzorgCostEur; global._fairnessGuardrailActive = fairnessGuardrailActive; global._cycle = cycle; global._BIAS_DATA = BIAS_DATA; global._WEEKLY_REPORTS = WEEKLY_REPORTS; };\n';
+patchedJS += 'global._tick = function() { tick(); global._erAdmissionCount = erAdmissionCount; global._proactiveAlertCount = proactiveAlertCount; global._ketenzorgInterventions = ketenzorgInterventions; global._ketenzorgCostEur = ketenzorgCostEur; global._fairnessGuardrailActive = fairnessGuardrailActive; global._researchQueriesCompleted = researchQueriesCompleted; global._researchOptOutRefusals = researchOptOutRefusals; global._researchCohortTooSmall = researchCohortTooSmall; global._benchmarkReportsGenerated = benchmarkReportsGenerated; global._cycle = cycle; global._BIAS_DATA = BIAS_DATA; global._WEEKLY_REPORTS = WEEKLY_REPORTS; };\n';
 patchedJS += 'global._setMode = function(m) { mode = m; };\n';
-patchedJS += 'global._erAdmissionCount = 0; global._proactiveAlertCount = 0; global._ketenzorgInterventions = 0; global._ketenzorgCostEur = 0; global._fairnessGuardrailActive = false; global._cycle = 0;\n';
+patchedJS += 'global._erAdmissionCount = 0; global._proactiveAlertCount = 0; global._ketenzorgInterventions = 0; global._ketenzorgCostEur = 0; global._fairnessGuardrailActive = false; global._researchQueriesCompleted = 0; global._researchOptOutRefusals = 0; global._researchCohortTooSmall = 0; global._benchmarkReportsGenerated = 0; global._cycle = 0;\n';
 
 // Set headless flag before eval
 global._headlessMode = true;
@@ -313,6 +313,10 @@ const proactiveAlertCount = global._proactiveAlertCount || 0;
 const ketenzorgInterventions = global._ketenzorgInterventions || 0;
 const ketenzorgCostEur = global._ketenzorgCostEur || 0;
 const fairnessGuardrailActive = global._fairnessGuardrailActive || false;
+const researchQueriesCompleted = global._researchQueriesCompleted || 0;
+const researchOptOutRefusals = global._researchOptOutRefusals || 0;
+const researchCohortTooSmall = global._researchCohortTooSmall || 0;
+const benchmarkReportsGenerated = global._benchmarkReportsGenerated || 0;
 const S = global._S || {};
 
 const pop = agents.filter(a => a.type === 'patient' || a.type === 'citizen');
@@ -349,6 +353,10 @@ const results = {
   gini: Math.round((BIAS_DATA.currentGini||0) * 1000)/1000,
   bias_score: Math.round((BIAS_DATA.currentBiasScore||0)*1000)/1000,
   fairness_guardrail: fairnessGuardrailActive,
+  research_queries_completed: researchQueriesCompleted,
+  research_opt_out_refusals: researchOptOutRefusals,
+  research_cohort_too_small: researchCohortTooSmall,
+  benchmark_reports_generated: benchmarkReportsGenerated,
   gini_history_samples: (BIAS_DATA.giniHistory||[]).filter((_,i) => i % 10 === 0).map(v => Math.round(v*1000)/1000),
   age_analysis: {},
   gp_burnout: agents.filter(a => a.type === 'gp').map(gp => ({ name: gp.name, burnout: Math.round(gp.burnoutLevel || 0) })),
