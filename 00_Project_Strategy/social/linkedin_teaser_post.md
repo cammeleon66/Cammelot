@@ -1,12 +1,45 @@
 # LinkedIn Teaser Post — Series Announcement
 
-**Status:** Draft v4 — 5 variations (urgency + personal + scientific)
+**Status:** Final — updated with 100-run data (April 2025)
 **Target:** LinkedIn (short-form post)
 **Publish:** Same day as or just before Blog Post 0
+**Data source:** `scripts/output/mortality_fix_100runs.json`
 
 ---
 
-## Variation 1: The Stakes
+## FINAL VERSION
+
+Welcome to Cammelot 🏰
+
+I built a simulated Dutch town. 45 inhabitants, three GPs, one hospital. Real CBS demographics, real RIVM disease prevalence, real NZa tariffs. Everything runs as a 16-bit pixel simulation because that's apparently how my brain works.
+
+Then I ran it 100 times with the current healthcare system. And 100 times with an AI-augmented version: ambient scribes, Digital Twins, AI triage, proactive chronic care management.
+
+Results from 100 paired simulations (Cohen's d, Welch's t-test):
+
+→ GP burnout: 9.4% → 1.4%, d=1.47 ✅ (large effect, p<0.001)
+→ Administrative waste: €33.6k → €5.6k, −83% ✅
+→ Proactive alerts: 0 → 143/run, d=3.07 ✅
+→ Ketenzorg enrollment: +221%, d=1.16 ✅
+→ Patient mortality: 11.1 → 10.8 deaths/year, d=0.10 ❌ (not significant)
+→ Age fairness: bias index 0.94 → 0.90, d=0.34 ✅ (guardrail fired 98% of runs)
+
+The uncomfortable conclusion: AI is, today, a workforce intervention. Not a mortality intervention. Burnout drops 85%, admin drops 83%, the GPs can actually see their patients — but the specialist queue is still 12 weeks. And that is where people deteriorate.
+
+I wrote ten posts about it. Six on the health data (including the null results and one age group where SOLL was actually worse). Four on the architecture (A2A protocol, FHIR memory, security red-teaming, why the data mesh is the wrong abstraction for healthcare).
+
+Code is open. Stats are open. I would genuinely like people to tell me where the model is wrong.
+
+🔗 [Link to series]
+
+---
+
+## ARCHIVED — Previous variations (old data, rejected)
+
+<details>
+<summary>Click to expand 5 old variations (stale numbers from 200-run set)</summary>
+
+### Variation 1: The Stakes (ARCHIVED)
 
 The Netherlands will be short 301,000 healthcare workers by 2035.
 
@@ -22,9 +55,7 @@ I wrote five posts about why. With all the statistics and all the uncomfortable 
 
 🔗 [Link to full series]
 
----
-
-## Variation 2: The Personal
+### Variation 2: The Personal (ARCHIVED)
 
 My grandmother waited 14 weeks for a cardiologist. She was fine. But every day in that queue, I wondered: what if she wasn't?
 
@@ -40,9 +71,7 @@ Five posts. Open code. Real stats.
 
 🔗 [Link]
 
----
-
-## Variation 3: The Challenge
+### Variation 3: The Challenge (ARCHIVED)
 
 If you work in Dutch healthcare, I have a question:
 
@@ -58,9 +87,7 @@ I'm looking for people who think I'm wrong. Especially if you can explain why.
 
 🔗 [Link]
 
----
-
-## Variation 4: The Contrarian
+### Variation 4: The Contrarian (ARCHIVED)
 
 The most expensive healthcare system in Europe doesn't have a technology problem. It has a plumbing problem.
 
@@ -74,9 +101,7 @@ AI optimizes the pipes. It doesn't add water. Five posts on what I learned, with
 
 🔗 [Link]
 
----
-
-## Variation 5: The Dutch One
+### Variation 5: The Dutch One (ARCHIVED)
 
 Welkom in Cammelot 🏰
 
@@ -98,4 +123,6 @@ I wrote five posts about it. In English, with the stats, the code, and every nul
 Especially looking for Dutch healthcare professionals who want to stress-test the model.
 
 🔗 [Link]
+
+</details>
 
