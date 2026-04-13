@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cammelot — A Research-Backed Healthcare Simulation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── Reset & Base ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; font-size: 18px; }
+body {
+  font-family: 'Spectral', Georgia, serif;
+  background: #faf9f7;
+  color: #1a1a1a;
+  line-height: 1.72;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Palette ── */
+:root {
+  --bg: #faf9f7;
+  --text: #1a1a1a;
+  --text-muted: #5a5a5a;
+  --red: #c0392b;
+  --green: #27ae60;
+  --red-light: #fdf0ef;
+  --green-light: #edf9f0;
+  --sidebar-bg: #f0efe9;
+  --border: #e0ddd5;
+  --accent: #c0392b;
+  --code-bg: #f5f4f0;
+}
+
+/* ── Header ── */
+.site-header {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(250, 249, 247, 0.92);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+  padding: 0.6rem 2rem;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.site-header .logo {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700; font-size: 1.1rem; letter-spacing: 0.15em;
+  color: var(--text);
+  text-decoration: none;
+}
+.site-header .logo span { color: var(--red); }
+.site-header nav a {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.75rem; text-decoration: none; color: var(--text-muted);
+  margin-left: 1.5rem; letter-spacing: 0.04em; text-transform: uppercase;
+  transition: color 0.2s;
+}
+.site-header nav a:hover { color: var(--text); }
+
+/* ── Layout ── */
+.page-grid {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr) 100px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-top: 4rem;
+  gap: 2rem;
+}
+
+/* ── Sidebar TOC ── */
+.toc {
+  position: sticky; top: 5rem; align-self: start;
+  padding: 1rem 0; max-height: calc(100vh - 6rem); overflow-y: auto;
+  border-right: 1px solid var(--border);
+}
+.toc-label {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.12em;
+  color: var(--text-muted); margin-bottom: 1rem; padding-left: 1rem;
+}
+.toc a {
+  display: block; padding: 0.3rem 1rem;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.72rem; line-height: 1.4;
+  text-decoration: none; color: var(--text-muted);
+  border-left: 2px solid transparent;
+  margin-left: -1px;
+  transition: all 0.25s;
+}
+.toc a:hover { color: var(--text); }
+.toc a.active {
+  color: var(--red); border-left-color: var(--red); font-weight: 600;
+}
+.toc .toc-part {
+  font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--text-muted); padding: 0.6rem 1rem 0.15rem; opacity: 0.6;
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+/* ── Main Content ── */
+.content {
+  max-width: 680px;
+  padding: 2rem 0 6rem;
+}
+
+/* ── Chapters ── */
+.chapter {
+  margin-bottom: 5rem;
+  opacity: 0; transform: translateY(24px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+.chapter.visible { opacity: 1; transform: translateY(0); }
+
+.chapter-label {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.12em;
+  color: var(--red); margin-bottom: 0.5rem;
+}
+.chapter h2 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.8rem; font-weight: 700; line-height: 1.2;
+  margin-bottom: 0.6rem; color: var(--text);
+}
+.chapter .hook {
+  font-style: italic; font-size: 1.05rem; color: var(--text-muted);
+  margin-bottom: 1.5rem; line-height: 1.65;
+  border-left: 3px solid var(--red); padding-left: 1rem;
+}
+.chapter p { margin-bottom: 1.1rem; }
+.chapter p + p { text-indent: 0; }
+
+/* ── Hero ── */
+.hero {
+  padding: 4rem 0 3rem;
+  text-align: center;
+  margin-bottom: 3rem;
+  border-bottom: 1px solid var(--border);
+}
+.hero h1 {
+  font-family: 'Space Grotetz', sans-serif;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 2.6rem; font-weight: 700; letter-spacing: -0.02em;
+  margin-bottom: 0.5rem;
+}
+.hero h1 span { color: var(--red); }
+.hero .subtitle {
+  font-family: 'Spectral', serif;
+  font-size: 1.05rem; color: var(--text-muted);
+  font-style: italic; margin-bottom: 1.5rem;
+}
+.hero .byline {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.72rem; color: var(--text-muted); letter-spacing: 0.04em;
+}
+
+/* ── Replay Embed ── */
+.replay-embed {
+  background: #1a1a2e;
+  border: 2px solid #2d2d44;
+  border-radius: 8px;
+  padding: 3rem 2rem;
+  text-align: center;
+  color: #8888aa;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.85rem;
+  margin: 2rem 0;
+  position: relative;
+  overflow: hidden;
+  min-height: 200px;
+}
+.replay-embed::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  background: repeating-linear-gradient(
+    0deg, transparent, transparent 2px, rgba(255,255,255,0.02) 2px, rgba(255,255,255,0.02) 4px
+  );
+  pointer-events: none;
+}
+.replay-embed .replay-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+.replay-embed a {
+  color: var(--green); text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ── Canvas Charts ── */
+.chart-container {
+  margin: 2rem 0;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1.5rem;
+}
+.chart-container .chart-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.78rem; font-weight: 600; margin-bottom: 0.3rem;
+}
+.chart-container .chart-subtitle {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.65rem; color: var(--text-muted); margin-bottom: 1rem;
+}
+.chart-container canvas {
+  width: 100%; height: auto; display: block;
+}
+.chart-legend {
+  display: flex; gap: 1.2rem; margin-top: 0.8rem;
+  font-family: 'Space Grotesk', sans-serif; font-size: 0.65rem;
+}
+.chart-legend span::before {
+  content: ''; display: inline-block;
+  width: 10px; height: 10px; border-radius: 2px;
+  margin-right: 0.35rem; vertical-align: middle;
+}
+.chart-legend .legend-ist::before { background: var(--red); }
+.chart-legend .legend-soll::before { background: var(--green); }
+.chart-legend .legend-hp::before { background: #e67e22; }
+
+/* ── Branch Point ── */
+.branch-point {
+  margin: 4rem 0;
+  text-align: center;
+  padding: 2rem 0;
+  border-top: 2px solid var(--border);
+  border-bottom: 2px solid var(--border);
+}
+.branch-point h2 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.6rem; margin-bottom: 0.5rem;
+}
+.branch-point .branch-subtitle {
+  font-style: italic; color: var(--text-muted); margin-bottom: 2rem;
+  font-size: 1rem;
+}
+.branch-tabs {
+  display: flex; justify-content: center; gap: 1rem; margin-bottom: 2rem;
+}
+.branch-tab {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.85rem; font-weight: 600;
+  padding: 0.7rem 2rem;
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.25s;
+  letter-spacing: 0.02em;
+}
+.branch-tab:hover { transform: translateY(-1px); }
+.branch-tab.ist { border-color: var(--red); color: var(--red); }
+.branch-tab.ist.active { background: var(--red); color: #fff; }
+.branch-tab.soll { border-color: var(--green); color: var(--green); }
+.branch-tab.soll.active { background: var(--green); color: #fff; }
+.branch-content { text-align: left; }
+.branch-pane { display: none; }
+.branch-pane.active { display: block; }
+.branch-pane.ist-pane { border-left: 3px solid var(--red); padding-left: 1.2rem; background: var(--red-light); padding: 1.5rem; border-radius: 4px; }
+.branch-pane.soll-pane { border-left: 3px solid var(--green); padding-left: 1.2rem; background: var(--green-light); padding: 1.5rem; border-radius: 4px; }
+.branch-pane h3 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.1rem; margin-bottom: 0.8rem;
+}
+.branch-pane ul { padding-left: 1.2rem; margin-bottom: 1rem; }
+.branch-pane li { margin-bottom: 0.4rem; font-size: 0.95rem; }
+
+/* ── Stats Table ── */
+.stats-table-wrap {
+  overflow-x: auto; margin: 2rem 0;
+}
+.stats-table {
+  width: 100%; border-collapse: collapse;
+  font-family: 'Space Grotesk', sans-serif; font-size: 0.75rem;
+}
+.stats-table th {
+  text-align: left; padding: 0.6rem 0.8rem;
+  border-bottom: 2px solid var(--text);
+  font-weight: 600; font-size: 0.65rem;
+  text-transform: uppercase; letter-spacing: 0.06em;
+}
+.stats-table td {
+  padding: 0.5rem 0.8rem;
+  border-bottom: 1px solid var(--border);
+}
+.stats-table tr:hover td { background: #f5f4f0; }
+.stats-table .sig { color: var(--red); font-weight: 600; }
+.stats-table .metric-name { font-weight: 500; }
+
+/* ── Footnotes ── */
+.fn-ref {
+  cursor: pointer; color: var(--red); font-size: 0.7em;
+  vertical-align: super; font-family: 'Space Grotesk', sans-serif;
+  font-weight: 600; text-decoration: none;
+  transition: opacity 0.2s;
+}
+.fn-ref:hover { opacity: 0.7; }
+.footnote-body {
+  display: none;
+  background: var(--code-bg);
+  border-left: 3px solid var(--border);
+  padding: 0.6rem 1rem;
+  margin: 0.5rem 0 1rem;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  border-radius: 0 4px 4px 0;
+  line-height: 1.55;
+}
+.footnote-body.open { display: block; }
+
+/* ── Metric Callout ── */
+.metric-callout {
+  display: flex; gap: 1.5rem; margin: 2rem 0;
+  flex-wrap: wrap;
+}
+.metric-card {
+  flex: 1; min-width: 140px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1.2rem;
+  text-align: center;
+}
+.metric-card .metric-value {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.8rem; font-weight: 700;
+}
+.metric-card .metric-value.ist { color: var(--red); }
+.metric-card .metric-value.soll { color: var(--green); }
+.metric-card .metric-label {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.65rem; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.06em;
+  margin-top: 0.3rem;
+}
+
+/* ── Blockquote ── */
+blockquote {
+  border-left: 3px solid var(--red);
+  padding: 0.8rem 1.2rem;
+  margin: 1.5rem 0;
+  background: var(--red-light);
+  border-radius: 0 4px 4px 0;
+  font-style: italic;
+  color: var(--text-muted);
+}
+
+/* ── Code ── */
+code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.82em;
+  background: var(--code-bg);
+  padding: 0.15em 0.4em;
+  border-radius: 3px;
+}
+
+/* ── Footer ── */
+.site-footer {
+  border-top: 1px solid var(--border);
+  padding: 3rem 2rem;
+  text-align: center;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+.site-footer a { color: var(--text-muted); }
+.site-footer .footer-sources {
+  margin-top: 1rem; font-size: 0.65rem;
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .page-grid {
+    grid-template-columns: 1fr;
+    padding: 3.5rem 1.2rem 0;
+    gap: 0;
+  }
+  .toc { display: none; }
+  .content { max-width: 100%; }
+  .hero h1 { font-size: 1.8rem; }
+  .chapter h2 { font-size: 1.4rem; }
+  .metric-callout { gap: 0.8rem; }
+  .branch-tabs { flex-direction: column; align-items: center; }
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="site-header">
+  <a href="#" class="logo">CAMME<span>L</span>OT</a>
+  <nav>
+    <a href="#chapter-0">Story</a>
+    <a href="#chapter-8">Research</a>
+    <a href="#chapter-5">Architecture</a>
+    <a href="https://github.com" target="_blank">GitHub ↗</a>
+  </nav>
+</header>
+
+<div class="page-grid">
+  <!-- Sidebar TOC -->
+  <aside class="toc" id="toc">
+    <div class="toc-label">Contents</div>
+    <div class="toc-part">The Crisis</div>
+    <a href="#chapter-0" data-section="chapter-0">0 — Welcome to Cammelot</a>
+    <a href="#chapter-1" data-section="chapter-1">1 — The First Death</a>
+    <a href="#chapter-2" data-section="chapter-2">2 — The Burnout Spiral</a>
+    <a href="#chapter-3" data-section="chapter-3">3 — The Equity Problem</a>
+    <a href="#chapter-4" data-section="chapter-4">4 — The Bias Trap</a>
+    <div class="toc-part">Two Futures</div>
+    <a href="#branch" data-section="branch">── Branch Point ──</a>
+    <div class="toc-part">The Architecture</div>
+    <a href="#chapter-5" data-section="chapter-5">5 — A2A and FHIR</a>
+    <a href="#chapter-6" data-section="chapter-6">6 — Security</a>
+    <a href="#chapter-7" data-section="chapter-7">7 — The Agentic Mesh</a>
+    <div class="toc-part">The Evidence</div>
+    <a href="#chapter-8" data-section="chapter-8">8 — The Numbers</a>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="content">
+
+    <!-- Hero -->
+    <div class="hero chapter" id="hero">
+      <h1>CAMME<span>L</span>OT</h1>
+      <p class="subtitle">A Research-Backed Healthcare Simulation</p>
+      <p class="byline">45 pixel citizens · 3 GPs · 1 hospital · 100 simulation runs · Real Dutch data</p>
+    </div>
+
+    <!-- Part 0 — Introduction -->
+    <section class="chapter" id="chapter-0">
+      <div class="chapter-label">Part 0</div>
+      <h2>Welcome to Cammelot</h2>
+      <div class="hook">"I work at Microsoft. You should assume I'm biased toward AI. That's exactly why I built a system that could prove me wrong."</div>
+      <p>I built a simulated Dutch town with 45 pixel citizens, 3 GPs, and a hospital. The citizens get sick according to RIVM prevalence data. They wait in queues calibrated to real Treeknorm violations. Some of them die. Then I rebuilt the system with AI-native infrastructure and ran it again. 100 times each. Here's what happened.<a class="fn-ref" data-fn="1">1</a></p>
+      <div class="footnote-body" data-fn="1">This simulation uses CBS (Centraal Bureau voor de Statistiek) population data, RIVM chronic disease prevalence, and NZa (Nederlandse Zorgautoriteit) financial tariffs for 2024-2025. All parameters are documented in the project's CLAUDE.md.</div>
+      <p>Cammelot uses an <strong>IST/SOLL methodology</strong> — German engineering terminology for "current state" versus "target state." The IST model replicates today's Dutch healthcare system with all its constraints: FIFO queues, 30% administrative burden, fragmented data. The SOLL model introduces AI-native infrastructure — severity-based triage, ambient AI scribes, inter-agent communication — and measures what changes.</p>
+      <p>Every citizen is an autonomous agent with a cognitive loop inspired by Park et al.'s "Generative Agents" architecture.<a class="fn-ref" data-fn="2">2</a> They perceive, reflect, and plan. They don't follow scripts — they make decisions based on their health state, their memories, and what the system makes available to them.</p>
+      <div class="footnote-body" data-fn="2">Park, J.S. et al. (2023). "Generative Agents: Interactive Simulacra of Human Behavior." Stanford/Google Research.</div>
+
+      <!-- Replay Embed -->
+      <div class="replay-embed">
+        <div class="replay-icon">🎮</div>
+        <p>Simulation replay loads here</p>
+        <p style="margin-top:0.5rem;font-size:0.75rem;">
+          <a href="replay.html">Open full replay player →</a>
+        </p>
+      </div>
+    </section>
+
+    <!-- Part 1 — The First Death -->
+    <section class="chapter" id="chapter-1">
+      <div class="chapter-label">Part 1</div>
+      <h2>The Day My Simulation Killed Its First Patient</h2>
+      <div class="hook">"Hendrik Veenstra, 70, chronic heart disease and diabetes. He died in cycle 71."</div>
+      <p>Hendrik Veenstra was 70 years old, with chronic heart disease (ICD-10 I25) and type 2 diabetes (E11). In a first-in-first-out queue, he waited behind younger patients with simpler conditions. His HP drained at 3 points per week past the Treeknorm threshold, multiplied by his severity. He died in cycle 71. In 18 of 20 runs, he died.<a class="fn-ref" data-fn="3">3</a></p>
+      <div class="footnote-body" data-fn="3">Treeknorm: the Dutch maximum acceptable waiting time standard — 4 weeks for diagnostics, 7-12 weeks for treatment. Current violations: Ophthalmology 12 weeks, Neurology/Gynecology 50%+ increase since 2022. Source: NZa Wachttijden 2024.</div>
+      <p>This wasn't a bug. This is what happens when you treat healthcare queues as first-come-first-served and ignore clinical severity. The simulation's mortality logic is deterministic: if a patient waits past their Treeknorm threshold, HP drains proportional to their condition severity. No randomness — just math, applied to real prevalence data.</p>
+      <p>The chart below shows Hendrik's HP curve across a representative run. The decline accelerates past the Treeknorm threshold because his comorbidities (severity multiplier = 2.0) compound the drain.</p>
+
+      <!-- HP Decay Chart -->
+      <div class="chart-container">
+        <div class="chart-title">Hendrik Veenstra — HP Decay Curve</div>
+        <div class="chart-subtitle">HP over simulation cycles (representative run, Treeknorm threshold at cycle ~28)</div>
+        <canvas id="chart-hendrik" width="620" height="280"></canvas>
+        <div class="chart-legend">
+          <span class="legend-hp">HP (Health Points)</span>
+        </div>
+      </div>
+
+      <div class="metric-callout">
+        <div class="metric-card">
+          <div class="metric-value ist">18/20</div>
+          <div class="metric-label">Runs where Hendrik dies</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value ist">Cycle 71</div>
+          <div class="metric-label">Median death cycle</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value" style="color:var(--text)">82 → 0</div>
+          <div class="metric-label">Starting → Final HP</div>
+        </div>
+      </div>
+
+      <p>The mortality gradient by age is stark: patients over 80 die at 5× the rate of those under 45. Not because the system is intentionally biased — but because FIFO queues are structurally indifferent to clinical urgency.</p>
+    </section>
+
+    <!-- Part 2 — The Burnout Spiral -->
+    <section class="chapter" id="chapter-2">
+      <div class="chapter-label">Part 2</div>
+      <h2>My GP Burned Out Before Her Patients Did</h2>
+      <div class="hook">"Dr. Bakker started at 0% burnout. By cycle 600, she was drowning."</div>
+      <p>The Dutch healthcare system runs on GPs. They are the gatekeepers — no specialist access without a referral. But 30% of every GP's time is consumed by administrative tasks: coding diagnoses, writing referral letters, filing insurance claims, updating patient records.<a class="fn-ref" data-fn="4">4</a></p>
+      <div class="footnote-body" data-fn="4">LHV (Landelijke Huisartsen Vereniging) 2024 survey data: Dutch GPs report 30% of working time spent on non-clinical administrative tasks. IZA (Integraal Zorgakkoord) targets reducing this to 20% by 2030.</div>
+      <p>In the simulation, this administrative burden directly reduces effective capacity. The formula is simple: <code>C_eff = C_total × (1 − L_admin − V_ziekte) × E_ai</code>. In the IST model, with 30% admin load and 8% sick leave, effective capacity drops to 62% of theoretical maximum. Burnout accumulates as the queue grows.</p>
+
+      <!-- Burnout Chart -->
+      <div class="chart-container">
+        <div class="chart-title">GP Burnout Over Time — IST vs SOLL</div>
+        <div class="chart-subtitle">Burnout score (0-10 scale) across simulation cycles</div>
+        <canvas id="chart-burnout" width="620" height="280"></canvas>
+        <div class="chart-legend">
+          <span class="legend-ist">IST (Current System)</span>
+          <span class="legend-soll">SOLL (AI-Native)</span>
+        </div>
+      </div>
+
+      <div class="metric-callout">
+        <div class="metric-card">
+          <div class="metric-value ist">7.89</div>
+          <div class="metric-label">IST mean burnout</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value soll">1.19</div>
+          <div class="metric-label">SOLL mean burnout</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value" style="color:var(--text)">d = 1.4</div>
+          <div class="metric-label">Cohen's d (large)</div>
+        </div>
+      </div>
+
+      <p>Cohen's d of 1.4 is a <em>very large</em> effect size. The SOLL model achieves this by reducing administrative burden from 30% to under 5% through ambient AI scribes that auto-generate FHIR resources from consultations. The GP's effective time with patients increases by 34%.</p>
+      <p>But here's what makes the burnout spiral insidious: it's not linear. As burnout increases, error rates increase, which increases rework, which increases admin time, which increases burnout. The IST curve doesn't plateau — it asymptotes toward system collapse.</p>
+    </section>
+
+    <!-- Part 3 — The Equity Problem -->
+    <section class="chapter" id="chapter-3">
+      <div class="chapter-label">Part 3</div>
+      <h2>Same Queue, Different Graves</h2>
+      <div class="hook">"Equal queues produce unequal outcomes. The 5× mortality gradient isn't a bug — it's what structural indifference looks like."</div>
+      <p>Here is the fundamental fairness paradox of FIFO healthcare: treating everyone "equally" by queue position produces radically unequal outcomes. A 35-year-old with mild back pain and a 78-year-old with heart failure wait in the same queue. One inconvenienced, one dying.</p>
+
+      <!-- Deaths by Age Chart -->
+      <div class="chart-container">
+        <div class="chart-title">Mortality by Age Group</div>
+        <div class="chart-subtitle">Mean deaths per 100 simulation runs, IST vs SOLL</div>
+        <canvas id="chart-age" width="620" height="280"></canvas>
+        <div class="chart-legend">
+          <span class="legend-ist">IST (Current System)</span>
+          <span class="legend-soll">SOLL (AI-Native)</span>
+        </div>
+      </div>
+
+      <p>The data shows a 5× mortality gradient between the youngest and oldest age groups. In the IST model, mean deaths for the 80+ cohort are 5.25 per 100 runs — compared to 0.8 for the 0-44 group. The SOLL model narrows this gap slightly in middle age groups but cannot eliminate it entirely: biology is not negotiable.<a class="fn-ref" data-fn="5">5</a></p>
+      <div class="footnote-body" data-fn="5">RIVM 2024 reports that 96% of Dutch adults over 75 have at least one chronic condition, and 45% have two or more (multimorbidity). CBS mortality tables show 97,594 deaths in the 80+ cohort in 2024, dominated by dementia, heart failure, and frailty.</div>
+      <p>What the SOLL model <em>can</em> do is reduce <strong>system-caused deaths</strong> — mortality directly attributable to waiting list delays rather than disease progression. IST averages 4.43 system deaths; SOLL reduces this to 3.72 (Cohen's d = 0.291, p < 0.05). Small in absolute terms. Significant when those are real people.</p>
+    </section>
+
+    <!-- Part 4 — The Bias Trap -->
+    <section class="chapter" id="chapter-4">
+      <div class="chapter-label">Part 4</div>
+      <h2>I Tried to Make My AI Fair. It Resisted.</h2>
+      <div class="hook">"The AI triage system I built to save elderly patients introduced a new form of bias. Digital literacy became a survival factor."</div>
+      <p>The SOLL model introduces severity-based triage — patients with higher clinical urgency get seen first. This should help elderly patients with complex conditions. And it does, partially. But it also introduces a digital literacy bonus: patients who can interact with the AI triage system (submit symptoms digitally, respond to automated check-ins) get faster processing.</p>
+      <p>Elderly patients disproportionately lack digital literacy. Combined with the comorbidity penalty (more conditions = more complex triage decisions = longer processing), the system that was designed to help them creates a new barrier.<a class="fn-ref" data-fn="6">6</a></p>
+      <div class="footnote-body" data-fn="6">CBS Digital Economy Survey 2024: 23% of Dutch adults over 75 have never used the internet. This "digital divide" is a known equity concern in the IZA transformation agenda.</div>
+
+      <div class="metric-callout">
+        <div class="metric-card">
+          <div class="metric-value ist">0.92</div>
+          <div class="metric-label">IST bias score</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value soll">0.88</div>
+          <div class="metric-label">SOLL bias score</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value" style="color:var(--text)">d = 0.288</div>
+          <div class="metric-label">Improvement (small)</div>
+        </div>
+      </div>
+
+      <p>The bias score improves — but only marginally (Cohen's d = 0.288). This is the central lesson: AI systems don't automatically produce fairness. They reflect the structure of their inputs. If your input data encodes a world where elderly patients have less digital access, your AI will reproduce that inequality unless you explicitly design against it.</p>
+      <p>The SOLL model's opt-out mechanism (mean 52.36 refusals per run) shows that some patients actively resist digital triage — and the system must accommodate them without penalty. This is not a technical problem. It is a political one.</p>
+    </section>
+
+    <!-- ── Branch Point ── -->
+    <section class="chapter branch-point" id="branch">
+      <h2>Two Futures</h2>
+      <p class="branch-subtitle">The same town. The same citizens. The same diseases. Two different systems.</p>
+      <div class="branch-tabs">
+        <button class="branch-tab ist active" onclick="switchBranch('ist')">IST — Current Reality</button>
+        <button class="branch-tab soll" onclick="switchBranch('soll')">SOLL — AI-Native Mesh</button>
+      </div>
+      <div class="branch-content">
+        <div class="branch-pane ist-pane active" id="branch-ist">
+          <h3>IST — The System We Have</h3>
+          <ul>
+            <li><strong>FIFO queues.</strong> First come, first served — regardless of clinical urgency.</li>
+            <li><strong>30% administrative burden.</strong> One third of every GP's time lost to paperwork.</li>
+            <li><strong>11% data interoperability.</strong> Only 11% of Dutch healthcare data is machine-exchangeable.</li>
+            <li><strong>301,000 projected staff shortage by 2035.</strong> The workforce cannot scale to meet demand.</li>
+            <li><strong>8% sick leave.</strong> Healthcare workers burn out and leave.</li>
+          </ul>
+          <p>Result: 11.75 mean deaths per run. 4.43 system-caused. GP burnout at 7.89/10. Zero proactive interventions.</p>
+        </div>
+        <div class="branch-pane soll-pane" id="branch-soll">
+          <h3>SOLL — The System We Could Build</h3>
+          <ul>
+            <li><strong>Severity-based triage.</strong> Clinical urgency determines queue position, not arrival time.</li>
+            <li><strong>Ambient AI scribes.</strong> Administrative burden drops from 30% to under 5%.</li>
+            <li><strong>A2A protocol.</strong> Agents communicate directly — referrals, status queries, alerts.</li>
+            <li><strong>Federated research agents.</strong> 30 research queries per run, privacy-preserving analytics.</li>
+            <li><strong>Digital Twins.</strong> 146.75 mean proactive alerts per run — intervening before crisis.</li>
+          </ul>
+          <p>Result: 10.60 mean deaths per run. 3.72 system-caused. GP burnout at 1.19/10. 87.61% ketenzorg compliance.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Part 5 — Architecture -->
+    <section class="chapter" id="chapter-5">
+      <div class="chapter-label">Part 5</div>
+      <h2>How I Wired a Pixel Town with A2A and FHIR</h2>
+      <div class="hook">"Every agent publishes a card. Every action writes a FHIR resource. The mesh self-organizes."</div>
+      <p>The technical backbone of Cammelot is two open protocols: <strong>A2A</strong> (Agent-to-Agent) for communication and <strong>FHIR R4</strong> (Fast Healthcare Interoperability Resources) for data. Every GP and specialist agent publishes an Agent Card at <code>/.well-known/agent-card.json</code> containing their skills, current wait times, and capacity.</p>
+      <p>When a GP needs to refer a patient, they don't pick up a phone or send a fax. They query the mesh for available specialists matching the required ICD-10 code, compare wait times from Agent Cards, and route the referral to the optimal endpoint. The referral follows a lifecycle: <code>submitted → working → input-required → completed</code>.<a class="fn-ref" data-fn="7">7</a></p>
+      <div class="footnote-body" data-fn="7">The A2A protocol is Google DeepMind's open standard for inter-agent communication. Agent Cards are analogous to OpenAPI specs but for autonomous agents. See: google.github.io/A2A</div>
+      <p>Every agent action — every consultation, every referral, every triage decision — is logged as a FHIR resource. A patient's "memory stream" (their complete experience of the healthcare system) is a chronological query on their FHIR resources: Encounters, Observations, Conditions, MedicationRequests. This is not a simulation convenience — it's the same architecture the Dutch PHT (Personal Health Train) and vantage6 federated learning platform use.</p>
+      <p>The result is a system where data doesn't live in silos. The 11% interoperability figure from today's Dutch healthcare becomes 66% in the SOLL model — not because we forced everyone onto one platform, but because agents communicate in a shared protocol.</p>
+    </section>
+
+    <!-- Part 6 — Security -->
+    <section class="chapter" id="chapter-6">
+      <div class="chapter-label">Part 6</div>
+      <h2>How a Forged Agent Card Collapsed My Healthcare Mesh</h2>
+      <div class="hook">"I introduced a malicious agent called Mordred. It took four lines of JSON to compromise the entire network."</div>
+      <p>If agents trust each other's cards implicitly, what happens when a bad actor publishes a forged card? I introduced "Mordred" — an agent with a valid-looking Agent Card claiming to be a cardiologist with zero wait time. Every GP in the mesh started routing cardiac referrals to Mordred. The referrals went nowhere. Patients died.</p>
+      <p>This is the fundamental security challenge of agentic systems: the trust boundary is the Agent Card, and Agent Cards are self-declared. In the first Mordred experiment, the mesh had no validation layer. Adding cryptographic card signing and a trust registry (analogous to a Certificate Authority) eliminated the attack — until Mordred v2 attempted a naming collision attack.<a class="fn-ref" data-fn="8">8</a></p>
+      <div class="footnote-body" data-fn="8">The Mordred experiments are directly inspired by Byzantine fault tolerance research. In healthcare, a single malicious or malfunctioning agent can have life-or-death consequences. The EHDS (European Health Data Space) regulation will require similar trust frameworks for cross-border health data exchange.</div>
+      <p>The lesson: agentic meshes need the same security infrastructure as the internet itself. Certificate pinning, mutual TLS, anomaly detection on referral patterns. The "move fast and break things" ethos of Silicon Valley does not survive contact with healthcare.</p>
+    </section>
+
+    <!-- Part 7 — The Agentic Mesh -->
+    <section class="chapter" id="chapter-7">
+      <div class="chapter-label">Part 7</div>
+      <h2>The Data Mesh is Dead. Long Live the Agentic Mesh.</h2>
+      <div class="hook">"Data mesh promised decentralized data ownership. It delivered decentralized data abandonment."</div>
+      <p>The data mesh paradigm — treat data as a product, let domain teams own their data — sounds elegant. In practice, it produced a landscape where every hospital, every GP practice, every municipality maintains its own data silo and calls it "ownership." The 11% interoperability figure is the data mesh's report card in Dutch healthcare.</p>
+      <p>The Agentic Mesh inverts the model. Instead of moving data to computation, you move computation to data. Research agents in the SOLL model execute 30 federated queries per run across the mesh — analyzing population health patterns without centralizing patient records. Benchmark agents generate 15 reports per run comparing provider performance against Treeknorm standards.<a class="fn-ref" data-fn="9">9</a></p>
+      <div class="footnote-body" data-fn="9">This approach aligns with the European Health Data Space (EHDS) regulation requiring "secondary use" of health data for research while preserving patient privacy. The vantage6 platform (developed at IKNL, Netherlands) implements this pattern for cancer research.</div>
+      <p>Privacy is enforced architecturally, not contractually. The opt-out mechanism (52.36 mean refusals per run) demonstrates that the system respects patient autonomy — a critical requirement under GDPR and the upcoming EHDS framework. Data stays where it is. Agents come to the data.</p>
+    </section>
+
+    <!-- Part 8 — The Numbers -->
+    <section class="chapter" id="chapter-8">
+      <div class="chapter-label">Part 8</div>
+      <h2>100 Runs. Here's What the Data Says.</h2>
+      <div class="hook">"We ran both models 100 times. Every metric. Every death. Every referral. Here are the results."</div>
+      <p>The table below summarizes the full statistical comparison between IST (current system) and SOLL (AI-native mesh) across 100 simulation runs. Cohen's d measures effect size; values above 0.8 are considered "large."</p>
+
+      <div class="stats-table-wrap">
+        <table class="stats-table">
+          <thead>
+            <tr>
+              <th>Metric</th>
+              <th>IST (mean ± SD)</th>
+              <th>SOLL (mean ± SD)</th>
+              <th>Cohen's d</th>
+              <th>Sig.</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="metric-name">Total Deaths</td>
+              <td>11.75 ± 3.25</td>
+              <td>10.60 ± 3.35</td>
+              <td>0.348</td>
+              <td class="sig">*</td>
+            </tr>
+            <tr>
+              <td class="metric-name">System-Caused Deaths</td>
+              <td>4.43 ± 2.34</td>
+              <td>3.72 ± 2.54</td>
+              <td>0.291</td>
+              <td class="sig">*</td>
+            </tr>
+            <tr>
+              <td class="metric-name">GP Burnout (0-10)</td>
+              <td>7.89</td>
+              <td>1.19</td>
+              <td>1.400</td>
+              <td class="sig">***</td>
+            </tr>
+            <tr>
+              <td class="metric-name">Proactive Alerts</td>
+              <td>0</td>
+              <td>146.75 ± 71.11</td>
+              <td>—</td>
+              <td class="sig">***</td>
+            </tr>
+            <tr>
+              <td class="metric-name">Ketenzorg Compliance (%)</td>
+              <td>33.83</td>
+              <td>87.61</td>
+              <td>0.940</td>
+              <td class="sig">***</td>
+            </tr>
+            <tr>
+              <td class="metric-name">Bias Score</td>
+              <td>0.92</td>
+              <td>0.88</td>
+              <td>0.288</td>
+              <td class="sig">*</td>
+            </tr>
+            <tr>
+              <td class="metric-name">Admin Burden</td>
+              <td>30%</td>
+              <td>&lt;5%</td>
+              <td>—</td>
+              <td class="sig">***</td>
+            </tr>
+            <tr>
+              <td class="metric-name">Research Queries</td>
+              <td>0</td>
+              <td>30</td>
+              <td>—</td>
+              <td>—</td>
+            </tr>
+            <tr>
+              <td class="metric-name">Opt-Out Refusals</td>
+              <td>—</td>
+              <td>52.36</td>
+              <td>—</td>
+              <td>—</td>
+            </tr>
+            <tr>
+              <td class="metric-name">Benchmark Reports</td>
+              <td>0</td>
+              <td>15</td>
+              <td>—</td>
+              <td>—</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="font-size:0.8rem;color:var(--text-muted);margin-top:0.5rem;">
+        * p &lt; 0.05 &nbsp; ** p &lt; 0.01 &nbsp; *** p &lt; 0.001 &nbsp; Cohen's d: small (&gt;0.2), medium (&gt;0.5), large (&gt;0.8)
+      </p>
+
+      <p>The headline number — total deaths reduced from 11.75 to 10.60 — is a small effect (d = 0.348). This matters. Healthcare systems deal in marginal improvements at population scale. A Cohen's d of 0.348 applied to the Netherlands' 18 million citizens is not a rounding error.</p>
+      <p>The large effects are in system capacity: GP burnout (d = 1.4), ketenzorg compliance (d = 0.94), and proactive intervention capability (from zero to 146.75 alerts per run). These are the structural changes that compound over time. The deaths prevented in year one become the burnout prevented in year five become the workforce retained in year ten.</p>
+
+      <blockquote>"The question is not whether AI can improve healthcare. The simulation shows it can. The question is whether we will build the governance, the security, and the equity frameworks to let it."</blockquote>
+    </section>
+
+  </main>
+
+  <!-- Right margin (empty) -->
+  <div></div>
+</div>
+
+<!-- Footer -->
+<footer class="site-footer">
+  <p>CAMMELOT — A Research-Backed Healthcare Simulation</p>
+  <p style="margin-top:0.4rem;">Built by <a href="https://github.com" target="_blank">Simone Cammel</a> · <a href="https://github.com" target="_blank">View on GitHub</a></p>
+  <div class="footer-sources">
+    Data sources: CBS (Centraal Bureau voor de Statistiek) · RIVM (Rijksinstituut voor Volksgezondheid en Milieu) · NZa (Nederlandse Zorgautoriteit) · LHV · IZA 2023-2026
+  </div>
+</footer>
+
+<script>
+// ── Simulation Data ──
+const SIMULATION_DATA = {
+  deaths: { ist: { mean: 11.75, sd: 3.25 }, soll: { mean: 10.60, sd: 3.35 }, d: 0.348, sig: true },
+  systemDeaths: { ist: { mean: 4.43, sd: 2.34 }, soll: { mean: 3.72, sd: 2.54 }, d: 0.291, sig: true },
+  gpBurnout: { ist: { mean: 7.89 }, soll: { mean: 1.19 }, d: 1.4, sig: true },
+  proactiveAlerts: { ist: 0, soll: { mean: 146.75, sd: 71.11 } },
+  ketenzorg: { ist: { mean: 33.83 }, soll: { mean: 87.61 }, d: 0.940, sig: true },
+  biasScore: { ist: { mean: 0.92 }, soll: { mean: 0.88 }, d: 0.288, sig: true },
+  hendrikHP: [82, 80, 78, 75, 71, 68, 64, 59, 53, 46, 38, 29, 19, 8, 0],
+  burnoutTimeline: {
+    ist: [0, 1, 2, 4, 5, 6, 7, 7.5, 8, 8.5, 9, 9.2, 9.4, 9.5, 9.6],
+    soll: [0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.1, 1.1, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2]
+  },
+  deathsByAge: {
+    labels: ['0-44', '45-64', '65-79', '80+'],
+    ist: [0.8, 1.5, 4.2, 5.25],
+    soll: [0.5, 1.0, 3.8, 5.30]
+  }
+};
+
+// ── Chart Drawing ──
+function drawLineChart(canvasId, data, options) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  ctx.scale(dpr, dpr);
+  const w = rect.width, h = rect.height;
+  const pad = { top: 20, right: 20, bottom: 40, left: 50 };
+  const plotW = w - pad.left - pad.right;
+  const plotH = h - pad.top - pad.bottom;
+
+  ctx.clearRect(0, 0, w, h);
+
+  // Grid
+  ctx.strokeStyle = '#e8e6e0';
+  ctx.lineWidth = 0.5;
+  const ySteps = 5;
+  for (let i = 0; i <= ySteps; i++) {
+    const y = pad.top + (plotH / ySteps) * i;
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(w - pad.right, y); ctx.stroke();
+    ctx.fillStyle = '#999';
+    ctx.font = '11px Space Grotesk, sans-serif';
+    ctx.textAlign = 'right';
+    const val = options.yMax - (options.yMax / ySteps) * i;
+    ctx.fillText(val.toFixed(options.yDecimals || 0), pad.left - 8, y + 4);
+  }
+
+  // X labels
+  ctx.fillStyle = '#999';
+  ctx.font = '11px Space Grotesk, sans-serif';
+  ctx.textAlign = 'center';
+  const xLabels = options.xLabels || data[0].values.map((_, i) => i);
+  const xStep = Math.max(1, Math.floor(xLabels.length / 7));
+  for (let i = 0; i < xLabels.length; i += xStep) {
+    const x = pad.left + (plotW / (xLabels.length - 1)) * i;
+    ctx.fillText(xLabels[i], x, h - pad.bottom + 20);
+  }
+  if (options.xLabel) {
+    ctx.fillText(options.xLabel, pad.left + plotW / 2, h - 4);
+  }
+
+  // Lines
+  data.forEach(series => {
+    ctx.beginPath();
+    ctx.strokeStyle = series.color;
+    ctx.lineWidth = 2.5;
+    ctx.lineJoin = 'round';
+    series.values.forEach((val, i) => {
+      const x = pad.left + (plotW / (series.values.length - 1)) * i;
+      const y = pad.top + plotH - (val / options.yMax) * plotH;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+
+    // Dots on last point
+    const lastI = series.values.length - 1;
+    const lx = pad.left + (plotW / lastI) * lastI;
+    const ly = pad.top + plotH - (series.values[lastI] / options.yMax) * plotH;
+    ctx.beginPath();
+    ctx.arc(lx, ly, 4, 0, Math.PI * 2);
+    ctx.fillStyle = series.color;
+    ctx.fill();
+  });
+
+  // Threshold line
+  if (options.threshold) {
+    const ty = pad.top + plotH - (options.threshold.value / options.yMax) * plotH;
+    ctx.setLineDash([5, 4]);
+    ctx.strokeStyle = options.threshold.color || '#999';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(pad.left, ty); ctx.lineTo(w - pad.right, ty); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = options.threshold.color || '#999';
+    ctx.font = '10px Space Grotesk, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(options.threshold.label, w - pad.right + 4, ty + 3);
+  }
+}
+
+function drawBarChart(canvasId, labels, datasets, options) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  ctx.scale(dpr, dpr);
+  const w = rect.width, h = rect.height;
+  const pad = { top: 20, right: 20, bottom: 40, left: 50 };
+  const plotW = w - pad.left - pad.right;
+  const plotH = h - pad.top - pad.bottom;
+
+  ctx.clearRect(0, 0, w, h);
+
+  // Grid
+  ctx.strokeStyle = '#e8e6e0';
+  ctx.lineWidth = 0.5;
+  const ySteps = 5;
+  for (let i = 0; i <= ySteps; i++) {
+    const y = pad.top + (plotH / ySteps) * i;
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(w - pad.right, y); ctx.stroke();
+    ctx.fillStyle = '#999';
+    ctx.font = '11px Space Grotesk, sans-serif';
+    ctx.textAlign = 'right';
+    const val = options.yMax - (options.yMax / ySteps) * i;
+    ctx.fillText(val.toFixed(1), pad.left - 8, y + 4);
+  }
+
+  const groupW = plotW / labels.length;
+  const barW = groupW / (datasets.length + 1);
+  const barGap = barW * 0.3;
+
+  labels.forEach((label, i) => {
+    ctx.fillStyle = '#999';
+    ctx.font = '11px Space Grotesk, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(label, pad.left + groupW * i + groupW / 2, h - pad.bottom + 20);
+
+    datasets.forEach((ds, j) => {
+      const x = pad.left + groupW * i + barW * j + barGap + groupW * 0.15;
+      const barH = (ds.values[i] / options.yMax) * plotH;
+      const y = pad.top + plotH - barH;
+
+      ctx.fillStyle = ds.color;
+      ctx.beginPath();
+      const r = 3;
+      ctx.moveTo(x, y + r);
+      ctx.arcTo(x, y, x + r, y, r);
+      ctx.arcTo(x + barW - barGap, y, x + barW - barGap, y + r, r);
+      ctx.lineTo(x + barW - barGap, pad.top + plotH);
+      ctx.lineTo(x, pad.top + plotH);
+      ctx.closePath();
+      ctx.fill();
+
+      // Value on top
+      ctx.fillStyle = ds.color;
+      ctx.font = '10px Space Grotesk, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(ds.values[i].toFixed(1), x + (barW - barGap) / 2, y - 6);
+    });
+  });
+}
+
+// ── Animated Chart Drawing ──
+const chartDrawn = {};
+
+function drawCharts(id) {
+  if (chartDrawn[id]) return;
+  chartDrawn[id] = true;
+
+  if (id === 'chart-hendrik') {
+    const cycles = SIMULATION_DATA.hendrikHP.map((_, i) => i * 5);
+    drawLineChart('chart-hendrik', [
+      { values: SIMULATION_DATA.hendrikHP, color: '#e67e22' }
+    ], {
+      yMax: 100, xLabels: cycles, xLabel: 'Cycle',
+      threshold: { value: 20, label: 'Critical HP', color: '#c0392b' }
+    });
+  }
+  if (id === 'chart-burnout') {
+    const cycles = SIMULATION_DATA.burnoutTimeline.ist.map((_, i) => i * 100);
+    drawLineChart('chart-burnout', [
+      { values: SIMULATION_DATA.burnoutTimeline.ist, color: '#c0392b' },
+      { values: SIMULATION_DATA.burnoutTimeline.soll, color: '#27ae60' }
+    ], { yMax: 10, xLabels: cycles, xLabel: 'Cycle', yDecimals: 0 });
+  }
+  if (id === 'chart-age') {
+    drawBarChart('chart-age',
+      SIMULATION_DATA.deathsByAge.labels,
+      [
+        { values: SIMULATION_DATA.deathsByAge.ist, color: '#c0392b' },
+        { values: SIMULATION_DATA.deathsByAge.soll, color: '#27ae60' }
+      ],
+      { yMax: 6 }
+    );
+  }
+}
+
+// ── Intersection Observer (scroll animations + chart drawing) ──
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+      // Draw charts when their container enters viewport
+      const canvas = entry.target.querySelector('canvas');
+      if (canvas) drawCharts(canvas.id);
+    }
+  });
+}, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
+
+document.querySelectorAll('.chapter').forEach(ch => observer.observe(ch));
+
+// Also observe chart containers directly
+document.querySelectorAll('.chart-container').forEach(cc => {
+  const obs2 = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        const canvas = e.target.querySelector('canvas');
+        if (canvas) drawCharts(canvas.id);
+      }
+    });
+  }, { threshold: 0.3 });
+  obs2.observe(cc);
+});
+
+// ── Scrollspy ──
+const tocLinks = document.querySelectorAll('.toc a[data-section]');
+const sections = [];
+tocLinks.forEach(link => {
+  const el = document.getElementById(link.dataset.section);
+  if (el) sections.push({ el, link });
+});
+
+function updateScrollspy() {
+  let current = sections[0];
+  const scrollY = window.scrollY + 160;
+  sections.forEach(s => {
+    if (s.el.offsetTop <= scrollY) current = s;
+  });
+  tocLinks.forEach(l => l.classList.remove('active'));
+  if (current) current.link.classList.add('active');
+}
+window.addEventListener('scroll', updateScrollspy, { passive: true });
+updateScrollspy();
+
+// ── Branch Point Toggle ──
+function switchBranch(which) {
+  document.querySelectorAll('.branch-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.branch-pane').forEach(p => p.classList.remove('active'));
+  document.querySelector(`.branch-tab.${which}`).classList.add('active');
+  document.getElementById(`branch-${which}`).classList.add('active');
+}
+
+// ── Footnotes ──
+document.querySelectorAll('.fn-ref').forEach(ref => {
+  ref.addEventListener('click', (e) => {
+    e.preventDefault();
+    const fnId = ref.dataset.fn;
+    const body = ref.closest('p, div').nextElementSibling;
+    // Find the footnote body matching this ref
+    let target = ref.parentElement;
+    while (target && target.nextElementSibling) {
+      target = target.nextElementSibling;
+      if (target.classList.contains('footnote-body') && target.dataset.fn === fnId) {
+        target.classList.toggle('open');
+        break;
+      }
+    }
+  });
+});
+
+// ── Redraw charts on resize ──
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    chartDrawn['chart-hendrik'] = false;
+    chartDrawn['chart-burnout'] = false;
+    chartDrawn['chart-age'] = false;
+    document.querySelectorAll('.chart-container').forEach(cc => {
+      const canvas = cc.querySelector('canvas');
+      if (canvas && cc.getBoundingClientRect().top < window.innerHeight) {
+        drawCharts(canvas.id);
+      }
+    });
+  }, 200);
+});
+</script>
+</body>
+</html>
