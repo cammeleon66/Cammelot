@@ -1,0 +1,376 @@
+{
+  "scenario": "benchmark-freq",
+  "date": "2026-04-13T08:58:19.030Z",
+  "runs_per_config": 20,
+  "cycles": 3000,
+  "results": {
+    "benchmark_every_50": {
+      "config": {
+        "benchmark_frequency_cycles": 50
+      },
+      "n_runs": 20,
+      "metrics": {
+        "total_deaths": {
+          "mean": 10.75,
+          "sd": 1.888,
+          "min": 7,
+          "max": 14,
+          "median": 10.5
+        },
+        "system_deaths": {
+          "mean": 4.15,
+          "sd": 1.348,
+          "min": 2,
+          "max": 7,
+          "median": 4
+        },
+        "research_queries": {
+          "mean": 30,
+          "sd": 0,
+          "min": 30,
+          "max": 30,
+          "median": 30
+        },
+        "opt_out_refusals": {
+          "mean": 62.75,
+          "sd": 49.235,
+          "min": 0,
+          "max": 183,
+          "median": 60
+        },
+        "cohort_too_small": {
+          "mean": 27.85,
+          "sd": 6.945,
+          "min": 0,
+          "max": 30,
+          "median": 30
+        },
+        "benchmark_reports": {
+          "mean": 15,
+          "sd": 0,
+          "min": 15,
+          "max": 15,
+          "median": 15
+        },
+        "proactive_alerts": {
+          "mean": 161.8,
+          "sd": 84.509,
+          "min": 41,
+          "max": 425,
+          "median": 155
+        },
+        "ketenzorg": {
+          "mean": 131,
+          "sd": 124.168,
+          "min": 12,
+          "max": 573,
+          "median": 89.5
+        },
+        "gini": {
+          "mean": 0.097,
+          "sd": 0.299,
+          "min": 0,
+          "max": 0.972,
+          "median": 0
+        },
+        "bias_score": {
+          "mean": 0.912,
+          "sd": 0.083,
+          "min": 0.738,
+          "max": 1,
+          "median": 0.932
+        },
+        "er_admissions": {
+          "mean": 28.1,
+          "sd": 15.352,
+          "min": 6,
+          "max": 77,
+          "median": 24
+        }
+      },
+      "gp_burnout_avg": {
+        "mean": 1.3,
+        "sd": 1.673,
+        "min": 0,
+        "max": 6,
+        "median": 0.5
+      }
+    },
+    "benchmark_every_100": {
+      "config": {
+        "benchmark_frequency_cycles": 100
+      },
+      "n_runs": 20,
+      "metrics": {
+        "total_deaths": {
+          "mean": 10.95,
+          "sd": 3.72,
+          "min": 5,
+          "max": 20,
+          "median": 10.5
+        },
+        "system_deaths": {
+          "mean": 4.1,
+          "sd": 2.882,
+          "min": 0,
+          "max": 11,
+          "median": 3.5
+        },
+        "research_queries": {
+          "mean": 30,
+          "sd": 0,
+          "min": 30,
+          "max": 30,
+          "median": 30
+        },
+        "opt_out_refusals": {
+          "mean": 71.95,
+          "sd": 52.616,
+          "min": 0,
+          "max": 180,
+          "median": 60
+        },
+        "cohort_too_small": {
+          "mean": 28.3,
+          "sd": 6.697,
+          "min": 0,
+          "max": 30,
+          "median": 30
+        },
+        "benchmark_reports": {
+          "mean": 15,
+          "sd": 0,
+          "min": 15,
+          "max": 15,
+          "median": 15
+        },
+        "proactive_alerts": {
+          "mean": 147.65,
+          "sd": 58.363,
+          "min": 19,
+          "max": 241,
+          "median": 141.5
+        },
+        "ketenzorg": {
+          "mean": 89.25,
+          "sd": 74.754,
+          "min": 4,
+          "max": 304,
+          "median": 91
+        },
+        "gini": {
+          "mean": 0.193,
+          "sd": 0.397,
+          "min": 0,
+          "max": 0.971,
+          "median": 0
+        },
+        "bias_score": {
+          "mean": 0.879,
+          "sd": 0.141,
+          "min": 0.589,
+          "max": 1,
+          "median": 0.936
+        },
+        "er_admissions": {
+          "mean": 26,
+          "sd": 12.933,
+          "min": 3,
+          "max": 51,
+          "median": 23
+        }
+      },
+      "gp_burnout_avg": {
+        "mean": 1.4,
+        "sd": 1.429,
+        "min": 0,
+        "max": 4,
+        "median": 0.75
+      }
+    },
+    "benchmark_every_200": {
+      "config": {
+        "benchmark_frequency_cycles": 200
+      },
+      "n_runs": 20,
+      "metrics": {
+        "total_deaths": {
+          "mean": 10.4,
+          "sd": 3.136,
+          "min": 5,
+          "max": 16,
+          "median": 10.5
+        },
+        "system_deaths": {
+          "mean": 4.15,
+          "sd": 2.477,
+          "min": 0,
+          "max": 10,
+          "median": 4
+        },
+        "research_queries": {
+          "mean": 30,
+          "sd": 0,
+          "min": 30,
+          "max": 30,
+          "median": 30
+        },
+        "opt_out_refusals": {
+          "mean": 47.25,
+          "sd": 36.787,
+          "min": 0,
+          "max": 136,
+          "median": 31.5
+        },
+        "cohort_too_small": {
+          "mean": 27.65,
+          "sd": 6.691,
+          "min": 3,
+          "max": 30,
+          "median": 30
+        },
+        "benchmark_reports": {
+          "mean": 15,
+          "sd": 0,
+          "min": 15,
+          "max": 15,
+          "median": 15
+        },
+        "proactive_alerts": {
+          "mean": 146,
+          "sd": 63.684,
+          "min": 54,
+          "max": 306,
+          "median": 138.5
+        },
+        "ketenzorg": {
+          "mean": 111.8,
+          "sd": 82.992,
+          "min": 16,
+          "max": 275,
+          "median": 88.5
+        },
+        "gini": {
+          "mean": 0.049,
+          "sd": 0.217,
+          "min": 0,
+          "max": 0.971,
+          "median": 0
+        },
+        "bias_score": {
+          "mean": 0.928,
+          "sd": 0.117,
+          "min": 0.516,
+          "max": 1,
+          "median": 1
+        },
+        "er_admissions": {
+          "mean": 28.25,
+          "sd": 17.18,
+          "min": 5,
+          "max": 78,
+          "median": 28.5
+        }
+      },
+      "gp_burnout_avg": {
+        "mean": 1.25,
+        "sd": 1.352,
+        "min": 0,
+        "max": 3.5,
+        "median": 1
+      }
+    },
+    "benchmark_every_500": {
+      "config": {
+        "benchmark_frequency_cycles": 500
+      },
+      "n_runs": 20,
+      "metrics": {
+        "total_deaths": {
+          "mean": 10.4,
+          "sd": 2.945,
+          "min": 5,
+          "max": 15,
+          "median": 10.5
+        },
+        "system_deaths": {
+          "mean": 3.6,
+          "sd": 1.875,
+          "min": 1,
+          "max": 7,
+          "median": 4
+        },
+        "research_queries": {
+          "mean": 30,
+          "sd": 0,
+          "min": 30,
+          "max": 30,
+          "median": 30
+        },
+        "opt_out_refusals": {
+          "mean": 56.95,
+          "sd": 37.262,
+          "min": 0,
+          "max": 133,
+          "median": 60
+        },
+        "cohort_too_small": {
+          "mean": 27,
+          "sd": 7.726,
+          "min": 1,
+          "max": 30,
+          "median": 30
+        },
+        "benchmark_reports": {
+          "mean": 15,
+          "sd": 0,
+          "min": 15,
+          "max": 15,
+          "median": 15
+        },
+        "proactive_alerts": {
+          "mean": 143.85,
+          "sd": 51.216,
+          "min": 55,
+          "max": 231,
+          "median": 126.5
+        },
+        "ketenzorg": {
+          "mean": 90.65,
+          "sd": 52.402,
+          "min": 25,
+          "max": 221,
+          "median": 72
+        },
+        "gini": {
+          "mean": 0.146,
+          "sd": 0.356,
+          "min": 0,
+          "max": 0.974,
+          "median": 0
+        },
+        "bias_score": {
+          "mean": 0.897,
+          "sd": 0.126,
+          "min": 0.647,
+          "max": 1,
+          "median": 0.969
+        },
+        "er_admissions": {
+          "mean": 27.6,
+          "sd": 10.282,
+          "min": 7,
+          "max": 47,
+          "median": 30
+        }
+      },
+      "gp_burnout_avg": {
+        "mean": 1.525,
+        "sd": 2.029,
+        "min": 0,
+        "max": 8,
+        "median": 0.75
+      }
+    }
+  }
+}
