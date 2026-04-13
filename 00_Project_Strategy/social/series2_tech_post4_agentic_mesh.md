@@ -141,6 +141,32 @@ Same five providers. One shared protocol. Data moves with action. No one queries
 
 ---
 
+### The bigger picture: research and benchmarks
+
+The referral scenario is one interaction type. But the same architecture applies to two things that the current system handles poorly and that data mesh would not improve much either.
+
+**Research queries that travel to the data, instead of the other way around.**
+
+If a university researcher wants to know the average HbA1c trajectory of type 2 diabetes patients who also have COPD in the eastern Netherlands, today that requires: a research protocol, an ethics approval, a data sharing agreement with every participating GP practice and hospital, a data extraction from each system, a de-identification step, a central collection point, and then finally an analysis. This takes months. Sometimes years. By the time the data is assembled, the clinical landscape has changed.
+
+In an agentic mesh, the research query is itself an agent. It carries a signed protocol (approved by the medical ethics committee), a SMART-on-FHIR scope definition (which resource types, which patient cohort), and a consent verification requirement. It travels the mesh. At each GP agent, it presents its credentials. The GP agent checks: does this patient have an active research consent for this type of study? If yes, the agent runs the aggregation locally — on the GP's own data, in the GP's own environment — and returns only the aggregate result. The raw data never leaves the practice.
+
+This is federated computation, not federated governance. The data stays where it is. The question travels. The GP agent doesn't need to understand the research question — it just needs to verify the credentials and run a scoped FHIR query.
+
+The same pattern works for **national quality benchmarks**. The Dutch healthcare inspectorate (IGJ) and quality registries currently collect data by asking every provider to submit reports. Each provider formats them differently. The data arrives late. The benchmarks are always retrospective.
+
+In an agentic mesh, a benchmark agent carries a standardised measurement definition (say: "percentage of diabetes patients with HbA1c below 53 mmol/mol"). It visits each GP agent. Each GP agent runs the calculation against its own FHIR store and returns one number. The benchmark agent aggregates. No data extraction. No manual reports. No formatting inconsistencies. The benchmark updates in near-real-time instead of once a year.
+
+**The open question: who owns the data?**
+
+This is the thing I do not have a good answer for. When a research agent aggregates results across 200 GP agents, who owns the aggregate? The researcher? The GP practices? The patients who consented? When a benchmark agent produces a national quality score, and that score reveals that a specific region underperforms, who is responsible for the underlying data that produced that conclusion?
+
+In a data mesh, ownership is at least theoretically clear: the domain owns its data product. In an agentic mesh, the data never leaves the domain, but the *conclusions* do. Ownership of conclusions derived from federated computation is an unsolved legal question, and it won't be solved by better technology. It needs policy.
+
+I'm flagging this as an open problem, not proposing a solution. The architectural pattern works. The governance question around derived data is hard and I don't think anyone has cracked it yet.
+
+---
+
 ### The honest limitations
 
 A few things I'm not claiming.
