@@ -6,6 +6,25 @@
 **Data source:** `scripts/output/mortality_fix_100runs.json`
 
 ---
+## MY version
+Welcome to Cammelot! 🏰 Warning up front: hobby project gone *very* rogue.
+
+I built this because both online and in real-life I still see most people pro and con AI focussing on seeing this as a productivity tool only. I actually believe (yes, I am biased) that this is the wrong way to look at things: the current status of AI is able to disrupt a complete industry, but then we need to be able to compare it the right way. So, that is what I did. I built Cammelot.
+
+**Cammelot** is a simulated Dutch town. Forty-five citizens with names, ages, pre-existing conditions, and GP assignments. Three general practitioners. One hospital. The citizens walk around a 16-bit pixel map that looks like it belongs on a 1994 Super Nintendo. Their diseases are drawn from 2025 RIVM prevalence data, the health system is drawn from CBS demographics, IZA program and NZa tariffs. The simulation is built on agentic citizens that spawn diseases based on statistical Markov Chains reflecting actual Dutch data.
+
+Then, I built the AI-augmented version of my simulated Dutch town reflecting the health industry: ambient scribes, Digital Twins, AI triage, proactive chronic care management, standardized data, interoperable data.
+
+I ran 100 simulations of 1 year in both environments and did a mini 'applied science' analysis to check all the biased ideas I have (had?) on the (non-)value of AI in health.
+
+The headline result that surprised me most: GP burnout drops 85%. Admin waste drops 83%. But mortality? That one was hard. It only became statistically significant (d=0.35) after I added proper triage priority and referral capacity management. The AI doesn't save lives by being smart — it saves lives by not wasting the doctor's time on paperwork.
+
+In a series of ten posts I will take you through the architecture, the uncomfortable findings, and why I think the "data mesh" is the wrong abstraction for Dutch healthcare. Happy to get some peer reviews or new research questions from the wider public. And.. I had a looooooooot of fun doing this.
+
+Code is open source. All statistics are published. Tell me where I'm wrong.
+
+🔗 [Link to series]
+
 
 ## FINAL VERSION
 
@@ -13,18 +32,20 @@ Welcome to Cammelot 🏰
 
 I built a simulated Dutch town. 45 inhabitants, three GPs, one hospital. Real CBS demographics, real RIVM disease prevalence, real NZa tariffs. Everything runs as a 16-bit pixel simulation because that's apparently how my brain works.
 
-Then I ran it 100 times with the current healthcare system. And 100 times with an AI-augmented version: ambient scribes, Digital Twins, AI triage, proactive chronic care management.
+Then I ran it 100 times with the current healthcare system. And 100 times with an AI-augmented version: ambient scribes, Digital Twins, AI triage, proactive chronic care management, federated research agents, signed agent cards.
 
 Results from 100 paired simulations (Cohen's d, Welch's t-test):
 
-→ GP burnout: 9.4% → 1.4%, d=1.47 ✅ (large effect, p<0.001)
+→ GP burnout: 7.9% → 1.2%, d=1.4+ ✅ (large effect, p<0.001)
 → Administrative waste: €33.6k → €5.6k, −83% ✅
-→ Proactive alerts: 0 → 143/run, d=3.07 ✅
-→ Ketenzorg enrollment: +221%, d=1.16 ✅
-→ Patient mortality: 11.1 → 10.8 deaths/year, d=0.10 ❌ (not significant)
-→ Age fairness: bias index 0.94 → 0.90, d=0.34 ✅ (guardrail fired 98% of runs)
+→ Proactive alerts: 0 → 147/run, d=2.92 ✅
+→ Ketenzorg enrollment: +159%, d=0.94 ✅
+→ Patient mortality: 11.75 → 10.60 deaths/year, d=0.35 ✅ (significant after triage + capacity fixes)
+→ Age fairness: bias index 0.92 → 0.88, d=0.29 ✅ (guardrail fired 98% of runs)
+→ Research queries: 30/run (SOLL only) — federated, consent-checked, k-anonymity enforced
+→ Security: both forged-card and replay attacks blocked by signed agent cards
 
-The uncomfortable conclusion: AI is, today, a workforce intervention. Not a mortality intervention. Burnout drops 85%, admin drops 83%, the GPs can actually see their patients — but the specialist queue is still 12 weeks. And that is where people deteriorate.
+The finding that surprised me most: mortality only became significant after I stopped optimizing the AI and started fixing the plumbing — referral capacity limits, proper triage priority, signed agent cards. AI doesn't save lives by being smart. It saves lives by not wasting the doctor's time on paperwork and not losing the referral in a broken queue.
 
 I wrote ten posts about it. Six on the health data (including the null results and one age group where SOLL was actually worse). Four on the architecture (A2A protocol, FHIR memory, security red-teaming, why the data mesh is the wrong abstraction for healthcare).
 
