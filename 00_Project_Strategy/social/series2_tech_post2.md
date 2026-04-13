@@ -58,13 +58,13 @@ The fix: FHIR stores need SMART-on-FHIR scoping. Each agent gets OAuth tokens sc
 
 ### Why this isn't hypothetical
 
-I've been showing this demo to people who work on real healthcare IT systems. The reaction is always the same: "we have this exact vulnerability."
+In March 2026, an attacker gained admin access to vantage6's Harbor container registry. Vantage6 is the open-source federated learning platform used by IKNL (Integraal Kankercentrum Nederland) for multi-hospital oncology research. The attacker injected malware into infrastructure Docker images — node images, VPN clients, algorithm base images. The compromised images had internet access. The vantage6 team published an advisory on April 2, 2026; the investigation is still ongoing.
 
-Not the naming collision specifically. But the general pattern: systems that trust incoming data because it comes from "inside the network." Hospital integration engines that don't validate HL7 message sources. FHIR endpoints that authenticate the application but not the user. Referral systems where the receiving party is assumed to be who they claim to be.
+This is the Mordred attack, but in production infrastructure. Vantage6 sends containerised algorithms to hospital data nodes. If you tamper with the container before it arrives, every node that runs it is compromised. The attack surface is the supply chain, not the protocol endpoint. The container registry was the weak point — the same architectural position as the Agent Card discovery layer in A2A.
+
+The general pattern is the same thing I see when showing the Mordred demo to people in healthcare IT: systems that trust incoming data because it comes from "inside the network." Hospital integration engines that don't validate HL7 message sources. FHIR endpoints that authenticate the application but not the user. Referral systems where the receiving party is assumed to be who they claim to be.
 
 Multi-agent systems make this worse, not better. The more autonomous your agents are, the more damage a single compromised agent can do. If Dr. van den Berg's agent autonomously processes referrals without human oversight (which is the entire point of SOLL mode), then compromising that agent means compromising the care pathway for every patient it touches.
-
-The agentic AI community talks about capability all day. Tooling. Orchestration. Reasoning. Memory. Security is an afterthought. "We'll add authentication later." In my simulation, "later" was 47 cycles after Mordred showed up. By then, someone was dead.
 
 ---
 
@@ -95,3 +95,5 @@ The code is open. If you want to try your own attack, fork the repo and add an a
 ---
 
 *Note: Mordred doesn't exist in the current public codebase. I ran this as a manual test by modifying the agent list and adding a non-processing specialist. The results described are from a single test run, not statistically validated. The vulnerabilities described are structural, not stochastic.*
+
+*References: A2A Protocol Specification v1.0.0 (Linux Foundation / Google, 2025). SMART-on-FHIR v2.2.0 (HL7, 2023). Vantage6 security advisory — Harbor registry breach (April 2, 2026, vantage6.ai). UZI-register (CIBG, Dutch healthcare professional register). NEN 7510/7512/7513 (Dutch healthcare information security standards).*

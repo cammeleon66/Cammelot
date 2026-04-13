@@ -39,6 +39,8 @@ In Cammelot, every GP and specialist publishes a machine-readable description of
 
 That's it. No API contract negotiation. No integration middleware. Just: "here's who I am, here's what I can do, here's how busy I am right now." Any other agent in the mesh can read this and decide whether to send a referral.
 
+This concept is not new to the Netherlands. Health-RI and DTL developed the Personal Health Train (PHT) — data stays at the "station" (the hospital, the GP practice), and the "train" (the analysis) travels to it. The technical platform, vantage6 by IKNL, has been used in federated oncology research across multiple hospitals. What PHT doesn't have is discovery. In vantage6, the researcher configures which nodes to query. In A2A, agents find each other by reading published cards. The researcher doesn't need to know the topology. The mesh is self-describing.
+
 The cardiologist publishes the same format:
 
 ```json

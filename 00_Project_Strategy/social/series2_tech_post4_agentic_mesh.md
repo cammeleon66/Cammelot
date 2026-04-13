@@ -143,6 +143,8 @@ Same five providers. One shared protocol. Data moves with action. No one queries
 
 ### The bigger picture: research and benchmarks
 
+Everything above — the referral mesh, the Agent Cards, the FHIR memory — is what I actually built and ran. What follows is what the same architecture enables but I have not yet implemented in Cammelot. The protocol and data model already support it; the agents don't exist yet.
+
 The referral scenario is one interaction type. But the same architecture applies to two things that the current system handles poorly and that data mesh would not improve much either.
 
 **The Netherlands already tried "bring the question to the data."**

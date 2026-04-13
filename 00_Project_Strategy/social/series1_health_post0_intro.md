@@ -43,7 +43,7 @@ Each agent, every simulation cycle, does three things:
 
 Disease progression is driven by **Markov chains** — probabilistic state machines calibrated to RIVM data. A patient with COPD transitions between states: healthy → mild → moderate → severe → terminal. Each tick, the chain rolls. Comorbidities multiply the odds: diabetes worsens heart disease (1.4×), hypertension compounds both (1.3×). When a patient reaches terminal, their sprite turns grey. They become a ghost.
 
-Providers communicate through **A2A (Agent-to-Agent) protocol**. Every GP and specialist publishes an Agent Card — a machine-readable description of their skills, current wait time, and queue depth. Referrals flow as structured messages. Wait times are real-time, not estimated.
+Providers communicate through **A2A (Agent-to-Agent) protocol**. Every GP and specialist publishes an Agent Card — a machine-readable description of their skills, current wait time, and queue depth. Referrals flow as structured messages. Wait times are real-time, not estimated. Think of it as an evolution of the Personal Health Train concept that the Netherlands pioneered through Health-RI — but with stateful agents that discover each other, instead of stateless containers dispatched to known nodes.
 
 [📸 Architecture diagram: Agent cognitive loop → FHIR memory → A2A communication → Markov disease engine]
 
