@@ -4,6 +4,23 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Cammelot — A Research-Backed Healthcare Simulation</title>
+
+<!-- Open Graph Meta Tags -->
+<meta property="og:title" content="Cammelot — What Happens When AI Runs a Dutch Town's Healthcare">
+<meta property="og:description" content="100 simulations. 45 pixel citizens. Real Dutch data. A research-backed exploration of AI in healthcare.">
+<meta property="og:image" content="https://cammeleon66.github.io/Cammelot/og-image.png">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://cammeleon66.github.io/Cammelot/">
+
+<!-- Twitter Card Meta Tags -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Cammelot — What Happens When AI Runs a Dutch Town's Healthcare">
+<meta name="twitter:description" content="100 simulations. 45 pixel citizens. Real Dutch data. A research-backed exploration of AI in healthcare.">
+<meta name="twitter:image" content="https://cammeleon66.github.io/Cammelot/og-image.png">
+
+<!-- Favicon: Inline SVG pixel castle turret -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='4' y='20' width='24' height='12' fill='%23c0392b'/%3E%3Crect x='4' y='16' width='6' height='4' fill='%23c0392b'/%3E%3Crect x='13' y='16' width='6' height='4' fill='%23c0392b'/%3E%3Crect x='22' y='16' width='6' height='4' fill='%23c0392b'/%3E%3Crect x='12' y='8' width='8' height='12' fill='%23e74c3c'/%3E%3Crect x='14' y='4' width='4' height='4' fill='%23c0392b'/%3E%3Crect x='14' y='24' width='4' height='8' fill='%23922b21'/%3E%3C/svg%3E">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -13,10 +30,11 @@
 html { scroll-behavior: smooth; font-size: 18px; }
 body {
   font-family: 'Spectral', Georgia, serif;
-  background: #faf9f7;
-  color: #1a1a1a;
+  background: var(--bg);
+  color: var(--text);
   line-height: 1.72;
   -webkit-font-smoothing: antialiased;
+  transition: background 0.4s ease, color 0.4s ease;
 }
 
 /* ── Palette ── */
@@ -32,16 +50,64 @@ body {
   --border: #e0ddd5;
   --accent: #c0392b;
   --code-bg: #f5f4f0;
+  --card-bg: #fff;
+  --header-bg: rgba(250, 249, 247, 0.92);
+  --table-alt: rgba(0,0,0,0.02);
+  --table-hover: rgba(0,0,0,0.04);
+}
+
+/* ── Dark Theme ── */
+body.dark-theme {
+  --bg: #0a0a12;
+  --text: #e0e0e0;
+  --text-muted: #8a8a9a;
+  --red: #e74c3c;
+  --green: #27ae60;
+  --red-light: rgba(231,76,60,0.1);
+  --green-light: rgba(39,174,96,0.1);
+  --sidebar-bg: #0f0f1a;
+  --border: #2a2a3a;
+  --accent: #27ae60;
+  --code-bg: #14141f;
+  --card-bg: #12121e;
+  --header-bg: rgba(10, 10, 18, 0.92);
+  --table-alt: rgba(255,255,255,0.02);
+  --table-hover: rgba(255,255,255,0.05);
+}
+
+body.dark-theme .site-header { border-bottom-color: var(--border); }
+body.dark-theme .chart-container { background: var(--card-bg); }
+body.dark-theme .metric-card { background: var(--card-bg); }
+
+/* Dark CRT scanline overlay */
+body.dark-theme::after {
+  content: '';
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: repeating-linear-gradient(
+    0deg, transparent, transparent 2px, rgba(0,255,0,0.015) 2px, rgba(0,255,0,0.015) 4px
+  );
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* ── Reading Progress Bar ── */
+.progress-bar {
+  position: fixed; top: 0; left: 0; height: 3px;
+  background: var(--red);
+  z-index: 200;
+  width: 0%;
+  transition: width 0.05s linear;
 }
 
 /* ── Header ── */
 .site-header {
-  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-  background: rgba(250, 249, 247, 0.92);
+  position: fixed; top: 3px; left: 0; right: 0; z-index: 100;
+  background: var(--header-bg);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--border);
   padding: 0.6rem 2rem;
   display: flex; align-items: center; justify-content: space-between;
+  transition: background 0.4s ease, border-color 0.4s ease;
 }
 .site-header .logo {
   font-family: 'Space Grotesk', sans-serif;
@@ -50,6 +116,7 @@ body {
   text-decoration: none;
 }
 .site-header .logo span { color: var(--red); }
+.site-header nav { display: flex; align-items: center; }
 .site-header nav a {
   font-family: 'Space Grotesk', sans-serif;
   font-size: 0.75rem; text-decoration: none; color: var(--text-muted);
@@ -57,6 +124,76 @@ body {
   transition: color 0.2s;
 }
 .site-header nav a:hover { color: var(--text); }
+
+/* Theme toggle */
+.theme-toggle {
+  background: none; border: 1px solid var(--border); border-radius: 4px;
+  font-size: 1rem; cursor: pointer; padding: 0.25rem 0.5rem;
+  margin-left: 1.5rem; transition: all 0.3s;
+  line-height: 1;
+}
+.theme-toggle:hover { border-color: var(--text-muted); }
+
+/* Hamburger */
+.hamburger {
+  display: none; background: none; border: none; cursor: pointer;
+  padding: 0.3rem; margin-left: 1rem;
+}
+.hamburger span {
+  display: block; width: 20px; height: 2px;
+  background: var(--text); margin: 4px 0;
+  transition: all 0.3s;
+}
+.hamburger.open span:nth-child(1) { transform: rotate(45deg) translate(4px, 4px); }
+.hamburger.open span:nth-child(2) { opacity: 0; }
+.hamburger.open span:nth-child(3) { transform: rotate(-45deg) translate(4px, -4px); }
+
+/* Mobile overlay TOC */
+.mobile-toc-overlay {
+  display: none; position: fixed; top: 0; left: 0; bottom: 0;
+  width: 280px; max-width: 80vw;
+  background: var(--bg); z-index: 150;
+  padding: 5rem 1.5rem 2rem;
+  transform: translateX(-100%);
+  transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
+  overflow-y: auto;
+  box-shadow: 4px 0 20px rgba(0,0,0,0.15);
+}
+.mobile-toc-overlay.open { transform: translateX(0); }
+.mobile-toc-backdrop {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.4); z-index: 140;
+  opacity: 0; transition: opacity 0.3s;
+}
+.mobile-toc-backdrop.open { opacity: 1; }
+.mobile-toc-overlay a {
+  display: block; padding: 0.5rem 0;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.82rem; text-decoration: none;
+  color: var(--text-muted); transition: color 0.2s;
+}
+.mobile-toc-overlay a:hover { color: var(--text); }
+.mobile-toc-overlay .toc-part {
+  font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--text-muted); padding: 0.8rem 0 0.15rem; opacity: 0.6;
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+/* ── Back to Top ── */
+.back-to-top {
+  position: fixed; bottom: 2rem; right: 2rem;
+  width: 42px; height: 42px;
+  background: var(--red); color: #fff;
+  border: none; border-radius: 50%;
+  font-size: 1.1rem; cursor: pointer;
+  opacity: 0; transform: translateY(20px);
+  transition: opacity 0.3s, transform 0.3s;
+  z-index: 80;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+}
+.back-to-top.visible { opacity: 1; transform: translateY(0); }
+.back-to-top:hover { background: #a93226; }
 
 /* ── Layout ── */
 .page-grid {
@@ -107,10 +244,35 @@ body {
 /* ── Chapters ── */
 .chapter {
   margin-bottom: 5rem;
+}
+/* Staggered animation children */
+.chapter .chapter-label,
+.chapter h2,
+.chapter .hook,
+.chapter > p,
+.chapter > .metric-callout,
+.chapter > .chart-container,
+.chapter > .replay-embed,
+.chapter > .stats-table-wrap,
+.chapter > blockquote {
   opacity: 0; transform: translateY(24px);
   transition: opacity 0.7s ease, transform 0.7s ease;
 }
-.chapter.visible { opacity: 1; transform: translateY(0); }
+.chapter.visible .chapter-label { opacity: 1; transform: translateY(0); transition-delay: 0ms; }
+.chapter.visible h2 { opacity: 1; transform: translateY(0); transition-delay: 100ms; }
+.chapter.visible .hook { opacity: 1; transform: translateY(0); transition-delay: 200ms; }
+.chapter.visible > p:nth-of-type(1) { opacity: 1; transform: translateY(0); transition-delay: 300ms; }
+.chapter.visible > p:nth-of-type(2) { opacity: 1; transform: translateY(0); transition-delay: 350ms; }
+.chapter.visible > p:nth-of-type(3) { opacity: 1; transform: translateY(0); transition-delay: 400ms; }
+.chapter.visible > p:nth-of-type(4) { opacity: 1; transform: translateY(0); transition-delay: 450ms; }
+.chapter.visible > p:nth-of-type(5) { opacity: 1; transform: translateY(0); transition-delay: 500ms; }
+.chapter.visible > .metric-callout { opacity: 1; transform: translateY(0); transition-delay: 350ms; }
+.chapter.visible > .chart-container { opacity: 1; transform: translateY(0); transition-delay: 300ms; }
+.chapter.visible > .replay-embed { opacity: 1; transform: translateY(0); transition-delay: 300ms; }
+.chapter.visible > .stats-table-wrap { opacity: 1; transform: translateY(0); transition-delay: 300ms; }
+.chapter.visible > blockquote { opacity: 1; transform: translateY(0); transition-delay: 350ms; }
+/* Footnote bodies should be visible when open */
+.chapter .footnote-body { opacity: 1; transform: none; }
 
 .chapter-label {
   font-family: 'Space Grotesk', sans-serif;
@@ -132,13 +294,36 @@ body {
 
 /* ── Hero ── */
 .hero {
-  padding: 4rem 0 3rem;
+  padding: 2rem 0 3rem;
   text-align: center;
   margin-bottom: 3rem;
   border-bottom: 1px solid var(--border);
+  position: relative;
+}
+.hero-canvas-wrap {
+  position: relative;
+  width: 100%; max-width: 620px;
+  height: 200px;
+  margin: 0 auto 1.5rem;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid #2d2d44;
+  background: #1a3a2a;
+}
+.hero-canvas-wrap canvas {
+  width: 100%; height: 100%; display: block;
+  image-rendering: pixelated;
+}
+/* CRT scanline overlay on hero canvas */
+.hero-canvas-wrap::after {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  background: repeating-linear-gradient(
+    0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px
+  );
+  pointer-events: none;
 }
 .hero h1 {
-  font-family: 'Space Grotetz', sans-serif;
   font-family: 'Space Grotesk', sans-serif;
   font-size: 2.6rem; font-weight: 700; letter-spacing: -0.02em;
   margin-bottom: 0.5rem;
@@ -186,10 +371,12 @@ body {
 /* ── Canvas Charts ── */
 .chart-container {
   margin: 2rem 0;
-  background: #fff;
+  background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 1.5rem;
+  position: relative;
+  transition: background 0.4s, border-color 0.4s;
 }
 .chart-container .chart-title {
   font-family: 'Space Grotesk', sans-serif;
@@ -214,6 +401,23 @@ body {
 .chart-legend .legend-ist::before { background: var(--red); }
 .chart-legend .legend-soll::before { background: var(--green); }
 .chart-legend .legend-hp::before { background: #e67e22; }
+
+/* Chart tooltip */
+.chart-tooltip {
+  position: absolute;
+  background: var(--text);
+  color: var(--bg);
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.7rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: 4px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+  white-space: nowrap;
+  z-index: 10;
+}
+.chart-tooltip.visible { opacity: 1; }
 
 /* ── Branch Point ── */
 .branch-point {
@@ -240,10 +444,11 @@ body {
   padding: 0.7rem 2rem;
   border: 2px solid var(--border);
   border-radius: 4px;
-  background: #fff;
+  background: var(--card-bg);
   cursor: pointer;
   transition: all 0.25s;
   letter-spacing: 0.02em;
+  color: var(--text);
 }
 .branch-tab:hover { transform: translateY(-1px); }
 .branch-tab.ist { border-color: var(--red); color: var(--red); }
@@ -279,9 +484,20 @@ body {
 .stats-table td {
   padding: 0.5rem 0.8rem;
   border-bottom: 1px solid var(--border);
+  transition: background 0.2s;
 }
-.stats-table tr:hover td { background: #f5f4f0; }
+.stats-table tbody tr:nth-child(even) td { background: var(--table-alt); }
+.stats-table tbody tr:hover td { background: var(--table-hover); }
 .stats-table .sig { color: var(--red); font-weight: 600; }
+.stats-table .sig::before {
+  content: '';
+  display: inline-block;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--red);
+  margin-right: 0.4rem;
+  vertical-align: middle;
+}
 .stats-table .metric-name { font-weight: 500; }
 
 /* ── Footnotes ── */
@@ -312,11 +528,12 @@ body {
 }
 .metric-card {
   flex: 1; min-width: 140px;
-  background: #fff;
+  background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 1.2rem;
   text-align: center;
+  transition: background 0.4s, border-color 0.4s;
 }
 .metric-card .metric-value {
   font-family: 'Space Grotesk', sans-serif;
@@ -340,6 +557,47 @@ blockquote {
   border-radius: 0 4px 4px 0;
   font-style: italic;
   color: var(--text-muted);
+}
+
+/* ── Pull Quote ── */
+.pull-quote {
+  padding: 3rem 2rem;
+  text-align: center;
+  position: relative;
+}
+.pull-quote p {
+  font-family: 'Spectral', serif;
+  font-style: italic;
+  font-size: 1.45rem;
+  line-height: 1.55;
+  color: var(--text-muted);
+  max-width: 560px;
+  margin: 0 auto;
+  border-left: 4px solid var(--red);
+  padding-left: 1.5rem;
+  text-align: left;
+}
+
+/* ── Chapter Divider ── */
+.chapter-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 1rem 0 3rem;
+  gap: 0.8rem;
+}
+.chapter-divider::before,
+.chapter-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+.chapter-divider .diamond {
+  width: 8px; height: 8px;
+  background: var(--border);
+  transform: rotate(45deg);
+  flex-shrink: 0;
 }
 
 /* ── Code ── */
@@ -375,9 +633,15 @@ code {
   .toc { display: none; }
   .content { max-width: 100%; }
   .hero h1 { font-size: 1.8rem; }
+  .hero-canvas-wrap { height: 150px; }
   .chapter h2 { font-size: 1.4rem; }
   .metric-callout { gap: 0.8rem; }
   .branch-tabs { flex-direction: column; align-items: center; }
+  .pull-quote p { font-size: 1.15rem; }
+  .hamburger { display: block; }
+  .mobile-toc-overlay { display: block; }
+  .mobile-toc-backdrop { display: block; }
+  .site-header nav a.nav-link { display: none; }
 }
 
 /* ── Scrollbar ── */
@@ -388,16 +652,42 @@ code {
 </head>
 <body>
 
+<!-- Reading Progress Bar -->
+<div class="progress-bar" id="progress-bar"></div>
+
 <!-- Header -->
 <header class="site-header">
   <a href="#" class="logo">CAMME<span>L</span>OT</a>
   <nav>
-    <a href="#chapter-0">Story</a>
-    <a href="#chapter-8">Research</a>
-    <a href="#chapter-5">Architecture</a>
-    <a href="https://github.com" target="_blank">GitHub ↗</a>
+    <a href="#chapter-0" class="nav-link">Story</a>
+    <a href="#chapter-8" class="nav-link">Research</a>
+    <a href="#chapter-5" class="nav-link">Architecture</a>
+    <a href="https://github.com/cammeleon66/Cammelot" target="_blank" class="nav-link">GitHub ↗</a>
+    <button class="theme-toggle" id="theme-toggle" title="Toggle dark mode">🌙</button>
+    <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+      <span></span><span></span><span></span>
+    </button>
   </nav>
 </header>
+
+<!-- Mobile TOC overlay -->
+<div class="mobile-toc-backdrop" id="mobile-toc-backdrop"></div>
+<nav class="mobile-toc-overlay" id="mobile-toc-overlay">
+  <div class="toc-part">The Crisis</div>
+  <a href="#chapter-0" class="mobile-toc-link">0 — Welcome to Cammelot</a>
+  <a href="#chapter-1" class="mobile-toc-link">1 — The First Death</a>
+  <a href="#chapter-2" class="mobile-toc-link">2 — The Burnout Spiral</a>
+  <a href="#chapter-3" class="mobile-toc-link">3 — The Equity Problem</a>
+  <a href="#chapter-4" class="mobile-toc-link">4 — The Bias Trap</a>
+  <div class="toc-part">Two Futures</div>
+  <a href="#branch" class="mobile-toc-link">── Branch Point ──</a>
+  <div class="toc-part">The Architecture</div>
+  <a href="#chapter-5" class="mobile-toc-link">5 — A2A and FHIR</a>
+  <a href="#chapter-6" class="mobile-toc-link">6 — Security</a>
+  <a href="#chapter-7" class="mobile-toc-link">7 — The Agentic Mesh</a>
+  <div class="toc-part">The Evidence</div>
+  <a href="#chapter-8" class="mobile-toc-link">8 — The Numbers</a>
+</nav>
 
 <div class="page-grid">
   <!-- Sidebar TOC -->
@@ -423,11 +713,16 @@ code {
   <main class="content">
 
     <!-- Hero -->
-    <div class="hero chapter" id="hero">
+    <div class="hero" id="hero">
+      <div class="hero-canvas-wrap">
+        <canvas id="hero-canvas"></canvas>
+      </div>
       <h1>CAMME<span>L</span>OT</h1>
       <p class="subtitle">A Research-Backed Healthcare Simulation</p>
       <p class="byline">45 pixel citizens · 3 GPs · 1 hospital · 100 simulation runs · Real Dutch data</p>
     </div>
+
+    <div class="chapter-divider"><div class="diamond"></div></div>
 
     <!-- Part 0 — Introduction -->
     <section class="chapter" id="chapter-0">
@@ -450,6 +745,8 @@ code {
       </div>
     </section>
 
+    <div class="chapter-divider"><div class="diamond"></div></div>
+
     <!-- Part 1 — The First Death -->
     <section class="chapter" id="chapter-1">
       <div class="chapter-label">Part 1</div>
@@ -465,6 +762,7 @@ code {
         <div class="chart-title">Hendrik Veenstra — HP Decay Curve</div>
         <div class="chart-subtitle">HP over simulation cycles (representative run, Treeknorm threshold at cycle ~28)</div>
         <canvas id="chart-hendrik" width="620" height="280"></canvas>
+        <div class="chart-tooltip" id="tooltip-hendrik"></div>
         <div class="chart-legend">
           <span class="legend-hp">HP (Health Points)</span>
         </div>
@@ -472,11 +770,11 @@ code {
 
       <div class="metric-callout">
         <div class="metric-card">
-          <div class="metric-value ist">18/20</div>
+          <div class="metric-value ist" data-counter="18" data-suffix="/20">18/20</div>
           <div class="metric-label">Runs where Hendrik dies</div>
         </div>
         <div class="metric-card">
-          <div class="metric-value ist">Cycle 71</div>
+          <div class="metric-value ist" data-counter="71" data-prefix="Cycle ">Cycle 71</div>
           <div class="metric-label">Median death cycle</div>
         </div>
         <div class="metric-card">
@@ -487,6 +785,13 @@ code {
 
       <p>The mortality gradient by age is stark: patients over 80 die at 5× the rate of those under 45. Not because the system is intentionally biased — but because FIFO queues are structurally indifferent to clinical urgency.</p>
     </section>
+
+    <!-- Pull Quote -->
+    <div class="pull-quote">
+      <p>"Hendrik died because the queue didn't know he was dying."</p>
+    </div>
+
+    <div class="chapter-divider"><div class="diamond"></div></div>
 
     <!-- Part 2 — The Burnout Spiral -->
     <section class="chapter" id="chapter-2">
@@ -502,6 +807,7 @@ code {
         <div class="chart-title">GP Burnout Over Time — IST vs SOLL</div>
         <div class="chart-subtitle">Burnout score (0-10 scale) across simulation cycles</div>
         <canvas id="chart-burnout" width="620" height="280"></canvas>
+        <div class="chart-tooltip" id="tooltip-burnout"></div>
         <div class="chart-legend">
           <span class="legend-ist">IST (Current System)</span>
           <span class="legend-soll">SOLL (AI-Native)</span>
@@ -510,15 +816,15 @@ code {
 
       <div class="metric-callout">
         <div class="metric-card">
-          <div class="metric-value ist">7.89</div>
+          <div class="metric-value ist" data-counter="7.89">7.89</div>
           <div class="metric-label">IST mean burnout</div>
         </div>
         <div class="metric-card">
-          <div class="metric-value soll">1.19</div>
+          <div class="metric-value soll" data-counter="1.19">1.19</div>
           <div class="metric-label">SOLL mean burnout</div>
         </div>
         <div class="metric-card">
-          <div class="metric-value" style="color:var(--text)">d = 1.4</div>
+          <div class="metric-value" style="color:var(--text)" data-counter="1.4" data-prefix="d = ">d = 1.4</div>
           <div class="metric-label">Cohen's d (large)</div>
         </div>
       </div>
@@ -526,6 +832,8 @@ code {
       <p>Cohen's d of 1.4 is a <em>very large</em> effect size. The SOLL model achieves this by reducing administrative burden from 30% to under 5% through ambient AI scribes that auto-generate FHIR resources from consultations. The GP's effective time with patients increases by 34%.</p>
       <p>But here's what makes the burnout spiral insidious: it's not linear. As burnout increases, error rates increase, which increases rework, which increases admin time, which increases burnout. The IST curve doesn't plateau — it asymptotes toward system collapse.</p>
     </section>
+
+    <div class="chapter-divider"><div class="diamond"></div></div>
 
     <!-- Part 3 — The Equity Problem -->
     <section class="chapter" id="chapter-3">
@@ -539,6 +847,7 @@ code {
         <div class="chart-title">Mortality by Age Group</div>
         <div class="chart-subtitle">Mean deaths per 100 simulation runs, IST vs SOLL</div>
         <canvas id="chart-age" width="620" height="280"></canvas>
+        <div class="chart-tooltip" id="tooltip-age"></div>
         <div class="chart-legend">
           <span class="legend-ist">IST (Current System)</span>
           <span class="legend-soll">SOLL (AI-Native)</span>
@@ -549,6 +858,8 @@ code {
       <div class="footnote-body" data-fn="5">RIVM 2024 reports that 96% of Dutch adults over 75 have at least one chronic condition, and 45% have two or more (multimorbidity). CBS mortality tables show 97,594 deaths in the 80+ cohort in 2024, dominated by dementia, heart failure, and frailty.</div>
       <p>What the SOLL model <em>can</em> do is reduce <strong>system-caused deaths</strong> — mortality directly attributable to waiting list delays rather than disease progression. IST averages 4.43 system deaths; SOLL reduces this to 3.72 (Cohen's d = 0.291, p < 0.05). Small in absolute terms. Significant when those are real people.</p>
     </section>
+
+    <div class="chapter-divider"><div class="diamond"></div></div>
 
     <!-- Part 4 — The Bias Trap -->
     <section class="chapter" id="chapter-4">
@@ -561,15 +872,15 @@ code {
 
       <div class="metric-callout">
         <div class="metric-card">
-          <div class="metric-value ist">0.92</div>
+          <div class="metric-value ist" data-counter="0.92">0.92</div>
           <div class="metric-label">IST bias score</div>
         </div>
         <div class="metric-card">
-          <div class="metric-value soll">0.88</div>
+          <div class="metric-value soll" data-counter="0.88">0.88</div>
           <div class="metric-label">SOLL bias score</div>
         </div>
         <div class="metric-card">
-          <div class="metric-value" style="color:var(--text)">d = 0.288</div>
+          <div class="metric-value" style="color:var(--text)" data-counter="0.288" data-prefix="d = ">d = 0.288</div>
           <div class="metric-label">Improvement (small)</div>
         </div>
       </div>
@@ -577,6 +888,13 @@ code {
       <p>The bias score improves — but only marginally (Cohen's d = 0.288). This is the central lesson: AI systems don't automatically produce fairness. They reflect the structure of their inputs. If your input data encodes a world where elderly patients have less digital access, your AI will reproduce that inequality unless you explicitly design against it.</p>
       <p>The SOLL model's opt-out mechanism (mean 52.36 refusals per run) shows that some patients actively resist digital triage — and the system must accommodate them without penalty. This is not a technical problem. It is a political one.</p>
     </section>
+
+    <!-- Pull Quote -->
+    <div class="pull-quote">
+      <p>"Equal access is not equitable access."</p>
+    </div>
+
+    <div class="chapter-divider"><div class="diamond"></div></div>
 
     <!-- ── Branch Point ── -->
     <section class="chapter branch-point" id="branch">
@@ -612,6 +930,8 @@ code {
       </div>
     </section>
 
+    <div class="chapter-divider"><div class="diamond"></div></div>
+
     <!-- Part 5 — Architecture -->
     <section class="chapter" id="chapter-5">
       <div class="chapter-label">Part 5</div>
@@ -624,6 +944,8 @@ code {
       <p>The result is a system where data doesn't live in silos. The 11% interoperability figure from today's Dutch healthcare becomes 66% in the SOLL model — not because we forced everyone onto one platform, but because agents communicate in a shared protocol.</p>
     </section>
 
+    <div class="chapter-divider"><div class="diamond"></div></div>
+
     <!-- Part 6 — Security -->
     <section class="chapter" id="chapter-6">
       <div class="chapter-label">Part 6</div>
@@ -635,6 +957,8 @@ code {
       <p>The lesson: agentic meshes need the same security infrastructure as the internet itself. Certificate pinning, mutual TLS, anomaly detection on referral patterns. The "move fast and break things" ethos of Silicon Valley does not survive contact with healthcare.</p>
     </section>
 
+    <div class="chapter-divider"><div class="diamond"></div></div>
+
     <!-- Part 7 — The Agentic Mesh -->
     <section class="chapter" id="chapter-7">
       <div class="chapter-label">Part 7</div>
@@ -645,6 +969,13 @@ code {
       <div class="footnote-body" data-fn="9">This approach aligns with the European Health Data Space (EHDS) regulation requiring "secondary use" of health data for research while preserving patient privacy. The vantage6 platform (developed at IKNL, Netherlands) implements this pattern for cancer research.</div>
       <p>Privacy is enforced architecturally, not contractually. The opt-out mechanism (52.36 mean refusals per run) demonstrates that the system respects patient autonomy — a critical requirement under GDPR and the upcoming EHDS framework. Data stays where it is. Agents come to the data.</p>
     </section>
+
+    <!-- Pull Quote -->
+    <div class="pull-quote">
+      <p>"Data stays where it is. Agents come to the data."</p>
+    </div>
+
+    <div class="chapter-divider"><div class="diamond"></div></div>
 
     <!-- Part 8 — The Numbers -->
     <section class="chapter" id="chapter-8">
@@ -754,10 +1085,13 @@ code {
   <div></div>
 </div>
 
+<!-- Back to Top button -->
+<button class="back-to-top" id="back-to-top" aria-label="Back to top">↑</button>
+
 <!-- Footer -->
 <footer class="site-footer">
   <p>CAMMELOT — A Research-Backed Healthcare Simulation</p>
-  <p style="margin-top:0.4rem;">Built by <a href="https://github.com" target="_blank">Simone Cammel</a> · <a href="https://github.com" target="_blank">View on GitHub</a></p>
+  <p style="margin-top:0.4rem;">Built by <a href="https://www.linkedin.com/in/simonecammel/" target="_blank">Simone Cammel</a> · <a href="https://github.com/cammeleon66/Cammelot" target="_blank">View on GitHub</a></p>
   <div class="footer-sources">
     Data sources: CBS (Centraal Bureau voor de Statistiek) · RIVM (Rijksinstituut voor Volksgezondheid en Milieu) · NZa (Nederlandse Zorgautoriteit) · LHV · IZA 2023-2026
   </div>
@@ -784,7 +1118,200 @@ const SIMULATION_DATA = {
   }
 };
 
+// ── Hero Pixel Town Canvas ──
+(function initHeroCanvas() {
+  const canvas = document.getElementById('hero-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = 320, H = 100;
+  canvas.width = W; canvas.height = H;
+
+  // SNES palette
+  const GRASS1 = '#3a8c3f', GRASS2 = '#2e7a33';
+  const SKY = '#4a90d9';
+  const BUILDING_COLORS = ['#e74c3c','#3498db','#f39c12','#9b59b6','#1abc9c','#e67e22','#2ecc71','#c0392b'];
+  const ROOF_COLORS = ['#922b21','#21618c','#b7950b','#6c3483','#148f77','#af601a','#1e8449','#7b241c'];
+  const WATER = '#2980b9';
+
+  // Buildings
+  const buildings = [];
+  const bx = [20, 52, 80, 120, 155, 190, 228, 265];
+  for (let i = 0; i < 8; i++) {
+    const bw = 16 + Math.floor(Math.random()*12);
+    const bh = 18 + Math.floor(Math.random()*16);
+    buildings.push({ x: bx[i], y: H - 16 - bh, w: bw, h: bh, color: BUILDING_COLORS[i], roof: ROOF_COLORS[i] });
+  }
+
+  // Sprites
+  const sprites = [];
+  const SPRITE_COLORS = ['#e74c3c','#3498db','#f1c40f','#e67e22','#9b59b6'];
+  for (let i = 0; i < 5; i++) {
+    sprites.push({
+      x: 30 + Math.random() * 260,
+      y: H - 14 + Math.random() * 4,
+      dx: (Math.random() - 0.5) * 0.6,
+      color: SPRITE_COLORS[i],
+      frame: Math.floor(Math.random()*2)
+    });
+  }
+
+  function draw() {
+    // Sky gradient
+    const grad = ctx.createLinearGradient(0,0,0,H-16);
+    grad.addColorStop(0, SKY);
+    grad.addColorStop(1, '#87ceeb');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H - 16);
+
+    // Grass
+    for (let gx = 0; gx < W; gx += 4) {
+      ctx.fillStyle = (gx/4) % 2 === 0 ? GRASS1 : GRASS2;
+      ctx.fillRect(gx, H - 16, 4, 16);
+    }
+
+    // Small pond
+    ctx.fillStyle = WATER;
+    ctx.fillRect(140, H-12, 20, 8);
+    ctx.fillStyle = '#5dade2';
+    ctx.fillRect(142, H-10, 4, 2);
+
+    // Buildings
+    buildings.forEach(b => {
+      ctx.fillStyle = b.color;
+      ctx.fillRect(b.x, b.y, b.w, b.h);
+      // Roof
+      ctx.fillStyle = b.roof;
+      ctx.fillRect(b.x - 2, b.y - 4, b.w + 4, 4);
+      // Window
+      ctx.fillStyle = '#f9e79f';
+      const wx = b.x + 3, wy = b.y + 4;
+      ctx.fillRect(wx, wy, 3, 3);
+      if (b.w > 18) ctx.fillRect(wx + 8, wy, 3, 3);
+      // Door
+      ctx.fillStyle = '#6c3483';
+      ctx.fillRect(b.x + Math.floor(b.w/2) - 2, b.y + b.h - 6, 4, 6);
+    });
+
+    // Sprites
+    sprites.forEach(s => {
+      s.x += s.dx;
+      if (s.x < 10 || s.x > W - 10) s.dx *= -1;
+      s.frame = (s.frame + 0.03) % 2;
+      // Body
+      ctx.fillStyle = s.color;
+      ctx.fillRect(Math.floor(s.x), Math.floor(s.y) - 6, 4, 4);
+      // Head
+      ctx.fillStyle = '#fad7a0';
+      ctx.fillRect(Math.floor(s.x), Math.floor(s.y) - 9, 4, 3);
+      // Legs (animated)
+      ctx.fillStyle = '#2c3e50';
+      if (Math.floor(s.frame) === 0) {
+        ctx.fillRect(Math.floor(s.x), Math.floor(s.y) - 2, 2, 2);
+        ctx.fillRect(Math.floor(s.x) + 2, Math.floor(s.y) - 1, 2, 2);
+      } else {
+        ctx.fillRect(Math.floor(s.x), Math.floor(s.y) - 1, 2, 2);
+        ctx.fillRect(Math.floor(s.x) + 2, Math.floor(s.y) - 2, 2, 2);
+      }
+    });
+
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+// ── Reading Progress Bar ──
+const progressBar = document.getElementById('progress-bar');
+function updateProgress() {
+  const scrollTop = window.scrollY;
+  const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+  const pct = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+  progressBar.style.width = pct + '%';
+}
+
+// ── Back to Top ──
+const backToTop = document.getElementById('back-to-top');
+function updateBackToTop() {
+  if (window.scrollY > 600) {
+    backToTop.classList.add('visible');
+  } else {
+    backToTop.classList.remove('visible');
+  }
+}
+backToTop.addEventListener('click', () => {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+// ── Theme Toggle ──
+const themeToggle = document.getElementById('theme-toggle');
+const savedTheme = localStorage.getItem('cammelot-theme');
+if (savedTheme === 'dark') {
+  document.body.classList.add('dark-theme');
+  themeToggle.textContent = '☀️';
+}
+themeToggle.addEventListener('click', () => {
+  document.body.classList.toggle('dark-theme');
+  const isDark = document.body.classList.contains('dark-theme');
+  themeToggle.textContent = isDark ? '☀️' : '🌙';
+  localStorage.setItem('cammelot-theme', isDark ? 'dark' : 'light');
+  // Redraw charts for new theme
+  Object.keys(chartDrawn).forEach(k => chartDrawn[k] = false);
+  document.querySelectorAll('.chart-container').forEach(cc => {
+    const cv = cc.querySelector('canvas');
+    if (cv && cc.getBoundingClientRect().top < window.innerHeight) drawCharts(cv.id);
+  });
+});
+
+// ── Mobile Hamburger ──
+const hamburger = document.getElementById('hamburger');
+const mobileOverlay = document.getElementById('mobile-toc-overlay');
+const mobileBackdrop = document.getElementById('mobile-toc-backdrop');
+
+hamburger.addEventListener('click', () => {
+  hamburger.classList.toggle('open');
+  mobileOverlay.classList.toggle('open');
+  mobileBackdrop.classList.toggle('open');
+});
+mobileBackdrop.addEventListener('click', () => {
+  hamburger.classList.remove('open');
+  mobileOverlay.classList.remove('open');
+  mobileBackdrop.classList.remove('open');
+});
+document.querySelectorAll('.mobile-toc-link').forEach(a => {
+  a.addEventListener('click', () => {
+    hamburger.classList.remove('open');
+    mobileOverlay.classList.remove('open');
+    mobileBackdrop.classList.remove('open');
+  });
+});
+
+// ── Animated Number Counters ──
+function animateCounter(el) {
+  if (el.dataset.animated) return;
+  el.dataset.animated = '1';
+  const target = parseFloat(el.dataset.counter);
+  if (isNaN(target)) return;
+  const prefix = el.dataset.prefix || '';
+  const suffix = el.dataset.suffix || '';
+  const decimals = (el.dataset.counter.split('.')[1] || '').length;
+  const duration = 1500;
+  const start = performance.now();
+
+  function tick(now) {
+    const elapsed = now - start;
+    const progress = Math.min(elapsed / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+    const current = target * eased;
+    el.textContent = prefix + current.toFixed(decimals) + suffix;
+    if (progress < 1) requestAnimationFrame(tick);
+    else el.textContent = prefix + target.toFixed(decimals) + suffix;
+  }
+  requestAnimationFrame(tick);
+}
+
 // ── Chart Drawing ──
+// Store data point positions for tooltips
+const chartDataPoints = {};
+
 function drawLineChart(canvasId, data, options) {
   const canvas = document.getElementById(canvasId);
   if (!canvas) return;
@@ -798,17 +1325,21 @@ function drawLineChart(canvasId, data, options) {
   const pad = { top: 20, right: 20, bottom: 40, left: 50 };
   const plotW = w - pad.left - pad.right;
   const plotH = h - pad.top - pad.bottom;
+  const isDark = document.body.classList.contains('dark-theme');
+  const gridColor = isDark ? '#2a2a3a' : '#e8e6e0';
+  const labelColor = isDark ? '#8a8a9a' : '#999';
 
   ctx.clearRect(0, 0, w, h);
+  chartDataPoints[canvasId] = [];
 
   // Grid
-  ctx.strokeStyle = '#e8e6e0';
+  ctx.strokeStyle = gridColor;
   ctx.lineWidth = 0.5;
   const ySteps = 5;
   for (let i = 0; i <= ySteps; i++) {
     const y = pad.top + (plotH / ySteps) * i;
     ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(w - pad.right, y); ctx.stroke();
-    ctx.fillStyle = '#999';
+    ctx.fillStyle = labelColor;
     ctx.font = '11px Space Grotesk, sans-serif';
     ctx.textAlign = 'right';
     const val = options.yMax - (options.yMax / ySteps) * i;
@@ -816,7 +1347,7 @@ function drawLineChart(canvasId, data, options) {
   }
 
   // X labels
-  ctx.fillStyle = '#999';
+  ctx.fillStyle = labelColor;
   ctx.font = '11px Space Grotesk, sans-serif';
   ctx.textAlign = 'center';
   const xLabels = options.xLabels || data[0].values.map((_, i) => i);
@@ -829,39 +1360,41 @@ function drawLineChart(canvasId, data, options) {
     ctx.fillText(options.xLabel, pad.left + plotW / 2, h - 4);
   }
 
-  // Lines
-  data.forEach(series => {
+  // Lines + dots at every data point
+  data.forEach((series, si) => {
     ctx.beginPath();
     ctx.strokeStyle = series.color;
     ctx.lineWidth = 2.5;
     ctx.lineJoin = 'round';
+    const points = [];
     series.values.forEach((val, i) => {
       const x = pad.left + (plotW / (series.values.length - 1)) * i;
       const y = pad.top + plotH - (val / options.yMax) * plotH;
       if (i === 0) ctx.moveTo(x, y);
       else ctx.lineTo(x, y);
+      points.push({ x, y, value: val, label: xLabels[i], seriesName: series.name || '' });
     });
     ctx.stroke();
 
-    // Dots on last point
-    const lastI = series.values.length - 1;
-    const lx = pad.left + (plotW / lastI) * lastI;
-    const ly = pad.top + plotH - (series.values[lastI] / options.yMax) * plotH;
-    ctx.beginPath();
-    ctx.arc(lx, ly, 4, 0, Math.PI * 2);
-    ctx.fillStyle = series.color;
-    ctx.fill();
+    // Draw dots at every data point
+    points.forEach(pt => {
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y, 3, 0, Math.PI * 2);
+      ctx.fillStyle = series.color;
+      ctx.fill();
+      chartDataPoints[canvasId].push({ ...pt, color: series.color, rect });
+    });
   });
 
   // Threshold line
   if (options.threshold) {
     const ty = pad.top + plotH - (options.threshold.value / options.yMax) * plotH;
     ctx.setLineDash([5, 4]);
-    ctx.strokeStyle = options.threshold.color || '#999';
+    ctx.strokeStyle = options.threshold.color || labelColor;
     ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(pad.left, ty); ctx.lineTo(w - pad.right, ty); ctx.stroke();
     ctx.setLineDash([]);
-    ctx.fillStyle = options.threshold.color || '#999';
+    ctx.fillStyle = options.threshold.color || labelColor;
     ctx.font = '10px Space Grotesk, sans-serif';
     ctx.textAlign = 'left';
     ctx.fillText(options.threshold.label, w - pad.right + 4, ty + 3);
@@ -881,17 +1414,21 @@ function drawBarChart(canvasId, labels, datasets, options) {
   const pad = { top: 20, right: 20, bottom: 40, left: 50 };
   const plotW = w - pad.left - pad.right;
   const plotH = h - pad.top - pad.bottom;
+  const isDark = document.body.classList.contains('dark-theme');
+  const gridColor = isDark ? '#2a2a3a' : '#e8e6e0';
+  const labelColor = isDark ? '#8a8a9a' : '#999';
 
   ctx.clearRect(0, 0, w, h);
+  chartDataPoints[canvasId] = [];
 
   // Grid
-  ctx.strokeStyle = '#e8e6e0';
+  ctx.strokeStyle = gridColor;
   ctx.lineWidth = 0.5;
   const ySteps = 5;
   for (let i = 0; i <= ySteps; i++) {
     const y = pad.top + (plotH / ySteps) * i;
     ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(w - pad.right, y); ctx.stroke();
-    ctx.fillStyle = '#999';
+    ctx.fillStyle = labelColor;
     ctx.font = '11px Space Grotesk, sans-serif';
     ctx.textAlign = 'right';
     const val = options.yMax - (options.yMax / ySteps) * i;
@@ -903,7 +1440,7 @@ function drawBarChart(canvasId, labels, datasets, options) {
   const barGap = barW * 0.3;
 
   labels.forEach((label, i) => {
-    ctx.fillStyle = '#999';
+    ctx.fillStyle = labelColor;
     ctx.font = '11px Space Grotesk, sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText(label, pad.left + groupW * i + groupW / 2, h - pad.bottom + 20);
@@ -928,10 +1465,47 @@ function drawBarChart(canvasId, labels, datasets, options) {
       ctx.fillStyle = ds.color;
       ctx.font = '10px Space Grotesk, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(ds.values[i].toFixed(1), x + (barW - barGap) / 2, y - 6);
+      const cx = x + (barW - barGap) / 2;
+      ctx.fillText(ds.values[i].toFixed(1), cx, y - 6);
+
+      // Store tooltip point at top center of bar
+      chartDataPoints[canvasId].push({
+        x: cx, y: y, value: ds.values[i], label: label,
+        color: ds.color, rect, seriesName: ds.name || ''
+      });
     });
   });
 }
+
+// ── Chart Tooltips ──
+document.querySelectorAll('.chart-container canvas').forEach(canvas => {
+  const tooltipEl = canvas.parentElement.querySelector('.chart-tooltip');
+  if (!tooltipEl) return;
+
+  canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    const points = chartDataPoints[canvas.id] || [];
+    let closest = null, minDist = 25;
+    points.forEach(pt => {
+      const d = Math.sqrt((pt.x - mx) ** 2 + (pt.y - my) ** 2);
+      if (d < minDist) { minDist = d; closest = pt; }
+    });
+    if (closest) {
+      tooltipEl.textContent = (closest.label != null ? closest.label + ': ' : '') + closest.value.toFixed(2);
+      const containerRect = canvas.parentElement.getBoundingClientRect();
+      tooltipEl.style.left = (closest.x + rect.left - containerRect.left - tooltipEl.offsetWidth/2) + 'px';
+      tooltipEl.style.top = (closest.y + rect.top - containerRect.top - 32) + 'px';
+      tooltipEl.classList.add('visible');
+    } else {
+      tooltipEl.classList.remove('visible');
+    }
+  });
+  canvas.addEventListener('mouseleave', () => {
+    tooltipEl.classList.remove('visible');
+  });
+});
 
 // ── Animated Chart Drawing ──
 const chartDrawn = {};
@@ -943,7 +1517,7 @@ function drawCharts(id) {
   if (id === 'chart-hendrik') {
     const cycles = SIMULATION_DATA.hendrikHP.map((_, i) => i * 5);
     drawLineChart('chart-hendrik', [
-      { values: SIMULATION_DATA.hendrikHP, color: '#e67e22' }
+      { values: SIMULATION_DATA.hendrikHP, color: '#e67e22', name: 'HP' }
     ], {
       yMax: 100, xLabels: cycles, xLabel: 'Cycle',
       threshold: { value: 20, label: 'Critical HP', color: '#c0392b' }
@@ -952,23 +1526,23 @@ function drawCharts(id) {
   if (id === 'chart-burnout') {
     const cycles = SIMULATION_DATA.burnoutTimeline.ist.map((_, i) => i * 100);
     drawLineChart('chart-burnout', [
-      { values: SIMULATION_DATA.burnoutTimeline.ist, color: '#c0392b' },
-      { values: SIMULATION_DATA.burnoutTimeline.soll, color: '#27ae60' }
+      { values: SIMULATION_DATA.burnoutTimeline.ist, color: '#c0392b', name: 'IST' },
+      { values: SIMULATION_DATA.burnoutTimeline.soll, color: '#27ae60', name: 'SOLL' }
     ], { yMax: 10, xLabels: cycles, xLabel: 'Cycle', yDecimals: 0 });
   }
   if (id === 'chart-age') {
     drawBarChart('chart-age',
       SIMULATION_DATA.deathsByAge.labels,
       [
-        { values: SIMULATION_DATA.deathsByAge.ist, color: '#c0392b' },
-        { values: SIMULATION_DATA.deathsByAge.soll, color: '#27ae60' }
+        { values: SIMULATION_DATA.deathsByAge.ist, color: '#c0392b', name: 'IST' },
+        { values: SIMULATION_DATA.deathsByAge.soll, color: '#27ae60', name: 'SOLL' }
       ],
       { yMax: 6 }
     );
   }
 }
 
-// ── Intersection Observer (scroll animations + chart drawing) ──
+// ── Intersection Observer (scroll animations + chart drawing + counters) ──
 const observer = new IntersectionObserver((entries) => {
   entries.forEach(entry => {
     if (entry.isIntersecting) {
@@ -976,6 +1550,8 @@ const observer = new IntersectionObserver((entries) => {
       // Draw charts when their container enters viewport
       const canvas = entry.target.querySelector('canvas');
       if (canvas) drawCharts(canvas.id);
+      // Animate counters
+      entry.target.querySelectorAll('[data-counter]').forEach(animateCounter);
     }
   });
 }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
@@ -995,6 +1571,18 @@ document.querySelectorAll('.chart-container').forEach(cc => {
   obs2.observe(cc);
 });
 
+// Also observe metric callouts for counter animation
+document.querySelectorAll('.metric-callout').forEach(mc => {
+  const obs3 = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.querySelectorAll('[data-counter]').forEach(animateCounter);
+      }
+    });
+  }, { threshold: 0.5 });
+  obs3.observe(mc);
+});
+
 // ── Scrollspy ──
 const tocLinks = document.querySelectorAll('.toc a[data-section]');
 const sections = [];
@@ -1012,15 +1600,22 @@ function updateScrollspy() {
   tocLinks.forEach(l => l.classList.remove('active'));
   if (current) current.link.classList.add('active');
 }
-window.addEventListener('scroll', updateScrollspy, { passive: true });
-updateScrollspy();
+
+// ── Combined Scroll Handler ──
+function onScroll() {
+  updateProgress();
+  updateBackToTop();
+  updateScrollspy();
+}
+window.addEventListener('scroll', onScroll, { passive: true });
+onScroll();
 
 // ── Branch Point Toggle ──
 function switchBranch(which) {
   document.querySelectorAll('.branch-tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.branch-pane').forEach(p => p.classList.remove('active'));
-  document.querySelector(`.branch-tab.${which}`).classList.add('active');
-  document.getElementById(`branch-${which}`).classList.add('active');
+  document.querySelector('.branch-tab.' + which).classList.add('active');
+  document.getElementById('branch-' + which).classList.add('active');
 }
 
 // ── Footnotes ──
@@ -1028,8 +1623,6 @@ document.querySelectorAll('.fn-ref').forEach(ref => {
   ref.addEventListener('click', (e) => {
     e.preventDefault();
     const fnId = ref.dataset.fn;
-    const body = ref.closest('p, div').nextElementSibling;
-    // Find the footnote body matching this ref
     let target = ref.parentElement;
     while (target && target.nextElementSibling) {
       target = target.nextElementSibling;
