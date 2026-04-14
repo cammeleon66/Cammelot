@@ -165,8 +165,9 @@ body.dark-theme::after {
   display: none; position: fixed; inset: 0;
   background: rgba(0,0,0,0.4); z-index: 140;
   opacity: 0; transition: opacity 0.3s;
+  pointer-events: none;
 }
-.mobile-toc-backdrop.open { opacity: 1; }
+.mobile-toc-backdrop.open { opacity: 1; pointer-events: auto; }
 .mobile-toc-overlay a {
   display: block; padding: 0.5rem 0;
   font-family: 'Space Grotesk', sans-serif;
@@ -239,12 +240,12 @@ body.dark-theme::after {
 /* ── Main Content ── */
 .content {
   max-width: 680px;
-  padding: 2rem 0 3rem;
+  padding: 1rem 0 2rem;
 }
 
 /* ── Chapters ── */
 .chapter {
-  margin-bottom: 2.5rem;
+  margin-bottom: 1.5rem;
 }
 /* Staggered animation children */
 .chapter .chapter-label,
@@ -295,9 +296,9 @@ body.dark-theme::after {
 
 /* ── Hero ── */
 .hero {
-  padding: 2rem 0 3rem;
+  padding: 1.5rem 0 2rem;
   text-align: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.5rem;
   border-bottom: 1px solid var(--border);
   position: relative;
 }
@@ -330,14 +331,6 @@ body.dark-theme::after {
   margin-bottom: 0.5rem;
 }
 .hero h1 span { color: var(--red); }
-.hero .hero-logo {
-  display: block;
-  max-width: 380px;
-  width: 80%;
-  margin: 0.8rem auto 0.5rem;
-  image-rendering: auto;
-  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.15));
-}
 .hero .subtitle {
   font-family: 'Spectral', serif;
   font-size: 1.05rem; color: var(--text-muted);
@@ -532,7 +525,7 @@ body.dark-theme::after {
 
 /* ── Metric Callout ── */
 .metric-callout {
-  display: flex; gap: 1.5rem; margin: 2rem 0;
+  display: flex; gap: 1rem; margin: 1.2rem 0;
   flex-wrap: wrap;
 }
 .metric-card {
@@ -560,8 +553,8 @@ body.dark-theme::after {
 /* ── Blockquote ── */
 blockquote {
   border-left: 3px solid var(--red);
-  padding: 0.8rem 1.2rem;
-  margin: 1.5rem 0;
+  padding: 0.6rem 1rem;
+  margin: 1rem 0;
   background: var(--red-light);
   border-radius: 0 4px 4px 0;
   font-style: italic;
@@ -570,14 +563,14 @@ blockquote {
 
 /* ── Pull Quote ── */
 .pull-quote {
-  padding: 1.5rem 2rem;
+  padding: 0.8rem 1rem;
   text-align: center;
   position: relative;
 }
 .pull-quote p {
   font-family: 'Spectral', serif;
   font-style: italic;
-  font-size: 1.45rem;
+  font-size: 1.25rem;
   line-height: 1.55;
   color: var(--text-muted);
   max-width: 560px;
@@ -592,7 +585,7 @@ blockquote {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0.5rem 0 1.5rem;
+  margin: 0.3rem 0 0.8rem;
   gap: 0.8rem;
 }
 .chapter-divider::before,
@@ -642,7 +635,6 @@ code {
   .toc { display: none; }
   .content { max-width: 100%; }
   .hero h1 { font-size: 1.8rem; }
-  .hero .hero-logo { max-width: 260px; }
   .hero-canvas-wrap { height: 150px; }
   .hero .subtitle { font-size: 0.9rem; margin-bottom: 1rem; }
   .hero .byline { font-size: 0.65rem; }
@@ -673,7 +665,6 @@ code {
   .page-grid { padding: 3.2rem 0.8rem 0; }
   .hero { padding: 1.2rem 0 2rem; }
   .hero h1 { font-size: 1.5rem; }
-  .hero .hero-logo { max-width: 200px; }
   .hero-canvas-wrap { height: 120px; max-width: 100%; }
   .hero .byline { font-size: 0.6rem; }
   .chapter { padding: 1rem 0 1.5rem; }
@@ -750,7 +741,7 @@ code {
       <div class="hero-canvas-wrap">
         <canvas id="hero-canvas"></canvas>
       </div>
-      <img src="logo.png" alt="Cammelot" class="hero-logo">
+      <h1>CAMME<span>L</span>OT</h1>
       <p class="subtitle">What happens when AI runs a Dutch town's healthcare?</p>
       <p class="byline">45 pixel citizens &middot; 3 GPs &middot; 1 hospital &middot; 100 simulation runs &middot; Real Dutch data</p>
     </div>

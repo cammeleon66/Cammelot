@@ -932,7 +932,8 @@ const MAP_H = 720;  // image pixel height
 mapImg.onload = () => { mapLoaded = true; mapImgW = mapImg.naturalWidth; mapImgH = mapImg.naturalHeight; mapCacheDirty = true; };
 mapImg.onerror = () => {
   // Try alternate paths (relative to HTML location)
-  const alts = ['../../assets/map.png', '../../assets/map2.jpeg', '../../assets/map.png.jpeg',
+  const alts = ['../assets/map2.jpeg', '../assets/map.png', '../assets/map.png.jpeg',
+                '../../assets/map2.jpeg', '../../assets/map.png',
                 '/assets/map2.jpeg', '/assets/map.png'];
   let idx = 0;
   function tryNext() {
@@ -944,7 +945,7 @@ mapImg.onerror = () => {
   }
   tryNext();
 };
-mapImg.src = '../../assets/map2.jpeg';
+mapImg.src = 'map2.jpeg';
 
 let mapImgW = MAP_W, mapImgH = MAP_H;
 
