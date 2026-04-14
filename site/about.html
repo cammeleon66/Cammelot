@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>About — Cammelot</title>
+<title>About Cammelot</title>
 
 <meta property="og:title" content="About Cammelot">
 <meta property="og:description" content="A research-backed healthcare simulation built by Simone Cammel.">
@@ -189,10 +189,18 @@ body.dark-theme .site-header { background: rgba(10, 10, 18, 0.92); }
 .site-footer a { color: var(--text-muted); }
 
 /* Responsive */
+@media (max-width: 900px) {
+  .site-header nav a:not([style*="font-weight"]) { display: none; }
+}
 @media (max-width: 600px) {
   .page-container { padding: 5rem 1rem 3rem; }
   .page-title { font-size: 1.6rem; }
   .contact-card { padding: 1.2rem; }
+  .site-header { padding: 0.5rem 1rem; }
+  .site-header .logo { font-size: 0.9rem; }
+  .site-header nav a { margin-left: 0.8rem; font-size: 0.65rem; }
+  .about-section p { font-size: 0.9rem; }
+  html, body { overflow-x: hidden; }
 }
 </style>
 </head>
@@ -202,6 +210,7 @@ body.dark-theme .site-header { background: rgba(10, 10, 18, 0.92); }
   <a href="index.html" class="logo">CAMME<span>L</span>OT</a>
   <nav>
     <a href="index.html">Story</a>
+    <a href="world.html" style="color:#27ae60;">&#127918; Live Sim</a>
     <a href="about.html" style="color:var(--text);font-weight:600;">About</a>
     <a href="https://github.com/cammeleon66/Cammelot" target="_blank">GitHub ↗</a>
     <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark mode">🌙</button>
@@ -214,8 +223,9 @@ body.dark-theme .site-header { background: rgba(10, 10, 18, 0.92); }
 
   <section class="about-section">
     <h2>The Project</h2>
-    <p>Cammelot is a simulated Dutch town with 45 pixel citizens, three GPs, and one hospital. Their diseases come from real RIVM prevalence data. The healthcare system is modeled on CBS demographics, IZA program targets, and NZa tariffs. Citizens walk around a 16-bit pixel map, get sick, queue for care, and sometimes die — not from disease alone, but from a system that can't keep up.</p>
-    <p>I ran 100 simulations of the current Dutch healthcare system (IST) and 100 simulations of an AI-augmented version (SOLL). Then I compared every metric I could think of: mortality, burnout, wait times, costs, fairness, security. The results are published openly — including the ones that surprised me.</p>
+    <p>Cammelot is a simulated Dutch town with 45 pixel citizens, three GPs, and one hospital. Their diseases come from real RIVM prevalence data. The healthcare system is modeled on CBS demographics, IZA program targets, and NZa tariffs. Citizens walk around a 16-bit pixel map, get sick, queue for care, and sometimes die. Not from disease alone, but from a system that can't keep up.</p>
+    <p>The architecture is inspired by Park et al.'s "Generative Agents" paper (Stanford/Google, 2023), which simulated 25 AI agents in a virtual town called Smallville. Cammelot adapts their cognitive loop (perceive, reflect, plan) to Dutch healthcare, with real epidemiological data driving the outcomes instead of open-ended social behavior.</p>
+    <p>I ran 100 simulations of the current Dutch healthcare system (IST) and 100 simulations of an AI-augmented version (SOLL). Then I compared every metric I could think of: mortality, burnout, wait times, costs, fairness, security. The results are published openly, including the ones that surprised me.</p>
   </section>
 
   <hr class="divider">
@@ -223,14 +233,14 @@ body.dark-theme .site-header { background: rgba(10, 10, 18, 0.92); }
   <section class="about-section">
     <h2>About Me</h2>
     <p>I'm Simone Cammel. I work at Microsoft, which means you should assume I'm biased toward AI. That's exactly why I built a system that could prove me wrong.</p>
-    <p>I built Cammelot because I believe the debate around AI in healthcare is stuck in the wrong frame. Most people see AI as a productivity tool. I think it has the potential to restructure entire systems — but only if we're honest about what it actually does and doesn't improve. This simulation is my attempt at that honesty.</p>
+    <p>I built Cammelot because I believe the debate around AI in healthcare is stuck in the wrong frame. Most people see AI as a productivity tool. I think it has the potential to restructure entire systems, but only if we're honest about what it actually does and doesn't improve. This simulation is my attempt at that honesty.</p>
   </section>
 
   <hr class="divider">
 
   <section class="about-section">
     <h2>Get in Touch</h2>
-    <p>I'd genuinely love to hear from you — whether you think the model is wrong, have a research question, want to collaborate, or just want to say hi.</p>
+    <p>I'd genuinely love to hear from you. Whether you think the model is wrong, have a research question, want to collaborate, or just want to say hi.</p>
 
     <div class="contact-card">
       <div class="contact-row">
@@ -255,8 +265,8 @@ body.dark-theme .site-header { background: rgba(10, 10, 18, 0.92); }
     <p>Everything is open. The code, the simulation data, the statistics. If you find something wrong, please tell me.</p>
     <ul class="links-list">
       <li><a href="https://github.com/cammeleon66/Cammelot" target="_blank">Source code on GitHub</a></li>
+      <li><a href="world.html">Try the live simulation</a></li>
       <li><a href="index.html">Read the full research narrative</a></li>
-      <li><a href="replay.html">Watch the simulation replay</a></li>
     </ul>
   </section>
 
@@ -266,17 +276,17 @@ body.dark-theme .site-header { background: rgba(10, 10, 18, 0.92); }
     <h2>Data Sources</h2>
     <p>All simulation parameters are drawn from publicly available Dutch healthcare data:</p>
     <ul class="links-list">
-      <li><strong>CBS</strong> — Centraal Bureau voor de Statistiek (demographics, mortality tables)</li>
-      <li><strong>RIVM</strong> — Rijksinstituut voor Volksgezondheid en Milieu (disease prevalence)</li>
-      <li><strong>NZa</strong> — Nederlandse Zorgautoriteit (tariffs, waiting times)</li>
-      <li><strong>LHV</strong> — Landelijke Huisartsen Vereniging (GP workload surveys)</li>
-      <li><strong>IZA</strong> — Integraal Zorgakkoord 2023-2026 (transformation targets)</li>
+      <li><strong>CBS</strong>, Centraal Bureau voor de Statistiek (demographics, mortality tables)</li>
+      <li><strong>RIVM</strong>, Rijksinstituut voor Volksgezondheid en Milieu (disease prevalence)</li>
+      <li><strong>NZa</strong>, Nederlandse Zorgautoriteit (tariffs, waiting times)</li>
+      <li><strong>LHV</strong>, Landelijke Huisartsen Vereniging (GP workload surveys)</li>
+      <li><strong>IZA</strong>, Integraal Zorgakkoord 2023-2026 (transformation targets)</li>
     </ul>
   </section>
 </main>
 
 <footer class="site-footer">
-  <p>CAMMELOT — A Research-Backed Healthcare Simulation</p>
+  <p>CAMMELOT: A Research-Backed Healthcare Simulation</p>
   <p style="margin-top:0.4rem;">Built by <a href="https://www.linkedin.com/in/simonecammel/" target="_blank">Simone Cammel</a> · <a href="https://github.com/cammeleon66/Cammelot" target="_blank">View on GitHub</a></p>
 </footer>
 

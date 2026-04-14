@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cammelot — A Research-Backed Healthcare Simulation</title>
+<title>Cammelot: A Research-Backed Healthcare Simulation</title>
 
 <!-- Open Graph Meta Tags -->
-<meta property="og:title" content="Cammelot — What Happens When AI Runs a Dutch Town's Healthcare">
+<meta property="og:title" content="Cammelot: What Happens When AI Runs a Dutch Town's Healthcare">
 <meta property="og:description" content="100 simulations. 45 pixel citizens. Real Dutch data. A research-backed exploration of AI in healthcare.">
 <meta property="og:image" content="https://cammelot.org/og-image.png">
 <meta property="og:type" content="website">
@@ -14,7 +14,7 @@
 
 <!-- Twitter Card Meta Tags -->
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Cammelot — What Happens When AI Runs a Dutch Town's Healthcare">
+<meta name="twitter:title" content="Cammelot: What Happens When AI Runs a Dutch Town's Healthcare">
 <meta name="twitter:description" content="100 simulations. 45 pixel citizens. Real Dutch data. A research-backed exploration of AI in healthcare.">
 <meta name="twitter:image" content="https://cammelot.org/og-image.png">
 
@@ -27,7 +27,7 @@
 <style>
 /* ── Reset & Base ── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; font-size: 18px; }
+html { scroll-behavior: smooth; font-size: 18px; overflow-x: hidden; }
 body {
   font-family: 'Spectral', Georgia, serif;
   background: var(--bg);
@@ -35,6 +35,7 @@ body {
   line-height: 1.72;
   -webkit-font-smoothing: antialiased;
   transition: background 0.4s ease, color 0.4s ease;
+  overflow-x: hidden;
 }
 
 /* ── Palette ── */
@@ -329,6 +330,14 @@ body.dark-theme::after {
   margin-bottom: 0.5rem;
 }
 .hero h1 span { color: var(--red); }
+.hero .hero-logo {
+  display: block;
+  max-width: 380px;
+  width: 80%;
+  margin: 0.8rem auto 0.5rem;
+  image-rendering: auto;
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.15));
+}
 .hero .subtitle {
   font-family: 'Spectral', serif;
   font-size: 1.05rem; color: var(--text-muted);
@@ -633,15 +642,47 @@ code {
   .toc { display: none; }
   .content { max-width: 100%; }
   .hero h1 { font-size: 1.8rem; }
+  .hero .hero-logo { max-width: 260px; }
   .hero-canvas-wrap { height: 150px; }
-  .chapter h2 { font-size: 1.4rem; }
-  .metric-callout { gap: 0.8rem; }
+  .hero .subtitle { font-size: 0.9rem; margin-bottom: 1rem; }
+  .hero .byline { font-size: 0.65rem; }
+  .chapter h2 { font-size: 1.3rem; }
+  .chapter .hook { font-size: 0.95rem; padding: 0.8rem 1rem; }
+  .metric-callout { gap: 0.6rem; }
+  .metric-card { min-width: 100px; padding: 0.8rem; }
+  .metric-card .metric-value { font-size: 1.3rem; }
+  .metric-card .metric-label { font-size: 0.58rem; }
   .branch-tabs { flex-direction: column; align-items: center; }
-  .pull-quote p { font-size: 1.15rem; }
+  .pull-quote p { font-size: 1.05rem; padding: 0 0.5rem; }
+  .pull-quote { margin: 1.5rem 0; padding: 1rem 0; }
+  .replay-embed { padding: 1rem; font-size: 0.8rem; }
+  .replay-embed code { font-size: 0.65rem; white-space: pre-wrap; word-break: break-all; }
+  .site-footer { padding: 2rem 1rem; }
   .hamburger { display: block; }
   .mobile-toc-overlay { display: block; }
   .mobile-toc-backdrop { display: block; }
   .site-header nav a.nav-link { display: none; }
+  .site-header { padding: 0.5rem 1rem; }
+  .site-header .logo { font-size: 0.95rem; }
+  .fn-ref { font-size: 0.7rem; }
+  .footnote-body { font-size: 0.75rem; padding: 0.6rem 0.8rem; }
+  p { font-size: 0.95rem; }
+}
+@media (max-width: 480px) {
+  html { font-size: 16px; }
+  .page-grid { padding: 3.2rem 0.8rem 0; }
+  .hero { padding: 1.2rem 0 2rem; }
+  .hero h1 { font-size: 1.5rem; }
+  .hero .hero-logo { max-width: 200px; }
+  .hero-canvas-wrap { height: 120px; max-width: 100%; }
+  .hero .byline { font-size: 0.6rem; }
+  .chapter { padding: 1rem 0 1.5rem; }
+  .chapter h2 { font-size: 1.15rem; }
+  .metric-callout { flex-direction: column; gap: 0.5rem; }
+  .metric-card { min-width: 0; }
+  .pull-quote p { font-size: 0.95rem; }
+  .site-header { padding: 0.4rem 0.8rem; }
+  .back-to-top { bottom: 1rem; right: 1rem; width: 36px; height: 36px; font-size: 0.9rem; }
 }
 
 /* ── Scrollbar ── */
@@ -650,6 +691,7 @@ code {
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 </style>
 </head>
+
 <body>
 
 <!-- Reading Progress Bar -->
@@ -660,11 +702,11 @@ code {
   <a href="#" class="logo">CAMME<span>L</span>OT</a>
   <nav>
     <a href="#chapter-0" class="nav-link">Story</a>
-    <a href="#chapter-8" class="nav-link">Research</a>
-    <a href="#chapter-5" class="nav-link">Architecture</a>
+    <a href="#chapter-1" class="nav-link">Architecture</a>
+    <a href="world.html" class="nav-link" style="color:var(--green)">&#127918; Live Sim</a>
     <a href="about.html" class="nav-link">About</a>
-    <a href="https://github.com/cammeleon66/Cammelot" target="_blank" class="nav-link">GitHub ↗</a>
-    <button class="theme-toggle" id="theme-toggle" title="Toggle dark mode">🌙</button>
+    <a href="https://github.com/cammeleon66/Cammelot" target="_blank" class="nav-link">GitHub &#8599;</a>
+    <button class="theme-toggle" id="theme-toggle" title="Toggle dark mode">&#127769;</button>
     <button class="hamburger" id="hamburger" aria-label="Toggle menu">
       <span></span><span></span><span></span>
     </button>
@@ -674,40 +716,30 @@ code {
 <!-- Mobile TOC overlay -->
 <div class="mobile-toc-backdrop" id="mobile-toc-backdrop"></div>
 <nav class="mobile-toc-overlay" id="mobile-toc-overlay">
-  <div class="toc-part">The Crisis</div>
-  <a href="#chapter-0" class="mobile-toc-link">0 — Welcome to Cammelot</a>
-  <a href="#chapter-1" class="mobile-toc-link">1 — The First Death</a>
-  <a href="#chapter-2" class="mobile-toc-link">2 — The Burnout Spiral</a>
-  <a href="#chapter-3" class="mobile-toc-link">3 — The Equity Problem</a>
-  <a href="#chapter-4" class="mobile-toc-link">4 — The Bias Trap</a>
-  <div class="toc-part">Two Futures</div>
-  <a href="#branch" class="mobile-toc-link">── Branch Point ──</a>
-  <div class="toc-part">The Architecture</div>
-  <a href="#chapter-5" class="mobile-toc-link">5 — A2A and FHIR</a>
-  <a href="#chapter-6" class="mobile-toc-link">6 — Security</a>
-  <a href="#chapter-7" class="mobile-toc-link">7 — The Agentic Mesh</a>
-  <div class="toc-part">The Evidence</div>
-  <a href="#chapter-8" class="mobile-toc-link">8 — The Numbers</a>
+  <div class="toc-part">The Story</div>
+  <a href="#chapter-0" class="mobile-toc-link">0. Why I Built This</a>
+  <div class="toc-part">The Build</div>
+  <a href="#chapter-1" class="mobile-toc-link">1. The Architecture</a>
+  <a href="#chapter-2" class="mobile-toc-link">2. The Agentic Mesh</a>
+  <div class="toc-part">What's Next</div>
+  <a href="#chapter-3" class="mobile-toc-link">3. What's Coming</a>
+  <div class="toc-part" style="margin-top:12px;">Explore</div>
+  <a href="world.html" class="mobile-toc-link" style="color:#27ae60;">&#127918; Live Simulation</a>
 </nav>
 
 <div class="page-grid">
   <!-- Sidebar TOC -->
   <aside class="toc" id="toc">
     <div class="toc-label">Contents</div>
-    <div class="toc-part">The Crisis</div>
-    <a href="#chapter-0" data-section="chapter-0">0 — Welcome to Cammelot</a>
-    <a href="#chapter-1" data-section="chapter-1">1 — The First Death</a>
-    <a href="#chapter-2" data-section="chapter-2">2 — The Burnout Spiral</a>
-    <a href="#chapter-3" data-section="chapter-3">3 — The Equity Problem</a>
-    <a href="#chapter-4" data-section="chapter-4">4 — The Bias Trap</a>
-    <div class="toc-part">Two Futures</div>
-    <a href="#branch" data-section="branch">── Branch Point ──</a>
-    <div class="toc-part">The Architecture</div>
-    <a href="#chapter-5" data-section="chapter-5">5 — A2A and FHIR</a>
-    <a href="#chapter-6" data-section="chapter-6">6 — Security</a>
-    <a href="#chapter-7" data-section="chapter-7">7 — The Agentic Mesh</a>
-    <div class="toc-part">The Evidence</div>
-    <a href="#chapter-8" data-section="chapter-8">8 — The Numbers</a>
+    <div class="toc-part">The Story</div>
+    <a href="#chapter-0" data-section="chapter-0">0. Why I Built This</a>
+    <div class="toc-part">The Build</div>
+    <a href="#chapter-1" data-section="chapter-1">1. The Architecture</a>
+    <a href="#chapter-2" data-section="chapter-2">2. The Agentic Mesh</a>
+    <div class="toc-part">What's Next</div>
+    <a href="#chapter-3" data-section="chapter-3">3. What's Coming</a>
+    <div class="toc-part" style="margin-top:12px;">Explore</div>
+    <a href="world.html" style="color:#27ae60;">&#127918; Live Simulation</a>
   </aside>
 
   <!-- Main Content -->
@@ -718,257 +750,97 @@ code {
       <div class="hero-canvas-wrap">
         <canvas id="hero-canvas"></canvas>
       </div>
-      <h1>CAMME<span>L</span>OT</h1>
+      <img src="logo.png" alt="Cammelot" class="hero-logo">
       <p class="subtitle">A Research-Backed Healthcare Simulation</p>
-      <p class="byline">45 pixel citizens · 3 GPs · 1 hospital · 100 simulation runs · Real Dutch data</p>
+      <p class="byline">45 pixel citizens &middot; 3 GPs &middot; 1 hospital &middot; 100 simulation runs &middot; Real Dutch data</p>
     </div>
 
     <div class="chapter-divider"><div class="diamond"></div></div>
 
-    <!-- Part 0 — Introduction -->
+    <!-- Chapter 0: Why I Built This -->
     <section class="chapter" id="chapter-0">
-      <div class="chapter-label">Part 0</div>
-      <h2>Welcome to Cammelot</h2>
-      <div class="hook">"I work at Microsoft. You should assume I'm biased toward AI. That's exactly why I built a system that could prove me wrong."</div>
-      <p>I built a simulated Dutch town with 45 pixel citizens, 3 GPs, and a hospital. The citizens get sick according to RIVM prevalence data. They wait in queues calibrated to real Treeknorm violations. Some of them die. Then I rebuilt the system with AI-native infrastructure and ran it again. 100 times each. Here's what happened.<a class="fn-ref" data-fn="1">1</a></p>
-      <div class="footnote-body" data-fn="1">This simulation uses CBS (Centraal Bureau voor de Statistiek) population data, RIVM chronic disease prevalence, and NZa (Nederlandse Zorgautoriteit) financial tariffs for 2024-2025. All parameters are documented in the project's CLAUDE.md.</div>
-      <p>Cammelot uses an <strong>IST/SOLL methodology</strong> — German engineering terminology for "current state" versus "target state." The IST model replicates today's Dutch healthcare system with all its constraints: FIFO queues, 30% administrative burden, fragmented data. The SOLL model introduces AI-native infrastructure — severity-based triage, ambient AI scribes, inter-agent communication — and measures what changes.</p>
-      <p>Every citizen is an autonomous agent with a cognitive loop inspired by Park et al.'s "Generative Agents" architecture.<a class="fn-ref" data-fn="2">2</a> They perceive, reflect, and plan. They don't follow scripts — they make decisions based on their health state, their memories, and what the system makes available to them.</p>
+      <div class="chapter-label">Chapter 0</div>
+      <h2>Why I Built This</h2>
+      <div class="hook">"I work at Microsoft. You should assume I'm biased toward AI. That's exactly why I built something that could prove me wrong."</div>
+
+      <p>I built this because I still see most people, pro and con, treating AI as a productivity tool. Do more with less. Automate the boring stuff. Save 20 minutes a day. I actually think that's the wrong way to look at things.</p>
+
+      <p>The interesting question isn't whether AI can make a GP 15% faster at filling out forms. The interesting question is what happens when you restructure an entire healthcare system around autonomous agents that talk to each other, share data in real time, and triage patients by severity instead of arrival order.</p>
+
+      <p>So I built a town. 45 pixel citizens, three GPs (huisartsen, the Dutch family doctors who gatekeep all specialist access), and one hospital. The citizens get sick based on real RIVM prevalence data.<a class="fn-ref" data-fn="1">1</a> They queue for care based on real Treeknorm waiting times, which is the Dutch standard for maximum acceptable wait: 4 weeks for diagnostics, 7 to 12 weeks for treatment. Some of them die. Not randomly. Deterministically, because the system couldn't get to them fast enough.</p>
+      <div class="footnote-body" data-fn="1">RIVM (Rijksinstituut voor Volksgezondheid en Milieu) publishes chronic disease prevalence for the Netherlands. CBS (Centraal Bureau voor de Statistiek) provides population demographics and mortality tables. NZa (Nederlandse Zorgautoriteit) sets the financial tariffs. All parameters are documented in the project's CLAUDE.md.</div>
+
+      <p>Then I rebuilt the system with AI-native infrastructure and ran it again. 100 times each. I used an IST/SOLL methodology, which is German engineering terminology for "current state" versus "target state." The IST model replicates today's Dutch healthcare with all its constraints: first-come-first-served queues, 30% administrative burden on GPs, fragmented data. The SOLL model introduces severity-based triage, ambient AI scribes, and inter-agent communication.</p>
+
+      <p>Every citizen is an autonomous agent with a cognitive loop inspired by Park et al.'s "Generative Agents" architecture.<a class="fn-ref" data-fn="2">2</a> They perceive, reflect, and plan. They don't follow scripts. They make decisions based on their health state, their memories, and what the system makes available to them.</p>
       <div class="footnote-body" data-fn="2">Park, J.S. et al. (2023). "Generative Agents: Interactive Simulacra of Human Behavior." Stanford/Google Research.</div>
+
+      <p>This started as a hobby project. A "what if" experiment on a Saturday afternoon. It got out of hand in the best possible way.</p>
 
       <!-- Replay Embed -->
       <div class="replay-embed">
-        <div class="replay-icon">🎮</div>
+        <div class="replay-icon">&#127918;</div>
         <p>Simulation replay loads here</p>
         <p style="margin-top:0.5rem;font-size:0.75rem;">
-          <a href="replay.html">Open full replay player →</a>
+          <a href="replay.html">Open full replay player &rarr;</a>
         </p>
       </div>
     </section>
 
     <div class="chapter-divider"><div class="diamond"></div></div>
 
-    <!-- Part 1 — The First Death -->
+    <!-- Chapter 1: The Architecture (was ch5) -->
     <section class="chapter" id="chapter-1">
-      <div class="chapter-label">Part 1</div>
-      <h2>The Day My Simulation Killed Its First Patient</h2>
-      <div class="hook">"Hendrik Veenstra, 70, chronic heart disease and diabetes. He died in cycle 71."</div>
-      <p>Hendrik Veenstra was 70 years old, with chronic heart disease (ICD-10 I25) and type 2 diabetes (E11). In a first-in-first-out queue, he waited behind younger patients with simpler conditions. His HP drained at 3 points per week past the Treeknorm threshold, multiplied by his severity. He died in cycle 71. In 18 of 20 runs, he died.<a class="fn-ref" data-fn="3">3</a></p>
-      <div class="footnote-body" data-fn="3">Treeknorm: the Dutch maximum acceptable waiting time standard — 4 weeks for diagnostics, 7-12 weeks for treatment. Current violations: Ophthalmology 12 weeks, Neurology/Gynecology 50%+ increase since 2022. Source: NZa Wachttijden 2024.</div>
-      <p>This wasn't a bug. This is what happens when you treat healthcare queues as first-come-first-served and ignore clinical severity. The simulation's mortality logic is deterministic: if a patient waits past their Treeknorm threshold, HP drains proportional to their condition severity. No randomness — just math, applied to real prevalence data.</p>
-      <p>The chart below shows Hendrik's HP curve across a representative run. The decline accelerates past the Treeknorm threshold because his comorbidities (severity multiplier = 2.0) compound the drain.</p>
-
-      <!-- HP Decay Chart -->
-      <div class="chart-container">
-        <div class="chart-title">Hendrik Veenstra — HP Decay Curve</div>
-        <div class="chart-subtitle">HP over simulation cycles (representative run, Treeknorm threshold at cycle ~28)</div>
-        <canvas id="chart-hendrik" width="620" height="280"></canvas>
-        <div class="chart-tooltip" id="tooltip-hendrik"></div>
-        <div class="chart-legend">
-          <span class="legend-hp">HP (Health Points)</span>
-        </div>
-      </div>
-
-      <div class="metric-callout">
-        <div class="metric-card">
-          <div class="metric-value ist" data-counter="18" data-suffix="/20">18/20</div>
-          <div class="metric-label">Runs where Hendrik dies</div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-value ist" data-counter="71" data-prefix="Cycle ">Cycle 71</div>
-          <div class="metric-label">Median death cycle</div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-value" style="color:var(--text)">82 → 0</div>
-          <div class="metric-label">Starting → Final HP</div>
-        </div>
-      </div>
-
-      <p>The mortality gradient by age is stark: patients over 80 die at 5× the rate of those under 45. Not because the system is intentionally biased — but because FIFO queues are structurally indifferent to clinical urgency.</p>
-    </section>
-
-    <!-- Pull Quote -->
-    <div class="pull-quote">
-      <p>"Hendrik died because the queue didn't know he was dying."</p>
-    </div>
-
-    <div class="chapter-divider"><div class="diamond"></div></div>
-
-    <!-- Part 2 — The Burnout Spiral -->
-    <section class="chapter" id="chapter-2">
-      <div class="chapter-label">Part 2</div>
-      <h2>My GP Burned Out Before Her Patients Did</h2>
-      <div class="hook">"Dr. Bakker started at 0% burnout. By cycle 600, she was drowning."</div>
-      <p>The Dutch healthcare system runs on GPs. They are the gatekeepers — no specialist access without a referral. But 30% of every GP's time is consumed by administrative tasks: coding diagnoses, writing referral letters, filing insurance claims, updating patient records.<a class="fn-ref" data-fn="4">4</a></p>
-      <div class="footnote-body" data-fn="4">LHV (Landelijke Huisartsen Vereniging) 2024 survey data: Dutch GPs report 30% of working time spent on non-clinical administrative tasks. IZA (Integraal Zorgakkoord) targets reducing this to 20% by 2030.</div>
-      <p>In the simulation, this administrative burden directly reduces effective capacity. The formula is simple: <code>C_eff = C_total × (1 − L_admin − V_ziekte) × E_ai</code>. In the IST model, with 30% admin load and 8% sick leave, effective capacity drops to 62% of theoretical maximum. Burnout accumulates as the queue grows.</p>
-
-      <!-- Burnout Chart -->
-      <div class="chart-container">
-        <div class="chart-title">GP Burnout Over Time — IST vs SOLL</div>
-        <div class="chart-subtitle">Burnout score (0-10 scale) across simulation cycles</div>
-        <canvas id="chart-burnout" width="620" height="280"></canvas>
-        <div class="chart-tooltip" id="tooltip-burnout"></div>
-        <div class="chart-legend">
-          <span class="legend-ist">IST (Current System)</span>
-          <span class="legend-soll">SOLL (AI-Native)</span>
-        </div>
-      </div>
-
-      <div class="metric-callout">
-        <div class="metric-card">
-          <div class="metric-value ist" data-counter="7.89">7.89</div>
-          <div class="metric-label">IST mean burnout</div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-value soll" data-counter="1.19">1.19</div>
-          <div class="metric-label">SOLL mean burnout</div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-value" style="color:var(--text)" data-counter="1.4" data-prefix="d = ">d = 1.4</div>
-          <div class="metric-label">Cohen's d (large)</div>
-        </div>
-      </div>
-
-      <p>Cohen's d of 1.4 is a <em>very large</em> effect size. The SOLL model achieves this by reducing administrative burden from 30% to under 5% through ambient AI scribes that auto-generate FHIR resources from consultations. The GP's effective time with patients increases by 34%.</p>
-      <p>But here's what makes the burnout spiral insidious: it's not linear. As burnout increases, error rates increase, which increases rework, which increases admin time, which increases burnout. The IST curve doesn't plateau — it asymptotes toward system collapse.</p>
-    </section>
-
-    <div class="chapter-divider"><div class="diamond"></div></div>
-
-    <!-- Part 3 — The Equity Problem -->
-    <section class="chapter" id="chapter-3">
-      <div class="chapter-label">Part 3</div>
-      <h2>Same Queue, Different Graves</h2>
-      <div class="hook">"Equal queues produce unequal outcomes. The 5× mortality gradient isn't a bug — it's what structural indifference looks like."</div>
-      <p>Here is the fundamental fairness paradox of FIFO healthcare: treating everyone "equally" by queue position produces radically unequal outcomes. A 35-year-old with mild back pain and a 78-year-old with heart failure wait in the same queue. One inconvenienced, one dying.</p>
-
-      <!-- Deaths by Age Chart -->
-      <div class="chart-container">
-        <div class="chart-title">Mortality by Age Group</div>
-        <div class="chart-subtitle">Mean deaths per 100 simulation runs, IST vs SOLL</div>
-        <canvas id="chart-age" width="620" height="280"></canvas>
-        <div class="chart-tooltip" id="tooltip-age"></div>
-        <div class="chart-legend">
-          <span class="legend-ist">IST (Current System)</span>
-          <span class="legend-soll">SOLL (AI-Native)</span>
-        </div>
-      </div>
-
-      <p>The data shows a 5× mortality gradient between the youngest and oldest age groups. In the IST model, mean deaths for the 80+ cohort are 5.25 per 100 runs — compared to 0.8 for the 0-44 group. The SOLL model narrows this gap slightly in middle age groups but cannot eliminate it entirely: biology is not negotiable.<a class="fn-ref" data-fn="5">5</a></p>
-      <div class="footnote-body" data-fn="5">RIVM 2024 reports that 96% of Dutch adults over 75 have at least one chronic condition, and 45% have two or more (multimorbidity). CBS mortality tables show 97,594 deaths in the 80+ cohort in 2024, dominated by dementia, heart failure, and frailty.</div>
-      <p>What the SOLL model <em>can</em> do is reduce <strong>system-caused deaths</strong> — mortality directly attributable to waiting list delays rather than disease progression. IST averages 4.43 system deaths; SOLL reduces this to 3.72 (Cohen's d = 0.291, p < 0.05). Small in absolute terms. Significant when those are real people.</p>
-    </section>
-
-    <div class="chapter-divider"><div class="diamond"></div></div>
-
-    <!-- Part 4 — The Bias Trap -->
-    <section class="chapter" id="chapter-4">
-      <div class="chapter-label">Part 4</div>
-      <h2>I Tried to Make My AI Fair. It Resisted.</h2>
-      <div class="hook">"The AI triage system I built to save elderly patients introduced a new form of bias. Digital literacy became a survival factor."</div>
-      <p>The SOLL model introduces severity-based triage — patients with higher clinical urgency get seen first. This should help elderly patients with complex conditions. And it does, partially. But it also introduces a digital literacy bonus: patients who can interact with the AI triage system (submit symptoms digitally, respond to automated check-ins) get faster processing.</p>
-      <p>Elderly patients disproportionately lack digital literacy. Combined with the comorbidity penalty (more conditions = more complex triage decisions = longer processing), the system that was designed to help them creates a new barrier.<a class="fn-ref" data-fn="6">6</a></p>
-      <div class="footnote-body" data-fn="6">CBS Digital Economy Survey 2024: 23% of Dutch adults over 75 have never used the internet. This "digital divide" is a known equity concern in the IZA transformation agenda.</div>
-
-      <div class="metric-callout">
-        <div class="metric-card">
-          <div class="metric-value ist" data-counter="0.92">0.92</div>
-          <div class="metric-label">IST bias score</div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-value soll" data-counter="0.88">0.88</div>
-          <div class="metric-label">SOLL bias score</div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-value" style="color:var(--text)" data-counter="0.288" data-prefix="d = ">d = 0.288</div>
-          <div class="metric-label">Improvement (small)</div>
-        </div>
-      </div>
-
-      <p>The bias score improves — but only marginally (Cohen's d = 0.288). This is the central lesson: AI systems don't automatically produce fairness. They reflect the structure of their inputs. If your input data encodes a world where elderly patients have less digital access, your AI will reproduce that inequality unless you explicitly design against it.</p>
-      <p>The SOLL model's opt-out mechanism (mean 52.36 refusals per run) shows that some patients actively resist digital triage — and the system must accommodate them without penalty. This is not a technical problem. It is a political one.</p>
-    </section>
-
-    <!-- Pull Quote -->
-    <div class="pull-quote">
-      <p>"Equal access is not equitable access."</p>
-    </div>
-
-    <div class="chapter-divider"><div class="diamond"></div></div>
-
-    <!-- ── Branch Point ── -->
-    <section class="chapter branch-point" id="branch">
-      <h2>Two Futures</h2>
-      <p class="branch-subtitle">The same town. The same citizens. The same diseases. Two different systems.</p>
-      <div class="branch-tabs">
-        <button class="branch-tab ist active" onclick="switchBranch('ist')">IST — Current Reality</button>
-        <button class="branch-tab soll" onclick="switchBranch('soll')">SOLL — AI-Native Mesh</button>
-      </div>
-      <div class="branch-content">
-        <div class="branch-pane ist-pane active" id="branch-ist">
-          <h3>IST — The System We Have</h3>
-          <ul>
-            <li><strong>FIFO queues.</strong> First come, first served — regardless of clinical urgency.</li>
-            <li><strong>30% administrative burden.</strong> One third of every GP's time lost to paperwork.</li>
-            <li><strong>11% data interoperability.</strong> Only 11% of Dutch healthcare data is machine-exchangeable.</li>
-            <li><strong>301,000 projected staff shortage by 2035.</strong> The workforce cannot scale to meet demand.</li>
-            <li><strong>8% sick leave.</strong> Healthcare workers burn out and leave.</li>
-          </ul>
-          <p>Result: 11.75 mean deaths per run. 4.43 system-caused. GP burnout at 7.89/10. Zero proactive interventions.</p>
-        </div>
-        <div class="branch-pane soll-pane" id="branch-soll">
-          <h3>SOLL — The System We Could Build</h3>
-          <ul>
-            <li><strong>Severity-based triage.</strong> Clinical urgency determines queue position, not arrival time.</li>
-            <li><strong>Ambient AI scribes.</strong> Administrative burden drops from 30% to under 5%.</li>
-            <li><strong>A2A protocol.</strong> Agents communicate directly — referrals, status queries, alerts.</li>
-            <li><strong>Federated research agents.</strong> 30 research queries per run, privacy-preserving analytics.</li>
-            <li><strong>Digital Twins.</strong> 146.75 mean proactive alerts per run — intervening before crisis.</li>
-          </ul>
-          <p>Result: 10.60 mean deaths per run. 3.72 system-caused. GP burnout at 1.19/10. 87.61% ketenzorg compliance.</p>
-        </div>
-      </div>
-    </section>
-
-    <div class="chapter-divider"><div class="diamond"></div></div>
-
-    <!-- Part 5 — Architecture -->
-    <section class="chapter" id="chapter-5">
-      <div class="chapter-label">Part 5</div>
+      <div class="chapter-label">Chapter 1</div>
       <h2>How I Wired a Pixel Town with A2A and FHIR</h2>
       <div class="hook">"Every agent publishes a card. Every action writes a FHIR resource. The mesh self-organizes."</div>
-      <p>The technical backbone of Cammelot is two open protocols: <strong>A2A</strong> (Agent-to-Agent) for communication and <strong>FHIR R4</strong> (Fast Healthcare Interoperability Resources) for data. Every GP and specialist agent publishes an Agent Card at <code>/.well-known/agent-card.json</code> containing their skills, current wait times, and capacity.</p>
-      <p>When a GP needs to refer a patient, they don't pick up a phone or send a fax. They query the mesh for available specialists matching the required ICD-10 code, compare wait times from Agent Cards, and route the referral to the optimal endpoint. The referral follows a lifecycle: <code>submitted → working → input-required → completed</code>.<a class="fn-ref" data-fn="7">7</a></p>
-      <div class="footnote-body" data-fn="7">The A2A protocol is Google DeepMind's open standard for inter-agent communication. Agent Cards are analogous to OpenAPI specs but for autonomous agents. See: google.github.io/A2A</div>
-      <p>Every agent action — every consultation, every referral, every triage decision — is logged as a FHIR resource. A patient's "memory stream" (their complete experience of the healthcare system) is a chronological query on their FHIR resources: Encounters, Observations, Conditions, MedicationRequests. This is not a simulation convenience — it's the same architecture the Dutch PHT (Personal Health Train) and vantage6 federated learning platform use.</p>
-      <p>The result is a system where data doesn't live in silos. The 11% interoperability figure from today's Dutch healthcare becomes 66% in the SOLL model — not because we forced everyone onto one platform, but because agents communicate in a shared protocol.</p>
+
+      <p>The backbone of Cammelot is two open protocols. <strong>A2A</strong> (Agent-to-Agent) handles communication between agents. <strong>FHIR R4</strong> (Fast Healthcare Interoperability Resources) handles data. Every GP and specialist publishes an Agent Card at <code>/.well-known/agent-card.json</code> listing their skills, current wait times, and capacity.<a class="fn-ref" data-fn="3">3</a></p>
+      <div class="footnote-body" data-fn="3">The A2A protocol is Google DeepMind's open standard for inter-agent communication. Agent Cards work like OpenAPI specs, but for autonomous agents. See: google.github.io/A2A</div>
+
+      <p>When a GP needs to refer a patient, they don't send a fax. They query the mesh for available specialists matching the required ICD-10 code, compare wait times from Agent Cards, and route the referral to the best endpoint. The referral follows a simple lifecycle: <code>submitted, working, input-required, completed</code>.</p>
+
+      <p>Every agent action gets logged as a FHIR resource. A patient's "memory stream," their complete experience of the healthcare system, is just a chronological query on their FHIR records: Encounters, Observations, Conditions, MedicationRequests. This isn't a simulation shortcut. It's the same architecture that the Dutch Personal Health Train and the vantage6 federated learning platform use in production.</p>
+
+      <p>The result is a system where data doesn't live in silos. Today, only about 11% of Dutch healthcare data is machine-exchangeable. In the SOLL model, that jumps to 66%. Not because everyone got forced onto one platform, but because agents speak a shared protocol.</p>
+
+      <p>An Agent Card looks something like this:</p>
+
+      <div class="replay-embed" style="text-align:left;padding:1.5rem;font-size:0.75rem;line-height:1.5;">
+        <code style="background:none;color:#8888aa;font-size:0.75rem;white-space:pre;">{
+  "agentId": "gp-de-jong",
+  "name": "Dr. de Jong, GP Practice De Brink",
+  "role": "gp",
+  "skills": ["triage", "referral", "chronic_care"],
+  "waitTime": { "weeks": 2, "queueSize": 12 },
+  "metadata": {
+    "admin_load": "30%",
+    "treeknorm_status": "compliant"
+  }
+}</code>
+      </div>
+
+      <p>That's it. Every agent in the mesh can read every other agent's card. GPs know which specialist has the shortest wait. Specialists know who's sending them referrals. Research agents can query population health patterns without ever centralizing patient data.</p>
     </section>
 
     <div class="chapter-divider"><div class="diamond"></div></div>
 
-    <!-- Part 6 — Security -->
-    <section class="chapter" id="chapter-6">
-      <div class="chapter-label">Part 6</div>
-      <h2>How a Forged Agent Card Collapsed My Healthcare Mesh</h2>
-      <div class="hook">"I introduced a malicious agent called Mordred. It took four lines of JSON to compromise the entire network."</div>
-      <p>If agents trust each other's cards implicitly, what happens when a bad actor publishes a forged card? I introduced "Mordred" — an agent with a valid-looking Agent Card claiming to be a cardiologist with zero wait time. Every GP in the mesh started routing cardiac referrals to Mordred. The referrals went nowhere. Patients died.</p>
-      <p>This is the fundamental security challenge of agentic systems: the trust boundary is the Agent Card, and Agent Cards are self-declared. In the first Mordred experiment, the mesh had no validation layer. Adding cryptographic card signing and a trust registry (analogous to a Certificate Authority) eliminated the attack — until Mordred v2 attempted a naming collision attack.<a class="fn-ref" data-fn="8">8</a></p>
-      <div class="footnote-body" data-fn="8">The Mordred experiments are directly inspired by Byzantine fault tolerance research. In healthcare, a single malicious or malfunctioning agent can have life-or-death consequences. The EHDS (European Health Data Space) regulation will require similar trust frameworks for cross-border health data exchange.</div>
-      <p>The lesson: agentic meshes need the same security infrastructure as the internet itself. Certificate pinning, mutual TLS, anomaly detection on referral patterns. The "move fast and break things" ethos of Silicon Valley does not survive contact with healthcare.</p>
-    </section>
-
-    <div class="chapter-divider"><div class="diamond"></div></div>
-
-    <!-- Part 7 — The Agentic Mesh -->
-    <section class="chapter" id="chapter-7">
-      <div class="chapter-label">Part 7</div>
+    <!-- Chapter 2: The Agentic Mesh (was ch7) -->
+    <section class="chapter" id="chapter-2">
+      <div class="chapter-label">Chapter 2</div>
       <h2>The Data Mesh is Dead. Long Live the Agentic Mesh.</h2>
-      <div class="hook">"Data mesh promised decentralized data ownership. It delivered decentralized data abandonment."</div>
-      <p>The data mesh paradigm — treat data as a product, let domain teams own their data — sounds elegant. In practice, it produced a landscape where every hospital, every GP practice, every municipality maintains its own data silo and calls it "ownership." The 11% interoperability figure is the data mesh's report card in Dutch healthcare.</p>
-      <p>The Agentic Mesh inverts the model. Instead of moving data to computation, you move computation to data. Research agents in the SOLL model execute 30 federated queries per run across the mesh — analyzing population health patterns without centralizing patient records. Benchmark agents generate 15 reports per run comparing provider performance against Treeknorm standards.<a class="fn-ref" data-fn="9">9</a></p>
-      <div class="footnote-body" data-fn="9">This approach aligns with the European Health Data Space (EHDS) regulation requiring "secondary use" of health data for research while preserving patient privacy. The vantage6 platform (developed at IKNL, Netherlands) implements this pattern for cancer research.</div>
-      <p>Privacy is enforced architecturally, not contractually. The opt-out mechanism (52.36 mean refusals per run) demonstrates that the system respects patient autonomy — a critical requirement under GDPR and the upcoming EHDS framework. Data stays where it is. Agents come to the data.</p>
+      <div class="hook">"Data mesh promised decentralized ownership. It delivered decentralized abandonment."</div>
+
+      <p>The data mesh idea sounds great on paper. Treat data as a product. Let domain teams own their data. In practice, it produced a landscape where every hospital, every GP practice, every municipality maintains its own silo and calls it "ownership." That 11% interoperability figure is the data mesh's report card in Dutch healthcare.</p>
+
+      <p>The Agentic Mesh inverts the model. Instead of moving data to computation, you move computation to data.<a class="fn-ref" data-fn="4">4</a></p>
+      <div class="footnote-body" data-fn="4">This approach aligns with the European Health Data Space (EHDS) regulation requiring "secondary use" of health data for research while preserving patient privacy. The vantage6 platform (developed at IKNL, Netherlands) implements this pattern for cancer research.</div>
+
+      <p>In the SOLL model, research agents execute federated queries across the mesh. They analyze population health patterns without centralizing patient records. Benchmark agents compare provider performance against Treeknorm standards. All of this happens while data stays exactly where it is. Agents come to the data, not the other way around.</p>
+
+      <p>Privacy is enforced architecturally, not contractually. The simulation's opt-out mechanism shows that some patients actively refuse digital triage, and the system accommodates them without penalty. Under GDPR and the upcoming EHDS framework, "just trust us with your data" is not a valid architecture.</p>
+
+      <p>The key insight is that interoperability doesn't require centralization. It requires a shared language. FHIR gives you the language. A2A gives you the conversation. Together, they let autonomous agents coordinate care across organizational boundaries without anyone building a massive data warehouse first.</p>
     </section>
 
     <!-- Pull Quote -->
@@ -978,106 +850,44 @@ code {
 
     <div class="chapter-divider"><div class="diamond"></div></div>
 
-    <!-- Part 8 — The Numbers -->
-    <section class="chapter" id="chapter-8">
-      <div class="chapter-label">Part 8</div>
-      <h2>100 Runs. Here's What the Data Says.</h2>
-      <div class="hook">"We ran both models 100 times. Every metric. Every death. Every referral. Here are the results."</div>
-      <p>The table below summarizes the full statistical comparison between IST (current system) and SOLL (AI-native mesh) across 100 simulation runs. Cohen's d measures effect size; values above 0.8 are considered "large."</p>
+    <!-- Chapter 3: What's Coming (NEW teaser) -->
+    <section class="chapter" id="chapter-3">
+      <div class="chapter-label">Chapter 3</div>
+      <h2>What's Coming</h2>
+      <div class="hook">"I ran 100 simulations. I have numbers. Some confirmed what I expected. Others didn't."</div>
 
-      <div class="stats-table-wrap">
-        <table class="stats-table">
-          <thead>
-            <tr>
-              <th>Metric</th>
-              <th>IST (mean ± SD)</th>
-              <th>SOLL (mean ± SD)</th>
-              <th>Cohen's d</th>
-              <th>Sig.</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td class="metric-name">Total Deaths</td>
-              <td>11.75 ± 3.25</td>
-              <td>10.60 ± 3.35</td>
-              <td>0.348</td>
-              <td class="sig">*</td>
-            </tr>
-            <tr>
-              <td class="metric-name">System-Caused Deaths</td>
-              <td>4.43 ± 2.34</td>
-              <td>3.72 ± 2.54</td>
-              <td>0.291</td>
-              <td class="sig">*</td>
-            </tr>
-            <tr>
-              <td class="metric-name">GP Burnout (0-10)</td>
-              <td>7.89</td>
-              <td>1.19</td>
-              <td>1.400</td>
-              <td class="sig">***</td>
-            </tr>
-            <tr>
-              <td class="metric-name">Proactive Alerts</td>
-              <td>0</td>
-              <td>146.75 ± 71.11</td>
-              <td>—</td>
-              <td class="sig">***</td>
-            </tr>
-            <tr>
-              <td class="metric-name">Ketenzorg Compliance (%)</td>
-              <td>33.83</td>
-              <td>87.61</td>
-              <td>0.940</td>
-              <td class="sig">***</td>
-            </tr>
-            <tr>
-              <td class="metric-name">Bias Score</td>
-              <td>0.92</td>
-              <td>0.88</td>
-              <td>0.288</td>
-              <td class="sig">*</td>
-            </tr>
-            <tr>
-              <td class="metric-name">Admin Burden</td>
-              <td>30%</td>
-              <td>&lt;5%</td>
-              <td>—</td>
-              <td class="sig">***</td>
-            </tr>
-            <tr>
-              <td class="metric-name">Research Queries</td>
-              <td>0</td>
-              <td>30</td>
-              <td>—</td>
-              <td>—</td>
-            </tr>
-            <tr>
-              <td class="metric-name">Opt-Out Refusals</td>
-              <td>—</td>
-              <td>52.36</td>
-              <td>—</td>
-              <td>—</td>
-            </tr>
-            <tr>
-              <td class="metric-name">Benchmark Reports</td>
-              <td>0</td>
-              <td>15</td>
-              <td>—</td>
-              <td>—</td>
-            </tr>
-          </tbody>
-        </table>
+      <p>I have results on mortality, burnout, costs, and fairness. I have charts, effect sizes, and p-values. I have a story about a 70-year-old named Hendrik who died in cycle 71 because the queue didn't know he was dying.</p>
+
+      <p>I also have a story about what happened when I tried to make my AI triage system fair, and it resisted. And one about a malicious agent called Mordred who collapsed my entire healthcare mesh with four lines of JSON.</p>
+
+      <p>I'm rolling these out week by week. Each finding deserves its own space.</p>
+
+      <p><strong>Next week:</strong> what happened when my simulation killed its first patient.</p>
+
+      <div class="metric-callout">
+        <div class="metric-card">
+          <div class="metric-value ist">???</div>
+          <div class="metric-label">Burnout Score</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value ist">???</div>
+          <div class="metric-label">Mortality Rate</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value soll">???</div>
+          <div class="metric-label">Cost Savings</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value" style="color:var(--text)">???</div>
+          <div class="metric-label">Fairness</div>
+        </div>
       </div>
-      <p style="font-size:0.8rem;color:var(--text-muted);margin-top:0.5rem;">
-        * p &lt; 0.05 &nbsp; ** p &lt; 0.01 &nbsp; *** p &lt; 0.001 &nbsp; Cohen's d: small (&gt;0.2), medium (&gt;0.5), large (&gt;0.8)
-      </p>
 
-      <p>The headline number — total deaths reduced from 11.75 to 10.60 — is a small effect (d = 0.348). This matters. Healthcare systems deal in marginal improvements at population scale. A Cohen's d of 0.348 applied to the Netherlands' 18 million citizens is not a rounding error.</p>
-      <p>The large effects are in system capacity: GP burnout (d = 1.4), ketenzorg compliance (d = 0.94), and proactive intervention capability (from zero to 146.75 alerts per run). These are the structural changes that compound over time. The deaths prevented in year one become the burnout prevented in year five become the workforce retained in year ten.</p>
+      <p>All code is open. All data is open. If you want to poke holes in my methodology before I publish the results, the <a href="https://github.com/cammeleon66/Cammelot" target="_blank">GitHub repo</a> is right there.</p>
 
-      <blockquote>"The question is not whether AI can improve healthcare. The simulation shows it can. The question is whether we will build the governance, the security, and the equity frameworks to let it."</blockquote>
+      <div style="text-align:center;margin:2rem 0;">
+        <a href="world.html" style="display:inline-block;background:var(--green);color:#fff;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:0.9rem;padding:0.8rem 2rem;border-radius:6px;text-decoration:none;letter-spacing:0.03em;box-shadow:0 3px 12px rgba(39,174,96,0.25);">&#127918; Try the Live Simulation</a>
+      </div>
     </section>
 
   </main>
@@ -1087,16 +897,17 @@ code {
 </div>
 
 <!-- Back to Top button -->
-<button class="back-to-top" id="back-to-top" aria-label="Back to top">↑</button>
+<button class="back-to-top" id="back-to-top" aria-label="Back to top">&uarr;</button>
 
 <!-- Footer -->
 <footer class="site-footer">
-  <p>CAMMELOT — A Research-Backed Healthcare Simulation</p>
-  <p style="margin-top:0.4rem;">Built by <a href="https://www.linkedin.com/in/simonecammel/" target="_blank">Simone Cammel</a> · <a href="https://github.com/cammeleon66/Cammelot" target="_blank">View on GitHub</a></p>
+  <p>CAMMELOT: A Research-Backed Healthcare Simulation</p>
+  <p style="margin-top:0.4rem;">Built by <a href="https://www.linkedin.com/in/simonecammel/" target="_blank">Simone Cammel</a> &middot; <a href="https://github.com/cammeleon66/Cammelot" target="_blank">View on GitHub</a></p>
   <div class="footer-sources">
-    Data sources: CBS (Centraal Bureau voor de Statistiek) · RIVM (Rijksinstituut voor Volksgezondheid en Milieu) · NZa (Nederlandse Zorgautoriteit) · LHV · IZA 2023-2026
+    Data sources: CBS (Centraal Bureau voor de Statistiek) &middot; RIVM (Rijksinstituut voor Volksgezondheid en Milieu) &middot; NZa (Nederlandse Zorgautoriteit) &middot; LHV &middot; IZA 2023-2026
   </div>
 </footer>
+
 
 <script>
 // ── Simulation Data ──
