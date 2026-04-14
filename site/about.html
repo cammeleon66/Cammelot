@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>About — Cammelot</title>
+
+<meta property="og:title" content="About Cammelot">
+<meta property="og:description" content="A research-backed healthcare simulation built by Simone Cammel.">
+<meta property="og:type" content="website">
+
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='4' y='20' width='24' height='12' fill='%23c0392b'/%3E%3Crect x='4' y='16' width='6' height='4' fill='%23c0392b'/%3E%3Crect x='13' y='16' width='6' height='4' fill='%23c0392b'/%3E%3Crect x='22' y='16' width='6' height='4' fill='%23c0392b'/%3E%3Crect x='12' y='8' width='8' height='12' fill='%23e74c3c'/%3E%3Crect x='14' y='4' width='4' height='4' fill='%23c0392b'/%3E%3Crect x='14' y='24' width='4' height='8' fill='%23922b21'/%3E%3C/svg%3E">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; font-size: 18px; }
+body {
+  font-family: 'Spectral', Georgia, serif;
+  background: #faf9f7;
+  color: #1a1a1a;
+  line-height: 1.72;
+  -webkit-font-smoothing: antialiased;
+}
+
+:root {
+  --bg: #faf9f7;
+  --text: #1a1a1a;
+  --text-muted: #5a5a5a;
+  --red: #c0392b;
+  --green: #27ae60;
+  --border: #e0ddd5;
+  --card-bg: #fff;
+}
+
+/* Dark theme */
+body.dark-theme {
+  --bg: #0a0a12; --text: #e0e0e0; --text-muted: #8a8a9a;
+  --red: #e74c3c; --green: #2ecc71; --border: #2a2a3a; --card-bg: #14141f;
+}
+body.dark-theme { background: var(--bg); color: var(--text); }
+body.dark-theme .site-header { border-bottom-color: var(--border); }
+
+/* Header */
+.site-header {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(250, 249, 247, 0.92);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+  padding: 0.6rem 2rem;
+  display: flex; align-items: center; justify-content: space-between;
+}
+body.dark-theme .site-header { background: rgba(10, 10, 18, 0.92); }
+.site-header .logo {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700; font-size: 1.1rem; letter-spacing: 0.15em;
+  color: var(--text); text-decoration: none;
+}
+.site-header .logo span { color: var(--red); }
+.site-header nav a {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.75rem; text-decoration: none; color: var(--text-muted);
+  margin-left: 1.5rem; letter-spacing: 0.04em; text-transform: uppercase;
+  transition: color 0.2s;
+}
+.site-header nav a:hover { color: var(--text); }
+
+/* Theme toggle */
+.theme-toggle {
+  background: none; border: 1px solid var(--border); border-radius: 4px;
+  padding: 0.3rem 0.5rem; cursor: pointer; font-size: 0.9rem;
+  margin-left: 1rem; transition: all 0.3s;
+}
+.theme-toggle:hover { border-color: var(--text-muted); }
+
+/* Main */
+.page-container {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 6rem 1.5rem 4rem;
+}
+
+.page-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 2.2rem; font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+.page-title span { color: var(--red); }
+.page-subtitle {
+  font-style: italic; color: var(--text-muted);
+  margin-bottom: 3rem; font-size: 1.05rem;
+}
+
+/* Sections */
+.about-section {
+  margin-bottom: 3rem;
+}
+.about-section h2 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.3rem; font-weight: 600;
+  margin-bottom: 0.8rem;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+.about-section p {
+  margin-bottom: 1rem;
+}
+.about-section a {
+  color: var(--red);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: opacity 0.2s;
+}
+.about-section a:hover { opacity: 0.7; }
+
+/* Divider */
+.divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 2.5rem 0;
+  position: relative;
+}
+.divider::after {
+  content: '◆';
+  position: absolute; top: -0.6em; left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg);
+  padding: 0 0.8rem;
+  color: var(--border);
+  font-size: 0.6rem;
+}
+
+/* Contact card */
+.contact-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 2rem;
+  margin: 2rem 0;
+}
+.contact-card .contact-row {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.9rem;
+}
+.contact-card .contact-row:last-child { margin-bottom: 0; }
+.contact-card .contact-icon {
+  font-size: 1.2rem;
+  width: 2rem;
+  text-align: center;
+  flex-shrink: 0;
+}
+.contact-card a {
+  color: var(--red);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Links list */
+.links-list {
+  list-style: none;
+  padding: 0;
+}
+.links-list li {
+  margin-bottom: 0.6rem;
+  font-size: 0.95rem;
+}
+.links-list li::before {
+  content: '→';
+  color: var(--red);
+  margin-right: 0.5rem;
+  font-weight: 600;
+}
+
+/* Footer */
+.site-footer {
+  border-top: 1px solid var(--border);
+  padding: 3rem 2rem;
+  text-align: center;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+.site-footer a { color: var(--text-muted); }
+
+/* Responsive */
+@media (max-width: 600px) {
+  .page-container { padding: 5rem 1rem 3rem; }
+  .page-title { font-size: 1.6rem; }
+  .contact-card { padding: 1.2rem; }
+}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a href="index.html" class="logo">CAMME<span>L</span>OT</a>
+  <nav>
+    <a href="index.html">Story</a>
+    <a href="about.html" style="color:var(--text);font-weight:600;">About</a>
+    <a href="https://github.com/cammeleon66/Cammelot" target="_blank">GitHub ↗</a>
+    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark mode">🌙</button>
+  </nav>
+</header>
+
+<main class="page-container">
+  <h1 class="page-title">About <span>Cammelot</span></h1>
+  <p class="page-subtitle">A hobby project gone very rogue.</p>
+
+  <section class="about-section">
+    <h2>The Project</h2>
+    <p>Cammelot is a simulated Dutch town with 45 pixel citizens, three GPs, and one hospital. Their diseases come from real RIVM prevalence data. The healthcare system is modeled on CBS demographics, IZA program targets, and NZa tariffs. Citizens walk around a 16-bit pixel map, get sick, queue for care, and sometimes die — not from disease alone, but from a system that can't keep up.</p>
+    <p>I ran 100 simulations of the current Dutch healthcare system (IST) and 100 simulations of an AI-augmented version (SOLL). Then I compared every metric I could think of: mortality, burnout, wait times, costs, fairness, security. The results are published openly — including the ones that surprised me.</p>
+  </section>
+
+  <hr class="divider">
+
+  <section class="about-section">
+    <h2>About Me</h2>
+    <p>I'm Simone Cammel. I work at Microsoft, which means you should assume I'm biased toward AI. That's exactly why I built a system that could prove me wrong.</p>
+    <p>I built Cammelot because I believe the debate around AI in healthcare is stuck in the wrong frame. Most people see AI as a productivity tool. I think it has the potential to restructure entire systems — but only if we're honest about what it actually does and doesn't improve. This simulation is my attempt at that honesty.</p>
+  </section>
+
+  <hr class="divider">
+
+  <section class="about-section">
+    <h2>Get in Touch</h2>
+    <p>I'd genuinely love to hear from you — whether you think the model is wrong, have a research question, want to collaborate, or just want to say hi.</p>
+
+    <div class="contact-card">
+      <div class="contact-row">
+        <span class="contact-icon">📧</span>
+        <span>Email: <a href="mailto:contact@cammelot.org">contact@cammelot.org</a></span>
+      </div>
+      <div class="contact-row">
+        <span class="contact-icon">💼</span>
+        <span>LinkedIn: <a href="https://www.linkedin.com/in/simonecammel/" target="_blank">linkedin.com/in/simonecammel</a></span>
+      </div>
+      <div class="contact-row">
+        <span class="contact-icon">💻</span>
+        <span>GitHub: <a href="https://github.com/cammeleon66/Cammelot" target="_blank">cammeleon66/Cammelot</a></span>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <section class="about-section">
+    <h2>Open Source & Data</h2>
+    <p>Everything is open. The code, the simulation data, the statistics. If you find something wrong, please tell me.</p>
+    <ul class="links-list">
+      <li><a href="https://github.com/cammeleon66/Cammelot" target="_blank">Source code on GitHub</a></li>
+      <li><a href="index.html">Read the full research narrative</a></li>
+      <li><a href="replay.html">Watch the simulation replay</a></li>
+    </ul>
+  </section>
+
+  <hr class="divider">
+
+  <section class="about-section">
+    <h2>Data Sources</h2>
+    <p>All simulation parameters are drawn from publicly available Dutch healthcare data:</p>
+    <ul class="links-list">
+      <li><strong>CBS</strong> — Centraal Bureau voor de Statistiek (demographics, mortality tables)</li>
+      <li><strong>RIVM</strong> — Rijksinstituut voor Volksgezondheid en Milieu (disease prevalence)</li>
+      <li><strong>NZa</strong> — Nederlandse Zorgautoriteit (tariffs, waiting times)</li>
+      <li><strong>LHV</strong> — Landelijke Huisartsen Vereniging (GP workload surveys)</li>
+      <li><strong>IZA</strong> — Integraal Zorgakkoord 2023-2026 (transformation targets)</li>
+    </ul>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <p>CAMMELOT — A Research-Backed Healthcare Simulation</p>
+  <p style="margin-top:0.4rem;">Built by <a href="https://www.linkedin.com/in/simonecammel/" target="_blank">Simone Cammel</a> · <a href="https://github.com/cammeleon66/Cammelot" target="_blank">View on GitHub</a></p>
+</footer>
+
+<script>
+function toggleTheme() {
+  document.body.classList.toggle('dark-theme');
+  const btn = document.querySelector('.theme-toggle');
+  btn.textContent = document.body.classList.contains('dark-theme') ? '☀️' : '🌙';
+  localStorage.setItem('cammelot-theme', document.body.classList.contains('dark-theme') ? 'dark' : 'light');
+}
+if (localStorage.getItem('cammelot-theme') === 'dark') {
+  document.body.classList.add('dark-theme');
+  document.querySelector('.theme-toggle').textContent = '☀️';
+}
+</script>
+</body>
+</html>
