@@ -344,17 +344,17 @@ body.dark-theme::after {
 /* ── Replay Embed ── */
 .replay-embed {
   background: #1a1a2e;
-  border: 2px solid #2d2d44;
-  border-radius: 8px;
-  padding: 3rem 2rem;
+  border: 1px solid #2d2d44;
+  border-radius: 6px;
+  padding: 1rem 1.2rem;
   text-align: center;
   color: #8888aa;
   font-family: 'Space Grotesk', sans-serif;
-  font-size: 0.85rem;
-  margin: 2rem 0;
+  font-size: 0.82rem;
+  margin: 1rem 0;
   position: relative;
   overflow: hidden;
-  min-height: 200px;
+  min-height: 0;
 }
 .replay-embed::before {
   content: '';
@@ -372,7 +372,7 @@ body.dark-theme::after {
 
 /* ── Canvas Charts ── */
 .chart-container {
-  margin: 2rem 0;
+  margin: 1rem 0;
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: 6px;
@@ -585,7 +585,7 @@ blockquote {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0.3rem 0 0.8rem;
+  margin: 0.2rem 0 0.5rem;
   gap: 0.8rem;
 }
 .chapter-divider::before,
@@ -757,9 +757,6 @@ code {
       <p>I work at Microsoft. You should assume I'm biased toward AI.</p>
 
       <p>That's exactly why I built a system that could prove me wrong. In several important ways, it did.</p>
-
-      <div class="chapter-divider"><div class="diamond"></div></div>
-
       <p><strong>Cammelot</strong> is a simulated Dutch town. Forty-five citizens with names, ages, pre-existing conditions, and GP assignments. Three general practitioners. One hospital. The citizens walk around a 16-bit pixel map that looks like it belongs on a 1994 Super Nintendo. Their diseases are drawn from 2025 RIVM prevalence data. Their healthcare costs come from NZa tariffs. Their waiting times follow the Treeknorm - the Dutch legal norm for how long you should wait for specialist care.</p>
 
       <p>I built it because I was tired of the vibes.</p>
@@ -769,9 +766,6 @@ code {
       <p>"AI is overhyped." Compared to what? The system that's already producing a 301,000-worker shortage by 2035?</p>
 
       <p>Both sides argue with anecdotes and intuition. I wanted a machine that produces numbers. Not predictions. Outputs you can measure. Run it, measure it, break it, run it again. Two hundred times. With statistics.</p>
-
-      <div class="chapter-divider"><div class="diamond"></div></div>
-
       <h3>The architecture: how it actually works</h3>
 
       <p>Every citizen in Cammelot is an autonomous agent running a cognitive loop inspired by Park et al.'s "Generative Agents" - the Stanford paper that simulated 25 AI agents in a town called Smallville. Their agents organized a Valentine's Day party. Mine enter waiting lists.</p>
@@ -787,9 +781,6 @@ code {
       <p>Disease progression is driven by <strong>Markov chains</strong> - probabilistic state machines calibrated to RIVM data. A patient with COPD transitions between states: healthy → mild → moderate → severe → terminal. Each tick, the chain rolls. Comorbidities multiply the odds: diabetes worsens heart disease (1.4×), hypertension compounds both (1.3×). When a patient reaches terminal, their sprite turns grey. They become a ghost.</p>
 
       <p>Providers communicate through <strong>A2A (Agent-to-Agent) protocol</strong>. Every GP and specialist publishes an Agent Card - a machine-readable description of their skills, current wait time, and queue depth. Referrals flow as structured messages. Wait times are real-time, not estimated. Think of it as an evolution of the Personal Health Train concept that the Netherlands pioneered through Health-RI - but with stateful agents that discover each other, instead of stateless containers dispatched to known nodes.</p>
-
-      <div class="chapter-divider"><div class="diamond"></div></div>
-
       <h3>Two worlds: IST and SOLL</h3>
 
       <p>The simulation runs in two modes. Each is a complete set of parameters - not a toggle, but a different reality.</p>
@@ -827,9 +818,6 @@ code {
       </ul>
 
       <p>The effective GP capacity in SOLL: <code>C_total × (1 - 0.05 - 0.05) × 1.34 = ~121%</code>. The same GP, nearly double the output.</p>
-
-      <div class="chapter-divider"><div class="diamond"></div></div>
-
       <h3>Wait - that's a lot of changes at once</h3>
 
       <p>Yes, and that's deliberate.</p>
@@ -841,9 +829,6 @@ code {
       <p>That's what the five posts in this series are for. Each one isolates a different mechanism and asks: does this specific link in the chain hold?</p>
 
       <p>Spoiler: some do. Some don't. And one mechanism turned out to matter more than all the others combined.</p>
-
-      <div class="chapter-divider"><div class="diamond"></div></div>
-
       <h3>The methodology: why you should take this semi-seriously</h3>
 
       <p>Every finding in this series comes from the same protocol:</p>
@@ -858,9 +843,6 @@ code {
       </ul>
 
       <p>N = 45 agents is small. I know. The stochastic variance is high - especially for elderly subgroups, where 3 agents per run means a single death swings mortality by 33 percentage points. I'll flag this limitation every time it matters. And I'll show you the raw data, not just the averages.</p>
-
-      <div class="chapter-divider"><div class="diamond"></div></div>
-
       <h3>Why you should be skeptical of me</h3>
 
       <p>Three reasons:</p>
@@ -872,9 +854,6 @@ code {
       <p><strong>3. N = 45.</strong> This is a proof of concept, not a clinical trial. The findings are directional, not definitive. I use proper statistics to separate signal from noise, but small populations have fundamental power limitations that no amount of t-testing can overcome.</p>
 
       <p>What I <em>can</em> promise: I report every finding honestly. When the data contradicts my hypothesis, I say so. When a result is not significant, I don't dress it up. When I got something wrong in an earlier analysis, I show the correction.</p>
-
-      <div class="chapter-divider"><div class="diamond"></div></div>
-
       <h3>What's coming</h3>
 
       <p>Over the next five posts, I'll walk through what happened - in the order I discovered it:</p>
@@ -907,14 +886,11 @@ code {
       <p>In 2024, only 11% of Dutch health data was interoperable between providers. The IZA wants that at 66% by 2030. They're spending €2.8 billion on transformation plans to get there. Most of those plans are building point-to-point integrations: system A talks to system B through a custom connector. Repeat for every pair.</p>
 
       <p>I took a different approach. I gave every provider in my simulation a business card and let them figure it out.</p>
-
-      <div class="chapter-divider"><div class="diamond"></div></div>
-
       <h3>Agent Cards: the business card idea</h3>
 
       <p>In Cammelot, every GP and specialist publishes a machine-readable description of themselves at a known URL. It's based on the A2A (Agent-to-Agent) protocol. The structure is simple:</p>
 
-      <div class="replay-embed" style="text-align:left;padding:1.5rem;font-size:0.75rem;line-height:1.5;"><code style="background:none;color:#8888aa;font-size:0.75rem;white-space:pre;">{
+      <div class="replay-embed" style="text-align:left;padding:0.8rem;font-size:0.75rem;line-height:1.5;"><code style="background:none;color:#8888aa;font-size:0.75rem;white-space:pre;">{
   "agentId": "gp-de-jong",
   "name": "Dr. de Jong",
   "role": "gp",
@@ -935,7 +911,7 @@ code {
 
       <p>The cardiologist publishes the same format:</p>
 
-      <div class="replay-embed" style="text-align:left;padding:1.5rem;font-size:0.75rem;line-height:1.5;"><code style="background:none;color:#8888aa;font-size:0.75rem;white-space:pre;">{
+      <div class="replay-embed" style="text-align:left;padding:0.8rem;font-size:0.75rem;line-height:1.5;"><code style="background:none;color:#8888aa;font-size:0.75rem;white-space:pre;">{
   "agentId": "spec-cardiology",
   "name": "Dr. van den Berg",
   "role": "specialist",
@@ -948,7 +924,7 @@ code {
 
       <p>In the simulation, this runs through <code>sendA2AMessage()</code>:</p>
 
-      <div class="replay-embed" style="text-align:left;padding:1.5rem;font-size:0.75rem;line-height:1.5;"><code style="background:none;color:#8888aa;font-size:0.75rem;white-space:pre;">function sendA2AMessage(from, to, type, payload) {
+      <div class="replay-embed" style="text-align:left;padding:0.8rem;font-size:0.75rem;line-height:1.5;"><code style="background:none;color:#8888aa;font-size:0.75rem;white-space:pre;">function sendA2AMessage(from, to, type, payload) {
   const msg = {
     id: 'msg-' + cycle + '-' + Math.random().toString(36).slice(2, 6),
     from: from.id, to: to.id,
@@ -962,16 +938,13 @@ code {
 }</code></div>
 
       <p>The entire inter-agent communication layer is about forty lines of code.</p>
-
-      <div class="chapter-divider"><div class="diamond"></div></div>
-
       <h3>FHIR as memory, not just messaging</h3>
 
       <p>The second piece is FHIR R4. Not as a messaging standard (everyone uses it for that) but as the memory layer for every agent.</p>
 
       <p>Every action in Cammelot gets logged as a FHIR resource. When Dr. de Jong sees a patient, that's an <code>Encounter</code>. When she records a blood pressure reading, that's an <code>Observation</code>. When she diagnoses COPD, that's a <code>Condition</code>. When she prescribes medication, <code>MedicationRequest</code>.</p>
 
-      <div class="replay-embed" style="text-align:left;padding:1.5rem;font-size:0.75rem;line-height:1.5;"><code style="background:none;color:#8888aa;font-size:0.75rem;white-space:pre;">function createFHIRResource(type, agentId, data) {
+      <div class="replay-embed" style="text-align:left;padding:0.8rem;font-size:0.75rem;line-height:1.5;"><code style="background:none;color:#8888aa;font-size:0.75rem;white-space:pre;">function createFHIRResource(type, agentId, data) {
   const resource = {
     resourceType: type,
     id: type.toLowerCase() + '-' + agentId + '-' + cycle,
@@ -985,7 +958,7 @@ code {
 
       <p>This means every agent's entire life history is a chronological FHIR query:</p>
 
-      <div class="replay-embed" style="text-align:left;padding:1.5rem;font-size:0.75rem;line-height:1.5;"><code style="background:none;color:#8888aa;font-size:0.75rem;white-space:pre;">function queryFHIR(agentId, type) {
+      <div class="replay-embed" style="text-align:left;padding:0.8rem;font-size:0.75rem;line-height:1.5;"><code style="background:none;color:#8888aa;font-size:0.75rem;white-space:pre;">function queryFHIR(agentId, type) {
   return FHIR_STORE.filter(r =&gt;
     r.subject?.reference === 'Patient/' + agentId &amp;&amp;
     (!type || r.resourceType === type)
@@ -996,7 +969,7 @@ code {
 
       <p>The Digital Twin risk calculator literally just reads the FHIR store:</p>
 
-      <div class="replay-embed" style="text-align:left;padding:1.5rem;font-size:0.75rem;line-height:1.5;"><code style="background:none;color:#8888aa;font-size:0.75rem;white-space:pre;">function calculateDigitalTwinRisk(agent) {
+      <div class="replay-embed" style="text-align:left;padding:0.8rem;font-size:0.75rem;line-height:1.5;"><code style="background:none;color:#8888aa;font-size:0.75rem;white-space:pre;">function calculateDigitalTwinRisk(agent) {
   let riskScore = 0;
   agent.conditions.forEach(c =&gt; {
     const sevMult = { mild: 0.1, moderate: 0.3, severe: 0.6, critical: 0.9 };
@@ -1008,9 +981,6 @@ code {
 }</code></div>
 
       <p>No fancy ML model. Just structured data, queried in real-time, producing actionable risk scores. The point isn't sophistication. The point is that when your data is standardized and queryable, even simple logic produces useful outputs.</p>
-
-      <div class="chapter-divider"><div class="diamond"></div></div>
-
       <h3>Why this matters outside my pixel town</h3>
 
       <p>The reason 89% of Dutch health data isn't interoperable in 2024 isn't technical. The standards exist. FHIR R4 has been around since 2019. The problem is architectural: every system is built as a silo, and interoperability is bolted on after the fact through connectors and adapters.</p>
@@ -1022,9 +992,6 @@ code {
       <p>The IZA transformation plans mostly fall into the "connect A to B" pattern. I think the plans that will actually work are the ones that adopt protocol-level interoperability: every provider speaks the same language, and the network effect does the rest.</p>
 
       <p>HTTP didn't succeed because browsers negotiated with servers. It succeeded because both sides agreed on a shared protocol and everything else followed. A2A could do the same for healthcare. Or something like it. The specific protocol matters less than the principle of publishing rather than connecting.</p>
-
-      <div class="chapter-divider"><div class="diamond"></div></div>
-
       <h3>The code</h3>
 
       <p>The full A2A + FHIR implementation in Cammelot is under 200 lines of JavaScript. It runs in a browser. There's no server, no database, no middleware. Everything is in-memory, in a single HTML file.</p>
@@ -1032,9 +999,6 @@ code {
       <p>This isn't production-ready. But it took an afternoon to build, and it produces a functioning multi-agent healthcare mesh that can run 200 simulations with full statistical analysis. If the protocol were standardized across real Dutch providers, the integration cost for the IZA transformation would look very different.</p>
 
       <p>The code is on GitHub if you want to poke holes in it.</p>
-
-      <div class="chapter-divider"><div class="diamond"></div></div>
-
       <div class="footnote-body" style="display:block;margin-top:2rem;"><em>Technical details: FHIR_STORE is a capped array (2,000 resources) with FIFO eviction. A2A_MESSAGES caps at 200. Agent cards are static in current implementation; dynamic publishing with real-time wait time updates is planned. FHIR resources follow R4 structure (resourceType, subject reference, effectiveDateTime) but don't validate against full FHIR schemas. That's a known shortcut.</em></div>
     </section>
 
@@ -1051,9 +1015,6 @@ code {
       <p>Five years later, the track record is mixed. Zalando, Netflix, PayPal adopted data mesh. Many more tried and failed. The recurring complaints are predictable: federated governance turns into governance-by-committee, domain teams resent the new responsibility because it's rarely compensated, and employees report severe lack of comprehension of what data mesh even means (that last one is from actual academic research, not my opinion).</p>
 
       <p>I think data mesh was the right diagnosis applied to the wrong patient. The problem was real: centralised data teams become bottlenecks. The solution assumed that data wants to sit in one place and be queried. What if data doesn't want to sit anywhere? What if data wants to move?</p>
-
-      <div class="chapter-divider"><div class="diamond"></div></div>
-
       <h3>The Dutch healthcare data problem, specifically</h3>
 
       <p>The Netherlands has a healthcare data landscape that makes the data mesh failures look quaint.</p>
@@ -1065,9 +1026,6 @@ code {
       <p>The IZA (Integraal Zorgakkoord) wants that at 66% by 2030. They're spending €2.8 billion on transformation plans to get there. Over 270 plans submitted before the postbus closed in July 2025.</p>
 
       <p>The Wegiz (Wet elektronische gegevensuitwisseling in de zorg) - the law mandating electronic data exchange in healthcare - came into effect to force the issue. But mandating exchange and achieving it are different things. The law says you must exchange. It doesn't say how. And "how" is where every integration project in Dutch healthcare goes to die.</p>
-
-      <div class="chapter-divider"><div class="diamond"></div></div>
-
       <h3>Why data mesh won't save healthcare</h3>
 
       <p>A data mesh advocate would look at this and say: give each domain (GPs, hospitals, pharmacies) ownership of their data products. Let them publish standardised data contracts. Build a self-serve data platform. Federate the governance.</p>
@@ -1095,9 +1053,6 @@ code {
       <p>Healthcare is the most regulated data domain in existence. GDPR, the Wgbo (Wet geneeskundige behandelingsovereenkomst), NEN 7510 (information security), NEN 7512 (trust infrastructure), NEN 7513 (logging). The governance is not missing. There is too much governance and not enough interoperability.</p>
 
       <p>Data mesh's federated governance model assumes that governance is the thing you need to create. In healthcare, governance is the thing that's preventing data from moving. Adding another governance layer on top of existing regulation is not a solution. It's another committee.</p>
-
-      <div class="chapter-divider"><div class="diamond"></div></div>
-
       <h3>What an agentic mesh does differently</h3>
 
       <p>The difference is in the question. Data mesh asks: "How do we organise data so humans can query it?" The agentic mesh asks: "How do we organise agents so they can act on it?"</p>
@@ -1106,7 +1061,7 @@ code {
 
       <p>In Cammelot, my healthcare simulation, I built this. Every GP and specialist is an autonomous agent. Each publishes an Agent Card - a machine-readable description of capabilities, wait times, and capacity - at a well-known URL. This follows the A2A (Agent-to-Agent) protocol, which Google published as an open standard in 2025.</p>
 
-      <div class="replay-embed" style="text-align:left;padding:1.5rem;font-size:0.75rem;line-height:1.5;"><code style="background:none;color:#8888aa;font-size:0.75rem;white-space:pre;">{
+      <div class="replay-embed" style="text-align:left;padding:0.8rem;font-size:0.75rem;line-height:1.5;"><code style="background:none;color:#8888aa;font-size:0.75rem;white-space:pre;">{
   "agentId": "gp-de-jong",
   "name": "Dr. de Jong",
   "role": "gp",
@@ -1121,9 +1076,6 @@ code {
       <p>The patient's medical history is stored as FHIR R4 resources, the international healthcare data standard. But it's not stored in a data product that someone queries. It's the agent's memory. The agent carries its own context. When the agent interacts with another agent, relevant context flows with the interaction, through communication rather than a data pipeline.</p>
 
       <p>This is not theoretical. The A2A protocol (version 1.0.0, released under the Linux Foundation) already specifies discovery, negotiation, task lifecycle, streaming, and push notifications. FHIR R4 has been a published standard since 2019. SMART-on-FHIR provides OAuth-based authorization scoping. The pieces exist. They've never been assembled into a mesh.</p>
-
-      <div class="chapter-divider"><div class="diamond"></div></div>
-
       <h3>The four properties that matter</h3>
 
       <p><strong>1. Discovery, not integration.</strong></p>
@@ -1149,9 +1101,6 @@ code {
       <p>If a GP agent tries to refer a patient to a specialist without meeting the triage threshold, the specialist agent rejects the referral automatically, with a machine-readable reason. If a patient's data is requested without proper SMART-on-FHIR scoping, the request is denied at the protocol level. If an agent card claims a wait time that's inconsistent with its processing rate, anomaly detection flags it (this is the Mordred attack from my security red-teaming post).</p>
 
       <p>You don't need a governance committee to enforce these rules. You need them encoded in the protocol. The governance meeting is replaced by a test suite.</p>
-
-      <div class="chapter-divider"><div class="diamond"></div></div>
-
       <h3>What this looks like in practice</h3>
 
       <p>Imagine a 72-year-old patient in Amersfoort with COPD and type 2 diabetes. Today's data flow:</p>
@@ -1178,9 +1127,6 @@ code {
       </ol>
 
       <p>Same five providers. One shared protocol. Data moves with action. No one queries anything. No one types anything twice. Governance is enforced by the agents' behaviour, not by a committee.</p>
-
-      <div class="chapter-divider"><div class="diamond"></div></div>
-
       <h3>The bigger picture: research and benchmarks</h3>
 
       <p>Everything above - the referral mesh, the Agent Cards, the FHIR memory - is what I built first. After writing the initial version of this post, I went back and added two new agent types to the simulation: a Research Agent that runs federated population health queries across GP practices, and a Benchmark Agent that collects quality metrics from providers. Both run only in SOLL mode. The Research Agent checks consent flags, enforces k-anonymity (cohort ≥ 10), and logs results as FHIR resources. In a 100-run validation, it completed 30 queries per run, encountered ~52 consent refusals (~5% opt-out rate), and had its diabetes-specific cohort suppressed ~29 times because the town is too small for condition-specific anonymity.</p>
@@ -1256,9 +1202,6 @@ code {
       <p>In a data mesh, ownership is at least theoretically clear: the domain owns its data product. In an agentic mesh, the data never leaves the domain. But conclusions do. And ownership of conclusions derived from federated computation across hundreds of independent data controllers is an unsolved legal question. The EHDS doesn't fully answer it. The GDPR doesn't cleanly cover it. The Dutch Wgbo (Wet geneeskundige behandelingsovereenkomst - the patient rights law) gives patients rights over their care data, but says nothing about aggregate statistics derived from those data.</p>
 
       <p>I'm flagging this as an open research problem. The architectural pattern works. The governance of derived insights from that pattern is genuinely hard. I'd love to hear from healthcare lawyers and ethicists on this one.</p>
-
-      <div class="chapter-divider"><div class="diamond"></div></div>
-
       <h3>The honest limitations</h3>
 
       <p>A few things I'm not claiming.</p>
@@ -1268,9 +1211,6 @@ code {
       <p>Agents don't replace humans. The agents I'm describing are infrastructure, not clinical decision-makers. They move data, flag risks, enforce protocols, and manage queues. The GP still decides. The specialist still treats. The agent handles the plumbing that currently consumes 30% of their time.</p>
 
       <p>And data mesh wasn't wrong. The four principles - domain ownership, data as a product, self-serve platform, federated governance - are genuinely good ideas. They just assumed a world where data is the thing you optimise. In healthcare, the thing you optimise is the workflow. And workflows are what agents do.</p>
-
-      <div class="chapter-divider"><div class="diamond"></div></div>
-
       <h3>The uncomfortable question</h3>
 
       <p>The IZA is spending €2.8 billion on transformation plans. Most of those plans are building integrations between existing systems. System A talks to System B through a custom connector. Multiply by the number of system pairs and you get the current Dutch healthcare IT landscape: a hairball of point-to-point connections that breaks every time a vendor updates their API.</p>
@@ -1284,9 +1224,6 @@ code {
       <p>The architectural principle is the same every time: publish rather than connect. Let the protocol do the work.</p>
 
       <p>Data mesh told us to decentralise the data. The agentic mesh says to decentralise the action.</p>
-
-      <div class="chapter-divider"><div class="diamond"></div></div>
-
       <div class="footnote-body" style="display:block;margin-top:2rem;"><em>References and sources: Dehghani, Z. "How to Move Beyond a Monolithic Data Lake to a Distributed Data Mesh" (2019, Thoughtworks). A2A Protocol Specification v1.0.0 (Linux Foundation / Google, 2025). FHIR R4 (HL7, 2019). SMART-on-FHIR v2.2.0 (HL7, 2023). IZA - Integraal Zorgakkoord (Dutch Ministry of Health, 2022). NZa market scan waiting times (2024). Bode et al., Vestues et al., Joshi et al. - empirical data mesh adoption challenges. openEHR Foundation (2003-present). Model Context Protocol (Anthropic, 2024). Nictiz Zibs - 150+ care information building blocks. CBS / RIVM 2025 demographic and prevalence data. Health-RI / DTL - Personal Health Train concept (2017-present). Moncada-Torres et al. "VANTAGE6: an open source priVAcy preserviNg federaTed leArninG infrastructurE for Secure Insight eXchange" (AMIA 2020). Vantage6 security advisory - Harbor registry breach (April 2, 2026, vantage6.ai). DICA - Dutch Institute for Clinical Auditing, 26 quality registries (dica.nl). Nivel Primary Care Database - GP registration data from hundreds of practices (nivel.nl). EHDS - Regulation (EU) 2025/327, European Health Data Space (entered into force March 26, 2025). GDPR - Regulation (EU) 2016/679 (2018). Wgbo - Wet geneeskundige behandelingsovereenkomst (Dutch patient rights law). Wegiz - Wet elektronische gegevensuitwisseling in de zorg (electronic data exchange in healthcare). FAIR data principles (Wilkinson et al., Scientific Data, 2016). TEHDAS Joint Action - Towards the European Health Data Space (EU4Health programme).</em></div>
 
       <div class="footnote-body" style="display:block;margin-top:2rem;"><em>Disclosure: I work at Microsoft. My employer builds and sells AI products and cloud infrastructure. I built Cammelot as a personal applied research project, not a Microsoft product. The code is open source. All opinions are my own.</em></div>
