@@ -9475,13 +9475,32 @@ if(EMBED_MODE){
   var embedCycle=parseInt(embedParams.get('cycle'),10);
   if(embedCycle>0){for(var i=0;i<embedCycle&&i<10000;i++)tick();}
 } else {
-// Website version: always start fresh — no save/load
-startNewGame();
-// Sprint 17.1: Fade loading screen — intro pan & wizard removed (Sprint 29: cleaner startup)
-setTimeout(()=>{
-  stopLoadingAnimation();
-  document.getElementById('load').classList.add('go');
-},1600);
+// Website version: wait for play button click before starting
+// Hide load screen immediately (play overlay is on top anyway)
+stopLoadingAnimation();
+document.getElementById('load').classList.add('go');
+
+// Register play overlay handlers IMMEDIATELY (before any code that might throw)
+document.getElementById('play-btn').addEventListener('click', function() {
+  try {
+    document.getElementById('play-overlay').style.display = 'none';
+    startNewGame();
+    // Start auto-run at 50ms tick speed
+    if (!autoTimer) {
+      autoTimer = setInterval(tick, 50);
+      var playBtnInSim = document.getElementById('btn-play');
+      if (playBtnInSim) playBtnInSim.textContent = '⏸ Pause';
+    }
+  } catch(e) {
+    console.error('Cammelot init error:', e);
+    document.getElementById('play-overlay').style.display = 'none';
+  }
+});
+document.getElementById('play-overlay').addEventListener('click', function(e) {
+  if (e.target === this || e.target.tagName !== 'BUTTON') {
+    document.getElementById('play-btn').click();
+  }
+});
 } // end non-embed block
 // Sprint 17.3: Start attract mode timer
 // Sprint 29: Attract mode disabled for cleaner UX
@@ -10646,22 +10665,7 @@ document.getElementById('btn-taximeter').addEventListener('click', function() {
 // ═══ END SPRINT 21 ═══
 
 
-// ═══ WEBSITE: Play overlay dismissal ═══
-document.getElementById('play-btn').addEventListener('click', function() {
-  document.getElementById('play-overlay').style.display = 'none';
-  // Start auto-run at 50ms tick speed
-  if (!autoTimer) {
-    autoTimer = setInterval(tick, 50);
-    var playBtn = document.getElementById('btn-play');
-    if (playBtn) playBtn.textContent = '⏸ Pause';
-  }
-});
-// Also allow clicking anywhere on overlay (except the button) to start
-document.getElementById('play-overlay').addEventListener('click', function(e) {
-  if (e.target === this || e.target.tagName !== 'BUTTON') {
-    document.getElementById('play-btn').click();
-  }
-});
+// ═══ WEBSITE: Play overlay handlers moved to non-embed init block (above) ═══
 
 </script>
 </body>
