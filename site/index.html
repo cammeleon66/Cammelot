@@ -1035,6 +1035,41 @@ code {
       .roadmap-table th, .roadmap-table td { padding: 0.5rem 0.4rem; }
     }
 
+
+    /* Screenshot placeholders */
+    .screenshot-wrap {
+      margin: 1.5rem 0;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 2px solid #2d2d44;
+      background: #1a3a2a;
+      position: relative;
+    }
+    .screenshot-wrap img {
+      width: 100%;
+      height: auto;
+      display: block;
+      image-rendering: auto;
+    }
+    .screenshot-wrap .caption {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      text-align: center;
+      padding: 0.5rem;
+      background: var(--card-bg);
+      border-top: 1px solid var(--border);
+      letter-spacing: 0.02em;
+    }
+    .screenshot-pair {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+    @media (max-width: 700px) {
+      .screenshot-pair { grid-template-columns: 1fr; }
+    }
     </style>
 </head>
 
@@ -1042,6 +1077,10 @@ code {
 
 <!-- Reading Progress Bar -->
 <div class="progress-bar" id="progress-bar"></div>
+      <div class="screenshot-wrap">
+        <img src="img/hero-sim.png" alt="Cammelot pixel town — 45 citizens walking between GPs and hospital" loading="lazy">
+        <div class="caption">The town of Cammelot: 45 citizens, 3 GP practices, 1 hospital. 16-bit aesthetic, real Dutch data.</div>
+      </div>
 
 <!-- Header -->
 <header class="site-header">
@@ -1178,7 +1217,12 @@ code {
         </div>
       </div>
 
-      <p>Your GP is operating at sixty-two percent capacity before they see their first patient. The effective capacity formula: <code>C_eff = C_total × (1 − 0.30 − 0.08) × 1.0 = 62%</code>. Thirty percent lost to paperwork. Eight percent to sick leave. No AI assistance. The efficiency multiplier is 1.0.</p>
+      <p>      <div class="screenshot-wrap">
+        <img src="img/ist-queue.png" alt="IST mode: queue congestion at hospital, burnout indicators, ghost events" loading="lazy">
+        <div class="caption">IST mode after ~500 cycles. Queues overflow. Burnout climbs. Citizens become ghosts.</div>
+      </div>
+
+      <p>r GP is operating at sixty-two percent capacity before they see their first patient. The effective capacity formula: <code>C_eff = C_total × (1 − 0.30 − 0.08) × 1.0 = 62%</code>. Thirty percent lost to paperwork. Eight percent to sick leave. No AI assistance. The efficiency multiplier is 1.0.</p>
 
       <p>When citizens get sick in IST, they follow the same path real Dutch patients do: visit a GP, get triaged, get referred to a specialist, and wait. If the wait exceeds the Treeknorm threshold, their health deteriorates. The sicker you already are, the faster you decline. At some point, the sprite turns grey. A ghost. A preventable death caused not by the disease itself, but by the system’s inability to process the patient in time.</p>
 
@@ -1370,6 +1414,17 @@ code {
             </tr>
           </tbody>
         </table>
+      </div>
+
+      <div class="      <div class="screenshot-pair">
+        <div class="screenshot-wrap">
+          <img src="img/ist-queue.png" alt="IST: congested queues, red indicators" loading="lazy">
+          <div class="caption" style="color:#e74c3c;">IST — Status Quo</div>
+        </div>
+        <div class="screenshot-wrap">
+          <img src="img/soll-smooth.png" alt="SOLL: shorter queues, green indicators, proactive alerts" loading="lazy">
+          <div class="caption" style="color:#27ae60;">SOLL — Agentic Mesh</div>
+        </div>
       </div>
 
       <div class="hypothesis-box">
