@@ -830,7 +830,7 @@ body.embed-mode #app{display:block!important}
     <div class="top-stats">
       <div class="ts"><div class="n" id="hC">0</div><div class="l">Cycle</div></div>
       <div class="ts"><div class="n" id="hP">5,000</div><div class="l">Alive</div></div>
-      <div class="ts"><div class="n" id="hG" data-value="0" data-prefix="💀 ">0</div><div class="l">Impact</div></div>
+      <div class="ts"><div class="n" id="hG" data-value="0" data-prefix="💀 ">0</div><div class="l" title="Human Cost of Inaction: avoidable deaths from system delay">Impact</div></div>
       <div class="ts"><div class="n y" id="hW">4w</div><div class="l">Avg Wait</div></div>
       <div class="ts"><div class="n" id="hE">62%</div><div class="l">Capacity</div></div>
       <div class="ts"><div class="n" id="hBurn">0%</div><div class="l">GP Burnout</div></div>
@@ -8862,7 +8862,7 @@ function updateUI(){
   // Deaths — Sprint 16: animated counter
   animateNumber('hG', dead);
   document.getElementById('hG').dataset.prefix = '💀 ';
-  document.getElementById('hG').dataset.suffix = sysDeath > 0 ? ' (' + sysDeath + ' preventable)' : '';
+  document.getElementById('hG').dataset.suffix = sysDeath > 0 ? ' (' + sysDeath + ' preventable, ' + mode + ')' : '';
   document.getElementById('hG').className='n'+(dead>0?' r':' g');
 
   // Sprint S1: Death counter flash when deaths increase

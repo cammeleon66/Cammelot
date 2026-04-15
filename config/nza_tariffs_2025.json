@@ -1,0 +1,45 @@
+{
+  "source": "NZa 2025 Beleidsregel huisartsenzorg",
+  "registration_annual": {
+    "under_65": 20.35,
+    "65_to_75": 23.95,
+    "75_to_85": 36.06,
+    "85_plus": 56.7
+  },
+  "consult_tariffs": {
+    "short_under_5min": 6.21,
+    "regular_5_20min": 12.43,
+    "extended_over_20min": 24.85,
+    "house_visit_under_20min": 18.64
+  },
+  "mtvp_quarterly_per_patient": 3.23,
+  "ketenzorg_quarterly": {
+    "diabetes": 63.36,
+    "copd": 50.19,
+    "hvz": 27.17
+  },
+  "specialist_msz": {
+    "copd_hospitalization": 44439.93,
+    "copd_outpatient": 261.35,
+    "specialist_consultation_avg": 150.0,
+    "hospital_day_avg": 850.0,
+    "prevented_hospitalization_avg_saving": 5845.0
+  },
+  "admin_burden_scenarios": {
+    "ist": {
+      "admin_pct": 0.3,
+      "consults_per_week": 120,
+      "mortality_delta": "baseline"
+    },
+    "iza_target": {
+      "admin_pct": 0.25,
+      "consults_per_week": 135,
+      "mortality_delta": "-3.5%"
+    },
+    "soll_agentic": {
+      "admin_pct": 0.1,
+      "consults_per_week": 180,
+      "mortality_delta": "-12%"
+    }
+  }
+}

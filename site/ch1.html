@@ -964,7 +964,13 @@ code {
 
       <p>The code is on GitHub if you want to poke holes in it.</p>
       <div class="footnote-body" style="display:block;margin-top:2rem;"><em>Technical details: FHIR_STORE is a capped array (2,000 resources) with FIFO eviction. A2A_MESSAGES caps at 200. Agent cards are static in current implementation; dynamic publishing with real-time wait time updates is planned. FHIR resources follow R4 structure (resourceType, subject reference, effectiveDateTime) but don't validate against full FHIR schemas. That's a known shortcut.</em></div>
-    </section>
+    
+      <div class="insight-callout" style="margin-top:1.5rem;">
+        <strong>Wegiz-Ready by Design</strong><br>
+        Cammelot is aligned with the Wegiz (Wet elektronische gegevensuitwisseling in de zorg), which mandates electronic data exchange for all Dutch healthcare providers. Every agent interaction uses HL7 FHIR R4 resources aligned with Nictiz nl-core profiles. This isn't aspirational compliance &mdash; it's the architecture's foundation.
+      </div>
+
+</section>
 
     <nav class="chapter-nav">
     <a href="ch0.html" class="prev">← Previous: Why I Built This</a>
