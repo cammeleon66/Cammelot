@@ -847,7 +847,195 @@ code {
 .finding-card p { font-size: 0.85rem; color: var(--text-muted); line-height: 1.6; margin: 0; }
 .finding-card .stat { display: inline-block; font-family: 'Space Mono', monospace; font-weight: 700; font-size: 1.1rem; color: var(--red); }
 .finding-card .stat.green { color: var(--green); }
-</style>
+
+    /* Research sections */
+    .research-section { margin-bottom: 1rem; }
+    .research-section h2 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--heading);
+      margin-bottom: 1rem;
+      letter-spacing: -0.01em;
+    }
+    .research-section p {
+      font-size: 1.02rem;
+      line-height: 1.75;
+      color: var(--text);
+      margin-bottom: 0.75rem;
+    }
+
+    /* Component cards (What Is Cammelot) */
+    .component-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1rem;
+      margin-top: 1.25rem;
+    }
+    .component-card {
+      background: var(--card-bg, rgba(39,174,96,0.06));
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--green);
+      border-radius: 6px;
+      padding: 1.2rem 1.4rem;
+    }
+    .component-card h3 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--green);
+      margin: 0 0 0.5rem 0;
+    }
+    .component-card p {
+      font-size: 0.92rem;
+      line-height: 1.6;
+      color: var(--text);
+      margin: 0;
+    }
+
+    /* IST vs SOLL comparison */
+    .ist-soll-compare {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+      margin: 1.25rem 0;
+    }
+    .mode-card {
+      border-radius: 6px;
+      padding: 1.2rem 1.4rem;
+      border: 1px solid var(--border);
+    }
+    .mode-card h3 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      margin: 0 0 0.6rem 0;
+    }
+    .mode-card p { font-size: 0.92rem; line-height: 1.6; color: var(--text); margin: 0; }
+    .mode-tag { font-weight: 400; font-size: 0.85rem; color: var(--text-muted); }
+    .ist-card { background: rgba(231,76,60,0.06); border-left: 3px solid #e74c3c; }
+    .ist-card h3 { color: #e74c3c; }
+    .soll-card { background: rgba(39,174,96,0.06); border-left: 3px solid var(--green); }
+    .soll-card h3 { color: var(--green); }
+
+    .hypothesis-box {
+      background: var(--card-bg, rgba(52,152,219,0.06));
+      border: 1px solid var(--border);
+      border-left: 3px solid #3498db;
+      border-radius: 6px;
+      padding: 1rem 1.4rem;
+      font-size: 0.95rem;
+      line-height: 1.7;
+      color: var(--text);
+      margin-top: 0.5rem;
+    }
+
+    /* Transparency grid */
+    .transparency-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+    .transparency-item {
+      background: var(--card-bg, rgba(0,0,0,0.02));
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1.2rem 1.4rem;
+    }
+    .transparency-item h3 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--heading);
+      margin: 0 0 0.5rem 0;
+    }
+    .transparency-item p { font-size: 0.92rem; line-height: 1.6; color: var(--text); margin: 0; }
+
+    /* Roadmap table */
+    .roadmap-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+      margin-bottom: 1rem;
+    }
+    .roadmap-table th {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 600;
+      text-align: left;
+      padding: 0.6rem 0.8rem;
+      border-bottom: 2px solid var(--border);
+      color: var(--heading);
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .roadmap-table td {
+      padding: 0.7rem 0.8rem;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+      vertical-align: top;
+    }
+    .roadmap-table tr:last-child td { border-bottom: none; }
+    .roadmap-table a.read-link {
+      color: var(--green);
+      font-weight: 600;
+      text-decoration: none;
+      font-size: 1.1rem;
+    }
+    .coming-soon-badge {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: var(--card-bg, rgba(0,0,0,0.04));
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.15rem 0.6rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    /* CTA buttons */
+    .cta-button {
+      display: inline-block;
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 600;
+      font-size: 0.9rem;
+      padding: 0.7rem 1.8rem;
+      border-radius: 6px;
+      text-decoration: none;
+      letter-spacing: 0.02em;
+      color: var(--green);
+      border: 1px solid var(--green);
+      transition: all 0.2s;
+    }
+    .cta-button:hover { background: var(--green); color: #fff; }
+    .cta-sim {
+      background: var(--green);
+      color: #fff;
+      box-shadow: 0 3px 12px rgba(39,174,96,0.25);
+    }
+    .cta-sim:hover { background: #219a52; }
+
+    /* Footer line */
+    .footer-line {
+      text-align: center;
+      margin: 1.5rem 0 2rem;
+      padding: 1.5rem 0;
+      border-top: 1px solid var(--border);
+    }
+    .footer-line p { font-size: 0.95rem; color: var(--text); margin: 0.3rem 0; }
+    .footer-line .sources { font-size: 0.8rem; color: var(--text-muted); }
+    .footer-line a { color: var(--green); }
+
+    /* Mobile: IST/SOLL stack */
+    @media (max-width: 700px) {
+      .ist-soll-compare { grid-template-columns: 1fr; }
+      .roadmap-table { font-size: 0.8rem; }
+      .roadmap-table th, .roadmap-table td { padding: 0.5rem 0.4rem; }
+    }
+
+    </style>
 </head>
 
 <body>
@@ -888,20 +1076,23 @@ code {
   <!-- Sidebar TOC -->
   <aside class="toc" id="toc">
     <div class="toc-label">Navigate</div>
-    <div class="toc-part">Welcome</div>
+    <div class="toc-part">The Research</div>
     <a href="#hero" class="active">Cammelot</a>
-    <a href="#intro">What Is This?</a>
+    <a href="#objective">The Objective</a>
+    <a href="#what-is">What Is Cammelot?</a>
+    <a href="#ist-soll">IST vs. SOLL</a>
+    <div class="toc-part">Transparency</div>
+    <a href="#methodology">Methodology</a>
+    <a href="#roadmap">Research Roadmap</a>
+    <div class="toc-part">Technical</div>
+    <a href="#agent-card">The Agent Card</a>
     <div class="toc-part">Chapters</div>
     <a href="ch0.html">0. Why I Built This</a>
     <a href="ch1.html">1. The Architecture</a>
     <a href="ch2.html">2. The Agentic Mesh</a>
-    <a href="ch3.html">3. What's Coming</a>
-    <div class="toc-part">On This Page</div>
-    <a href="#findings">Key Findings</a>
-    <a href="#skeptics">Skeptic's Corner</a>
+    <a href="ch3.html">3. What’s Coming</a>
     <div class="toc-part" style="margin-top:12px;">Explore</div>
     <a href="world.html" style="color:#27ae60;">&#127918; Live Simulation</a>
-    <a href="about.html">About</a>
   </aside>
 
   <main class="content">
@@ -912,151 +1103,164 @@ code {
         <canvas id="hero-canvas"></canvas>
       </div>
       <h1>CAMME<span>L</span>OT</h1>
-      <p class="subtitle">What happens when AI runs a Dutch town's healthcare?</p>
-      <p class="byline">45 pixel citizens &middot; 3 GPs &middot; 1 hospital &middot; 100 simulation runs &middot; Real Dutch data</p>
+      <p class="subtitle">A 16-Bit Stress Test for a 301,000-Worker Shortage</p>
+      <p class="byline">45 citizens &middot; 3 GPs &middot; 1 hospital &middot; 200 simulation runs &middot; Real Dutch data</p>
     </div>
 
     <div class="chapter-divider"><div class="diamond"></div></div>
 
-    <!-- Intro: What Is Cammelot? -->
-    <section id="intro" style="margin-bottom:2rem;">
-      <p style="font-size:1.05rem;line-height:1.75;color:var(--text);">I built a simulated Dutch town. 45 inhabitants, three GPs, one hospital. Real CBS demographics, real RIVM disease prevalence, real NZa tariffs. Everything runs as a 16-bit pixel simulation because that&#8217;s apparently how my brain works.</p>
-      <p style="font-size:1.05rem;line-height:1.75;color:var(--text);">Then I ran it 100 times with the current healthcare system. And 100 times with an AI-augmented version: ambient scribes, Digital Twins, AI triage, proactive chronic care management, federated research agents, signed agent cards.</p>
-      <p style="font-size:1.05rem;line-height:1.75;color:var(--text);">The finding that surprised me most: mortality only became significant after I stopped optimizing the AI and started fixing the plumbing. <strong>AI doesn&#8217;t save lives by being smart. It saves lives by not wasting the doctor&#8217;s time on paperwork</strong> and not losing the referral in a broken queue.</p>
-      <p style="font-size:0.9rem;line-height:1.6;color:var(--text-muted);">Code is open. Stats are open. I would genuinely like people to tell me where the model is wrong.</p>
+    <!-- The Objective -->
+    <section id="objective" class="research-section">
+      <h2>The Objective</h2>
+      <p>By 2035, the Netherlands faces a structural deficit of <strong>301,000 healthcare workers</strong>. While “AI” is often presented as a panacea, its systemic impact on patient outcomes and clinician workload is rarely quantified.</p>
+      <p>I work at Microsoft—you should assume I have a professional bias toward technology. To challenge that bias, I built Cammelot: a stochastic simulation designed to move the conversation from anecdotal “vibes” to measurable variables.</p>
     </section>
 
-    <!-- Teaser cards with section groupings -->
-    <div class="chapter-teasers">
+    <div class="chapter-divider"><div class="diamond"></div></div>
 
-      <!-- THE STORY -->
-      <div class="section-group">
-        <div class="section-group-label">The Story</div>
-        <div class="chapter-teaser">
-          <div class="chapter-label">Chapter 0</div>
-          <h2><a href="ch0.html">Why I Built This</a></h2>
-          <p class="hook">“I work at Microsoft. You should assume I’m biased toward AI. That’s exactly why I built something that could prove me wrong.”</p>
-          <p>A simulated Dutch town. 45 citizens. Real data. Two hundred simulation runs. Here’s why I built a machine that could prove me wrong — and in several important ways, did.</p>
-          <a href="ch0.html" class="read-more">Read chapter →</a>
+    <!-- What Is Cammelot? -->
+    <section id="what-is" class="research-section">
+      <h2>What Is Cammelot?</h2>
+      <p>Cammelot is an agent-based model of a representative Dutch town, built with 16-bit pixels but governed by rigorous data. It consists of <strong>45 citizens, 3 GPs, and 1 hospital</strong>. Unlike a traditional game, the behavior of these pixel-citizens is driven by:</p>
+
+      <div class="component-grid">
+        <div class="component-card">
+          <h3>The Disease Engine</h3>
+          <p>Markov State Machines calibrated to <strong>RIVM prevalence data (2025)</strong> for COPD, Diabetes Type 2, and Cardiovascular disease. Each citizen’s health trajectory is probabilistic, not scripted.</p>
+        </div>
+        <div class="component-card">
+          <h3>The Regulatory Framework</h3>
+          <p>Patient flow and referral logic follow <strong>NZa tariffs</strong> and <strong>Treeknormen</strong>—the legal maximum waiting times for specialist care in the Netherlands.</p>
+        </div>
+        <div class="component-card">
+          <h3>The Data Layer</h3>
+          <p>Every clinical interaction is logged as an <strong>HL7® FHIR® R4 resource</strong>, ensuring the simulation architecture mirrors real-world Dutch healthcare standards.</p>
+        </div>
+      </div>
+    </section>
+
+    <div class="chapter-divider"><div class="diamond"></div></div>
+
+    <!-- IST vs. SOLL -->
+    <section id="ist-soll" class="research-section">
+      <h2>Architecture as Intervention: IST vs. SOLL</h2>
+      <p>In Cammelot, we don’t treat AI as a “magic wand” but as a fundamental shift in healthcare architecture. We test the system in two primary states:</p>
+
+      <div class="ist-soll-compare">
+        <div class="mode-card ist-card">
+          <h3>The IST <span class="mode-tag">(Status Quo)</span></h3>
+          <p>A reactive system burdened by <strong>30% administrative overhead</strong> and 12-week wait times. It operates on fragmented data where clinicians are the primary routers of information.</p>
+        </div>
+        <div class="mode-card soll-card">
+          <h3>The SOLL <span class="mode-tag">(Target Architecture)</span></h3>
+          <p>An <strong>Agentic Mesh</strong> where providers utilize an A2A (Agent-to-Agent) protocol. Autonomous agents negotiate capacity and referrals in real-time based on machine-readable “Agent Cards.”</p>
         </div>
       </div>
 
-      <!-- TECHNICAL -->
-      <div class="section-group">
-        <div class="section-group-label">Technical Deep Dives</div>
-        <div class="chapter-teaser">
-          <div class="chapter-label">Chapter 1</div>
-          <h2><a href="ch1.html">How I Wired a Pixel Town with A2A and FHIR</a></h2>
-          <p class="hook">“Every agent publishes a card. Every action writes a FHIR resource. The mesh self-organizes.”</p>
-          <p>Agent Cards, FHIR memory stores, and 200 lines of JavaScript. How a protocol-first architecture makes the IZA’s €2.8 billion integration problem look very different.</p>
-          <a href="ch1.html" class="read-more">Read chapter →</a>
-        </div>
-        <div class="chapter-teaser">
-          <div class="chapter-label">Chapter 2</div>
-          <h2><a href="ch2.html">The Data Mesh is Dead. Long Live the Agentic Mesh.</a></h2>
-          <p class="hook">“Data mesh promised decentralized ownership. It delivered decentralized abandonment.”</p>
-          <p>Why data mesh fails in healthcare, and what an agent-native architecture does differently. Discovery over integration. Context travels with action.</p>
-          <a href="ch2.html" class="read-more">Read chapter →</a>
-        </div>
+      <div class="hypothesis-box">
+        <strong>The Hypothesis:</strong> By automating the “handshake” between primary and secondary care, we can return 25% of a clinician’s day to direct patient care. Cammelot measures if that “returned time” actually translates to lower mortality.
       </div>
+    </section>
 
-      <!-- RESEARCH — coming soon -->
-      <div class="section-group">
-        <div class="section-group-label coming-soon">Research · Coming Soon</div>
-        <div class="chapter-teaser teaser-greyed">
-          <div class="chapter-label">Series 3</div>
-          <h2><a href="#">The Numbers: What 200 Runs Told Me</a></h2>
-          <p>Mortality, burnout, costs, fairness. Every finding — including the ones that embarrass the AI-optimist position.</p>
+    <div class="chapter-divider"><div class="diamond"></div></div>
+
+    <!-- Methodological Transparency -->
+    <section id="methodology" class="research-section">
+      <h2>Methodological Transparency &amp; Limitations</h2>
+      <p style="color:var(--text-muted);margin-bottom:1.5rem;">A model is only as useful as its constraints. To maintain intellectual honesty, we disclose the following:</p>
+
+      <div class="transparency-grid">
+        <div class="transparency-item">
+          <h3>Statistical Rigor</h3>
+          <p>We do not rely on single demos. The findings presented here are the result of <strong>200 independent simulation runs</strong> (100 per mode). We use Welch’s t-tests to determine statistical significance (<em>p</em> &lt; 0.05) across all health and economic metrics.</p>
         </div>
-        <div class="chapter-teaser teaser-greyed">
-          <div class="chapter-label">Series 4</div>
-          <h2><a href="#">Policy Implications</a></h2>
-          <p>What this means for the IZA, the zorginfarct, and 301,000 missing healthcare workers.</p>
+        <div class="transparency-item">
+          <h3>The N=45 Constraint</h3>
+          <p>While a population of 45 is small, it allows for granular tracking of individual “Life Histories.” We use stochastic modeling to ensure that ghost events (preventable deaths) are not scripted, but the result of system failure.</p>
+        </div>
+        <div class="transparency-item">
+          <h3>Bias Acknowledgment</h3>
+          <p>This simulation was built to find the “breaking points” of AI. Several runs demonstrated that <strong>detection is useless without clinical capacity</strong>—a finding that contradicts pure technological optimism.</p>
         </div>
       </div>
+    </section>
 
-      <!-- PREVIEW -->
-      <div class="section-group">
-        <div class="section-group-label">Preview</div>
-        <div class="chapter-teaser">
-          <div class="chapter-label">Chapter 3</div>
-          <h2><a href="ch3.html">What’s Coming</a></h2>
-          <p class="hook">“I ran 100 simulations. I have numbers. Some confirmed what I expected. Others didn’t.”</p>
-          <p>Results on mortality, burnout, costs, and fairness. Charts, effect sizes, and p-values. Coming week by week.</p>
-          <a href="ch3.html" class="read-more">See what’s next →</a>
-        </div>
-      </div>
+    <div class="chapter-divider"><div class="diamond"></div></div>
 
-    </div>
+    <!-- Research Roadmap -->
+    <section id="roadmap" class="research-section">
+      <h2>The Research Roadmap</h2>
+      <p style="margin-bottom:1.5rem;">We are releasing a series of research posts detailing the results of our 200-run simulation series. Each post isolates a specific structural question within the Dutch <em>Zorgstelsel</em>.</p>
 
-    <!-- Metric preview from ch3 -->
-    <div class="metric-callout">
-      <div class="metric-card">
-        <div class="metric-value ist">???</div>
-        <div class="metric-label">Burnout Score</div>
-      </div>
-      <div class="metric-card">
-        <div class="metric-value ist">???</div>
-        <div class="metric-label">Mortality Rate</div>
-      </div>
-      <div class="metric-card">
-        <div class="metric-value soll">???</div>
-        <div class="metric-label">Cost Savings</div>
-      </div>
-      <div class="metric-card">
-        <div class="metric-value" style="color:var(--text)">???</div>
-        <div class="metric-label">Fairness</div>
-      </div>
-    </div>
+      <table class="roadmap-table">
+        <thead>
+          <tr>
+            <th>Post</th>
+            <th>The Primary Question</th>
+            <th>Key Focus</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>01: The Alternative</strong></td>
+            <td>Why a skeptic’s perspective is required for the 2035 crisis</td>
+            <td>Systemic Workforce Gaps</td>
+            <td><a href="ch0.html" class="read-link">→</a></td>
+          </tr>
+          <tr>
+            <td><strong>02: The Admin Tax</strong></td>
+            <td>Does a 25% reduction in paperwork directly save lives?</td>
+            <td>GP Capacity &amp; ROI</td>
+            <td><a href="ch1.html" class="read-link">→</a></td>
+          </tr>
+          <tr>
+            <td><strong>03: The Waiting List</strong></td>
+            <td>Why 12-week waits are mathematically age-discriminatory</td>
+            <td>Treeknorm Impact</td>
+            <td><span class="coming-soon-badge">Soon</span></td>
+          </tr>
+          <tr>
+            <td><strong>04: The Inequality Drift</strong></td>
+            <td>Does AI triage amplify existing disparities in care?</td>
+            <td>Algorithmic Fairness</td>
+            <td><span class="coming-soon-badge">Soon</span></td>
+          </tr>
+          <tr>
+            <td><strong>05: The Digital Twin Bet</strong></td>
+            <td>Can proactive risk-scoring prevent the ER “Cliff”?</td>
+            <td>Predictive Monitoring</td>
+            <td><span class="coming-soon-badge">Soon</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
 
+    <div class="chapter-divider"><div class="diamond"></div></div>
+
+    <!-- The Agent Card -->
+    <section id="agent-card" class="research-section">
+      <h2>Technical Breakdown: The Agent Card</h2>
+      <p>For those interested in the underlying protocol, Cammelot utilizes a decentralized discovery model. Every GP and hospital publishes an <strong>Agent Card</strong>—a machine-readable description of their current wait times, specialty codes, and capacity.</p>
+      <p>This architecture replaces central databases with a “Mesh” where the patient’s context travels with the referral. It is a proof-of-concept for the <strong>Wegiz requirements</strong> for FHIR R4 implementation in the Netherlands, moving us toward a system where <em>action</em> is as interoperable as <em>data</em>.</p>
+      <div style="text-align:center;margin:1.5rem 0;">
+        <a href="ch1.html" class="cta-button">Read the Technical Deep Dive →</a>
+      </div>
+    </section>
+
+    <div class="chapter-divider"><div class="diamond"></div></div>
+
+    <!-- Live Sim CTA -->
     <div style="text-align:center;margin:2rem 0;">
-      <a href="world.html" style="display:inline-block;background:var(--green);color:#fff;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:0.9rem;padding:0.8rem 2rem;border-radius:6px;text-decoration:none;letter-spacing:0.03em;box-shadow:0 3px 12px rgba(39,174,96,0.25);">&#127918; Try the Live Simulation</a>
+      <a href="world.html" class="cta-button cta-sim">&#127918; Try the Live Simulation</a>
     </div>
 
-    <!-- Variables over Vibes thesis -->
-    <div class="thesis-callout">
-      <p>Variables over Vibes.</p>
-      <p class="subtitle">Dutch healthcare policy runs on intuition. This simulation runs on CBS, RIVM, and NZa data.<br>The 16-bit aesthetic abstracts emotional weight into observable variables.</p>
+    <!-- Footer line -->
+    <div class="footer-line">
+      <p><strong>Cammelot:</strong> 45 citizens. 200 simulations. Real Dutch data.</p>
+      <p class="sources">Data sources: CBS &middot; RIVM &middot; NZa &middot; IZA 2023–2026.<br>Built by Simone Cammel. <a href="https://github.com/cammeleon66/Cammelot">View the FHIR Logs on GitHub</a></p>
     </div>
 
-    <!-- Skeptic's Corner -->
-    <div class="skeptics-corner" id="skeptics">
-      <h2>Skeptic's Corner</h2>
-      <div class="skeptic-qa">
-        <div class="q">"Is this a video game?"</div>
-        <div class="a">No. It runs on FHIR R4 health records, RIVM chronic disease models, and NZa 2025 tariffs. The 16-bit aesthetic is deliberate: it strips away emotion so you focus on the variables. Every pixel citizen has a real health trajectory based on Dutch epidemiological data.</div>
-      </div>
-      <div class="skeptic-qa">
-        <div class="q">"You work at Microsoft. Aren't you biased toward AI?"</div>
-        <div class="a">Yes, and I designed the simulation to catch that. The "Efficiency Trap" finding (below) showed AI throughput optimization deprioritized complex elderly patients. That's not a feature I wanted to find. 200 runs, open parameters, all data public.</div>
-      </div>
-      <div class="skeptic-qa">
-        <div class="q">"Does AI actually help?"</div>
-        <div class="a">Detection without capacity is useless. The biggest mortality drop came from administrative relief&mdash;giving GPs back 25% of their time&mdash;not from diagnostic AI. The simulation proved that boring automation beats flashy prediction.</div>
-      </div>
-    </div>
-
-    <!-- Key Findings -->
-    <div class="key-findings" id="findings">
-      <h2>Key Findings from 200 Runs</h2>
-
-      <div class="finding-card">
-        <h3>The Opportunity Cost of Paperwork</h3>
-        <p>Every automated 20-minute consult (NZa code 12001) saves <span class="stat green">&euro;24.85</span> in redeployable GP labor. At 30% admin burden, that's 7.2 hours per GP per week lost to filing&mdash;enough for 22 extra patient consultations.</p>
-        <p style="margin-top:0.5rem;font-size:0.8rem;color:var(--text-muted)">Three scenarios tested: IST (30% admin) &rarr; IZA target (25%) &rarr; SOLL (10%). Each 5% reduction freed ~2.4 consult-hours/week.</p>
-      </div>
-
-      <div class="finding-card">
-        <h3>The Efficiency Trap</h3>
-        <p>When we optimized purely for throughput, the simulation <em>deprioritized complex elderly patients</em> with multimorbidity. AI-driven triage routed fast cases first, creating <span class="stat">digital selection</span> that excluded those who needed care most.</p>
-        <p style="margin-top:0.5rem;font-size:0.8rem;color:var(--text-muted)">Fix: Fairness Score in Agent Cards + Priority Multiplier for complexity. Prevents AI from optimizing away the hardest cases.</p>
-      </div>
-
-      <div class="finding-card">
-        <h3>Impact Counter (formerly "Ghost Count")</h3>
-        <p>Every pixel citizen who reaches 0 HP due to system delay is an <span class="stat">avoidable death</span>. Not a random event&mdash;a direct consequence of wait time exceeding the Treeknorm threshold. We stopped calling it "Ghost Count" because it's not a game metric. It's the human cost of inaction.</p>
-      </div>
-    </div>
 
   </main>
   <div></div>
