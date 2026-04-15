@@ -874,6 +874,24 @@ code {
 
           <p>In data mesh, domain teams are supposed to take end-to-end responsibility for their data products. In Dutch healthcare, a GP practice with 2 GPs and a practice nurse is not a "domain team" in the Thoughtworks sense. They're three people drowning in 30% administrative overhead trying to see patients. Asking them to also maintain a data product with quality metrics, documentation, and access controls is asking them to become a software team. They are not a software team. They are doctors.</p>
 
+<details>
+  <summary>⚙️ Administrative Burden: Three Scenarios</summary>
+  <div class="details-content">
+    <div class="stats-table-wrap">
+      <table>
+        <thead><tr><th>Scenario</th><th>Admin Load</th><th>Consults/Week</th><th>Mortality Impact</th></tr></thead>
+        <tbody>
+          <tr><td>IST (Current)</td><td>30%</td><td>120</td><td>Baseline</td></tr>
+          <tr><td>IZA Target (2026)</td><td>25%</td><td>135</td><td>−3.5%</td></tr>
+          <tr><td>SOLL (AI-Native)</td><td>10%</td><td>180</td><td>−12%</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:0.8rem;color:var(--text-muted);margin-top:0.5rem;">Source: IZA 2023–2026 targets; NZa 2025 capacity norms; Cammelot 200-run simulation</p>
+  </div>
+</details>
+
+
           <p>The same applies to most hospitals. The IT departments are running EHR systems, not building data products. They have vendor contracts with Chipsoft or Epic or Nexus. The data sits inside those systems, behind vendor-specific APIs. The hospital doesn't own the data product in any meaningful engineering sense. The vendor does.</p>
 
           <p>Data mesh works when you have autonomous engineering teams that can iterate on data quality. Healthcare has autonomous clinical teams that want the computer to stop breaking.</p>
@@ -956,6 +974,26 @@ code {
         <li>GP receives letter. Types key findings into their own HIS. The two records are now inconsistent.</li>
         <li>Pharmacist has a third, independent record. The home care nurse has a fourth.</li>
       </ol>
+
+<details>
+  <summary>📊 Type 2 Diabetes Prevalence by Age & Gender (RIVM 2024)</summary>
+  <div class="details-content">
+    <div class="stats-table-wrap">
+      <table>
+        <thead><tr><th>Age Group</th><th>Men</th><th>Women</th></tr></thead>
+        <tbody>
+          <tr><td>30–39</td><td>1.0%</td><td>0.8%</td></tr>
+          <tr><td>40–49</td><td>3.5%</td><td>2.8%</td></tr>
+          <tr><td>50–59</td><td>7.0%</td><td>5.5%</td></tr>
+          <tr><td>60–70</td><td>14.0%</td><td>11.0%</td></tr>
+          <tr><td>70–79</td><td>18.0%</td><td>15.0%</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:0.8rem;color:var(--text-muted);margin-top:0.5rem;">Source: RIVM Chronic Disease Model 2024; VZinfo.nl diabetes prevalence</p>
+  </div>
+</details>
+
 
       <p>Five providers. Five records. Zero automated interoperability. The data mesh version would give each provider a data product. The GP queries the hospital's data product. Better than nothing. But still pull-based, still requires integration per data product pair, still assumes someone is asking the right question.</p>
 
@@ -1073,10 +1111,58 @@ code {
 
       <div class="footnote-body" style="display:block;margin-top:2rem;"><em>Disclosure: I work at Microsoft. My employer builds and sells AI products and cloud infrastructure. I built Cammelot as a personal applied research project, not a Microsoft product. The code is open source. All opinions are my own.</em></div>
     
+      
+<details>
+  <summary>💰 NZa 2025 GP Tariff Schedule</summary>
+  <div class="details-content">
+    <div class="stats-table-wrap">
+      <table>
+        <thead><tr><th>Item</th><th>Tariff (EUR)</th></tr></thead>
+        <tbody>
+          <tr><td>Registration &lt;65</td><td>€20.35/year</td></tr>
+          <tr><td>Registration 65–75</td><td>€23.95/year</td></tr>
+          <tr><td>Registration 75–85</td><td>€36.06/year</td></tr>
+          <tr><td>Registration 85+</td><td>€56.70/year</td></tr>
+          <tr><td>Regular consult (5–20 min)</td><td>€12.43</td></tr>
+          <tr><td>Extended consult (>20 min)</td><td>€24.85</td></tr>
+          <tr><td>MTVP (Meer Tijd voor Patiënt)</td><td>€3.23/quarter</td></tr>
+          <tr><td>Ketenzorg Diabetes</td><td>€63.36/quarter</td></tr>
+          <tr><td>Ketenzorg COPD</td><td>€50.19/quarter</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:0.8rem;color:var(--text-muted);margin-top:0.5rem;">Source: NZa Beleidsregel huisartsenzorg en multidisciplinaire zorg 2025</p>
+  </div>
+</details>
+
       <div class="insight-callout" style="margin-top:1.5rem;">
         <strong>The Economics of Prevention</strong><br>
         One prevented COPD hospitalization saves &euro;44,439.93 in MSZ specialist costs (NZa 2025). A Digital Twin agent providing early detection and proactive primary care intervention doesn't just improve outcomes &mdash; it's an economic necessity for the Dutch treasury. At scale, ambient AI scribes combined with predictive monitoring could prevent thousands of avoidable escalations per year.
       </div>
+
+
+<details style="margin-top:2rem;">
+  <summary>📚 Sources & References</summary>
+  <div class="details-content">
+    <ol style="font-size:0.82rem;line-height:1.7;color:var(--text-muted);">
+      <li>CBS StatLine — Bevolking; kerncijfers 2024</li>
+      <li>RIVM Volksgezondheid Toekomst Verkenning 2024</li>
+      <li>NZa Beleidsregel huisartsenzorg en multidisciplinaire zorg 2025</li>
+      <li>Park et al. “Generative Agents: Interactive Simulacra of Human Behavior” (Stanford, 2023)</li>
+      <li>IZA — Integraal Zorgakkoord 2023–2026</li>
+      <li>RIVM Chronic Disease Model — Diabetes prevalence by age cohort</li>
+      <li>NZa Monitor Toegankelijkheid Zorg — Wachttijden 2024</li>
+      <li>Nictiz — HL7 FHIR R4 nl-core implementatiegids</li>
+      <li>LHV Enquête Werkdruk Huisartsen 2024</li>
+      <li>ABF Research — Arbeidsmarktprognose zorg en welzijn 2023–2033</li>
+      <li>Nivel Zorgregistraties — Zorggebruik huisartsenzorg 2024</li>
+      <li>WHO — Global Strategy on Digital Health 2020–2025</li>
+      <li>ESC Guidelines — Cardiovascular Disease Prevention 2021</li>
+      <li>PMC — COPD as Independent Risk Factor for Cardiovascular Disease (RR=2.5)</li>
+      <li>Wegiz — Wet elektronische gegevensuitwisseling in de zorg (2023)</li>
+    </ol>
+  </div>
+</details>
 
 </section>
 
