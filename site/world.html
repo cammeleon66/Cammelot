@@ -135,6 +135,13 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a1a2e;font-family:
 .tour-btn.primary{background:linear-gradient(135deg,#FFB300,#FF6F00);color:#1a1a2e;border:none}
 .tour-btn.close{background:rgba(229,57,53,.1);color:#E53935;border-color:rgba(229,57,53,.3)}
 .tour-btn.close:hover{background:rgba(229,57,53,.2)}
+.first-visit-prompt{position:fixed;bottom:24px;right:24px;z-index:9000;background:#2a1f0e;border:2px solid #FFB300;border-radius:12px;padding:16px 20px;max-width:340px;box-shadow:0 8px 32px rgba(0,0,0,.5);display:flex;flex-direction:column;gap:10px;opacity:0;transform:translateY(20px);transition:opacity .4s,transform .4s}
+.first-visit-prompt.visible{opacity:1;transform:translateY(0)}
+.fvp-icon{font-size:24px}
+.fvp-text{font:13px/1.5 'Inter',sans-serif;color:var(--parchment,#f4e4c1)}
+.fvp-text strong{font-size:14px;color:#FFB300}
+.fvp-text span{opacity:.8;font-size:12px}
+.fvp-btns{display:flex;gap:8px;margin-top:4px}
 
 /* Sprint 21: Tour selection panel */
 .tour-select-overlay{position:fixed;inset:0;z-index:9400;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.6)}
@@ -10630,6 +10637,62 @@ document.getElementById('btn-tours').addEventListener('click', function() {
   if (typeof playUIClick === 'function') playUIClick();
   showTourSelection();
 });
+
+// ═══ FIRST VISIT: Auto-prompt tour ═══
+(function() {
+  var TOUR_PROMPT_KEY = 'cammelot-tour-prompted';
+  if (localStorage.getItem(TOUR_PROMPT_KEY)) return;
+
+  // Show prompt 4s after game starts (after intro pan)
+  var checkInterval = setInterval(function() {
+    if (typeof cycle !== 'undefined' && cycle > 5) {
+      clearInterval(checkInterval);
+      localStorage.setItem(TOUR_PROMPT_KEY, '1');
+      showFirstVisitPrompt();
+    }
+  }, 1000);
+
+  // Auto-cancel after 30s if game never starts
+  setTimeout(function() { clearInterval(checkInterval); }, 30000);
+
+  function showFirstVisitPrompt() {
+    var prompt = document.createElement('div');
+    prompt.className = 'first-visit-prompt';
+    prompt.innerHTML =
+      '<div class="fvp-icon">🏰</div>' +
+      '<div class="fvp-text">' +
+        '<strong>First time in Cammelot?</strong><br>' +
+        '<span>Take a 60-second guided tour to see how the simulation works.</span>' +
+      '</div>' +
+      '<div class="fvp-btns">' +
+        '<button class="tour-btn primary" id="fvp-start">Start Tour</button>' +
+        '<button class="tour-btn" id="fvp-skip">Explore on my own</button>' +
+      '</div>';
+    document.body.appendChild(prompt);
+
+    // Animate in
+    requestAnimationFrame(function() {
+      requestAnimationFrame(function() { prompt.classList.add('visible'); });
+    });
+
+    document.getElementById('fvp-start').addEventListener('click', function() {
+      prompt.remove();
+      startTour('patient_journey');
+    });
+    document.getElementById('fvp-skip').addEventListener('click', function() {
+      prompt.classList.remove('visible');
+      setTimeout(function() { prompt.remove(); }, 400);
+    });
+
+    // Auto-dismiss after 15s
+    setTimeout(function() {
+      if (prompt.parentNode) {
+        prompt.classList.remove('visible');
+        setTimeout(function() { if (prompt.parentNode) prompt.remove(); }, 400);
+      }
+    }, 15000);
+  }
+})();
 
 // Sprint S2: Taxi meter toggle button
 document.getElementById('btn-taximeter').addEventListener('click', function() {

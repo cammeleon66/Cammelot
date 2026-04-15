@@ -803,6 +803,30 @@ code {
   letter-spacing: 0.02em;
 }
 .read-more:hover { text-decoration: underline; }
+
+/* ── Section Groups ── */
+.chapter-teasers { max-width: 640px; margin: 0 auto; }
+.section-group { margin-bottom: 2.5rem; }
+.section-group-label {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--red);
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+.section-group-label.coming-soon {
+  color: var(--text-muted);
+  opacity: 0.5;
+}
+.teaser-greyed {
+  opacity: 0.4;
+  pointer-events: none;
+}
+.teaser-greyed h2 a { color: var(--text-muted) !important; }
 </style>
 </head>
 
@@ -858,37 +882,67 @@ code {
 
     <div class="chapter-divider"><div class="diamond"></div></div>
 
-    <!-- Teaser cards -->
-    <div class="chapter-teaser">
-      <div class="chapter-label">Chapter 0</div>
-      <h2><a href="ch0.html">Why I Built This</a></h2>
-      <p class="hook">"I work at Microsoft. You should assume I'm biased toward AI. That's exactly why I built something that could prove me wrong."</p>
-      <p>A simulated Dutch town. 45 citizens. Real data. Two hundred simulation runs. Here's why I built a machine that could prove me wrong — and in several important ways, did.</p>
-      <a href="ch0.html" class="read-more">Read chapter →</a>
-    </div>
+    <!-- Teaser cards with section groupings -->
+    <div class="chapter-teasers">
 
-    <div class="chapter-teaser">
-      <div class="chapter-label">Chapter 1</div>
-      <h2><a href="ch1.html">How I Wired a Pixel Town with A2A and FHIR</a></h2>
-      <p class="hook">"Every agent publishes a card. Every action writes a FHIR resource. The mesh self-organizes."</p>
-      <p>Agent Cards, FHIR memory stores, and 200 lines of JavaScript. How a protocol-first architecture makes the IZA’s €2.8 billion integration problem look very different.</p>
-      <a href="ch1.html" class="read-more">Read chapter →</a>
-    </div>
+      <!-- THE STORY -->
+      <div class="section-group">
+        <div class="section-group-label">The Story</div>
+        <div class="chapter-teaser">
+          <div class="chapter-label">Chapter 0</div>
+          <h2><a href="ch0.html">Why I Built This</a></h2>
+          <p class="hook">“I work at Microsoft. You should assume I’m biased toward AI. That’s exactly why I built something that could prove me wrong.”</p>
+          <p>A simulated Dutch town. 45 citizens. Real data. Two hundred simulation runs. Here’s why I built a machine that could prove me wrong — and in several important ways, did.</p>
+          <a href="ch0.html" class="read-more">Read chapter →</a>
+        </div>
+      </div>
 
-    <div class="chapter-teaser">
-      <div class="chapter-label">Chapter 2</div>
-      <h2><a href="ch2.html">The Data Mesh is Dead. Long Live the Agentic Mesh.</a></h2>
-      <p class="hook">"Data mesh promised decentralized ownership. It delivered decentralized abandonment."</p>
-      <p>Why data mesh fails in healthcare, and what an agent-native architecture does differently. Discovery over integration. Context travels with action. Governance embedded in the protocol.</p>
-      <a href="ch2.html" class="read-more">Read chapter →</a>
-    </div>
+      <!-- TECHNICAL -->
+      <div class="section-group">
+        <div class="section-group-label">Technical Deep Dives</div>
+        <div class="chapter-teaser">
+          <div class="chapter-label">Chapter 1</div>
+          <h2><a href="ch1.html">How I Wired a Pixel Town with A2A and FHIR</a></h2>
+          <p class="hook">“Every agent publishes a card. Every action writes a FHIR resource. The mesh self-organizes.”</p>
+          <p>Agent Cards, FHIR memory stores, and 200 lines of JavaScript. How a protocol-first architecture makes the IZA’s €2.8 billion integration problem look very different.</p>
+          <a href="ch1.html" class="read-more">Read chapter →</a>
+        </div>
+        <div class="chapter-teaser">
+          <div class="chapter-label">Chapter 2</div>
+          <h2><a href="ch2.html">The Data Mesh is Dead. Long Live the Agentic Mesh.</a></h2>
+          <p class="hook">“Data mesh promised decentralized ownership. It delivered decentralized abandonment.”</p>
+          <p>Why data mesh fails in healthcare, and what an agent-native architecture does differently. Discovery over integration. Context travels with action.</p>
+          <a href="ch2.html" class="read-more">Read chapter →</a>
+        </div>
+      </div>
 
-    <div class="chapter-teaser">
-      <div class="chapter-label">Chapter 3</div>
-      <h2><a href="ch3.html">What’s Coming</a></h2>
-      <p class="hook">"I ran 100 simulations. I have numbers. Some confirmed what I expected. Others didn’t."</p>
-      <p>Results on mortality, burnout, costs, and fairness. Charts, effect sizes, and p-values. Coming week by week.</p>
-      <a href="ch3.html" class="read-more">Read chapter →</a>
+      <!-- RESEARCH — coming soon -->
+      <div class="section-group">
+        <div class="section-group-label coming-soon">Research · Coming Soon</div>
+        <div class="chapter-teaser teaser-greyed">
+          <div class="chapter-label">Series 3</div>
+          <h2><a href="#">The Numbers: What 200 Runs Told Me</a></h2>
+          <p>Mortality, burnout, costs, fairness. Every finding — including the ones that embarrass the AI-optimist position.</p>
+        </div>
+        <div class="chapter-teaser teaser-greyed">
+          <div class="chapter-label">Series 4</div>
+          <h2><a href="#">Policy Implications</a></h2>
+          <p>What this means for the IZA, the zorginfarct, and 301,000 missing healthcare workers.</p>
+        </div>
+      </div>
+
+      <!-- PREVIEW -->
+      <div class="section-group">
+        <div class="section-group-label">Preview</div>
+        <div class="chapter-teaser">
+          <div class="chapter-label">Chapter 3</div>
+          <h2><a href="ch3.html">What’s Coming</a></h2>
+          <p class="hook">“I ran 100 simulations. I have numbers. Some confirmed what I expected. Others didn’t.”</p>
+          <p>Results on mortality, burnout, costs, and fairness. Charts, effect sizes, and p-values. Coming week by week.</p>
+          <a href="ch3.html" class="read-more">See what’s next →</a>
+        </div>
+      </div>
+
     </div>
 
     <!-- Metric preview from ch3 -->
