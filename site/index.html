@@ -884,8 +884,26 @@ code {
   <a href="world.html" class="mobile-toc-link" style="color:#27ae60;">&#127918; Live Simulation</a>
 </nav>
 
-<div class="page-grid" style="grid-template-columns: 1fr minmax(0, 680px) 1fr;">
-  <div></div>
+<div class="page-grid">
+  <!-- Sidebar TOC -->
+  <aside class="toc" id="toc">
+    <div class="toc-label">Navigate</div>
+    <div class="toc-part">Welcome</div>
+    <a href="#hero" class="active">Cammelot</a>
+    <a href="#intro">What Is This?</a>
+    <div class="toc-part">Chapters</div>
+    <a href="ch0.html">0. Why I Built This</a>
+    <a href="ch1.html">1. The Architecture</a>
+    <a href="ch2.html">2. The Agentic Mesh</a>
+    <a href="ch3.html">3. What's Coming</a>
+    <div class="toc-part">On This Page</div>
+    <a href="#findings">Key Findings</a>
+    <a href="#skeptics">Skeptic's Corner</a>
+    <div class="toc-part" style="margin-top:12px;">Explore</div>
+    <a href="world.html" style="color:#27ae60;">&#127918; Live Simulation</a>
+    <a href="about.html">About</a>
+  </aside>
+
   <main class="content">
 
     <!-- Hero -->
@@ -900,7 +918,13 @@ code {
 
     <div class="chapter-divider"><div class="diamond"></div></div>
 
-    <div class="chapter-divider"><div class="diamond"></div></div>
+    <!-- Intro: What Is Cammelot? -->
+    <section id="intro" style="margin-bottom:2rem;">
+      <p style="font-size:1.05rem;line-height:1.75;color:var(--text);">I built a simulated Dutch town. 45 inhabitants, three GPs, one hospital. Real CBS demographics, real RIVM disease prevalence, real NZa tariffs. Everything runs as a 16-bit pixel simulation because that&#8217;s apparently how my brain works.</p>
+      <p style="font-size:1.05rem;line-height:1.75;color:var(--text);">Then I ran it 100 times with the current healthcare system. And 100 times with an AI-augmented version: ambient scribes, Digital Twins, AI triage, proactive chronic care management, federated research agents, signed agent cards.</p>
+      <p style="font-size:1.05rem;line-height:1.75;color:var(--text);">The finding that surprised me most: mortality only became significant after I stopped optimizing the AI and started fixing the plumbing. <strong>AI doesn&#8217;t save lives by being smart. It saves lives by not wasting the doctor&#8217;s time on paperwork</strong> and not losing the referral in a broken queue.</p>
+      <p style="font-size:0.9rem;line-height:1.6;color:var(--text-muted);">Code is open. Stats are open. I would genuinely like people to tell me where the model is wrong.</p>
+    </section>
 
     <!-- Teaser cards with section groupings -->
     <div class="chapter-teasers">
@@ -996,7 +1020,7 @@ code {
     </div>
 
     <!-- Skeptic's Corner -->
-    <div class="skeptics-corner">
+    <div class="skeptics-corner" id="skeptics">
       <h2>Skeptic's Corner</h2>
       <div class="skeptic-qa">
         <div class="q">"Is this a video game?"</div>
@@ -1013,7 +1037,7 @@ code {
     </div>
 
     <!-- Key Findings -->
-    <div class="key-findings">
+    <div class="key-findings" id="findings">
       <h2>Key Findings from 200 Runs</h2>
 
       <div class="finding-card">
