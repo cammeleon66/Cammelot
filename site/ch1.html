@@ -202,8 +202,8 @@ body.dark-theme::after {
   grid-template-columns: 220px minmax(0, 1fr) 100px;
   max-width: 1200px;
   margin: 0 auto;
-  padding-top: 4rem;
-  gap: 2rem;
+  padding-top: 2.5rem;
+  gap: 1.5rem;
 }
 
 /* ── Sidebar TOC ── */
@@ -288,15 +288,15 @@ body.dark-theme::after {
 }
 .chapter h2 {
   font-family: 'Space Grotesk', sans-serif;
-  font-size: 1.8rem; font-weight: 700; line-height: 1.2;
-  margin-bottom: 0.6rem; color: var(--text);
+  font-size: 1.6rem; font-weight: 700; line-height: 1.2;
+  margin-bottom: 0.4rem; color: var(--text);
 }
 .chapter .hook {
   font-style: italic; font-size: 1.05rem; color: var(--text-muted);
-  margin-bottom: 1.5rem; line-height: 1.65;
+  margin-bottom: 1rem; line-height: 1.65;
   border-left: 3px solid var(--red); padding-left: 1rem;
 }
-.chapter p { margin-bottom: 1.1rem; }
+.chapter p { margin-bottom: 0.8rem; }
 .chapter p + p { text-indent: 0; }
 
 /* ── H3 Section Breaks ── */
@@ -304,13 +304,13 @@ body.dark-theme::after {
   font-family: 'Space Grotesk', sans-serif;
   font-size: 1.15rem; font-weight: 600; line-height: 1.3;
   color: var(--text);
-  margin: 2.5rem 0 1rem;
-  padding-top: 1.5rem;
+  margin: 1.2rem 0 0.6rem;
+  padding-top: 0.8rem;
   border-top: 1px solid var(--border);
   letter-spacing: -0.01em;
 }
 .chapter h3:first-of-type {
-  margin-top: 2rem;
+  margin-top: 1rem;
 }
 
 /* ── Collapsible Details ── */
@@ -504,9 +504,9 @@ body.dark-theme::after {
 
 /* ── Branch Point ── */
 .branch-point {
-  margin: 4rem 0;
+  margin: 2rem 0;
   text-align: center;
-  padding: 2rem 0;
+  padding: 1rem 0;
   border-top: 2px solid var(--border);
   border-bottom: 2px solid var(--border);
 }
@@ -695,7 +695,7 @@ code {
 /* ── Footer ── */
 .site-footer {
   border-top: 1px solid var(--border);
-  padding: 3rem 2rem;
+  padding: 1.5rem 2rem;
   text-align: center;
   font-family: 'Space Grotesk', sans-serif;
   font-size: 0.72rem;
@@ -710,7 +710,7 @@ code {
 @media (max-width: 900px) {
   .page-grid {
     grid-template-columns: 1fr;
-    padding: 3.5rem 1.2rem 0;
+    padding: 2rem 1.2rem 0;
     gap: 0;
   }
   .toc { display: none; }
@@ -730,7 +730,7 @@ code {
   .pull-quote { margin: 1.5rem 0; padding: 1rem 0; }
   .replay-embed { padding: 1rem; font-size: 0.8rem; }
   .replay-embed code { font-size: 0.65rem; white-space: pre-wrap; word-break: break-all; }
-  .chapter h3 { font-size: 1rem; margin: 2rem 0 0.8rem; padding-top: 1.2rem; }
+  .chapter h3 { font-size: 1rem; margin: 1rem 0 0.5rem; padding-top: 0.6rem; }
   .chapter details summary { font-size: 0.8rem; padding: 0.6rem 1rem; }
   .chapter details .details-content { padding: 0 1rem 0.8rem; font-size: 0.88rem; }
   .insight-callout { font-size: 0.88rem; padding: 0.8rem 1rem; }
@@ -748,7 +748,7 @@ code {
 }
 @media (max-width: 480px) {
   html { font-size: 16px; }
-  .page-grid { padding: 3.2rem 0.8rem 0; }
+  .page-grid { padding: 1.5rem 0.8rem 0; }
   .hero { padding: 1.2rem 0 2rem; }
   .hero h1 { font-size: 1.5rem; }
   .hero-canvas-wrap { height: 120px; max-width: 100%; }
@@ -789,8 +789,8 @@ code {
       background: var(--card-bg);
       border: 1px solid var(--border);
       border-radius: 8px;
-      padding: 1.5rem;
-      margin: 1.5rem 0;
+      padding: 1rem;
+      margin: 1rem 0;
       font-family: 'Space Grotesk', sans-serif;
     }
     .code-header {
@@ -820,7 +820,7 @@ code {
     .agent-card-viz {
       border-left: 4px solid var(--green);
       padding-left: 1.5rem;
-      margin: 2rem 0;
+      margin: 1rem 0;
     }
     .agent-card-viz h4 {
       font-family: 'Space Grotesk', sans-serif;
@@ -838,17 +838,17 @@ code {
       margin-bottom: 0.5rem;
     }
     .lede {
-      font-size: 1.15rem;
-      line-height: 1.7;
+      font-size: 1.1rem;
+      line-height: 1.65;
       color: var(--text);
       font-weight: 500;
-      margin-bottom: 1.5rem;
+      margin-bottom: 1rem;
     }
     .pillar-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 1rem;
-      margin: 1.5rem 0;
+      gap: 0.8rem;
+      margin: 1rem 0;
     }
     .pillar-card {
       background: var(--card-bg);
@@ -882,8 +882,8 @@ code {
       background: var(--card-bg);
       border: 1px solid var(--border);
       border-radius: 8px;
-      padding: 1.2rem 1.5rem;
-      margin: 1.5rem 0;
+      padding: 0.8rem 1.2rem;
+      margin: 1rem 0;
       font-family: 'Space Grotesk', monospace;
       font-size: 0.82rem;
       line-height: 1.8;
@@ -893,10 +893,10 @@ code {
     .sequence-box .seq-label { color: var(--text-muted); font-size: 0.72rem; }
     .loop-step {
       display: flex;
-      gap: 1rem;
+      gap: 0.8rem;
       align-items: flex-start;
-      margin-bottom: 1rem;
-      padding: 0.8rem 1rem;
+      margin-bottom: 0.6rem;
+      padding: 0.6rem 0.8rem;
       background: var(--card-bg);
       border: 1px solid var(--border);
       border-radius: 6px;
