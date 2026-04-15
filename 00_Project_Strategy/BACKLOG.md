@@ -1,10 +1,10 @@
 # Cammelot Backlog
 
-> Source: [Google Doc — Technical Optimization Framework](https://docs.google.com/document/d/1XjJE5eC06uVz2dilmcxHlsarM4oCwYvHKAYWM9bAPo0/edit?usp=sharing) + existing project issues
->
-> Last updated: 2026-04-15
+**Last updated:** 2026-04-15
+**Progress:** 22/42 items done (52%) | P0: 9/9 | P1: 13/16 | P2: 0/13 | P3: 0/4
 
 ---
+
 
 ## 🔴 P0 — Fix Now
 
