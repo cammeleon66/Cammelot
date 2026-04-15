@@ -3,19 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cammelot: What Happens When AI Runs a Dutch Town's Healthcare?</title>
+<title>What's Coming — Results from 100 Simulation Runs</title>
 
 <!-- Open Graph Meta Tags -->
-<meta property="og:title" content="Cammelot: What Happens When AI Runs a Dutch Town's Healthcare?">
-<meta property="og:description" content="100 simulations. 45 pixel citizens. Real Dutch data. I built a town to see what happens when AI runs healthcare.">
+<meta property="og:title" content="What's Coming — Results from 100 Simulation Runs">
+<meta property="og:description" content="I ran 100 simulations. I have numbers. Some confirmed what I expected. Others didn't.">
 <meta property="og:image" content="https://cammelot.org/og-image.png">
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://cammelot.org/">
+<meta property="og:url" content="https://cammelot.org/ch3.html">
 
 <!-- Twitter Card Meta Tags -->
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Cammelot: What Happens When AI Runs a Dutch Town's Healthcare?">
-<meta name="twitter:description" content="100 simulations. 45 pixel citizens. Real Dutch data. I built a town to see what happens when AI runs healthcare.">
+<meta name="twitter:title" content="What's Coming — Results from 100 Simulation Runs">
+<meta name="twitter:description" content="I ran 100 simulations. I have numbers. Some confirmed what I expected. Others didn't.">
 <meta name="twitter:image" content="https://cammelot.org/og-image.png">
 
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='4' y='20' width='24' height='12' fill='%23c0392b'/%3E%3Crect x='4' y='16' width='6' height='4' fill='%23c0392b'/%3E%3Crect x='13' y='16' width='6' height='4' fill='%23c0392b'/%3E%3Crect x='22' y='16' width='6' height='4' fill='%23c0392b'/%3E%3Crect x='12' y='8' width='8' height='12' fill='%23e74c3c'/%3E%3Crect x='14' y='4' width='4' height='4' fill='%23c0392b'/%3E%3Crect x='14' y='24' width='4' height='8' fill='%23922b21'/%3E%3C/svg%3E">
@@ -782,27 +782,6 @@ code {
 }
 .chapter-nav a:hover { color: var(--text); }
 .chapter-nav .next { margin-left: auto; }
-
-.chapter-teaser {
-  margin-bottom: 2.5rem;
-  padding-bottom: 2rem;
-  border-bottom: 1px solid var(--border);
-}
-.chapter-teaser h2 { margin-bottom: 0.5rem; }
-.chapter-teaser h2 a { 
-  color: var(--text); text-decoration: none; 
-  transition: color 0.2s;
-}
-.chapter-teaser h2 a:hover { color: var(--red); }
-.read-more {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 0.82rem;
-  color: var(--red);
-  text-decoration: none;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-}
-.read-more:hover { text-decoration: underline; }
 </style>
 </head>
 
@@ -831,90 +810,81 @@ code {
 <!-- Mobile TOC overlay -->
 <div class="mobile-toc-backdrop" id="mobile-toc-backdrop"></div>
 <nav class="mobile-toc-overlay" id="mobile-toc-overlay">
-  <div class="toc-part">Chapters</div>
+  <div class="toc-part">The Story</div>
   <a href="ch0.html" class="mobile-toc-link">0. Why I Built This</a>
+  <div class="toc-part">The Build</div>
   <a href="ch1.html" class="mobile-toc-link">1. The Architecture</a>
   <a href="ch2.html" class="mobile-toc-link">2. The Agentic Mesh</a>
+  <div class="toc-part">What's Next</div>
   <a href="ch3.html" class="mobile-toc-link">3. What's Coming</a>
   <div class="toc-part" style="margin-top:12px;">Explore</div>
   <a href="world.html" class="mobile-toc-link" style="color:#27ae60;">&#127918; Live Simulation</a>
 </nav>
 
-<div class="page-grid" style="grid-template-columns: 1fr minmax(0, 680px) 1fr;">
-  <div></div>
+<div class="page-grid">
+  <!-- Sidebar TOC -->
+  <aside class="toc" id="toc">
+  <div class="toc-label">Contents</div>
+  <div class="toc-part">The Story</div>
+  <a href="ch0.html" data-section="chapter-0">0. Why I Built This</a>
+  <div class="toc-part">The Build</div>
+  <a href="ch1.html" data-section="chapter-1">1. The Architecture</a>
+  <a href="ch2.html" data-section="chapter-2">2. The Agentic Mesh</a>
+  <div class="toc-part">What's Next</div>
+  <a href="ch3.html" data-section="chapter-3" class="active">3. What's Coming</a>
+  <div class="toc-part" style="margin-top:12px;">Explore</div>
+  <a href="world.html" style="color:#27ae60;">&#127918; Live Simulation</a>
+</aside>
+
+  <!-- Main Content -->
   <main class="content">
 
-    <!-- Hero -->
-    <div class="hero" id="hero">
-      <div class="hero-canvas-wrap">
-        <canvas id="hero-canvas"></canvas>
-      </div>
-      <h1>CAMME<span>L</span>OT</h1>
-      <p class="subtitle">What happens when AI runs a Dutch town's healthcare?</p>
-      <p class="byline">45 pixel citizens &middot; 3 GPs &middot; 1 hospital &middot; 100 simulation runs &middot; Real Dutch data</p>
-    </div>
-
-    <div class="chapter-divider"><div class="diamond"></div></div>
-
-    <div class="chapter-divider"><div class="diamond"></div></div>
-
-    <!-- Teaser cards -->
-    <div class="chapter-teaser">
-      <div class="chapter-label">Chapter 0</div>
-      <h2><a href="ch0.html">Why I Built This</a></h2>
-      <p class="hook">"I work at Microsoft. You should assume I'm biased toward AI. That's exactly why I built something that could prove me wrong."</p>
-      <p>A simulated Dutch town. 45 citizens. Real data. Two hundred simulation runs. Here's why I built a machine that could prove me wrong — and in several important ways, did.</p>
-      <a href="ch0.html" class="read-more">Read chapter →</a>
-    </div>
-
-    <div class="chapter-teaser">
-      <div class="chapter-label">Chapter 1</div>
-      <h2><a href="ch1.html">How I Wired a Pixel Town with A2A and FHIR</a></h2>
-      <p class="hook">"Every agent publishes a card. Every action writes a FHIR resource. The mesh self-organizes."</p>
-      <p>Agent Cards, FHIR memory stores, and 200 lines of JavaScript. How a protocol-first architecture makes the IZA’s €2.8 billion integration problem look very different.</p>
-      <a href="ch1.html" class="read-more">Read chapter →</a>
-    </div>
-
-    <div class="chapter-teaser">
-      <div class="chapter-label">Chapter 2</div>
-      <h2><a href="ch2.html">The Data Mesh is Dead. Long Live the Agentic Mesh.</a></h2>
-      <p class="hook">"Data mesh promised decentralized ownership. It delivered decentralized abandonment."</p>
-      <p>Why data mesh fails in healthcare, and what an agent-native architecture does differently. Discovery over integration. Context travels with action. Governance embedded in the protocol.</p>
-      <a href="ch2.html" class="read-more">Read chapter →</a>
-    </div>
-
-    <div class="chapter-teaser">
+    <section class="chapter" id="chapter-3">
       <div class="chapter-label">Chapter 3</div>
-      <h2><a href="ch3.html">What’s Coming</a></h2>
-      <p class="hook">"I ran 100 simulations. I have numbers. Some confirmed what I expected. Others didn’t."</p>
-      <p>Results on mortality, burnout, costs, and fairness. Charts, effect sizes, and p-values. Coming week by week.</p>
-      <a href="ch3.html" class="read-more">Read chapter →</a>
-    </div>
+      <h2>What's Coming</h2>
+      <div class="hook">"I ran 100 simulations. I have numbers. Some confirmed what I expected. Others didn't."</div>
 
-    <!-- Metric preview from ch3 -->
-    <div class="metric-callout">
-      <div class="metric-card">
-        <div class="metric-value ist">???</div>
-        <div class="metric-label">Burnout Score</div>
-      </div>
-      <div class="metric-card">
-        <div class="metric-value ist">???</div>
-        <div class="metric-label">Mortality Rate</div>
-      </div>
-      <div class="metric-card">
-        <div class="metric-value soll">???</div>
-        <div class="metric-label">Cost Savings</div>
-      </div>
-      <div class="metric-card">
-        <div class="metric-value" style="color:var(--text)">???</div>
-        <div class="metric-label">Fairness</div>
-      </div>
-    </div>
+      <p>I have results on mortality, burnout, costs, and fairness. I have charts, effect sizes, and p-values. I have a story about a 70-year-old named Hendrik who died in cycle 71 because the queue didn't know he was dying.</p>
 
-    <div style="text-align:center;margin:2rem 0;">
-      <a href="world.html" style="display:inline-block;background:var(--green);color:#fff;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:0.9rem;padding:0.8rem 2rem;border-radius:6px;text-decoration:none;letter-spacing:0.03em;box-shadow:0 3px 12px rgba(39,174,96,0.25);">&#127918; Try the Live Simulation</a>
-    </div>
+      <p>I also have a story about what happened when I tried to make my AI triage system fair, and it resisted. And one about a malicious agent called Mordred who collapsed my entire healthcare mesh with four lines of JSON.</p>
+
+      <p>I'm rolling these out week by week. Each finding deserves its own space.</p>
+
+      <p><strong>Next week:</strong> what happened when my simulation killed its first patient.</p>
+
+      <div class="metric-callout">
+        <div class="metric-card">
+          <div class="metric-value ist">???</div>
+          <div class="metric-label">Burnout Score</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value ist">???</div>
+          <div class="metric-label">Mortality Rate</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value soll">???</div>
+          <div class="metric-label">Cost Savings</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value" style="color:var(--text)">???</div>
+          <div class="metric-label">Fairness</div>
+        </div>
+      </div>
+
+      <p>All code is open. All data is open. If you want to poke holes in my methodology before I publish the results, the <a href="https://github.com/cammeleon66/Cammelot" target="_blank">GitHub repo</a> is right there.</p>
+
+      <div style="text-align:center;margin:2rem 0;">
+        <a href="world.html" style="display:inline-block;background:var(--green);color:#fff;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:0.9rem;padding:0.8rem 2rem;border-radius:6px;text-decoration:none;letter-spacing:0.03em;box-shadow:0 3px 12px rgba(39,174,96,0.25);">&#127918; Try the Live Simulation</a>
+      </div>
+    </section>
+
+    <nav class="chapter-nav">
+    <a href="ch2.html" class="prev">← Previous: The Data Mesh is Dead</a>
+    <span></span>
+  </nav>
   </main>
+
+  <!-- Right margin (empty) -->
   <div></div>
 </div>
 
@@ -932,106 +902,25 @@ code {
 
 
 <script>
-// ── Hero Pixel Town Canvas ──
-(function initHeroCanvas() {
-  const canvas = document.getElementById('hero-canvas');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  const W = 320, H = 100;
-  canvas.width = W; canvas.height = H;
-
-  // SNES palette
-  const GRASS1 = '#3a8c3f', GRASS2 = '#2e7a33';
-  const SKY = '#4a90d9';
-  const BUILDING_COLORS = ['#e74c3c','#3498db','#f39c12','#9b59b6','#1abc9c','#e67e22','#2ecc71','#c0392b'];
-  const ROOF_COLORS = ['#922b21','#21618c','#b7950b','#6c3483','#148f77','#af601a','#1e8449','#7b241c'];
-  const WATER = '#2980b9';
-
-  // Buildings
-  const buildings = [];
-  const bx = [20, 52, 80, 120, 155, 190, 228, 265];
-  for (let i = 0; i < 8; i++) {
-    const bw = 16 + Math.floor(Math.random()*12);
-    const bh = 18 + Math.floor(Math.random()*16);
-    buildings.push({ x: bx[i], y: H - 16 - bh, w: bw, h: bh, color: BUILDING_COLORS[i], roof: ROOF_COLORS[i] });
+// ── Simulation Data ──
+const SIMULATION_DATA = {
+  deaths: { ist: { mean: 11.75, sd: 3.25 }, soll: { mean: 10.60, sd: 3.35 }, d: 0.348, sig: true },
+  systemDeaths: { ist: { mean: 4.43, sd: 2.34 }, soll: { mean: 3.72, sd: 2.54 }, d: 0.291, sig: true },
+  gpBurnout: { ist: { mean: 7.89 }, soll: { mean: 1.19 }, d: 1.4, sig: true },
+  proactiveAlerts: { ist: 0, soll: { mean: 146.75, sd: 71.11 } },
+  ketenzorg: { ist: { mean: 33.83 }, soll: { mean: 87.61 }, d: 0.940, sig: true },
+  biasScore: { ist: { mean: 0.92 }, soll: { mean: 0.88 }, d: 0.288, sig: true },
+  hendrikHP: [82, 80, 78, 75, 71, 68, 64, 59, 53, 46, 38, 29, 19, 8, 0],
+  burnoutTimeline: {
+    ist: [0, 1, 2, 4, 5, 6, 7, 7.5, 8, 8.5, 9, 9.2, 9.4, 9.5, 9.6],
+    soll: [0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.1, 1.1, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2]
+  },
+  deathsByAge: {
+    labels: ['0-44', '45-64', '65-79', '80+'],
+    ist: [0.8, 1.5, 4.2, 5.25],
+    soll: [0.5, 1.0, 3.8, 5.30]
   }
-
-  // Sprites
-  const sprites = [];
-  const SPRITE_COLORS = ['#e74c3c','#3498db','#f1c40f','#e67e22','#9b59b6'];
-  for (let i = 0; i < 5; i++) {
-    sprites.push({
-      x: 30 + Math.random() * 260,
-      y: H - 14 + Math.random() * 4,
-      dx: (Math.random() - 0.5) * 0.6,
-      color: SPRITE_COLORS[i],
-      frame: Math.floor(Math.random()*2)
-    });
-  }
-
-  function draw() {
-    // Sky gradient
-    const grad = ctx.createLinearGradient(0,0,0,H-16);
-    grad.addColorStop(0, SKY);
-    grad.addColorStop(1, '#87ceeb');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, W, H - 16);
-
-    // Grass
-    for (let gx = 0; gx < W; gx += 4) {
-      ctx.fillStyle = (gx/4) % 2 === 0 ? GRASS1 : GRASS2;
-      ctx.fillRect(gx, H - 16, 4, 16);
-    }
-
-    // Small pond
-    ctx.fillStyle = WATER;
-    ctx.fillRect(140, H-12, 20, 8);
-    ctx.fillStyle = '#5dade2';
-    ctx.fillRect(142, H-10, 4, 2);
-
-    // Buildings
-    buildings.forEach(b => {
-      ctx.fillStyle = b.color;
-      ctx.fillRect(b.x, b.y, b.w, b.h);
-      // Roof
-      ctx.fillStyle = b.roof;
-      ctx.fillRect(b.x - 2, b.y - 4, b.w + 4, 4);
-      // Window
-      ctx.fillStyle = '#f9e79f';
-      const wx = b.x + 3, wy = b.y + 4;
-      ctx.fillRect(wx, wy, 3, 3);
-      if (b.w > 18) ctx.fillRect(wx + 8, wy, 3, 3);
-      // Door
-      ctx.fillStyle = '#6c3483';
-      ctx.fillRect(b.x + Math.floor(b.w/2) - 2, b.y + b.h - 6, 4, 6);
-    });
-
-    // Sprites
-    sprites.forEach(s => {
-      s.x += s.dx;
-      if (s.x < 10 || s.x > W - 10) s.dx *= -1;
-      s.frame = (s.frame + 0.03) % 2;
-      // Body
-      ctx.fillStyle = s.color;
-      ctx.fillRect(Math.floor(s.x), Math.floor(s.y) - 6, 4, 4);
-      // Head
-      ctx.fillStyle = '#fad7a0';
-      ctx.fillRect(Math.floor(s.x), Math.floor(s.y) - 9, 4, 3);
-      // Legs (animated)
-      ctx.fillStyle = '#2c3e50';
-      if (Math.floor(s.frame) === 0) {
-        ctx.fillRect(Math.floor(s.x), Math.floor(s.y) - 2, 2, 2);
-        ctx.fillRect(Math.floor(s.x) + 2, Math.floor(s.y) - 1, 2, 2);
-      } else {
-        ctx.fillRect(Math.floor(s.x), Math.floor(s.y) - 1, 2, 2);
-        ctx.fillRect(Math.floor(s.x) + 2, Math.floor(s.y) - 2, 2, 2);
-      }
-    });
-
-    requestAnimationFrame(draw);
-  }
-  draw();
-})();
+};
 
 // ── Reading Progress Bar ──
 const progressBar = document.getElementById('progress-bar');
@@ -1055,17 +944,24 @@ backToTop.addEventListener('click', () => {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 });
 
+// ── Theme Toggle ──
 const themeToggle = document.getElementById('theme-toggle');
 const savedTheme = localStorage.getItem('cammelot-theme');
 if (savedTheme === 'dark') {
   document.body.classList.add('dark-theme');
-  themeToggle.textContent = '\u2600\uFE0F';
+  themeToggle.textContent = '☀️';
 }
 themeToggle.addEventListener('click', () => {
   document.body.classList.toggle('dark-theme');
   const isDark = document.body.classList.contains('dark-theme');
-  themeToggle.textContent = isDark ? '\u2600\uFE0F' : '\uD83C\uDF19';
+  themeToggle.textContent = isDark ? '☀️' : '🌙';
   localStorage.setItem('cammelot-theme', isDark ? 'dark' : 'light');
+  // Redraw charts for new theme
+  Object.keys(chartDrawn).forEach(k => chartDrawn[k] = false);
+  document.querySelectorAll('.chart-container').forEach(cc => {
+    const cv = cc.querySelector('canvas');
+    if (cv && cc.getBoundingClientRect().top < window.innerHeight) drawCharts(cv.id);
+  });
 });
 
 // ── Mobile Hamburger ──
@@ -1091,6 +987,321 @@ document.querySelectorAll('.mobile-toc-link').forEach(a => {
   });
 });
 
+// ── Animated Number Counters ──
+function animateCounter(el) {
+  if (el.dataset.animated) return;
+  el.dataset.animated = '1';
+  const target = parseFloat(el.dataset.counter);
+  if (isNaN(target)) return;
+  const prefix = el.dataset.prefix || '';
+  const suffix = el.dataset.suffix || '';
+  const decimals = (el.dataset.counter.split('.')[1] || '').length;
+  const duration = 1500;
+  const start = performance.now();
+
+  function tick(now) {
+    const elapsed = now - start;
+    const progress = Math.min(elapsed / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+    const current = target * eased;
+    el.textContent = prefix + current.toFixed(decimals) + suffix;
+    if (progress < 1) requestAnimationFrame(tick);
+    else el.textContent = prefix + target.toFixed(decimals) + suffix;
+  }
+  requestAnimationFrame(tick);
+}
+
+// ── Chart Drawing ──
+// Store data point positions for tooltips
+const chartDataPoints = {};
+
+function drawLineChart(canvasId, data, options) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  ctx.scale(dpr, dpr);
+  const w = rect.width, h = rect.height;
+  const pad = { top: 20, right: 20, bottom: 40, left: 50 };
+  const plotW = w - pad.left - pad.right;
+  const plotH = h - pad.top - pad.bottom;
+  const isDark = document.body.classList.contains('dark-theme');
+  const gridColor = isDark ? '#2a2a3a' : '#e8e6e0';
+  const labelColor = isDark ? '#8a8a9a' : '#999';
+
+  ctx.clearRect(0, 0, w, h);
+  chartDataPoints[canvasId] = [];
+
+  // Grid
+  ctx.strokeStyle = gridColor;
+  ctx.lineWidth = 0.5;
+  const ySteps = 5;
+  for (let i = 0; i <= ySteps; i++) {
+    const y = pad.top + (plotH / ySteps) * i;
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(w - pad.right, y); ctx.stroke();
+    ctx.fillStyle = labelColor;
+    ctx.font = '11px Space Grotesk, sans-serif';
+    ctx.textAlign = 'right';
+    const val = options.yMax - (options.yMax / ySteps) * i;
+    ctx.fillText(val.toFixed(options.yDecimals || 0), pad.left - 8, y + 4);
+  }
+
+  // X labels
+  ctx.fillStyle = labelColor;
+  ctx.font = '11px Space Grotesk, sans-serif';
+  ctx.textAlign = 'center';
+  const xLabels = options.xLabels || data[0].values.map((_, i) => i);
+  const xStep = Math.max(1, Math.floor(xLabels.length / 7));
+  for (let i = 0; i < xLabels.length; i += xStep) {
+    const x = pad.left + (plotW / (xLabels.length - 1)) * i;
+    ctx.fillText(xLabels[i], x, h - pad.bottom + 20);
+  }
+  if (options.xLabel) {
+    ctx.fillText(options.xLabel, pad.left + plotW / 2, h - 4);
+  }
+
+  // Lines + dots at every data point
+  data.forEach((series, si) => {
+    ctx.beginPath();
+    ctx.strokeStyle = series.color;
+    ctx.lineWidth = 2.5;
+    ctx.lineJoin = 'round';
+    const points = [];
+    series.values.forEach((val, i) => {
+      const x = pad.left + (plotW / (series.values.length - 1)) * i;
+      const y = pad.top + plotH - (val / options.yMax) * plotH;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+      points.push({ x, y, value: val, label: xLabels[i], seriesName: series.name || '' });
+    });
+    ctx.stroke();
+
+    // Draw dots at every data point
+    points.forEach(pt => {
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y, 3, 0, Math.PI * 2);
+      ctx.fillStyle = series.color;
+      ctx.fill();
+      chartDataPoints[canvasId].push({ ...pt, color: series.color, rect });
+    });
+  });
+
+  // Threshold line
+  if (options.threshold) {
+    const ty = pad.top + plotH - (options.threshold.value / options.yMax) * plotH;
+    ctx.setLineDash([5, 4]);
+    ctx.strokeStyle = options.threshold.color || labelColor;
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(pad.left, ty); ctx.lineTo(w - pad.right, ty); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = options.threshold.color || labelColor;
+    ctx.font = '10px Space Grotesk, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(options.threshold.label, w - pad.right + 4, ty + 3);
+  }
+}
+
+function drawBarChart(canvasId, labels, datasets, options) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  ctx.scale(dpr, dpr);
+  const w = rect.width, h = rect.height;
+  const pad = { top: 20, right: 20, bottom: 40, left: 50 };
+  const plotW = w - pad.left - pad.right;
+  const plotH = h - pad.top - pad.bottom;
+  const isDark = document.body.classList.contains('dark-theme');
+  const gridColor = isDark ? '#2a2a3a' : '#e8e6e0';
+  const labelColor = isDark ? '#8a8a9a' : '#999';
+
+  ctx.clearRect(0, 0, w, h);
+  chartDataPoints[canvasId] = [];
+
+  // Grid
+  ctx.strokeStyle = gridColor;
+  ctx.lineWidth = 0.5;
+  const ySteps = 5;
+  for (let i = 0; i <= ySteps; i++) {
+    const y = pad.top + (plotH / ySteps) * i;
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(w - pad.right, y); ctx.stroke();
+    ctx.fillStyle = labelColor;
+    ctx.font = '11px Space Grotesk, sans-serif';
+    ctx.textAlign = 'right';
+    const val = options.yMax - (options.yMax / ySteps) * i;
+    ctx.fillText(val.toFixed(1), pad.left - 8, y + 4);
+  }
+
+  const groupW = plotW / labels.length;
+  const barW = groupW / (datasets.length + 1);
+  const barGap = barW * 0.3;
+
+  labels.forEach((label, i) => {
+    ctx.fillStyle = labelColor;
+    ctx.font = '11px Space Grotesk, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(label, pad.left + groupW * i + groupW / 2, h - pad.bottom + 20);
+
+    datasets.forEach((ds, j) => {
+      const x = pad.left + groupW * i + barW * j + barGap + groupW * 0.15;
+      const barH = (ds.values[i] / options.yMax) * plotH;
+      const y = pad.top + plotH - barH;
+
+      ctx.fillStyle = ds.color;
+      ctx.beginPath();
+      const r = 3;
+      ctx.moveTo(x, y + r);
+      ctx.arcTo(x, y, x + r, y, r);
+      ctx.arcTo(x + barW - barGap, y, x + barW - barGap, y + r, r);
+      ctx.lineTo(x + barW - barGap, pad.top + plotH);
+      ctx.lineTo(x, pad.top + plotH);
+      ctx.closePath();
+      ctx.fill();
+
+      // Value on top
+      ctx.fillStyle = ds.color;
+      ctx.font = '10px Space Grotesk, sans-serif';
+      ctx.textAlign = 'center';
+      const cx = x + (barW - barGap) / 2;
+      ctx.fillText(ds.values[i].toFixed(1), cx, y - 6);
+
+      // Store tooltip point at top center of bar
+      chartDataPoints[canvasId].push({
+        x: cx, y: y, value: ds.values[i], label: label,
+        color: ds.color, rect, seriesName: ds.name || ''
+      });
+    });
+  });
+}
+
+// ── Chart Tooltips ──
+document.querySelectorAll('.chart-container canvas').forEach(canvas => {
+  const tooltipEl = canvas.parentElement.querySelector('.chart-tooltip');
+  if (!tooltipEl) return;
+
+  canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    const points = chartDataPoints[canvas.id] || [];
+    let closest = null, minDist = 25;
+    points.forEach(pt => {
+      const d = Math.sqrt((pt.x - mx) ** 2 + (pt.y - my) ** 2);
+      if (d < minDist) { minDist = d; closest = pt; }
+    });
+    if (closest) {
+      tooltipEl.textContent = (closest.label != null ? closest.label + ': ' : '') + closest.value.toFixed(2);
+      const containerRect = canvas.parentElement.getBoundingClientRect();
+      tooltipEl.style.left = (closest.x + rect.left - containerRect.left - tooltipEl.offsetWidth/2) + 'px';
+      tooltipEl.style.top = (closest.y + rect.top - containerRect.top - 32) + 'px';
+      tooltipEl.classList.add('visible');
+    } else {
+      tooltipEl.classList.remove('visible');
+    }
+  });
+  canvas.addEventListener('mouseleave', () => {
+    tooltipEl.classList.remove('visible');
+  });
+});
+
+// ── Animated Chart Drawing ──
+const chartDrawn = {};
+
+function drawCharts(id) {
+  if (chartDrawn[id]) return;
+  chartDrawn[id] = true;
+
+  if (id === 'chart-hendrik') {
+    const cycles = SIMULATION_DATA.hendrikHP.map((_, i) => i * 5);
+    drawLineChart('chart-hendrik', [
+      { values: SIMULATION_DATA.hendrikHP, color: '#e67e22', name: 'HP' }
+    ], {
+      yMax: 100, xLabels: cycles, xLabel: 'Cycle',
+      threshold: { value: 20, label: 'Critical HP', color: '#c0392b' }
+    });
+  }
+  if (id === 'chart-burnout') {
+    const cycles = SIMULATION_DATA.burnoutTimeline.ist.map((_, i) => i * 100);
+    drawLineChart('chart-burnout', [
+      { values: SIMULATION_DATA.burnoutTimeline.ist, color: '#c0392b', name: 'IST' },
+      { values: SIMULATION_DATA.burnoutTimeline.soll, color: '#27ae60', name: 'SOLL' }
+    ], { yMax: 10, xLabels: cycles, xLabel: 'Cycle', yDecimals: 0 });
+  }
+  if (id === 'chart-age') {
+    drawBarChart('chart-age',
+      SIMULATION_DATA.deathsByAge.labels,
+      [
+        { values: SIMULATION_DATA.deathsByAge.ist, color: '#c0392b', name: 'IST' },
+        { values: SIMULATION_DATA.deathsByAge.soll, color: '#27ae60', name: 'SOLL' }
+      ],
+      { yMax: 6 }
+    );
+  }
+}
+
+// ── Intersection Observer (scroll animations + chart drawing + counters) ──
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+      // Draw charts when their container enters viewport
+      const canvas = entry.target.querySelector('canvas');
+      if (canvas) drawCharts(canvas.id);
+      // Animate counters
+      entry.target.querySelectorAll('[data-counter]').forEach(animateCounter);
+    }
+  });
+}, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
+
+document.querySelectorAll('.chapter').forEach(ch => observer.observe(ch));
+
+// Also observe chart containers directly
+document.querySelectorAll('.chart-container').forEach(cc => {
+  const obs2 = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        const canvas = e.target.querySelector('canvas');
+        if (canvas) drawCharts(canvas.id);
+      }
+    });
+  }, { threshold: 0.3 });
+  obs2.observe(cc);
+});
+
+// Also observe metric callouts for counter animation
+document.querySelectorAll('.metric-callout').forEach(mc => {
+  const obs3 = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.querySelectorAll('[data-counter]').forEach(animateCounter);
+      }
+    });
+  }, { threshold: 0.5 });
+  obs3.observe(mc);
+});
+
+// ── Footnotes ──
+document.querySelectorAll('.fn-ref').forEach(ref => {
+  ref.addEventListener('click', (e) => {
+    e.preventDefault();
+    const fnId = ref.dataset.fn;
+    let target = ref.parentElement;
+    while (target && target.nextElementSibling) {
+      target = target.nextElementSibling;
+      if (target.classList.contains('footnote-body') && target.dataset.fn === fnId) {
+        target.classList.toggle('open');
+        break;
+      }
+    }
+  });
+});
+
 // Combined scroll handler
 function onScroll() {
   updateProgress();
@@ -1098,6 +1309,26 @@ function onScroll() {
 }
 window.addEventListener('scroll', onScroll, { passive: true });
 onScroll();
+
+// ── Redraw charts on resize ──
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    chartDrawn['chart-hendrik'] = false;
+    chartDrawn['chart-burnout'] = false;
+    chartDrawn['chart-age'] = false;
+    document.querySelectorAll('.chart-container').forEach(cc => {
+      const canvas = cc.querySelector('canvas');
+      if (canvas && cc.getBoundingClientRect().top < window.innerHeight) {
+        drawCharts(canvas.id);
+      }
+    });
+  }, 200);
+});
+
+// Ensure chapter content is visible
+document.querySelectorAll('.chapter').forEach(el => el.classList.add('visible'));
 </script>
 </body>
 </html>
