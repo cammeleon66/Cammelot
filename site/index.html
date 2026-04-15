@@ -7,7 +7,7 @@
 
 <!-- Open Graph Meta Tags -->
 <meta property="og:title" content="Cammelot: What Happens When AI Runs a Dutch Town's Healthcare?">
-<meta property="og:description" content="100 simulations. 45 pixel citizens. Real Dutch data. I built a town to see what happens when AI runs healthcare.">
+<meta property="og:description" content="I built a simulated Dutch town to stress-test whether AI can save a healthcare system in crisis. 200 runs. Real data. Open code.">
 <meta property="og:image" content="https://cammelot.org/og-image.png">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://cammelot.org/">
@@ -15,7 +15,7 @@
 <!-- Twitter Card Meta Tags -->
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Cammelot: What Happens When AI Runs a Dutch Town's Healthcare?">
-<meta name="twitter:description" content="100 simulations. 45 pixel citizens. Real Dutch data. I built a town to see what happens when AI runs healthcare.">
+<meta name="twitter:description" content="I built a simulated Dutch town to stress-test whether AI can save a healthcare system in crisis. 200 runs. Real data. Open code.">
 <meta name="twitter:image" content="https://cammelot.org/og-image.png">
 
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='4' y='20' width='24' height='12' fill='%23c0392b'/%3E%3Crect x='4' y='16' width='6' height='4' fill='%23c0392b'/%3E%3Crect x='13' y='16' width='6' height='4' fill='%23c0392b'/%3E%3Crect x='22' y='16' width='6' height='4' fill='%23c0392b'/%3E%3Crect x='12' y='8' width='8' height='12' fill='%23e74c3c'/%3E%3Crect x='14' y='4' width='4' height='4' fill='%23c0392b'/%3E%3Crect x='14' y='24' width='4' height='8' fill='%23922b21'/%3E%3C/svg%3E">
@@ -1063,6 +1063,25 @@ code {
 <!-- Mobile TOC overlay -->
 <div class="mobile-toc-backdrop" id="mobile-toc-backdrop"></div>
 <nav class="mobile-toc-overlay" id="mobile-toc-overlay">
+  <div class="toc-part">The Simulation</div>
+  <a href="#opening" class="mobile-toc-link">Why I Built This</a>
+  <a href="#ist" class="mobile-toc-link">The Crisis (IST)</a>
+  <a href="#soll" class="mobile-toc-link">The Intervention (SOLL)</a>
+  <a href="#experiment" class="mobile-toc-link">The Experiment</a>
+  <a href="#roadmap" class="mobile-toc-link">What’s Next</a>
+  <div class="toc-part" style="margin-top:12px;">Chapters</div>
+  <a href="ch0.html" class="mobile-toc-link">0. Why I Built This</a>
+  <a href="ch1.html" class="mobile-toc-link">1. The Architecture</a>
+  <a href="ch2.html" class="mobile-toc-link">2. The Agentic Mesh</a>
+  <a href="ch3.html" class="mobile-toc-link">3. The Results</a>
+  <div class="toc-part" style="margin-top:12px;">Explore</div>
+  <a href="world.html" class="mobile-toc-link" style="color:#27ae60;">&#127918; Live Simulation</a>
+</nav>
+</header>
+
+<!-- Mobile TOC overlay -->
+<div class="mobile-toc-backdrop" id="mobile-toc-backdrop"></div>
+<nav class="mobile-toc-overlay" id="mobile-toc-overlay">
   <div class="toc-part">Chapters</div>
   <a href="ch0.html" class="mobile-toc-link">0. Why I Built This</a>
   <a href="ch1.html" class="mobile-toc-link">1. The Architecture</a>
@@ -1076,21 +1095,22 @@ code {
   <!-- Sidebar TOC -->
   <aside class="toc" id="toc">
     <div class="toc-label">Navigate</div>
-    <div class="toc-part">The Research</div>
+    <div class="toc-part">The Pitch</div>
     <a href="#hero" class="active">Cammelot</a>
-    <a href="#objective">The Objective</a>
-    <a href="#what-is">What Is Cammelot?</a>
-    <a href="#ist-soll">IST vs. SOLL</a>
-    <div class="toc-part">Transparency</div>
-    <a href="#methodology">Methodology</a>
-    <a href="#roadmap">Research Roadmap</a>
-    <div class="toc-part">Technical</div>
-    <a href="#agent-card">The Agent Card</a>
+    <a href="#opening">Why I Built This</a>
+    <div class="toc-part">The Simulation</div>
+    <a href="#ist">The Crisis (IST)</a>
+    <a href="#how-it-works">How It Works</a>
+    <a href="#soll">The Intervention (SOLL)</a>
+    <div class="toc-part">The Research</div>
+    <a href="#experiment">The Experiment</a>
+    <a href="#findings">What We Found</a>
+    <a href="#roadmap">What’s Next</a>
     <div class="toc-part">Chapters</div>
     <a href="ch0.html">0. Why I Built This</a>
     <a href="ch1.html">1. The Architecture</a>
     <a href="ch2.html">2. The Agentic Mesh</a>
-    <a href="ch3.html">3. What’s Coming</a>
+    <a href="ch3.html">3. The Results</a>
     <div class="toc-part" style="margin-top:12px;">Explore</div>
     <a href="world.html" style="color:#27ae60;">&#127918; Live Simulation</a>
   </aside>
@@ -1103,149 +1123,321 @@ code {
         <canvas id="hero-canvas"></canvas>
       </div>
       <h1>CAMME<span>L</span>OT</h1>
-      <p class="subtitle">A 16-Bit Stress Test for a 301,000-Worker Shortage</p>
+      <p class="subtitle">I built a town to stress-test whether AI can save Dutch healthcare.<br>Then I ran it 200 times.</p>
       <p class="byline">45 citizens &middot; 3 GPs &middot; 1 hospital &middot; 200 simulation runs &middot; Real Dutch data</p>
     </div>
 
     <div class="chapter-divider"><div class="diamond"></div></div>
 
-    <!-- The Objective -->
-    <section id="objective" class="research-section">
-      <h2>The Objective</h2>
-      <p>By 2035, the Netherlands faces a structural deficit of <strong>301,000 healthcare workers</strong>. While “AI” is often presented as a panacea, its systemic impact on patient outcomes and clinician workload is rarely quantified.</p>
-      <p>I work at Microsoft—you should assume I have a professional bias toward technology. To challenge that bias, I built Cammelot: a stochastic simulation designed to move the conversation from anecdotal “vibes” to measurable variables.</p>
+    <!-- ════════════════════════════════════════════ -->
+    <!-- SECTION 1: WHY I BUILT THIS                 -->
+    <!-- ════════════════════════════════════════════ -->
+
+    <section id="opening" class="research-section">
+      <h2>Why I Built This</h2>
+
+      <p>I work at Microsoft. You should assume I’m biased toward AI. That’s exactly why I built something that could prove me wrong. In several important ways, it did.</p>
+
+      <p>Both online and offline, I still see the AI conversation stuck in a strange place. Proponents treat it as a productivity tool — a faster way to write emails. Critics dismiss it as hype. Neither side shows their math. “AI will solve the zorginfarct.” <em>How? Which interventions? In what order? With what side effects?</em> “AI is overhyped.” <em>Compared to what? The system that’s already producing a 301,000-worker shortage by 2035?</em></p>
+
+      <p>I wanted a machine that produces numbers. Not predictions — outputs you can measure. Run it, measure it, break it, run it again. Two hundred times. With statistics.</p>
+
+      <p>So I built <strong>Cammelot</strong>: a simulated Dutch town. Forty-five citizens with names, ages, pre-existing conditions, and GP assignments. Three general practitioners. One hospital. The citizens walk around a 16-bit pixel map that looks like it belongs on a 1994 Super Nintendo — but their diseases are drawn from 2025 RIVM prevalence data, their healthcare costs from NZa tariffs, and their waiting times from the Treeknorm, the Dutch legal norm for specialist care access.</p>
+
+      <p>The intellectual lineage runs through Park et al.’s <em>“Generative Agents: Interactive Simulacra of Human Behavior”</em> (Stanford, 2023) — the paper that put 25 AI agents in a town called Smallville and watched them organize a Valentine’s Day party. My agents don’t organize parties. They enter waiting lists. They develop COPD. They wait twelve weeks for a cardiologist and sometimes they don’t make it.</p>
+
+      <div class="thesis-callout">
+        <p>Variables, Not Vibes</p>
+        <p class="subtitle">Every claim in this project is backed by simulation data, statistical tests, and published source parameters. The code is open. Tell me where I’m wrong.</p>
+      </div>
     </section>
 
     <div class="chapter-divider"><div class="diamond"></div></div>
 
-    <!-- What Is Cammelot? -->
-    <section id="what-is" class="research-section">
-      <h2>What Is Cammelot?</h2>
-      <p>Cammelot is an agent-based model of a representative Dutch town, built with 16-bit pixels but governed by rigorous data. It consists of <strong>45 citizens, 3 GPs, and 1 hospital</strong>. Unlike a traditional game, the behavior of these pixel-citizens is driven by:</p>
+    <!-- ════════════════════════════════════════════ -->
+    <!-- SECTION 2: THE CRISIS (IST)                 -->
+    <!-- ════════════════════════════════════════════ -->
+
+    <section id="ist" class="research-section">
+      <h2>The Crisis: IST</h2>
+
+      <p>IST is German for “current state.” In Cammelot, the IST world is today’s Dutch healthcare system, parameterized from CBS, NZa, LHV, and IZA data. It is the control group. Nothing is hypothetical — every number traces to a published source.</p>
+
+      <div class="metric-callout">
+        <div class="metric-card">
+          <div class="metric-value ist">301K</div>
+          <div class="metric-label">Worker Shortage by 2035</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value ist">30%</div>
+          <div class="metric-label">GP Time Lost to Admin</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value ist">12 wk</div>
+          <div class="metric-label">Specialist Wait (Treeknorm)</div>
+        </div>
+      </div>
+
+      <p>Your GP is operating at sixty-two percent capacity before they see their first patient. The effective capacity formula: <code>C_eff = C_total × (1 − 0.30 − 0.08) × 1.0 = 62%</code>. Thirty percent lost to paperwork. Eight percent to sick leave. No AI assistance. The efficiency multiplier is 1.0.</p>
+
+      <p>When citizens get sick in IST, they follow the same path real Dutch patients do: visit a GP, get triaged, get referred to a specialist, and wait. If the wait exceeds the Treeknorm threshold, their health deteriorates. The sicker you already are, the faster you decline. At some point, the sprite turns grey. A ghost. A preventable death caused not by the disease itself, but by the system’s inability to process the patient in time.</p>
+
+      <h3>How the Disease Engine Works</h3>
+
+      <p>Every citizen’s health trajectory is governed by <strong>Markov State Machines</strong> — probabilistic models calibrated to RIVM 2025 prevalence data. A patient with COPD transitions between states: healthy → mild → moderate → severe → critical. Each simulation tick, the chain rolls. There is no script. There is no predetermined outcome. The dice are loaded with real epidemiological data, and the results are stochastic.</p>
+
+      <p>Comorbidities compound the odds. Diabetes worsens cardiovascular disease (relative risk 2.0×). COPD accelerates heart failure (2.5×). Hypertension compounds both (1.8×). These aren’t arbitrary multipliers — they come from RIVM comorbidity research. A 72-year-old with diabetes and COPD isn’t just sicker. They’re on a steeper curve, and a 12-week wait hits them fundamentally differently than it hits a 35-year-old with a sports injury.</p>
+
+      <div class="component-grid">
+        <div class="component-card" style="border-left-color: #e74c3c;">
+          <h3 style="color: #e74c3c;">The Disease Engine</h3>
+          <p>Markov chains calibrated to <strong>RIVM prevalence data (2025)</strong> for COPD, Diabetes Type 2, Cardiovascular disease, Dementia, and Arthrosis. Each citizen’s trajectory is probabilistic, not scripted.</p>
+        </div>
+        <div class="component-card" style="border-left-color: #e74c3c;">
+          <h3 style="color: #e74c3c;">The Regulatory Framework</h3>
+          <p>Patient flow follows <strong>NZa tariffs</strong> and <strong>Treeknormen</strong> — the legal maximum waiting times for specialist care. GP consults cost €12.43. A prevented hospitalization saves €5,845. These are real numbers.</p>
+        </div>
+        <div class="component-card" style="border-left-color: #e74c3c;">
+          <h3 style="color: #e74c3c;">HP Drain: The Mortality Mechanism</h3>
+          <p>Every citizen has a health bar. When wait times exceed the Treeknorm, HP drains at a rate determined by severity, comorbidities, and administrative burden. When it hits zero, the citizen becomes a ghost. This is the model’s core claim: <em>system delay kills</em>.</p>
+        </div>
+      </div>
+    </section>
+
+    <div class="chapter-divider"><div class="diamond"></div></div>
+
+    <!-- ════════════════════════════════════════════ -->
+    <!-- SECTION 3: HOW IT WORKS (ARCHITECTURE)      -->
+    <!-- ════════════════════════════════════════════ -->
+
+    <section id="how-it-works" class="research-section">
+      <h2>How It Actually Works</h2>
+
+      <p>Every citizen in Cammelot is an autonomous agent running a cognitive loop. Each agent, every simulation tick, does three things:</p>
 
       <div class="component-grid">
         <div class="component-card">
-          <h3>The Disease Engine</h3>
-          <p>Markov State Machines calibrated to <strong>RIVM prevalence data (2025)</strong> for COPD, Diabetes Type 2, and Cardiovascular disease. Each citizen’s health trajectory is probabilistic, not scripted.</p>
+          <h3>1. Memory</h3>
+          <p>Every action — GP visits, referrals, queue entries, diagnoses — is logged as an <strong>HL7® FHIR® R4 resource</strong>. The international healthcare data standard. Not a toy format; the actual standard that hospitals use. Each agent’s “life history” is a chronological FHIR record: Conditions, Encounters, Observations, MedicationRequests.</p>
         </div>
         <div class="component-card">
-          <h3>The Regulatory Framework</h3>
-          <p>Patient flow and referral logic follow <strong>NZa tariffs</strong> and <strong>Treeknormen</strong>—the legal maximum waiting times for specialist care in the Netherlands.</p>
+          <h3>2. Reflection</h3>
+          <p>Agents assess their own state. A patient “realizes” their breathing is getting worse. A GP notices their burnout climbing. These reflections drive behavior — when to seek care, when to refer, when to escalate. This is the Park et al. architecture applied to healthcare instead of a social village.</p>
         </div>
         <div class="component-card">
-          <h3>The Data Layer</h3>
-          <p>Every clinical interaction is logged as an <strong>HL7® FHIR® R4 resource</strong>, ensuring the simulation architecture mirrors real-world Dutch healthcare standards.</p>
+          <h3>3. Planning</h3>
+          <p>Based on memory and reflection, agents act. Patients visit GPs. GPs triage and refer. Specialists process queues. The system runs forward one tick. Repeat 3,000 times — roughly ten simulated years.</p>
         </div>
       </div>
+
+      <p>Providers communicate through the <strong>A2A (Agent-to-Agent) protocol</strong>. Every GP and specialist publishes an Agent Card — a machine-readable description of their skills, current wait time, and queue depth. Referrals flow as structured messages. Wait times are real-time, not estimated. Think of it as an evolution of the Personal Health Train concept that the Netherlands pioneered through Health-RI — but where stateful agents discover each other, instead of stateless containers dispatched to known nodes.</p>
     </section>
 
     <div class="chapter-divider"><div class="diamond"></div></div>
 
-    <!-- IST vs. SOLL -->
-    <section id="ist-soll" class="research-section">
-      <h2>Architecture as Intervention: IST vs. SOLL</h2>
-      <p>In Cammelot, we don’t treat AI as a “magic wand” but as a fundamental shift in healthcare architecture. We test the system in two primary states:</p>
+    <!-- ════════════════════════════════════════════ -->
+    <!-- SECTION 4: THE INTERVENTION (SOLL)          -->
+    <!-- ════════════════════════════════════════════ -->
+
+    <section id="soll" class="research-section">
+      <h2>The Intervention: SOLL</h2>
+
+      <p>SOLL is German for “target state.” It is not “IST plus a chatbot.” It is a fundamentally different architecture for delivering care. SOLL changes the plumbing, not just the interface.</p>
+
+      <p>The premise: AI’s value in healthcare is not as a productivity tool for individual clinicians. It is as the connective tissue of a system that currently has none. The Dutch healthcare system doesn’t have a data problem — it has a “nobody can talk to anybody” problem. Only 11% of health data is interoperable today. The IZA target is 66% by 2030. SOLL models what happens when you actually get there.</p>
 
       <div class="ist-soll-compare">
         <div class="mode-card ist-card">
-          <h3>The IST <span class="mode-tag">(Status Quo)</span></h3>
-          <p>A reactive system burdened by <strong>30% administrative overhead</strong> and 12-week wait times. It operates on fragmented data where clinicians are the primary routers of information.</p>
+          <h3>IST <span class="mode-tag">(Status Quo)</span></h3>
+          <p>A reactive system. <strong>30% admin overhead</strong>. 12-week waits. Fragmented data. Clinicians are the primary routers of information. The GP is a switchboard operator who happens to also practice medicine.</p>
+          <p style="margin-top:0.8rem;font-family:Space Grotesk,sans-serif;font-size:0.85rem;"><strong>Effective capacity:</strong> <code>62%</code></p>
         </div>
         <div class="mode-card soll-card">
-          <h3>The SOLL <span class="mode-tag">(Target Architecture)</span></h3>
-          <p>An <strong>Agentic Mesh</strong> where providers utilize an A2A (Agent-to-Agent) protocol. Autonomous agents negotiate capacity and referrals in real-time based on machine-readable “Agent Cards.”</p>
+          <h3>SOLL <span class="mode-tag">(Target Architecture)</span></h3>
+          <p>An <strong>Agentic Mesh</strong>. Providers publish Agent Cards. Autonomous agents negotiate capacity and referrals in real-time. Digital Twins monitor patients continuously. Admin drops to &lt;5%. The system acts before the patient deteriorates.</p>
+          <p style="margin-top:0.8rem;font-family:Space Grotesk,sans-serif;font-size:0.85rem;"><strong>Effective capacity:</strong> <code>~121%</code></p>
         </div>
       </div>
 
-      <div class="hypothesis-box">
-        <strong>The Hypothesis:</strong> By automating the “handshake” between primary and secondary care, we can return 25% of a clinician’s day to direct patient care. Cammelot measures if that “returned time” actually translates to lower mortality.
+      <h3>What Makes SOLL Work (and What Doesn’t)</h3>
+
+      <p>SOLL is not a single intervention. It’s a stack of interventions that compound. This is deliberate — I’m not testing whether “one AI tool helps.” I’m testing what happens when you redesign the system end-to-end. The downside: when SOLL produces better outcomes, you can’t point to a single cause. That’s what the research posts are for — each one isolates a different mechanism.</p>
+
+      <div class="component-grid">
+        <div class="component-card">
+          <h3>Ambient AI Scribes</h3>
+          <p>Admin load drops from 30% to &lt;5%. The IZA 2030 target is 20% — I’m more aggressive. This is the single largest capacity unlock.</p>
+        </div>
+        <div class="component-card">
+          <h3>Digital Twin Monitoring</h3>
+          <p>Continuous risk assessment for every citizen. Alert threshold: 25% risk (vs. 60% in IST). Problems are flagged weeks before they become emergencies.</p>
+        </div>
+        <div class="component-card">
+          <h3>A2A Protocol &amp; Agent Cards</h3>
+          <p>Machine-readable discovery. Every provider publishes skills, wait times, and capacity. Referrals become structured negotiations, not faxes into the void.</p>
+        </div>
+        <div class="component-card">
+          <h3>Fairness Guardrail</h3>
+          <p>If any age group’s average wait exceeds 120% of the population mean, optimization biases auto-disable. Because optimizing for throughput without guardrails discriminates against the elderly. We found this out the hard way.</p>
+        </div>
       </div>
     </section>
 
     <div class="chapter-divider"><div class="diamond"></div></div>
 
-    <!-- Methodological Transparency -->
-    <section id="methodology" class="research-section">
-      <h2>Methodological Transparency &amp; Limitations</h2>
-      <p style="color:var(--text-muted);margin-bottom:1.5rem;">A model is only as useful as its constraints. To maintain intellectual honesty, we disclose the following:</p>
+    <!-- ════════════════════════════════════════════ -->
+    <!-- SECTION 5: THE EXPERIMENT                   -->
+    <!-- ════════════════════════════════════════════ -->
+
+    <section id="experiment" class="research-section">
+      <h2>The Experiment</h2>
+
+      <p>Every finding in this project comes from the same protocol: <strong>100 independent simulation runs per mode</strong> — 200 total. Each run simulates roughly 10 years (3,000 cycles). We use Welch’s t-test for significance, Cohen’s d for effect size, and 95% confidence intervals on every metric. Every null result is published alongside every positive one.</p>
 
       <div class="transparency-grid">
         <div class="transparency-item">
           <h3>Statistical Rigor</h3>
-          <p>We do not rely on single demos. The findings presented here are the result of <strong>200 independent simulation runs</strong> (100 per mode). We use Welch’s t-tests to determine statistical significance (<em>p</em> &lt; 0.05) across all health and economic metrics.</p>
+          <p>We do not rely on single demos. <strong>200 independent simulation runs</strong>, Welch’s t-tests for significance (<em>p</em> &lt; 0.05), Cohen’s d for effect size. If the data doesn’t clear the bar, we say so.</p>
         </div>
         <div class="transparency-item">
           <h3>The N=45 Constraint</h3>
-          <p>While a population of 45 is small, it allows for granular tracking of individual “Life Histories.” We use stochastic modeling to ensure that ghost events (preventable deaths) are not scripted, but the result of system failure.</p>
+          <p>A population of 45 is small. Stochastic variance is high — a single death in the 80+ group swings mortality by 33 percentage points. We flag this limitation every time it matters and show the raw data, not just averages.</p>
         </div>
         <div class="transparency-item">
           <h3>Bias Acknowledgment</h3>
-          <p>This simulation was built to find the “breaking points” of AI. Several runs demonstrated that <strong>detection is useless without clinical capacity</strong>—a finding that contradicts pure technological optimism.</p>
+          <p>I work at Microsoft. I chose the parameters, the architecture, and the disease models. A different builder would make different choices. The code is open — you can change anything and re-run. Several findings are embarrassing for the AI-optimist position. I report them anyway.</p>
         </div>
       </div>
     </section>
 
     <div class="chapter-divider"><div class="diamond"></div></div>
 
-    <!-- Research Roadmap -->
+    <!-- ════════════════════════════════════════════ -->
+    <!-- SECTION 6: WHAT WE FOUND                    -->
+    <!-- ════════════════════════════════════════════ -->
+
+    <section id="findings" class="research-section">
+      <h2>What We Found</h2>
+
+      <p>The headline results from 100 paired simulations:</p>
+
+      <div class="stats-table-wrap">
+        <table class="stats-table">
+          <thead>
+            <tr>
+              <th>Metric</th>
+              <th>IST</th>
+              <th>SOLL</th>
+              <th>Effect</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="metric-name">GP Burnout</td>
+              <td>7.9%</td>
+              <td>1.2%</td>
+              <td class="sig">d = 1.4+, p &lt; 0.001</td>
+            </tr>
+            <tr>
+              <td class="metric-name">Administrative Waste</td>
+              <td>€33.6K</td>
+              <td>€5.6K</td>
+              <td class="sig">−83%</td>
+            </tr>
+            <tr>
+              <td class="metric-name">Proactive Alerts</td>
+              <td>0 / run</td>
+              <td>147 / run</td>
+              <td class="sig">d = 2.92</td>
+            </tr>
+            <tr>
+              <td class="metric-name">Ketenzorg Enrollment</td>
+              <td>baseline</td>
+              <td>+159%</td>
+              <td class="sig">d = 0.94</td>
+            </tr>
+            <tr>
+              <td class="metric-name">Patient Mortality</td>
+              <td>11.75 deaths/yr</td>
+              <td>10.60 deaths/yr</td>
+              <td class="sig">d = 0.35</td>
+            </tr>
+            <tr>
+              <td class="metric-name">Age Fairness (Bias Index)</td>
+              <td>0.92</td>
+              <td>0.88</td>
+              <td class="sig">d = 0.29, guardrail fired 98%</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="hypothesis-box">
+        <strong>The finding that surprised me most:</strong> Mortality only became statistically significant after I stopped optimizing the AI and started fixing the plumbing — referral capacity limits, proper triage priority, signed agent cards. AI doesn’t save lives by being smart. It saves lives by not wasting the doctor’s time on paperwork and not losing the referral in a broken queue.
+      </div>
+
+      <p>Several results contradicted the optimist position. Detection without clinical capacity is documentation of decline, not intervention. The system pushed back against the elderly when optimized for throughput. And one age group actually did <em>worse</em> in SOLL during early transition — before full interoperability kicked in.</p>
+
+      <p>These are the findings that make me trust the model. A simulation that only produces good news is a brochure. Cammelot produces uncomfortable news, and I think that’s what makes it useful.</p>
+    </section>
+
+    <div class="chapter-divider"><div class="diamond"></div></div>
+
+    <!-- ════════════════════════════════════════════ -->
+    <!-- SECTION 7: WHAT’S NEXT (ROADMAP)              -->
+    <!-- ════════════════════════════════════════════ -->
+
     <section id="roadmap" class="research-section">
-      <h2>The Research Roadmap</h2>
-      <p style="margin-bottom:1.5rem;">We are releasing a series of research posts detailing the results of our 200-run simulation series. Each post isolates a specific structural question within the Dutch <em>Zorgstelsel</em>.</p>
+      <h2>What’s Next</h2>
+
+      <p>Over the coming weeks, we’re releasing a series of research posts. Each one isolates a different mechanism within the Dutch <em>zorgstelsel</em> and asks: does this specific link in the chain hold?</p>
 
       <table class="roadmap-table">
         <thead>
           <tr>
             <th>Post</th>
             <th>The Primary Question</th>
-            <th>Key Focus</th>
+            <th>Focus</th>
             <th></th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td><strong>01: The Alternative</strong></td>
+            <td><strong>00: The Setup</strong></td>
             <td>Why a skeptic’s perspective is required for the 2035 crisis</td>
-            <td>Systemic Workforce Gaps</td>
+            <td>Systemic Gaps</td>
             <td><a href="ch0.html" class="read-link">→</a></td>
           </tr>
           <tr>
-            <td><strong>02: The Admin Tax</strong></td>
+            <td><strong>01: The Admin Tax</strong></td>
             <td>Does a 25% reduction in paperwork directly save lives?</td>
             <td>GP Capacity &amp; ROI</td>
             <td><a href="ch1.html" class="read-link">→</a></td>
           </tr>
           <tr>
-            <td><strong>03: The Waiting List</strong></td>
+            <td><strong>02: The Waiting List</strong></td>
             <td>Why 12-week waits are mathematically age-discriminatory</td>
             <td>Treeknorm Impact</td>
             <td><span class="coming-soon-badge">Soon</span></td>
           </tr>
           <tr>
-            <td><strong>04: The Inequality Drift</strong></td>
+            <td><strong>03: The Inequality Drift</strong></td>
             <td>Does AI triage amplify existing disparities in care?</td>
             <td>Algorithmic Fairness</td>
             <td><span class="coming-soon-badge">Soon</span></td>
           </tr>
           <tr>
-            <td><strong>05: The Digital Twin Bet</strong></td>
+            <td><strong>04: The Digital Twin Bet</strong></td>
             <td>Can proactive risk-scoring prevent the ER “Cliff”?</td>
             <td>Predictive Monitoring</td>
             <td><span class="coming-soon-badge">Soon</span></td>
           </tr>
         </tbody>
       </table>
-    </section>
 
-    <div class="chapter-divider"><div class="diamond"></div></div>
+      <p>Beyond the health series, we’ll cover the architecture (FHIR memory, A2A protocol, security red-teaming), the applied research methodology (how to run your own simulation batch), and how the same structural model generalizes to education, retail, and government services.</p>
 
-    <!-- The Agent Card -->
-    <section id="agent-card" class="research-section">
-      <h2>Technical Breakdown: The Agent Card</h2>
-      <p>For those interested in the underlying protocol, Cammelot utilizes a decentralized discovery model. Every GP and hospital publishes an <strong>Agent Card</strong>—a machine-readable description of their current wait times, specialty codes, and capacity.</p>
-      <p>This architecture replaces central databases with a “Mesh” where the patient’s context travels with the referral. It is a proof-of-concept for the <strong>Wegiz requirements</strong> for FHIR R4 implementation in the Netherlands, moving us toward a system where <em>action</em> is as interoperable as <em>data</em>.</p>
-      <div style="text-align:center;margin:1.5rem 0;">
-        <a href="ch1.html" class="cta-button">Read the Technical Deep Dive →</a>
-      </div>
+      <p>The code is open source. The statistics are published. I am genuinely looking for people who think I’m wrong — especially if they can explain why.</p>
     </section>
 
     <div class="chapter-divider"><div class="diamond"></div></div>
@@ -1258,7 +1450,7 @@ code {
     <!-- Footer line -->
     <div class="footer-line">
       <p><strong>Cammelot:</strong> 45 citizens. 200 simulations. Real Dutch data.</p>
-      <p class="sources">Data sources: CBS &middot; RIVM &middot; NZa &middot; IZA 2023–2026.<br>Built by Simone Cammel. <a href="https://github.com/cammeleon66/Cammelot">View the FHIR Logs on GitHub</a></p>
+      <p class="sources">Data sources: CBS &middot; RIVM &middot; NZa &middot; IZA 2023–2026.<br>Built by Simone Cammel. <a href="https://github.com/cammeleon66/Cammelot">View on GitHub</a></p>
     </div>
 
 
@@ -1272,7 +1464,7 @@ code {
 <!-- Footer -->
 <footer class="site-footer">
   <p>CAMMELOT: 45 pixel citizens. 100 simulations. Real Dutch data.</p>
-  <p style="margin-top:0.4rem;">Built by <a href="https://www.linkedin.com/in/simonecammel/" target="_blank">Simone Cammel</a> &middot; <a href="https://github.com/cammeleon66/Cammelot" target="_blank">View on GitHub</a></p>
+  <p style="margin-top:0.4rem;">Built by <a href="https://www.linkedin.com/in/simonecammel/" target="_blank">Simone Cammel</a> &middot; </p>
   <div class="footer-sources">
     Data sources: CBS (Centraal Bureau voor de Statistiek) &middot; RIVM (Rijksinstituut voor Volksgezondheid en Milieu) &middot; NZa (Nederlandse Zorgautoriteit) &middot; LHV &middot; IZA 2023-2026
   </div>
