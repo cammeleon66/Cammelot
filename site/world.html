@@ -939,7 +939,7 @@ const MAP_H = 720;  // image pixel height
 mapImg.onload = () => { mapLoaded = true; mapImgW = mapImg.naturalWidth; mapImgH = mapImg.naturalHeight; mapCacheDirty = true; };
 mapImg.onerror = () => {
   // Try alternate paths (relative to HTML location)
-  const alts = ['../assets/map2.jpeg', '../assets/map.png', '../assets/map.png.jpeg',
+  const alts = ['./map2.jpeg', '../assets/map2.jpeg', '../assets/map.png', '../assets/map.png.jpeg',
                 '../../assets/map2.jpeg', '../../assets/map.png',
                 '/assets/map2.jpeg', '/assets/map.png'];
   let idx = 0;
@@ -9493,6 +9493,7 @@ document.getElementById('play-btn').addEventListener('click', function() {
   try {
     document.getElementById('play-overlay').style.display = 'none';
     startNewGame();
+    render();
     // Start auto-run at 50ms tick speed
     if (!autoTimer) {
       autoTimer = setInterval(tick, 50);
@@ -9509,6 +9510,7 @@ document.getElementById('play-overlay').addEventListener('click', function(e) {
     document.getElementById('play-btn').click();
   }
 });
+try { render(); } catch(e) {}
 } // end non-embed block
 // Sprint 17.3: Start attract mode timer
 // Sprint 29: Attract mode disabled for cleaner UX
