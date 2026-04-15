@@ -9215,6 +9215,7 @@ function loadGame(){ return false; }
 function showSavePrompt(){ startNewGame(); }
 
 function startNewGame(){
+  cycle=30; // Start at day phase so citizens are visible immediately
   updateUI();initCharSprites();buildWaypointGraph();initAgentBehaviors();seedInitialCrisis(agents);loop();
 }
 
@@ -9541,8 +9542,8 @@ if(EMBED_MODE){
   var embedCycle=parseInt(embedParams.get('cycle'),10);
   if(embedCycle>0){for(var i=0;i<embedCycle&&i<10000;i++)tick();}
 } else {
-// Website version: auto-start immediately (no play button needed)
-console.log('Cammelot: auto-starting...');
+// Website version: auto-start paused, show tour first
+console.log('Cammelot: auto-starting (paused)...');
 stopLoadingAnimation();
 document.getElementById('load').classList.add('go');
 document.getElementById('play-overlay').style.display = 'none';
@@ -9550,11 +9551,9 @@ try {
   startNewGame();
   console.log('Cammelot: startNewGame complete, rendering...');
   render();
-  if (!autoTimer) {
-    autoTimer = setInterval(tick, 500);
-    var playBtnInSim = document.getElementById('btn-play');
-    if (playBtnInSim) playBtnInSim.textContent = '⏸ Pause';
-  }
+  // Do NOT start autoTimer yet — wait for tour to end or be skipped
+  var playBtnInSim = document.getElementById('btn-play');
+  if (playBtnInSim) playBtnInSim.textContent = '▶ Play';
 } catch(e) {
   console.error('Cammelot init error:', e);
 }
@@ -10463,38 +10462,38 @@ document.getElementById('btn-about').addEventListener('click', function() {
 // Tour definitions
 const TOURS = {
   patient_journey: {
-    name: "The Patient Journey",
-    desc: "Follow a citizen from health to sickness to care — or death.",
+    name: "Welcome to Cammelot",
+    desc: "A 60-second intro to the simulation and how to explore it.",
     steps: [
-      { text: "This is Cammelot — a town of 5,000 AI citizens. Each one has a name, age, medical history, and daily life. Click any citizen to see their story.", highlight: '#cv' },
-      { text: "When citizens get sick, they visit their GP. Watch the queue form as demand exceeds capacity.", highlight: '#top' },
-      { text: "If the GP can't treat them, they're referred to the hospital. The referral enters the specialist queue.", highlight: '#cv' },
-      { text: "The wait begins. In IST mode, this can take 12+ weeks — three times the legal maximum.", highlight: '#hW' },
-      { text: "While waiting, their HP drains. The longer the wait and the more severe the condition, the faster they decline.", highlight: '#cv' },
-      { text: "When HP reaches 0… they become a ghost. A preventable death — caused not by disease, but by system delay.", highlight: '#hG' }
+      { text: "Welcome to Cammelot \u2014 a simulated Dutch town of 5,000 AI citizens. Each one has a name, age, health profile, and daily routine. Let\u2019s show you around.", highlight: '#cv' },
+      { text: "Try clicking on a citizen walking through town. You\u2019ll see their health data: HP, conditions, GP visits, and life history.", highlight: '#cv' },
+      { text: "Now try clicking on a GP practice (the building icons). You\u2019ll see the doctor\u2019s queue, burnout level, and daily capacity.", highlight: '#cv' },
+      { text: "See the \ud83d\udcf0 Gazette button? Click it anytime to read town trends, health news, and system stats \u2014 like a local newspaper.", highlight: '#btn-gazette' },
+      { text: "Notice the IST / SOLL toggle at the top. IST shows today\u2019s healthcare reality. SOLL shows what an AI-native system could achieve. Toggle between them to compare.", highlight: '#bi' },
+      { text: "That\u2019s it! Explore freely \u2014 click citizens, read the Gazette, toggle IST/SOLL, and watch how the system evolves over time. Enjoy Cammelot.", highlight: '#cv' }
     ]
   },
   ist_vs_soll: {
     name: "IST vs SOLL",
     desc: "Compare current reality with an AI-native healthcare future.",
     steps: [
-      { text: "You're watching IST mode — the current Dutch healthcare system. GPs drown in paperwork while patients wait.", highlight: '#bi' },
-      { text: "GPs lose 30% of their time to administration. That means effective capacity is only 62% — nearly 4 in 10 consultation slots wasted on forms.", highlight: '#hE' },
-      { text: "Click SOLL to see what AI-native healthcare could look like. Admin drops to 5%, capacity jumps to 83%.", highlight: '#bs' },
-      { text: "Watch the wait times fall. AI triage ensures patients are seen within the Treeknorm — the 4-week legal maximum.", highlight: '#hW' },
-      { text: "Fewer deaths. More treatments completed. The same population, the same diseases — but a better system.", highlight: '#hG' },
-      { text: "Toggle between IST and SOLL anytime. The difference in outcomes is the argument for healthcare AI.", highlight: '.mode-tog' }
+      { text: "You\u2019re watching IST mode \u2014 the current Dutch healthcare system. GPs are stretched thin between patients and paperwork.", highlight: '#bi' },
+      { text: "In IST mode, GPs lose roughly 30% of their time to administration. That means effective capacity is only about 62%.", highlight: '#hE' },
+      { text: "Click SOLL to see what AI-native healthcare could look like. Admin drops to 5%, and effective capacity jumps to 83%.", highlight: '#bs' },
+      { text: "Watch the wait times fall. AI triage helps ensure patients are seen within the Treeknorm \u2014 the 4-week legal maximum.", highlight: '#hW' },
+      { text: "Same population, same diseases \u2014 but better outcomes. More treatments completed, fewer citizens falling through the cracks.", highlight: '#cv' },
+      { text: "Toggle between IST and SOLL anytime using these buttons. The difference in outcomes makes the case for healthcare AI.", highlight: '.mode-tog' }
     ]
   },
   gp_day: {
-    name: "A GP's Day",
-    desc: "See what a Dutch GP deals with in a single day.",
+    name: "Explore a GP Practice",
+    desc: "Click a practice to discover what a Dutch GP deals with daily.",
     steps: [
-      { text: "Click a GP practice on the map to see what the doctor deals with daily. Each practice serves hundreds of citizens.", highlight: '#cv' },
-      { text: "30% of their time is paperwork. Not patients — paperwork. Letters, referrals, insurance forms, digital records.", highlight: '#hE' },
-      { text: "The queue keeps growing. Each GP can only see a limited number of patients per day (based on NZa rates).", highlight: '#cv' },
-      { text: "When the GP can't handle a case — complex conditions, specialist needs — they refer to the hospital.", highlight: '#cv' },
-      { text: "But the hospital has its own queue. The system bottlenecks. Patients wait, deteriorate, and sometimes die from the delay.", highlight: '#hW' }
+      { text: "Click any GP practice on the map to inspect it. Each practice serves hundreds of citizens with limited daily slots.", highlight: '#cv' },
+      { text: "Inside, you\u2019ll see the GP\u2019s queue, burnout level, and how many patients they can realistically see today.", highlight: '#cv' },
+      { text: "In IST mode, a big chunk of the GP\u2019s day is spent on paperwork \u2014 referral letters, insurance forms, and records.", highlight: '#hE' },
+      { text: "When a GP can\u2019t handle a case, they refer to a specialist. Click the hospital to see those queues building up.", highlight: '#cv' },
+      { text: "Now switch to SOLL and click the same practice again. Notice how AI assistance frees up the GP\u2019s time for actual patient care.", highlight: '#bs' }
     ]
   }
 };
@@ -10674,11 +10673,21 @@ function cleanupTourElements() {
   tourElements.panel = null;
 }
 
+function resumeSimulation() {
+  if (!autoTimer) {
+    autoTimer = setInterval(tick, 500);
+    var pb = document.getElementById('btn-play');
+    if (pb) pb.textContent = '\u23f8 Pause';
+    console.log('Cammelot: simulation resumed');
+  }
+}
+
 function endTour() {
   if (activeTour) { markTourComplete(activeTour.id); }
   cleanupTourElements();
   activeTour = null;
   tourStep = 0;
+  resumeSimulation();
 }
 
 // 📚 Tours button
@@ -10689,20 +10698,9 @@ document.getElementById('btn-tours').addEventListener('click', function() {
 
 // ═══ FIRST VISIT: Auto-prompt tour ═══
 (function() {
-  var TOUR_PROMPT_KEY = 'cammelot-tour-prompted';
-  // Always show tour on load (removed localStorage gate)
-
-  // Show prompt 4s after game starts (after intro pan)
-  var checkInterval = setInterval(function() {
-    if (typeof cycle !== 'undefined' && cycle > 2) {
-      clearInterval(checkInterval);
-      localStorage.setItem(TOUR_PROMPT_KEY, '1');
-      showFirstVisitPrompt();
-    }
-  }, 1000);
-
-  // Auto-cancel after 30s if game never starts
-  setTimeout(function() { clearInterval(checkInterval); }, 30000);
+  // Show tour prompt immediately (sim is paused until tour ends or is skipped)
+  // Use a short delay to let the initial render complete
+  setTimeout(function() { showFirstVisitPrompt(); }, 300);
 
   function showFirstVisitPrompt() {
     var prompt = document.createElement('div');
@@ -10710,8 +10708,8 @@ document.getElementById('btn-tours').addEventListener('click', function() {
     prompt.innerHTML =
       '<div class="fvp-icon">🏰</div>' +
       '<div class="fvp-text">' +
-        '<strong>First time in Cammelot?</strong><br>' +
-        '<span>Take a 60-second guided tour to see how the simulation works.</span>' +
+        '<strong>Welcome to Cammelot!</strong><br>' +
+        '<span>Take a 60-second guided tour, or jump right in.</span>' +
       '</div>' +
       '<div class="fvp-btns">' +
         '<button class="tour-btn primary" id="fvp-start">Start Tour</button>' +
@@ -10731,15 +10729,17 @@ document.getElementById('btn-tours').addEventListener('click', function() {
     document.getElementById('fvp-skip').addEventListener('click', function() {
       prompt.classList.remove('visible');
       setTimeout(function() { prompt.remove(); }, 400);
+      resumeSimulation();
     });
 
-    // Auto-dismiss after 15s
+    // Auto-dismiss after 20s and resume
     setTimeout(function() {
       if (prompt.parentNode) {
         prompt.classList.remove('visible');
         setTimeout(function() { if (prompt.parentNode) prompt.remove(); }, 400);
+        resumeSimulation();
       }
-    }, 15000);
+    }, 20000);
   }
 })();
 
