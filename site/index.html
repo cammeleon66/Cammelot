@@ -256,7 +256,10 @@ body.dark-theme::after {
 .chapter > .chart-container,
 .chapter > .replay-embed,
 .chapter > .stats-table-wrap,
-.chapter > blockquote {
+.chapter > blockquote,
+.chapter > h3,
+.chapter > details,
+.chapter > .insight-callout {
   opacity: 0; transform: translateY(24px);
   transition: opacity 0.7s ease, transform 0.7s ease;
 }
@@ -273,6 +276,9 @@ body.dark-theme::after {
 .chapter.visible > .replay-embed { opacity: 1; transform: translateY(0); transition-delay: 300ms; }
 .chapter.visible > .stats-table-wrap { opacity: 1; transform: translateY(0); transition-delay: 300ms; }
 .chapter.visible > blockquote { opacity: 1; transform: translateY(0); transition-delay: 350ms; }
+.chapter.visible > h3 { opacity: 1; transform: translateY(0); transition-delay: 200ms; }
+.chapter.visible > details { opacity: 1; transform: translateY(0); transition-delay: 300ms; }
+.chapter.visible > .insight-callout { opacity: 1; transform: translateY(0); transition-delay: 300ms; }
 /* Footnote bodies should be visible when open */
 .chapter .footnote-body { opacity: 1; transform: none; }
 
@@ -293,6 +299,82 @@ body.dark-theme::after {
 }
 .chapter p { margin-bottom: 1.1rem; }
 .chapter p + p { text-indent: 0; }
+
+/* ── H3 Section Breaks ── */
+.chapter h3 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.15rem; font-weight: 600; line-height: 1.3;
+  color: var(--text);
+  margin: 2.5rem 0 1rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+  letter-spacing: -0.01em;
+}
+.chapter h3:first-of-type {
+  margin-top: 2rem;
+}
+
+/* ── Collapsible Details ── */
+.chapter details {
+  margin: 1.2rem 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--card-bg);
+  transition: background 0.4s, border-color 0.4s;
+}
+.chapter details summary {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.85rem; font-weight: 600;
+  padding: 0.8rem 1.2rem;
+  cursor: pointer;
+  color: var(--text);
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.chapter details summary::-webkit-details-marker { display: none; }
+.chapter details summary::before {
+  content: '▸';
+  font-size: 0.7rem;
+  transition: transform 0.2s;
+  color: var(--text-muted);
+}
+.chapter details[open] summary::before {
+  transform: rotate(90deg);
+}
+.chapter details .details-content {
+  padding: 0 1.2rem 1rem;
+  font-size: 0.92rem;
+  line-height: 1.65;
+  color: var(--text);
+}
+.chapter details .details-content p { margin-bottom: 0.8rem; }
+.chapter details .details-content ul { padding-left: 1.2rem; margin-bottom: 0.8rem; }
+.chapter details .details-content li { margin-bottom: 0.3rem; font-size: 0.9rem; }
+
+/* ── Insight Callout ── */
+.insight-callout {
+  background: var(--green-light);
+  border-left: 3px solid var(--green);
+  border-radius: 0 6px 6px 0;
+  padding: 1rem 1.2rem;
+  margin: 1.5rem 0;
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+.insight-callout.warning {
+  background: var(--red-light);
+  border-left-color: var(--red);
+}
+.insight-callout strong {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: block;
+  margin-bottom: 0.3rem;
+}
 
 /* ── Hero ── */
 .hero {
@@ -649,6 +731,10 @@ code {
   .pull-quote { margin: 1.5rem 0; padding: 1rem 0; }
   .replay-embed { padding: 1rem; font-size: 0.8rem; }
   .replay-embed code { font-size: 0.65rem; white-space: pre-wrap; word-break: break-all; }
+  .chapter h3 { font-size: 1rem; margin: 2rem 0 0.8rem; padding-top: 1.2rem; }
+  .chapter details summary { font-size: 0.8rem; padding: 0.6rem 1rem; }
+  .chapter details .details-content { padding: 0 1rem 0.8rem; font-size: 0.88rem; }
+  .insight-callout { font-size: 0.88rem; padding: 0.8rem 1rem; }
   .site-footer { padding: 2rem 1rem; }
   .hamburger { display: block; }
   .mobile-toc-overlay { display: block; }
@@ -785,75 +871,88 @@ code {
 
       <p>The simulation runs in two modes. Each is a complete set of parameters - not a toggle, but a different reality.</p>
 
-      <p><strong>IST ("Ist-Zustand" - the current state):</strong></p>
+      <details>
+        <summary>IST ("Ist-Zustand" - the current state) — full parameters</summary>
+        <div class="details-content">
+          <p>This is today's Dutch healthcare system, parameterized from CBS, NZa, LHV, and IZA data:</p>
+          <ul>
+            <li><strong>30% of GP time</strong> lost to administrative paperwork (NZa/LHV)</li>
+            <li><strong>8% workforce capacity</strong> lost to sick leave (CBS)</li>
+            <li><strong>12-week Treeknorm ceiling</strong> for specialist care (NZa)</li>
+            <li><strong>Basic clinical triage</strong> - severity-based, but without AI enhancement</li>
+            <li><strong>No proactive monitoring</strong> - problems are detected when patients show up</li>
+            <li><strong>No AI assistance</strong> - efficiency multiplier is 1.0</li>
+            <li><strong>Standard disease progression</strong> - Markov chains tick identically for treated and untreated patients</li>
+          </ul>
+          <p>The effective GP capacity in IST: <code>C_total × (1 - 0.30 - 0.08) × 1.0 = 62%</code>. Your GP is operating at sixty-two percent before they see their first patient.</p>
+        </div>
+      </details>
 
-      <p>This is today's Dutch healthcare system, parameterized from CBS, NZa, LHV, and IZA data:</p>
+      <details>
+        <summary>SOLL ("Soll-Zustand" - the target state) — full parameters</summary>
+        <div class="details-content">
+          <p>This is what an AI-native primary care system <em>could</em> look like. Every parameter has a source, and I'll be honest about which are evidence-based and which are aspirational:</p>
+          <ul>
+            <li><strong>5% admin load</strong> - ambient AI scribes handle documentation (IZA 2030 target: 20%. I'm more aggressive.)</li>
+            <li><strong>5% sick leave</strong> - reduced through better workforce support (aspirational)</li>
+            <li><strong>4-week Treeknorm</strong> - AI-driven scheduling + capacity optimization (aspirational - the hardest one)</li>
+            <li><strong>Severity-based triage</strong> - sickest patients jump the queue, not first-come</li>
+            <li><strong>Digital Twin monitoring</strong> - continuous risk assessment for every citizen. Alert threshold: 25% risk (vs. 60% in IST). This means problems are flagged much earlier.</li>
+            <li><strong>1.34× AI efficiency multiplier</strong> - GPs see 34% more patients effectively (IZA/Vilans research estimate)</li>
+            <li><strong>0.3× HP drain</strong> - patients waiting in SOLL deteriorate 70% slower (because of active monitoring + ketenzorg)</li>
+            <li><strong>Treatment-modified disease progression</strong> - ketenzorg and hospital care actually slow Markov transitions: 20% deceleration on worsening, 5% chance of improving one state</li>
+            <li><strong>Fairness guardrail</strong> - if any age group's average wait exceeds 120% of the population mean, optimization biases auto-disable</li>
+          </ul>
+          <p>The effective GP capacity in SOLL: <code>C_total × (1 - 0.05 - 0.05) × 1.34 = ~121%</code>. The same GP, nearly double the output.</p>
+        </div>
+      </details>
 
-      <ul>
-        <li><strong>30% of GP time</strong> lost to administrative paperwork (NZa/LHV)</li>
-        <li><strong>8% workforce capacity</strong> lost to sick leave (CBS)</li>
-        <li><strong>12-week Treeknorm ceiling</strong> for specialist care (NZa)</li>
-        <li><strong>Basic clinical triage</strong> - severity-based, but without AI enhancement</li>
-        <li><strong>No proactive monitoring</strong> - problems are detected when patients show up</li>
-        <li><strong>No AI assistance</strong> - efficiency multiplier is 1.0</li>
-        <li><strong>Standard disease progression</strong> - Markov chains tick identically for treated and untreated patients</li>
-      </ul>
-
-      <p>The effective GP capacity in IST: <code>C_total × (1 - 0.30 - 0.08) × 1.0 = 62%</code>. Your GP is operating at sixty-two percent before they see their first patient.</p>
-
-      <p><strong>SOLL ("Soll-Zustand" - the target state):</strong></p>
-
-      <p>This is what an AI-native primary care system <em>could</em> look like. Every parameter has a source, and I'll be honest about which are evidence-based and which are aspirational:</p>
-
-      <ul>
-        <li><strong>5% admin load</strong> - ambient AI scribes handle documentation (IZA 2030 target: 20%. I'm more aggressive.)</li>
-        <li><strong>5% sick leave</strong> - reduced through better workforce support (aspirational)</li>
-        <li><strong>4-week Treeknorm</strong> - AI-driven scheduling + capacity optimization (aspirational - the hardest one)</li>
-        <li><strong>Severity-based triage</strong> - sickest patients jump the queue, not first-come</li>
-        <li><strong>Digital Twin monitoring</strong> - continuous risk assessment for every citizen. Alert threshold: 25% risk (vs. 60% in IST). This means problems are flagged much earlier.</li>
-        <li><strong>1.34× AI efficiency multiplier</strong> - GPs see 34% more patients effectively (IZA/Vilans research estimate)</li>
-        <li><strong>0.3× HP drain</strong> - patients waiting in SOLL deteriorate 70% slower (because of active monitoring + ketenzorg)</li>
-        <li><strong>Treatment-modified disease progression</strong> - ketenzorg and hospital care actually slow Markov transitions: 20% deceleration on worsening, 5% chance of improving one state</li>
-        <li><strong>Fairness guardrail</strong> - if any age group's average wait exceeds 120% of the population mean, optimization biases auto-disable</li>
-      </ul>
-
-      <p>The effective GP capacity in SOLL: <code>C_total × (1 - 0.05 - 0.05) × 1.34 = ~121%</code>. The same GP, nearly double the output.</p>
+      <div class="insight-callout">
+        <strong>Key difference</strong>
+        IST runs at 62% GP capacity. SOLL runs at 121%. Same GPs, same town — different architecture.
+      </div>
       <h3>Wait - that's a lot of changes at once</h3>
 
       <p>Yes, and that's deliberate.</p>
 
       <p>I'm not testing whether "one AI tool helps." I'm testing what happens when you redesign the system end-to-end. SOLL isn't "IST plus a chatbot." It's a fundamentally different architecture.</p>
 
-      <p>The downside: when SOLL produces better outcomes, you can't point to a single cause. Was it the admin relief? The triage? The Digital Twins? The treatment effect? The Treeknorm reduction?</p>
+      <div class="insight-callout warning">
+        <strong>The catch</strong>
+        When SOLL produces better outcomes, you can't point to a single cause. Was it the admin relief? The triage? The Digital Twins? That's what the five posts are for — each one isolates a different mechanism.
+      </div>
 
-      <p>That's what the five posts in this series are for. Each one isolates a different mechanism and asks: does this specific link in the chain hold?</p>
-
-      <p>Spoiler: some do. Some don't. And one mechanism turned out to matter more than all the others combined.</p>
+      <p>Spoiler: some hold. Some don't. And one mechanism turned out to matter more than all the others combined.</p>
       <h3>The methodology: why you should take this semi-seriously</h3>
 
-      <p>Every finding in this series comes from the same protocol:</p>
-
-      <ul>
-        <li><strong>100 independent runs per mode</strong> (IST and SOLL) - 200 total simulations</li>
-        <li><strong>3,000 cycles per run</strong> - roughly 10 simulated years</li>
-        <li><strong>Welch's t-test</strong> for significance (unequal variances)</li>
-        <li><strong>Cohen's d</strong> for effect size (how big is the difference, not just "is it nonzero")</li>
-        <li><strong>95% confidence intervals</strong> on every metric</li>
-        <li><strong>Every null result published</strong> alongside every positive one</li>
-      </ul>
-
-      <p>N = 45 agents is small. I know. The stochastic variance is high - especially for elderly subgroups, where 3 agents per run means a single death swings mortality by 33 percentage points. I'll flag this limitation every time it matters. And I'll show you the raw data, not just the averages.</p>
+      <details open>
+        <summary>Statistical protocol — 200 simulation runs</summary>
+        <div class="details-content">
+          <ul>
+            <li><strong>100 independent runs per mode</strong> (IST and SOLL) - 200 total simulations</li>
+            <li><strong>3,000 cycles per run</strong> - roughly 10 simulated years</li>
+            <li><strong>Welch's t-test</strong> for significance (unequal variances)</li>
+            <li><strong>Cohen's d</strong> for effect size (how big is the difference, not just "is it nonzero")</li>
+            <li><strong>95% confidence intervals</strong> on every metric</li>
+            <li><strong>Every null result published</strong> alongside every positive one</li>
+          </ul>
+          <p>N = 45 agents is small. I know. The stochastic variance is high - especially for elderly subgroups, where 3 agents per run means a single death swings mortality by 33 percentage points. I'll flag this limitation every time it matters. And I'll show you the raw data, not just the averages.</p>
+        </div>
+      </details>
       <h3>Why you should be skeptical of me</h3>
 
-      <p>Three reasons:</p>
+      <details>
+        <summary>Three reasons to discount this work</summary>
+        <div class="details-content">
+          <p><strong>1. I work at Microsoft.</strong> My employer builds and sells AI products. If this simulation showed "AI fixes everything," you should discount it heavily. It doesn't - several findings are embarrassing for the AI-optimist position - but the conflict of interest is real and I won't pretend otherwise.</p>
 
-      <p><strong>1. I work at Microsoft.</strong> My employer builds and sells AI products. If this simulation showed "AI fixes everything," you should discount it heavily. It doesn't - several findings are embarrassing for the AI-optimist position - but the conflict of interest is real and I won't pretend otherwise.</p>
+          <p><strong>2. I built the simulation.</strong> I chose the parameters, the architecture, and the disease models. A different builder would make different choices. The code is open - you can change anything and re-run.</p>
 
-      <p><strong>2. I built the simulation.</strong> I chose the parameters, the architecture, and the disease models. A different builder would make different choices. The code is open - you can change anything and re-run.</p>
+          <p><strong>3. N = 45.</strong> This is a proof of concept, not a clinical trial. The findings are directional, not definitive. I use proper statistics to separate signal from noise, but small populations have fundamental power limitations that no amount of t-testing can overcome.</p>
 
-      <p><strong>3. N = 45.</strong> This is a proof of concept, not a clinical trial. The findings are directional, not definitive. I use proper statistics to separate signal from noise, but small populations have fundamental power limitations that no amount of t-testing can overcome.</p>
-
-      <p>What I <em>can</em> promise: I report every finding honestly. When the data contradicts my hypothesis, I say so. When a result is not significant, I don't dress it up. When I got something wrong in an earlier analysis, I show the correction.</p>
+          <p>What I <em>can</em> promise: I report every finding honestly. When the data contradicts my hypothesis, I say so. When a result is not significant, I don't dress it up. When I got something wrong in an earlier analysis, I show the correction.</p>
+        </div>
+      </details>
       <h3>What's coming</h3>
 
       <p>Over the next five posts, I'll walk through what happened - in the order I discovered it:</p>
@@ -1032,30 +1131,39 @@ code {
 
       <p>It sounds reasonable. It doesn't survive contact with the Dutch healthcare system.</p>
 
-      <p><strong>Problem 1: Domain ownership presupposes willing domain owners.</strong></p>
+      <details>
+        <summary>The three problems with data mesh in healthcare</summary>
+        <div class="details-content">
+          <p><strong>Problem 1: Domain ownership presupposes willing domain owners.</strong></p>
 
-      <p>In data mesh, domain teams are supposed to take end-to-end responsibility for their data products. In Dutch healthcare, a GP practice with 2 GPs and a practice nurse is not a "domain team" in the Thoughtworks sense. They're three people drowning in 30% administrative overhead trying to see patients. Asking them to also maintain a data product with quality metrics, documentation, and access controls is asking them to become a software team. They are not a software team. They are doctors.</p>
+          <p>In data mesh, domain teams are supposed to take end-to-end responsibility for their data products. In Dutch healthcare, a GP practice with 2 GPs and a practice nurse is not a "domain team" in the Thoughtworks sense. They're three people drowning in 30% administrative overhead trying to see patients. Asking them to also maintain a data product with quality metrics, documentation, and access controls is asking them to become a software team. They are not a software team. They are doctors.</p>
 
-      <p>The same applies to most hospitals. The IT departments are running EHR systems, not building data products. They have vendor contracts with Chipsoft or Epic or Nexus. The data sits inside those systems, behind vendor-specific APIs. The hospital doesn't own the data product in any meaningful engineering sense. The vendor does.</p>
+          <p>The same applies to most hospitals. The IT departments are running EHR systems, not building data products. They have vendor contracts with Chipsoft or Epic or Nexus. The data sits inside those systems, behind vendor-specific APIs. The hospital doesn't own the data product in any meaningful engineering sense. The vendor does.</p>
 
-      <p>Data mesh works when you have autonomous engineering teams that can iterate on data quality. Healthcare has autonomous clinical teams that want the computer to stop breaking.</p>
+          <p>Data mesh works when you have autonomous engineering teams that can iterate on data quality. Healthcare has autonomous clinical teams that want the computer to stop breaking.</p>
 
-      <p><strong>Problem 2: Data contracts assume stable schemas.</strong></p>
+          <p><strong>Problem 2: Data contracts assume stable schemas.</strong></p>
 
-      <p>In retail or fintech, a data contract between "orders" and "payments" domains can be versioned and maintained because the schema is well-understood and relatively stable. In healthcare, the clinical data model is vast, evolving, and clinically nuanced. FHIR R4 defines over 150 resource types. A single patient encounter might generate Condition, Observation, Encounter, Procedure, MedicationRequest, DiagnosticReport, and ServiceRequest resources, each with dozens of fields and extensions.</p>
+          <p>In retail or fintech, a data contract between "orders" and "payments" domains can be versioned and maintained because the schema is well-understood and relatively stable. In healthcare, the clinical data model is vast, evolving, and clinically nuanced. FHIR R4 defines over 150 resource types. A single patient encounter might generate Condition, Observation, Encounter, Procedure, MedicationRequest, DiagnosticReport, and ServiceRequest resources, each with dozens of fields and extensions.</p>
 
-      <p>The Dutch healthcare standards body Nictiz publishes "Zibs" (Zorginformatiebouwstenen - care information building blocks) that try to standardise clinical concepts across systems. There are over 150 Zibs. They're good. They're also insufficient, because the clinical reality is messier than any schema can capture.</p>
+          <p>The Dutch healthcare standards body Nictiz publishes "Zibs" (Zorginformatiebouwstenen - care information building blocks) that try to standardise clinical concepts across systems. There are over 150 Zibs. They're good. They're also insufficient, because the clinical reality is messier than any schema can capture.</p>
 
-      <p>A data mesh data contract between "GP practice" and "hospital" would need to cover every possible clinical exchange scenario. That's not a contract. That's a standards body. We already have several of those. They've been working on it for decades.</p>
+          <p>A data mesh data contract between "GP practice" and "hospital" would need to cover every possible clinical exchange scenario. That's not a contract. That's a standards body. We already have several of those. They've been working on it for decades.</p>
 
-      <p><strong>Problem 3: Federated governance in healthcare is called "regulation" and it already exists and it already doesn't work well enough.</strong></p>
+          <p><strong>Problem 3: Federated governance in healthcare is called "regulation" and it already exists and it already doesn't work well enough.</strong></p>
 
-      <p>Healthcare is the most regulated data domain in existence. GDPR, the Wgbo (Wet geneeskundige behandelingsovereenkomst), NEN 7510 (information security), NEN 7512 (trust infrastructure), NEN 7513 (logging). The governance is not missing. There is too much governance and not enough interoperability.</p>
+          <p>Healthcare is the most regulated data domain in existence. GDPR, the Wgbo (Wet geneeskundige behandelingsovereenkomst), NEN 7510 (information security), NEN 7512 (trust infrastructure), NEN 7513 (logging). The governance is not missing. There is too much governance and not enough interoperability.</p>
 
-      <p>Data mesh's federated governance model assumes that governance is the thing you need to create. In healthcare, governance is the thing that's preventing data from moving. Adding another governance layer on top of existing regulation is not a solution. It's another committee.</p>
+          <p>Data mesh's federated governance model assumes that governance is the thing you need to create. In healthcare, governance is the thing that's preventing data from moving. Adding another governance layer on top of existing regulation is not a solution. It's another committee.</p>
+        </div>
+      </details>
+
+      <div class="insight-callout">
+        <strong>The core insight</strong>
+        Data mesh asks: "How do we organise data so humans can query it?" The agentic mesh asks: "How do we organise agents so they can act on it?"
+      </div>
+
       <h3>What an agentic mesh does differently</h3>
-
-      <p>The difference is in the question. Data mesh asks: "How do we organise data so humans can query it?" The agentic mesh asks: "How do we organise agents so they can act on it?"</p>
 
       <p>The difference is agency. In a data mesh, data is passive. It sits in a domain, behind a contract, waiting for someone to pull it. In an agentic mesh, data is carried by agents that can discover each other, negotiate, and act.</p>
 
@@ -1141,90 +1249,91 @@ code {
         <li><strong>Mordred v2</strong> (see T2). Both forged-card and replay attacks were blocked by signature verification. System metrics were indistinguishable from unattacked baseline.</li>
       </ul>
 
-      <p>The referral scenario is one interaction type. But the same architecture applies to two things that the current system handles poorly and that data mesh would not improve much either.</p>
+      <p>The referral scenario is one interaction type. But the same architecture applies to research and quality benchmarks — two things the current system handles poorly.</p>
 
-      <p><strong>The Netherlands already tried "bring the question to the data."</strong></p>
+      <details>
+        <summary>Deep dive: Personal Health Train, vantage6, and the evolution to agents</summary>
+        <div class="details-content">
+          <p>The concept of sending computation to where data lives, instead of centralising data, is not new. In fact, the Netherlands is one of the pioneers. The Personal Health Train (PHT), developed by Health-RI (the Dutch national health research infrastructure) and DTL (Dutch Techcentre for Life Sciences), explicitly uses this metaphor: data stays at the "station" (the hospital, the GP practice), and the "train" (the analysis) travels to it.</p>
 
-      <p>The concept of sending computation to where data lives, instead of centralising data, is not new. In fact, the Netherlands is one of the pioneers. The Personal Health Train (PHT), developed by Health-RI (the Dutch national health research infrastructure) and DTL (Dutch Techcentre for Life Sciences), explicitly uses this metaphor: data stays at the "station" (the hospital, the GP practice), and the "train" (the analysis) travels to it.</p>
+          <p>The technical implementation is vantage6, an open-source Privacy Enhancing Technology (PET) platform built by IKNL (Integraal Kankercentrum Nederland). It works: a researcher defines an algorithm, the vantage6 server distributes it to participating nodes, each node runs the computation locally on its own data, and only aggregated results return to the researcher. Federated learning, federated statistics, multi-party computation - vantage6 supports all of them. It has been used in oncology research across multiple hospitals.</p>
 
-      <p>The technical implementation is vantage6, an open-source Privacy Enhancing Technology (PET) platform built by IKNL (Integraal Kankercentrum Nederland). It works: a researcher defines an algorithm, the vantage6 server distributes it to participating nodes, each node runs the computation locally on its own data, and only aggregated results return to the researcher. Federated learning, federated statistics, multi-party computation - vantage6 supports all of them. It has been used in oncology research across multiple hospitals.</p>
+          <p>So the idea of "questions traveling to data" already exists in the Dutch healthcare ecosystem. The agentic mesh is not that idea. Or rather, it's an evolution of it.</p>
 
-      <p>So the idea of "questions traveling to data" already exists in the Dutch healthcare ecosystem. The agentic mesh is not that idea. Or rather, it's an evolution of it.</p>
+          <p>The difference is in what travels. In vantage6, what travels is a containerised algorithm. It runs on data, produces a result, and stops. It has no state, no memory, no ability to discover what other data exists, and no ability to negotiate access on the fly. It's batch computation that happens to be federated.</p>
 
-      <p>The difference is in what travels. In vantage6, what travels is a containerised algorithm. It runs on data, produces a result, and stops. It has no state, no memory, no ability to discover what other data exists, and no ability to negotiate access on the fly. It's batch computation that happens to be federated.</p>
+          <p>In an agentic mesh, what travels is an agent. It can discover other agents (via Agent Cards). It can negotiate (present credentials, request specific FHIR scopes). It can reason about what it finds (is this cohort large enough? does the aggregate make sense given what I already know from three other nodes?). And it maintains state across interactions.</p>
 
-      <p>In an agentic mesh, what travels is an agent. It can discover other agents (via Agent Cards). It can negotiate (present credentials, request specific FHIR scopes). It can reason about what it finds (is this cohort large enough? does the aggregate make sense given what I already know from three other nodes?). And it maintains state across interactions.</p>
+          <p>Consider a concrete research scenario. A university epidemiologist wants to know the average HbA1c trajectory of type 2 diabetes patients who also have COPD in the eastern Netherlands. Today's process: write a research protocol, obtain METC approval (medical ethics committee), negotiate data sharing agreements with each participating hospital and GP practice, wait for each institution's data manager to extract and de-identify the data, assemble it centrally, and finally run the analysis. Nivel, the Netherlands Institute for Health Services Research, has built an impressive infrastructure for this - their Primary Care Database receives data from hundreds of GP practices. But even Nivel's process requires each practice to participate in the registration, and researchers must formally request access through a governance protocol with steering committees.</p>
 
-      <p>Consider a concrete research scenario. A university epidemiologist wants to know the average HbA1c trajectory of type 2 diabetes patients who also have COPD in the eastern Netherlands. Today's process: write a research protocol, obtain METC approval (medical ethics committee), negotiate data sharing agreements with each participating hospital and GP practice, wait for each institution's data manager to extract and de-identify the data, assemble it centrally, and finally run the analysis. Nivel, the Netherlands Institute for Health Services Research, has built an impressive infrastructure for this - their Primary Care Database receives data from hundreds of GP practices. But even Nivel's process requires each practice to participate in the registration, and researchers must formally request access through a governance protocol with steering committees.</p>
+          <p>With vantage6, this is faster: the algorithm goes to the data. But the researcher still needs to know in advance which nodes have relevant data. The discovery is manual. The consent verification is separate from the computation. The algorithm can't adapt based on what it finds at the first node.</p>
 
-      <p>With vantage6, this is faster: the algorithm goes to the data. But the researcher still needs to know in advance which nodes have relevant data. The discovery is manual. The consent verification is separate from the computation. The algorithm can't adapt based on what it finds at the first node.</p>
+          <p>In an agentic mesh, the research agent carries a signed protocol (METC-approved), a SMART-on-FHIR scope definition, and a consent verification requirement. It discovers GP agents on the mesh via their Agent Cards - which advertise, among other things, whether the practice participates in research protocols and what disease populations they serve. The agent visits each relevant node. At each GP agent, it presents credentials. The GP agent checks: does this patient have an active research consent for this study type? If yes, the agent runs the FHIR query locally and returns the aggregate. If the cohort at this node is too small for anonymity (say, fewer than 10 patients), the agent flags it and moves on without returning data.</p>
 
-      <p>In an agentic mesh, the research agent carries a signed protocol (METC-approved), a SMART-on-FHIR scope definition, and a consent verification requirement. It discovers GP agents on the mesh via their Agent Cards - which advertise, among other things, whether the practice participates in research protocols and what disease populations they serve. The agent visits each relevant node. At each GP agent, it presents credentials. The GP agent checks: does this patient have an active research consent for this study type? If yes, the agent runs the FHIR query locally and returns the aggregate. If the cohort at this node is too small for anonymity (say, fewer than 10 patients), the agent flags it and moves on without returning data.</p>
+          <p>The difference: discovery is automated, consent is verified per-interaction, and the agent can reason about statistical sufficiency as it goes. The raw data never leaves the practice. The agent is stateful - it knows what it has already collected and what it still needs.</p>
+        </div>
+      </details>
 
-      <p>The difference: discovery is automated, consent is verified per-interaction, and the agent can reason about statistical sufficiency as it goes. The raw data never leaves the practice. The agent is stateful - it knows what it has already collected and what it still needs.</p>
+      <details>
+        <summary>Deep dive: DICA quality benchmarks and the EHDS</summary>
+        <div class="details-content">
+          <p><strong>Quality benchmarks: the DICA problem.</strong></p>
 
-      <p><strong>Quality benchmarks: the DICA problem.</strong></p>
+          <p>DICA (Dutch Institute for Clinical Auditing) runs 26 quality registries for hospital care. Their tagline is "life saving data," and it's accurate - systematic quality measurement has measurably improved surgical outcomes in the Netherlands. They collect data from hospitals into registries like DSCA (colorectal cancer), DUCA (upper GI cancer), DHFA (hip fracture), and 23 others. Hospitals submit data, DICA analyses it, and the results go back as "mirror sessions" (spiegelsessies) where clinicians compare their outcomes with national benchmarks.</p>
 
-      <p>DICA (Dutch Institute for Clinical Auditing) runs 26 quality registries for hospital care. Their tagline is "life saving data," and it's accurate - systematic quality measurement has measurably improved surgical outcomes in the Netherlands. They collect data from hospitals into registries like DSCA (colorectal cancer), DUCA (upper GI cancer), DHFA (hip fracture), and 23 others. Hospitals submit data, DICA analyses it, and the results go back as "mirror sessions" (spiegelsessies) where clinicians compare their outcomes with national benchmarks.</p>
+          <p>The problem is the data pipeline. Hospitals must extract, format, and submit data to DICA. This is manual work. DICA recently announced that batch costs for PROMs (Patient-Reported Outcome Measures) data submission were fully abolished as of January 2026 - which tells you that the cost of submitting data to quality registries was a real barrier. The benchmarks are retrospective: by the time you learn that your hospital's complication rate is above the national average, the patients have already been treated.</p>
 
-      <p>The problem is the data pipeline. Hospitals must extract, format, and submit data to DICA. This is manual work. DICA recently announced that batch costs for PROMs (Patient-Reported Outcome Measures) data submission were fully abolished as of January 2026 - which tells you that the cost of submitting data to quality registries was a real barrier. The benchmarks are retrospective: by the time you learn that your hospital's complication rate is above the national average, the patients have already been treated.</p>
+          <p>In an agentic mesh, a benchmark agent carries a standardised measurement definition (say: "30-day mortality after colorectal surgery, adjusted for ASA score and tumor stage"). It visits each hospital agent. Each hospital agent runs the calculation against its own FHIR store and returns one number. The benchmark agent aggregates. No data extraction. No manual formatting. No batch submission costs. The benchmark updates continuously instead of annually.</p>
 
-      <p>In an agentic mesh, a benchmark agent carries a standardised measurement definition (say: "30-day mortality after colorectal surgery, adjusted for ASA score and tumor stage"). It visits each hospital agent. Each hospital agent runs the calculation against its own FHIR store and returns one number. The benchmark agent aggregates. No data extraction. No manual formatting. No batch submission costs. The benchmark updates continuously instead of annually.</p>
+          <p><strong>The EHDS changes the legal landscape - and creates new problems.</strong></p>
 
-      <p>This is not hypothetical extrapolation - it's the logical extension of what Nivel already does for primary care and what DICA does for hospital care, but with the data pipeline replaced by a protocol.</p>
+          <p>The European Health Data Space (EHDS, Regulation EU 2025/327) entered into force on March 26, 2025. It is the most significant piece of European health data legislation since GDPR. For secondary data use (research, benchmarks, policy), the EHDS mandates that each EU member state establish at least one Health Data Access Body (HDAB). Researchers apply to the HDAB, the HDAB processes the request, data holders are obligated to share, and analysis must happen in "secure processing environments" under HDAB control. Patients can opt out.</p>
 
-      <p><strong>The EHDS changes the legal landscape - and creates new problems.</strong></p>
+          <p>An agentic mesh is not a replacement for the EHDS - the regulation is law, and compliance isn't optional. But it could be the infrastructure layer that HDABs use to fulfil their mandate. Instead of manually coordinating data extraction from every hospital, an HDAB could dispatch a certified research agent into the mesh.</p>
+        </div>
+      </details>
 
-      <p>The European Health Data Space (EHDS, Regulation EU 2025/327) entered into force on March 26, 2025. It is the most significant piece of European health data legislation since GDPR. For secondary data use (research, benchmarks, policy), the EHDS mandates that each EU member state establish at least one Health Data Access Body (HDAB). Researchers apply to the HDAB, the HDAB processes the request, data holders are obligated to share, and analysis must happen in "secure processing environments" under HDAB control. Patients can opt out.</p>
+      <details>
+        <summary>Deep dive: Security (vantage6 breach) and data ownership</summary>
+        <div class="details-content">
+          <p><strong>The security question is not theoretical.</strong></p>
 
-      <p>The EHDS is designed around centralised access bodies. That's a reasonable architecture when you're coordinating across 27 member states with different legal traditions. But it means the HDAB becomes a bottleneck - every research request goes through a single body per country. The regulation even specifies that data holders can charge fees for the time spent making data available (Article 62), which means the cost doesn't disappear; it shifts.</p>
+          <p>If you think "sending computation to data nodes" is inherently safe, consider what happened to vantage6 in March 2026. An attacker gained admin access to vantage6's Harbor container registry and injected malware into infrastructure Docker images - including node images, VPN clients, and algorithm base images. The malware was a downloader that, once executed, would fetch additional payloads from the internet. Several infrastructure images that had internet access (VPN clients, SSH tunnels, proxy containers) were compromised. The vantage6 team published an advisory on April 2, 2026, and the investigation is still ongoing.</p>
 
-      <p>An agentic mesh is not a replacement for the EHDS - the regulation is law, and compliance isn't optional. But it could be the infrastructure layer that HDABs use to fulfil their mandate. Instead of manually coordinating data extraction from every hospital, an HDAB could dispatch a certified research agent into the mesh. The agent verifies consent (including EHDS opt-out), runs computations locally, and returns only anonymised aggregates. The HDAB remains the governance authority. The agent is the execution mechanism.</p>
+          <p>This is exactly the attack vector that matters for federated computation: the "train" that visits your hospital's data can be tampered with before it arrives. In an agentic mesh, every agent presents an Agent Card with verifiable credentials. If the card doesn't validate against a trust anchor, the receiving agent refuses the interaction. The defence is protocol-level validation, not perimeter security.</p>
 
-      <p>The EHDS also explicitly prohibits certain secondary uses: marketing, discrimination in insurance or employment, development of harmful products (Article 54). In a traditional data pipeline, these prohibitions are enforced by policy and audit. In an agentic mesh, they could be enforced at the protocol level - the agent's scope is restricted by its signed credentials, and the receiving agent validates those restrictions before executing any query.</p>
+          <p><strong>The open question: who owns derived conclusions?</strong></p>
 
-      <p><strong>The security question is not theoretical.</strong></p>
+          <p>This is the thing I genuinely do not have a good answer for. Under GDPR, the data controller is whoever determines the purposes and means of processing personal data. When a researcher sends a federated query and 200 GP agents each return an aggregate, the individual aggregates may not constitute personal data - they're statistics. But the researcher's combined analysis might be re-identifiable in small cohorts. Who is the data controller of the combined result?</p>
 
-      <p>If you think "sending computation to data nodes" is inherently safe, consider what happened to vantage6 in March 2026. An attacker gained admin access to vantage6's Harbor container registry and injected malware into infrastructure Docker images - including node images, VPN clients, and algorithm base images. The malware was a downloader that, once executed, would fetch additional payloads from the internet. Several infrastructure images that had internet access (VPN clients, SSH tunnels, proxy containers) were compromised. The vantage6 team published an advisory on April 2, 2026, and the investigation is still ongoing.</p>
+          <p>In a data mesh, ownership is at least theoretically clear: the domain owns its data product. In an agentic mesh, the data never leaves the domain. But conclusions do. And ownership of conclusions derived from federated computation across hundreds of independent data controllers is an unsolved legal question. I'm flagging this as an open research problem.</p>
+        </div>
+      </details>
+      <details>
+        <summary>Honest limitations and what I'm not claiming</summary>
+        <div class="details-content">
+          <p>The agentic mesh does not exist as a production system today. What exists is a simulation (Cammelot) that demonstrates the architectural pattern - including signed agent cards, scoped FHIR access, referral rate limiting, a research agent with consent verification and k-anonymity, and a benchmark agent that collects quality metrics. These are working code, validated across 100 simulation runs. But they operate on 45 synthetic agents, not 12,000 GP practices. The gap between simulation and production is measured in decades of technical debt, vendor lock-in, and regulatory complexity.</p>
 
-      <p>This is exactly the attack vector that matters for federated computation: the "train" that visits your hospital's data can be tampered with before it arrives. Vantage6 uses Docker containers, and the container registry was the weak point. In an agentic mesh, every agent presents an Agent Card with verifiable credentials. If the card doesn't validate against a trust anchor - say, a certificate from the HDAB or a signed research protocol - the receiving agent refuses the interaction. This is the same pattern from my security red-teaming post (Series 2, T2): the Mordred attack works because a forged Agent Card can bypass trust verification. The defence is protocol-level validation, not perimeter security.</p>
+          <p>Agents don't replace humans. The agents I'm describing are infrastructure, not clinical decision-makers. They move data, flag risks, enforce protocols, and manage queues. The GP still decides. The specialist still treats. The agent handles the plumbing that currently consumes 30% of their time.</p>
 
-      <p>The vantage6 breach is not an argument against federated computation. It's an argument for building trust into the protocol layer rather than relying on infrastructure security alone.</p>
+          <p>And data mesh wasn't wrong. The four principles - domain ownership, data as a product, self-serve platform, federated governance - are genuinely good ideas. They just assumed a world where data is the thing you optimise. In healthcare, the thing you optimise is the workflow. And workflows are what agents do.</p>
+        </div>
+      </details>
 
-      <p><strong>The open question: who owns derived conclusions?</strong></p>
-
-      <p>This is the thing I genuinely do not have a good answer for, and I don't think anyone else does either.</p>
-
-      <p>Under GDPR, the data controller is whoever determines the purposes and means of processing personal data. Each GP practice is the data controller for its patient records. When a researcher sends a federated query and 200 GP agents each return an aggregate (say: mean HbA1c = 52.3 mmol/mol, N=47), the individual aggregates may not constitute personal data - they're statistics. But the researcher's combined analysis might be re-identifiable in small cohorts. Who is the data controller of the combined result?</p>
-
-      <p>The EHDS addresses this partially: analysis must happen in secure processing environments, and data must be anonymised (Article 60). But what about the conclusions? When a benchmark agent discovers that Region X has a 30-day surgical mortality rate twice the national average, and that information becomes public, the hospitals in Region X might argue that the benchmark was derived from their data without adequate context. The data stayed in place, but the conclusions traveled - and conclusions have consequences.</p>
-
-      <p>In a data mesh, ownership is at least theoretically clear: the domain owns its data product. In an agentic mesh, the data never leaves the domain. But conclusions do. And ownership of conclusions derived from federated computation across hundreds of independent data controllers is an unsolved legal question. The EHDS doesn't fully answer it. The GDPR doesn't cleanly cover it. The Dutch Wgbo (Wet geneeskundige behandelingsovereenkomst - the patient rights law) gives patients rights over their care data, but says nothing about aggregate statistics derived from those data.</p>
-
-      <p>I'm flagging this as an open research problem. The architectural pattern works. The governance of derived insights from that pattern is genuinely hard. I'd love to hear from healthcare lawyers and ethicists on this one.</p>
-      <h3>The honest limitations</h3>
-
-      <p>A few things I'm not claiming.</p>
-
-      <p>The agentic mesh does not exist as a production system today. What exists is a simulation (Cammelot) that demonstrates the architectural pattern - including signed agent cards, scoped FHIR access, referral rate limiting, a research agent with consent verification and k-anonymity, and a benchmark agent that collects quality metrics. These are working code, validated across 100 simulation runs. But they operate on 45 synthetic agents, not 12,000 GP practices. The gap between simulation and production is measured in decades of technical debt, vendor lock-in, and regulatory complexity.</p>
-
-      <p>Agents don't replace humans. The agents I'm describing are infrastructure, not clinical decision-makers. They move data, flag risks, enforce protocols, and manage queues. The GP still decides. The specialist still treats. The agent handles the plumbing that currently consumes 30% of their time.</p>
-
-      <p>And data mesh wasn't wrong. The four principles - domain ownership, data as a product, self-serve platform, federated governance - are genuinely good ideas. They just assumed a world where data is the thing you optimise. In healthcare, the thing you optimise is the workflow. And workflows are what agents do.</p>
       <h3>The uncomfortable question</h3>
 
-      <p>The IZA is spending €2.8 billion on transformation plans. Most of those plans are building integrations between existing systems. System A talks to System B through a custom connector. Multiply by the number of system pairs and you get the current Dutch healthcare IT landscape: a hairball of point-to-point connections that breaks every time a vendor updates their API.</p>
+      <p>The IZA is spending €2.8 billion on transformation plans. Most of those plans are building integrations between existing systems. What if, instead, every provider published an agent card and every interaction followed a shared protocol?</p>
 
-      <p>What if, instead, every provider published an agent card and every interaction followed a shared protocol?</p>
+      <p>I don't think anyone is going to rebuild Dutch healthcare IT around an agentic mesh in the next five years. But I do think the plans that will still be working in ten years are the ones that bet on protocol-level interoperability rather than integration-level connectivity. HTTP beat proprietary networks. FHIR is beating HL7v2. A2A might beat the connector model.</p>
 
-      <p>The marginal cost of adding a new provider to the mesh would be near zero. The data exchange problem would become a protocol compliance problem. The governance problem would become a test suite.</p>
-
-      <p>I don't think anyone is going to rebuild Dutch healthcare IT around an agentic mesh in the next five years. But I do think the plans that will still be working in ten years are the ones that bet on protocol-level interoperability rather than integration-level connectivity. HTTP beat proprietary networks. FHIR is beating HL7v2. A2A might beat the connector model. Or something like it will.</p>
-
-      <p>The architectural principle is the same every time: publish rather than connect. Let the protocol do the work.</p>
-
-      <p>Data mesh told us to decentralise the data. The agentic mesh says to decentralise the action.</p>
-      <div class="footnote-body" style="display:block;margin-top:2rem;"><em>References and sources: Dehghani, Z. "How to Move Beyond a Monolithic Data Lake to a Distributed Data Mesh" (2019, Thoughtworks). A2A Protocol Specification v1.0.0 (Linux Foundation / Google, 2025). FHIR R4 (HL7, 2019). SMART-on-FHIR v2.2.0 (HL7, 2023). IZA - Integraal Zorgakkoord (Dutch Ministry of Health, 2022). NZa market scan waiting times (2024). Bode et al., Vestues et al., Joshi et al. - empirical data mesh adoption challenges. openEHR Foundation (2003-present). Model Context Protocol (Anthropic, 2024). Nictiz Zibs - 150+ care information building blocks. CBS / RIVM 2025 demographic and prevalence data. Health-RI / DTL - Personal Health Train concept (2017-present). Moncada-Torres et al. "VANTAGE6: an open source priVAcy preserviNg federaTed leArninG infrastructurE for Secure Insight eXchange" (AMIA 2020). Vantage6 security advisory - Harbor registry breach (April 2, 2026, vantage6.ai). DICA - Dutch Institute for Clinical Auditing, 26 quality registries (dica.nl). Nivel Primary Care Database - GP registration data from hundreds of practices (nivel.nl). EHDS - Regulation (EU) 2025/327, European Health Data Space (entered into force March 26, 2025). GDPR - Regulation (EU) 2016/679 (2018). Wgbo - Wet geneeskundige behandelingsovereenkomst (Dutch patient rights law). Wegiz - Wet elektronische gegevensuitwisseling in de zorg (electronic data exchange in healthcare). FAIR data principles (Wilkinson et al., Scientific Data, 2016). TEHDAS Joint Action - Towards the European Health Data Space (EU4Health programme).</em></div>
+      <div class="insight-callout">
+        <strong>The principle</strong>
+        Data mesh told us to decentralise the data. The agentic mesh says to decentralise the action. Publish rather than connect. Let the protocol do the work.
+      </div>
+      <details>
+        <summary>References and sources</summary>
+        <div class="details-content" style="font-size:0.82rem;color:var(--text-muted);"><em>Dehghani, Z. "How to Move Beyond a Monolithic Data Lake to a Distributed Data Mesh" (2019, Thoughtworks). A2A Protocol Specification v1.0.0 (Linux Foundation / Google, 2025). FHIR R4 (HL7, 2019). SMART-on-FHIR v2.2.0 (HL7, 2023). IZA - Integraal Zorgakkoord (Dutch Ministry of Health, 2022). NZa market scan waiting times (2024). Bode et al., Vestues et al., Joshi et al. - empirical data mesh adoption challenges. openEHR Foundation (2003-present). Model Context Protocol (Anthropic, 2024). Nictiz Zibs - 150+ care information building blocks. CBS / RIVM 2025 demographic and prevalence data. Health-RI / DTL - Personal Health Train concept (2017-present). Moncada-Torres et al. "VANTAGE6: an open source priVAcy preserviNg federaTed leArninG infrastructurE for Secure Insight eXchange" (AMIA 2020). Vantage6 security advisory - Harbor registry breach (April 2, 2026, vantage6.ai). DICA - Dutch Institute for Clinical Auditing, 26 quality registries (dica.nl). Nivel Primary Care Database - GP registration data from hundreds of practices (nivel.nl). EHDS - Regulation (EU) 2025/327, European Health Data Space (entered into force March 26, 2025). GDPR - Regulation (EU) 2016/679 (2018). Wgbo - Wet geneeskundige behandelingsovereenkomst (Dutch patient rights law). Wegiz - Wet elektronische gegevensuitwisseling in de zorg (electronic data exchange in healthcare). FAIR data principles (Wilkinson et al., Scientific Data, 2016). TEHDAS Joint Action - Towards the European Health Data Space (EU4Health programme).</em></div>
+      </details>
 
       <div class="footnote-body" style="display:block;margin-top:2rem;"><em>Disclosure: I work at Microsoft. My employer builds and sells AI products and cloud infrastructure. I built Cammelot as a personal applied research project, not a Microsoft product. The code is open source. All opinions are my own.</em></div>
     </section>
