@@ -3,7 +3,7 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [feature/agentic-overhaul]
+    branches: [master, feature/agentic-overhaul]
     paths: [site/**]
   workflow_dispatch:
 
