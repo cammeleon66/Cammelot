@@ -1038,7 +1038,8 @@ code {
 
     /* ── Screenshot Slider ── */
     .sim-slider {
-      margin: 2.5rem 0 2rem;
+      margin: 2rem auto;
+      max-width: 520px;
       border-radius: 6px;
       overflow: hidden;
       border: 1px solid var(--border);
@@ -1047,14 +1048,16 @@ code {
     }
     .sim-slider-viewport {
       position: relative;
+      width: 100%;
       overflow: hidden;
     }
     .sim-slider-track {
       display: flex;
+      width: 300%;
       transition: transform 0.5s ease;
     }
     .sim-slide {
-      min-width: 100%;
+      width: calc(100% / 3);
       flex-shrink: 0;
       position: relative;
     }
@@ -1294,7 +1297,7 @@ code {
         var num = document.getElementById('sliderNum');
         function go(n) {
           cur = ((n % total) + total) % total;
-          track.style.transform = 'translateX(-' + (cur * 100) + '%)';
+          track.style.transform = 'translateX(-' + (cur * 33.3333) + '%)';
           pips.forEach(function (p, i) { p.className = 'sim-slider-pip' + (i === cur ? ' on' : ''); });
           num.textContent = cur + 1;
         }
