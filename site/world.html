@@ -135,8 +135,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a1a2e;font-family:
 .tour-btn.primary{background:linear-gradient(135deg,#FFB300,#FF6F00);color:#1a1a2e;border:none}
 .tour-btn.close{background:rgba(229,57,53,.1);color:#E53935;border-color:rgba(229,57,53,.3)}
 .tour-btn.close:hover{background:rgba(229,57,53,.2)}
-.walkthrough-overlay{position:fixed;inset:0;z-index:9600;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .4s}
-.walkthrough-overlay.visible{opacity:1}
+.walkthrough-overlay{position:fixed;inset:0;z-index:9600;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .4s}
+.walkthrough-overlay.visible{opacity:1;pointer-events:auto}
 .walkthrough-modal{background:#1a1510;border:3px solid #FFB300;border-radius:14px;padding:32px 36px 24px;max-width:560px;width:calc(100% - 48px);box-shadow:0 12px 48px rgba(0,0,0,.7);position:relative}
 .walkthrough-modal h2{font-family:'Press Start 2P',monospace;font-size:13px;color:#FFB300;margin:0 0 8px;text-align:center}
 .walkthrough-modal .wt-subtitle{font:12px/1.4 'Space Grotesk',sans-serif;color:#b0a080;text-align:center;margin-bottom:20px}
@@ -6086,6 +6086,19 @@ function initAgentBehaviors(){
       e.behaviorState='going_to_gp';
       sendAgentTo(e, getGPDest(e.gpName).entrance);
       addHistory(e,'feeling_sick','Not feeling well, going to see the doctor.');
+    } else if(!e.insideBuilding && ROAD_WAYPOINTS && ROAD_WAYPOINTS.length > 1){
+      // Give roaming agents an initial walking destination so they move immediately
+      e.behaviorState='roaming';
+      var fromIdx = nearestWaypointIdx(e.x, e.y);
+      var toIdx = Math.floor(Math.random() * ROAD_WAYPOINTS.length);
+      if(fromIdx !== toIdx){
+        var p = findWaypointPath(fromIdx, toIdx);
+        if(p && p.length > 1){
+          e.path = p; e.pathIdx = 1; e.pathComplete = false;
+          var wp = ROAD_WAYPOINTS[p[1]];
+          e.tx = wp.x; e.ty = wp.y;
+        }
+      }
     }
   });
 }

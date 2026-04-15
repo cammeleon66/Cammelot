@@ -1141,7 +1141,7 @@ code {
     <a href="#soll">The Intervention (SOLL)</a>
     <div class="toc-part">The Research</div>
     <a href="#experiment">The Experiment</a>
-    <a href="#findings">What We Found</a>
+    <a href="#questions">The Questions</a>
     <a href="#roadmap">What’s Next</a>
     <div class="toc-part">Chapters</div>
     <a href="ch1.html">1. The Architecture</a>
@@ -1214,10 +1214,7 @@ code {
         </div>
       </div>
 
-      <p>      <div class="screenshot-wrap">
-        <img src="img/ist-queue.png" alt="IST mode: queue congestion at hospital, burnout indicators, ghost events" loading="lazy">
-        <div class="caption">IST mode after ~500 cycles. Queues overflow. Burnout climbs. Citizens become ghosts.</div>
-      </div>
+
 
       <p>r GP is operating at sixty-two percent capacity before they see their first patient. The effective capacity formula: <code>C_eff = C_total × (1 − 0.30 − 0.08) × 1.0 = 62%</code>. Thirty percent lost to paperwork. Eight percent to sick leave. No AI assistance. The efficiency multiplier is 1.0.</p>
 
@@ -1302,7 +1299,7 @@ code {
 
       <h3>What Makes SOLL Work (and What Doesn’t)</h3>
 
-      <p>SOLL is not a single intervention. It’s a stack of interventions that compound. This is deliberate — I’m not testing whether “one AI tool helps.” I’m testing what happens when you redesign the system end-to-end. The downside: when SOLL produces better outcomes, you can’t point to a single cause. That’s what the research posts are for — each one isolates a different mechanism.</p>
+      <p>SOLL is not a single intervention. It’s a stack of interventions that compound. This is deliberate — I’m not testing whether “one AI tool helps.” I’m testing what happens when you redesign the system end-to-end. Each research chapter isolates a different mechanism and asks whether it holds up under 100 simulation runs.</p>
 
       <div class="component-grid">
         <div class="component-card">
@@ -1319,7 +1316,7 @@ code {
         </div>
         <div class="component-card">
           <h3>Fairness Guardrail</h3>
-          <p>If any age group’s average wait exceeds 120% of the population mean, optimization biases auto-disable. Because optimizing for throughput without guardrails discriminates against the elderly. We found this out the hard way.</p>
+          <p>If any age group’s average wait exceeds 120% of the population mean, optimization biases auto-disable. Because optimizing for throughput without guardrails risks discriminating against the elderly. This is one of the key things we’re testing.</p>
         </div>
       </div>
     </section>
@@ -1333,7 +1330,7 @@ code {
     <section id="experiment" class="research-section">
       <h2>The Experiment</h2>
 
-      <p>Every finding in this project comes from the same protocol: <strong>100 independent simulation runs per mode</strong> — 200 total. Each run simulates roughly 10 years (3,000 cycles). We use Welch’s t-test for significance, Cohen’s d for effect size, and 95% confidence intervals on every metric. Every null result is published alongside every positive one.</p>
+      <p>Every claim in this project will be tested using the same protocol: <strong>100 independent simulation runs per mode</strong> — 200 total. Each run simulates roughly 10 years (3,000 cycles). We use Welch’s t-test for significance, Cohen’s d for effect size, and 95% confidence intervals on every metric. Null results will be published alongside positive ones.</p>
 
       <div class="transparency-grid">
         <div class="transparency-item">
@@ -1346,7 +1343,7 @@ code {
         </div>
         <div class="transparency-item">
           <h3>Bias Acknowledgment</h3>
-          <p>I work at Microsoft. I chose the parameters, the architecture, and the disease models. A different builder would make different choices. The code is open — you can change anything and re-run. Several findings are embarrassing for the AI-optimist position. I report them anyway.</p>
+          <p>I work at Microsoft. I chose the parameters, the architecture, and the disease models. A different builder would make different choices. The code is open — you can change anything and re-run. If the data contradicts the optimist position, I will report it.</p>
         </div>
       </div>
     </section>
@@ -1354,83 +1351,44 @@ code {
     <div class="chapter-divider"><div class="diamond"></div></div>
 
     <!-- ════════════════════════════════════════════ -->
-    <!-- SECTION 6: WHAT WE FOUND                    -->
+    <!-- SECTION 6: THE QUESTIONS                    -->
     <!-- ════════════════════════════════════════════ -->
 
-    <section id="findings" class="research-section">
-      <h2>What We Found</h2>
+    <section id="questions" class="research-section">
+      <h2>The Questions We’re Asking</h2>
 
-      <p>The headline results from 100 paired simulations:</p>
+      <p>Cammelot isn’t designed to prove that AI saves healthcare. It’s designed to test <em>specific, measurable claims</em> — and to see which ones survive contact with a stochastic population. These are the questions driving the research:</p>
 
-      <div class="stats-table-wrap">
-        <table class="stats-table">
-          <thead>
-            <tr>
-              <th>Metric</th>
-              <th>IST</th>
-              <th>SOLL</th>
-              <th>Effect</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td class="metric-name">GP Burnout</td>
-              <td>7.9%</td>
-              <td>1.2%</td>
-              <td class="sig">d = 1.4+, p &lt; 0.001</td>
-            </tr>
-            <tr>
-              <td class="metric-name">Administrative Waste</td>
-              <td>€33.6K</td>
-              <td>€5.6K</td>
-              <td class="sig">−83%</td>
-            </tr>
-            <tr>
-              <td class="metric-name">Proactive Alerts</td>
-              <td>0 / run</td>
-              <td>147 / run</td>
-              <td class="sig">d = 2.92</td>
-            </tr>
-            <tr>
-              <td class="metric-name">Ketenzorg Enrollment</td>
-              <td>baseline</td>
-              <td>+159%</td>
-              <td class="sig">d = 0.94</td>
-            </tr>
-            <tr>
-              <td class="metric-name">Patient Mortality</td>
-              <td>11.75 deaths/yr</td>
-              <td>10.60 deaths/yr</td>
-              <td class="sig">d = 0.35</td>
-            </tr>
-            <tr>
-              <td class="metric-name">Age Fairness (Bias Index)</td>
-              <td>0.92</td>
-              <td>0.88</td>
-              <td class="sig">d = 0.29, guardrail fired 98%</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div class="      <div class="screenshot-pair">
-        <div class="screenshot-wrap">
-          <img src="img/ist-queue.png" alt="IST: congested queues, red indicators" loading="lazy">
-          <div class="caption" style="color:#e74c3c;">IST — Status Quo</div>
+      <div class="component-grid">
+        <div class="component-card">
+          <h3>Does reducing admin actually free GP capacity?</h3>
+          <p>If GPs spend 30% of their time on paperwork and we cut that to 5%, does that translate into more patients seen — or does the system just find new bottlenecks?</p>
         </div>
-        <div class="screenshot-wrap">
-          <img src="img/soll-smooth.png" alt="SOLL: shorter queues, green indicators, proactive alerts" loading="lazy">
-          <div class="caption" style="color:#27ae60;">SOLL — Agentic Mesh</div>
+        <div class="component-card">
+          <h3>Can proactive detection prevent hospitalization?</h3>
+          <p>Digital twins flag risk early. But flagging risk without clinical capacity to act on it might just mean better-documented decline. Does early detection actually change outcomes?</p>
+        </div>
+        <div class="component-card">
+          <h3>What happens to wait times under an agentic mesh?</h3>
+          <p>A2A protocol, smart referrals, machine-readable agent cards. Can structured communication bring specialist wait times back within the Treeknorm — the 4-week legal maximum?</p>
+        </div>
+        <div class="component-card">
+          <h3>Does AI optimization discriminate by age?</h3>
+          <p>When you optimize for throughput, do elderly patients — who take longer, cost more, and present with multimorbidity — get systematically deprioritized? And can guardrails prevent that?</p>
+        </div>
+        <div class="component-card">
+          <h3>Is system delay itself a cause of mortality?</h3>
+          <p>The model’s core hypothesis: patients don’t die from disease alone — they die from system delay. If we compress wait times, does mortality actually shift?</p>
+        </div>
+        <div class="component-card">
+          <h3>What breaks when you scale AI assistance?</h3>
+          <p>SOLL stacks multiple interventions: scribes, digital twins, A2A protocol, fairness guardrails. Which combinations compound? Which interfere? Where does the system push back?</p>
         </div>
       </div>
 
       <div class="hypothesis-box">
-        <strong>The finding that surprised me most:</strong> Mortality only became statistically significant after I stopped optimizing the AI and started fixing the plumbing — referral capacity limits, proper triage priority, signed agent cards. AI doesn’t save lives by being smart. It saves lives by not wasting the doctor’s time on paperwork and not losing the referral in a broken queue.
+        <strong>The research protocol:</strong> 100 independent simulation runs per mode — 200 total. Each run simulates roughly 10 years (3,000 cycles). Welch’s t-test for significance, Cohen’s d for effect size. Every null result will be published alongside every positive one. The answers are coming in the chapter series below.
       </div>
-
-      <p>Several results contradicted the optimist position. Detection without clinical capacity is documentation of decline, not intervention. The system pushed back against the elderly when optimized for throughput. And one age group actually did <em>worse</em> in SOLL during early transition — before full interoperability kicked in.</p>
-
-      <p>These are the findings that make me trust the model. A simulation that only produces good news is a brochure. Cammelot produces uncomfortable news, and I think that’s what makes it useful.</p>
     </section>
 
     <div class="chapter-divider"><div class="diamond"></div></div>
