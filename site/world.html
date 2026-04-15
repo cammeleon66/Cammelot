@@ -936,7 +936,7 @@ const MAP_W = 1280; // image pixel width (will be measured from loaded image)
 const MAP_H = 720;  // image pixel height
 
 // Try loading from assets — use relative paths so file:// works
-mapImg.onload = () => { mapLoaded = true; mapImgW = mapImg.naturalWidth; mapImgH = mapImg.naturalHeight; mapCacheDirty = true; };
+mapImg.onload = () => { mapLoaded = true; mapImgW = mapImg.naturalWidth; mapImgH = mapImg.naturalHeight; mapCacheDirty = true; console.log('Map loaded:', mapImgW, 'x', mapImgH); try { render(); } catch(e) {} };
 mapImg.onerror = () => {
   // Try alternate paths (relative to HTML location)
   const alts = ['./map2.jpeg', '../assets/map2.jpeg', '../assets/map.png', '../assets/map.png.jpeg',
@@ -946,7 +946,7 @@ mapImg.onerror = () => {
   function tryNext() {
     if (idx >= alts.length) { console.log('No map image found — drag and drop one onto the game area.'); return; }
     const alt = new Image();
-    alt.onload = () => { mapImg = alt; mapLoaded = true; mapImgW = alt.naturalWidth; mapImgH = alt.naturalHeight; mapCacheDirty = true; };
+    alt.onload = () => { mapImg = alt; mapLoaded = true; mapImgW = alt.naturalWidth; mapImgH = alt.naturalHeight; mapCacheDirty = true; console.log('Alt map loaded:', mapImgW, 'x', mapImgH); try { render(); } catch(e) {} };
     alt.onerror = () => { idx++; tryNext(); };
     alt.src = alts[idx];
   }
@@ -9542,11 +9542,13 @@ if(EMBED_MODE){
   if(embedCycle>0){for(var i=0;i<embedCycle&&i<10000;i++)tick();}
 } else {
 // Website version: auto-start immediately (no play button needed)
+console.log('Cammelot: auto-starting...');
 stopLoadingAnimation();
 document.getElementById('load').classList.add('go');
 document.getElementById('play-overlay').style.display = 'none';
 try {
   startNewGame();
+  console.log('Cammelot: startNewGame complete, rendering...');
   render();
   if (!autoTimer) {
     autoTimer = setInterval(tick, 500);
@@ -10688,11 +10690,11 @@ document.getElementById('btn-tours').addEventListener('click', function() {
 // ═══ FIRST VISIT: Auto-prompt tour ═══
 (function() {
   var TOUR_PROMPT_KEY = 'cammelot-tour-prompted';
-  if (localStorage.getItem(TOUR_PROMPT_KEY)) return;
+  // Always show tour on load (removed localStorage gate)
 
   // Show prompt 4s after game starts (after intro pan)
   var checkInterval = setInterval(function() {
-    if (typeof cycle !== 'undefined' && cycle > 5) {
+    if (typeof cycle !== 'undefined' && cycle > 2) {
       clearInterval(checkInterval);
       localStorage.setItem(TOUR_PROMPT_KEY, '1');
       showFirstVisitPrompt();
