@@ -6673,6 +6673,7 @@ function tick(){
             const gpDest=getGPDest(a.gpName);
             a.x=gpDest.entrance.x; a.y=gpDest.entrance.y;
             logEvent('referred', a, a.conditions.map(c=>c.code).join(','));
+            sayA2A(a.gpName||'GP', 'Hospital', 'REFERRAL', a.conditions.map(function(c){return c.code}).join('+') + ' wait:' + a.waitWeeks + 'w');
             addHistory(a,'referred',(a.gpName||'GP')+' referred me to the hospital. Specialist care needed.');
             addMemory(a, 'referred', 'Referred to hospital by ' + (a.gpName||'GP'), 6);
             say(a.gpName||'GP',`Referring ${a.name} to hospital — needs specialist care.`);
@@ -6717,6 +6718,7 @@ function tick(){
             const gpDest=getGPDest(a.gpName);
             a.x=gpDest.entrance.x; a.y=gpDest.entrance.y;
             logEvent('gp_treated', a, 'Conditions treated at GP');
+            sayA2A(a.gpName||'GP', a.name, 'TREATED', 'Primary care');
             addHistory(a,'gp_treated','GP prescribed medication. Should start feeling better.');
             addMemory(a, 'treated', 'GP prescribed treatment for my condition', 4);
             say(a.gpName||'GP',`${a.name}: condition manageable. Prescribed treatment.`);
@@ -6767,6 +6769,7 @@ function tick(){
           a.queueType = null;
           erAdmissionCount++;
           logEvent('admitted', a, 'Emergency admission');
+          sayA2A('Hospital', a.name, 'ADMITTED', 'Emergency');
           addHistory(a, 'entered_hospital', '🚑 Emergency admission — bypassed queue.');
           say('Hospital', `🚑 ${a.name} — EMERGENCY admission. Immediate treatment.`, 'alert');
           createFHIRResource('Encounter', a.id, { class: 'emergency_admission', serviceProvider: 'Hospital', urgency: 'emergency' });
@@ -8028,6 +8031,23 @@ function say(w,t,c=''){
   d.appendChild(div);
   d.scrollTop=d.scrollHeight;
   while(d.children.length>40)d.removeChild(d.firstChild);
+}
+
+
+// ═══ A2A LIFE STREAM: Protocol-level event messages ═══
+function sayA2A(from, to, action, detail) {
+  var d = document.getElementById('chatlog');
+  var div = document.createElement('div');
+  div.className = 'cm a2a';
+  div.innerHTML = '<span class="w" style="color:#4CAF50">[A2A]</span> ' +
+    '<span style="color:#FFB300">' + from + '</span>' +
+    ' \u2192 ' +
+    '<span style="color:#64B5F6">' + to + '</span>' +
+    ': <span class="t">' + action + '</span>' +
+    (detail ? ' <span style="color:#888;font-size:10px">(' + detail + ')</span>' : '');
+  d.appendChild(div);
+  d.scrollTop = d.scrollHeight;
+  while (d.children.length > 40) d.removeChild(d.firstChild);
 }
 
 // ═══ AGENTIC QA CHECKS (Sprint 11) ═══
