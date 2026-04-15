@@ -1,0 +1,23 @@
+{
+  "source": "RIVM Chronic Disease Model 2024; VZinfo.nl",
+  "condition": "Type 2 Diabetes Mellitus",
+  "icd10": "E11",
+  "total_nl_prevalence": 1200000,
+  "prevalence_by_age_gender": {
+    "M": {
+      "30_39": 0.010,
+      "40_49": 0.035,
+      "50_59": 0.070,
+      "60_70": 0.140,
+      "70_79": 0.180
+    },
+    "F": {
+      "30_39": 0.008,
+      "40_49": 0.028,
+      "50_59": 0.055,
+      "60_70": 0.110,
+      "70_79": 0.150
+    }
+  },
+  "notes": "Women slightly lower prevalence across all age groups. Sharp increase after 50."
+}

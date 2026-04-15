@@ -1,0 +1,35 @@
+{
+  "source": "PMC — COPD as Independent Risk Factor for Cardiovascular Disease; ESC 2021",
+  "comorbidity_rules": [
+    {
+      "primary": "COPD",
+      "primary_icd10": "J44",
+      "secondary": "Cardiovascular Disease",
+      "secondary_icd10": "I25",
+      "relative_risk": 2.5,
+      "mechanism": "Systemic inflammation, hypoxemia, shared risk factors (smoking)",
+      "evidence": "90.3% of COPD patients classified as high/very-high cardiovascular risk",
+      "simulation_effect": "If agent has COPD, multiply CVD incidence probability by 2.5 per tick"
+    },
+    {
+      "primary": "Diabetes Mellitus T2",
+      "primary_icd10": "E11",
+      "secondary": "Cardiovascular Disease",
+      "secondary_icd10": "I25",
+      "relative_risk": 2.0,
+      "mechanism": "Endothelial dysfunction, insulin resistance, dyslipidemia",
+      "evidence": "Well-established in Framingham cohort and ESC guidelines",
+      "simulation_effect": "If agent has T2D, multiply CVD incidence probability by 2.0 per tick"
+    },
+    {
+      "primary": "Hypertension",
+      "primary_icd10": "I10",
+      "secondary": "Cardiovascular Disease",
+      "secondary_icd10": "I25",
+      "relative_risk": 1.8,
+      "mechanism": "Chronic pressure overload, arterial stiffening",
+      "evidence": "ESC 2021 SCORE2 risk tables",
+      "simulation_effect": "If agent has hypertension, multiply CVD incidence by 1.8 per tick"
+    }
+  ]
+}

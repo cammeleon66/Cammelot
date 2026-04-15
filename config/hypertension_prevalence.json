@@ -1,0 +1,22 @@
+{
+  "source": "ESC Guidelines Cardiovascular Disease Prevention 2021; Nivel 2024",
+  "condition": "Hypertension",
+  "icd10": "I10",
+  "prevalence_by_age_gender": {
+    "M": {
+      "30_39": 0.170,
+      "40_49": 0.270,
+      "50_59": 0.580,
+      "60_70": 0.620,
+      "70_79": 0.710
+    },
+    "F": {
+      "30_39": 0.080,
+      "40_49": 0.140,
+      "50_59": 0.320,
+      "60_70": 0.670,
+      "70_79": 0.690
+    }
+  },
+  "notes": "Critical gender crossover at 60+: female prevalence surpasses male. Post-menopausal hormonal changes drive this reversal."
+}

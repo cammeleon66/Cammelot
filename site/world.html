@@ -3236,7 +3236,7 @@ function seedInitialCrisis(agentList) {
 
 // Markov state transition using condition-specific matrices from DISEASE_DB
 // receivingTreatment: boolean — if true, slows disease progression (ketenzorg/proactive care effect)
-function transitionDiseaseState(conditionCode, currentState, waitWeeks, treeknormWeeks, receivingTreatment) {
+function transitionDiseaseState(conditionCode, currentState, waitWeeks, treeknormWeeks, receivingTreatment, comorbidityBoost) {
   const db = DISEASE_DB[conditionCode];
   if (!db || !db.markovTransitions) return currentState;
 
@@ -3274,6 +3274,19 @@ function transitionDiseaseState(conditionCode, currentState, waitWeeks, treeknor
       }
       // Remainder goes to self-stay (stability)
       row[currentState] = (row[currentState] || 0) + totalRedistributed;
+    }
+  }
+
+  // Comorbidity acceleration: cascading failure from multi-condition interaction
+  if (comorbidityBoost > 0 && currentState !== 'deceased' && currentState !== 'healthy') {
+    if (currentIdx < states.length - 1) {
+      const selfStay = Math.max(row[currentState] - comorbidityBoost, 0.10);
+      const redistributed = row[currentState] - selfStay;
+      row = { ...row };
+      row[currentState] = selfStay;
+      const worseStates = states.slice(currentIdx + 1);
+      const perState = redistributed / worseStates.length;
+      for (const ws of worseStates) { row[ws] = (row[ws] || 0) + perState; }
     }
   }
 
@@ -6121,6 +6134,24 @@ function processGrieving(agent) {
 // Community protest: check once per tick
 let protestActive = false;
 function checkCommunityProtest() {
+  // Fairness guardrails: Priority Multiplier for elderly with complex conditions
+  // Prevents "Efficiency Trap" — throughput optimization deprioritizing multimorbid elderly
+  if (QUEUES.hospital && QUEUES.hospital.agents.length > 1) {
+    QUEUES.hospital.agents.sort(function(idA, idB) {
+      var aA = agents.find(function(a){ return a.id === idA; });
+      var aB = agents.find(function(a){ return a.id === idB; });
+      if (!aA || !aB) return 0;
+      // Priority score: age>65 + multimorbidity + wait time exceeding 50% Treeknorm
+      var scoreA = 0, scoreB = 0;
+      if (aA.age >= 65) scoreA += 2;
+      if (aA.conditions && aA.conditions.length >= 2) scoreA += aA.conditions.length;
+      if (aA.waitWeeks > p.tree * 0.5) scoreA += 1;
+      if (aB.age >= 65) scoreB += 2;
+      if (aB.conditions && aB.conditions.length >= 2) scoreB += aB.conditions.length;
+      if (aB.waitWeeks > p.tree * 0.5) scoreB += 1;
+      return scoreB - scoreA; // higher score = higher priority
+    });
+  }
   const hospitalQueue = QUEUES.hospital ? QUEUES.hospital.agents.length : 0;
   const gpQueues = (QUEUES.gp1_bldg ? QUEUES.gp1_bldg.agents.length : 0) + (QUEUES.gp2_bldg ? QUEUES.gp2_bldg.agents.length : 0);
   const totalQueue = hospitalQueue + gpQueues;
@@ -6286,7 +6317,14 @@ function tick(){
       const isBeingTreated = ketenzorgActive || hospitalCare || hasMedication;
       for (const cond of a.conditions) {
         const oldState = cond.severity;
-        const newState = transitionDiseaseState(cond.code, cond.severity, a.waitWeeks, p.tree, isBeingTreated);
+        // Comorbidity multiplier: COPD→CVD RR=2.5, T2D→CVD RR=2.0 (RIVM/ESC)
+        var comorbidityBoost = 0;
+        if (cond.code === 'I25' || cond.code === 'I50') {
+          if (a.conditions.some(function(c){ return c.code === 'J44'; })) comorbidityBoost += 0.015; // COPD→CVD RR=2.5
+          if (a.conditions.some(function(c){ return c.code === 'E11'; })) comorbidityBoost += 0.010; // T2D→CVD RR=2.0
+          if (a.conditions.some(function(c){ return c.code === 'I10'; })) comorbidityBoost += 0.008; // Hypertension→CVD RR=1.8
+        }
+        const newState = transitionDiseaseState(cond.code, cond.severity, a.waitWeeks, p.tree, isBeingTreated, comorbidityBoost);
         if (newState !== cond.severity) {
           cond.severity = newState;
           createFHIRResource('Condition', a.id, { code: cond.code, name: cond.name, clinicalStatus: newState, priorStatus: oldState });
