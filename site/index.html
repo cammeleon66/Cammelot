@@ -828,6 +828,25 @@ code {
   pointer-events: none;
 }
 .teaser-greyed h2 a { color: var(--text-muted) !important; }
+
+/* Skeptic's Corner */
+.skeptics-corner { margin: 2.5rem 0; padding: 1.5rem; border: 1px solid var(--border); border-radius: 8px; background: var(--card-bg); }
+.skeptics-corner h2 { font-family: 'Space Grotesk', sans-serif; font-size: 1.2rem; margin-bottom: 1rem; color: var(--text); }
+.skeptic-qa { margin-bottom: 1.2rem; }
+.skeptic-qa .q { font-weight: 700; font-size: 0.9rem; color: var(--red); margin-bottom: 0.3rem; }
+.skeptic-qa .a { font-size: 0.88rem; color: var(--text-muted); line-height: 1.65; }
+/* Variables over Vibes callout */
+.thesis-callout { text-align: center; margin: 2rem 0; padding: 1.2rem; border-left: 4px solid var(--red); background: rgba(231,76,60,0.04); border-radius: 0 6px 6px 0; }
+.thesis-callout p { font-family: 'Space Grotesk', sans-serif; font-size: 1rem; font-weight: 600; color: var(--text); margin: 0; line-height: 1.5; }
+.thesis-callout .subtitle { font-weight: 400; font-size: 0.85rem; color: var(--text-muted); margin-top: 0.4rem; }
+/* Key findings */
+.key-findings { margin: 2rem 0; }
+.key-findings h2 { font-family: 'Space Grotesk', sans-serif; font-size: 1.1rem; margin-bottom: 1rem; }
+.finding-card { padding: 1rem 1.2rem; margin-bottom: 1rem; border: 1px solid var(--border); border-radius: 6px; background: var(--card-bg); }
+.finding-card h3 { font-family: 'Space Grotesk', sans-serif; font-size: 0.95rem; margin: 0 0 0.4rem; color: var(--text); }
+.finding-card p { font-size: 0.85rem; color: var(--text-muted); line-height: 1.6; margin: 0; }
+.finding-card .stat { display: inline-block; font-family: 'Space Mono', monospace; font-weight: 700; font-size: 1.1rem; color: var(--red); }
+.finding-card .stat.green { color: var(--green); }
 </style>
 </head>
 
@@ -969,6 +988,52 @@ code {
     <div style="text-align:center;margin:2rem 0;">
       <a href="world.html" style="display:inline-block;background:var(--green);color:#fff;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:0.9rem;padding:0.8rem 2rem;border-radius:6px;text-decoration:none;letter-spacing:0.03em;box-shadow:0 3px 12px rgba(39,174,96,0.25);">&#127918; Try the Live Simulation</a>
     </div>
+
+    <!-- Variables over Vibes thesis -->
+    <div class="thesis-callout">
+      <p>Variables over Vibes.</p>
+      <p class="subtitle">Dutch healthcare policy runs on intuition. This simulation runs on CBS, RIVM, and NZa data.<br>The 16-bit aesthetic abstracts emotional weight into observable variables.</p>
+    </div>
+
+    <!-- Skeptic's Corner -->
+    <div class="skeptics-corner">
+      <h2>Skeptic's Corner</h2>
+      <div class="skeptic-qa">
+        <div class="q">"Is this a video game?"</div>
+        <div class="a">No. It runs on FHIR R4 health records, RIVM chronic disease models, and NZa 2025 tariffs. The 16-bit aesthetic is deliberate: it strips away emotion so you focus on the variables. Every pixel citizen has a real health trajectory based on Dutch epidemiological data.</div>
+      </div>
+      <div class="skeptic-qa">
+        <div class="q">"You work at Microsoft. Aren't you biased toward AI?"</div>
+        <div class="a">Yes, and I designed the simulation to catch that. The "Efficiency Trap" finding (below) showed AI throughput optimization deprioritized complex elderly patients. That's not a feature I wanted to find. 200 runs, open parameters, all data public.</div>
+      </div>
+      <div class="skeptic-qa">
+        <div class="q">"Does AI actually help?"</div>
+        <div class="a">Detection without capacity is useless. The biggest mortality drop came from administrative relief&mdash;giving GPs back 25% of their time&mdash;not from diagnostic AI. The simulation proved that boring automation beats flashy prediction.</div>
+      </div>
+    </div>
+
+    <!-- Key Findings -->
+    <div class="key-findings">
+      <h2>Key Findings from 200 Runs</h2>
+
+      <div class="finding-card">
+        <h3>The Opportunity Cost of Paperwork</h3>
+        <p>Every automated 20-minute consult (NZa code 12001) saves <span class="stat green">&euro;24.85</span> in redeployable GP labor. At 30% admin burden, that's 7.2 hours per GP per week lost to filing&mdash;enough for 22 extra patient consultations.</p>
+        <p style="margin-top:0.5rem;font-size:0.8rem;color:var(--text-muted)">Three scenarios tested: IST (30% admin) &rarr; IZA target (25%) &rarr; SOLL (10%). Each 5% reduction freed ~2.4 consult-hours/week.</p>
+      </div>
+
+      <div class="finding-card">
+        <h3>The Efficiency Trap</h3>
+        <p>When we optimized purely for throughput, the simulation <em>deprioritized complex elderly patients</em> with multimorbidity. AI-driven triage routed fast cases first, creating <span class="stat">digital selection</span> that excluded those who needed care most.</p>
+        <p style="margin-top:0.5rem;font-size:0.8rem;color:var(--text-muted)">Fix: Fairness Score in Agent Cards + Priority Multiplier for complexity. Prevents AI from optimizing away the hardest cases.</p>
+      </div>
+
+      <div class="finding-card">
+        <h3>Impact Counter (formerly "Ghost Count")</h3>
+        <p>Every pixel citizen who reaches 0 HP due to system delay is an <span class="stat">avoidable death</span>. Not a random event&mdash;a direct consequence of wait time exceeding the Treeknorm threshold. We stopped calling it "Ghost Count" because it's not a game metric. It's the human cost of inaction.</p>
+      </div>
+    </div>
+
   </main>
   <div></div>
 </div>
