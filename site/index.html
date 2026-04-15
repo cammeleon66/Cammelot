@@ -1036,89 +1036,110 @@ code {
     }
 
 
-    /* Screenshot slider */
+    /* ── Screenshot Slider ── */
     .sim-slider {
-      margin: 2rem 0;
-      border-radius: 10px;
+      margin: 2.5rem 0 2rem;
+      border-radius: 6px;
       overflow: hidden;
-      border: 2px solid var(--border);
-      background: #111;
+      border: 1px solid var(--border);
+      background: var(--card-bg);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+    .sim-slider-viewport {
+      position: relative;
+      overflow: hidden;
     }
     .sim-slider-track {
       display: flex;
-      transition: transform 0.45s cubic-bezier(0.4, 0, 0.2, 1);
-      will-change: transform;
+      transition: transform 0.5s ease;
     }
     .sim-slide {
       min-width: 100%;
       flex-shrink: 0;
+      position: relative;
     }
     .sim-slide img {
       width: 100%;
       height: auto;
       display: block;
     }
-    .sim-slide-info {
-      padding: 0.9rem 1.2rem 1rem;
-      background: var(--surface);
+    .sim-slide-caption {
+      padding: 1rem 1.4rem 1.1rem;
+      background: var(--card-bg);
       border-top: 1px solid var(--border);
     }
-    .sim-slide-title {
-      font-family: "Space Grotesk", sans-serif;
-      font-size: 0.82rem;
-      font-weight: 700;
+    .sim-slide-caption h4 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 600;
       color: var(--text);
-      margin-bottom: 0.25rem;
+      margin: 0 0 0.3rem;
+      letter-spacing: 0.01em;
     }
-    .sim-slide-desc {
-      font-family: "Space Grotesk", sans-serif;
-      font-size: 0.72rem;
+    .sim-slide-caption p {
+      font-family: 'Spectral', Georgia, serif;
+      font-size: 0.78rem;
       color: var(--text-muted);
-      line-height: 1.55;
+      line-height: 1.6;
+      margin: 0;
     }
-    .sim-slider-nav {
+    .sim-slider-controls {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 10px;
-      padding: 0.6rem 0;
-      background: var(--surface);
+      gap: 0.7rem;
+      padding: 0.7rem 0;
+      background: var(--card-bg);
       border-top: 1px solid var(--border);
     }
-    .sim-slider-dot {
-      width: 9px; height: 9px;
+    .sim-slider-arrow {
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: var(--card-bg);
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      padding: 0;
+      line-height: 1;
+    }
+    .sim-slider-arrow:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .sim-slider-indicator {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .sim-slider-pip {
+      width: 8px; height: 8px;
       border-radius: 50%;
       background: var(--border);
       border: none;
       cursor: pointer;
       padding: 0;
-      transition: background 0.25s, transform 0.2s;
+      transition: all 0.25s;
     }
-    .sim-slider-dot.active {
+    .sim-slider-pip.on {
       background: var(--green);
-      transform: scale(1.3);
+      transform: scale(1.35);
     }
-    .sim-slider-btn {
-      background: none;
-      border: 1px solid var(--border);
+    .sim-slider-counter {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.65rem;
       color: var(--text-muted);
-      width: 28px; height: 28px;
-      border-radius: 50%;
-      cursor: pointer;
-      font-size: 14px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: border-color 0.2s, color 0.2s;
+      margin-left: 0.3rem;
+      letter-spacing: 0.05em;
     }
-    .sim-slider-btn:hover {
-      border-color: var(--green);
-      color: var(--green);
-    }
-    @media (max-width: 600px) {
-      .sim-slide-info { padding: 0.6rem 0.8rem; }
-      .sim-slide-title { font-size: 0.75rem; }
-      .sim-slide-desc { font-size: 0.65rem; }
+    @media (max-width: 700px) {
+      .sim-slide-caption { padding: 0.8rem 1rem; }
+      .sim-slide-caption h4 { font-size: 0.78rem; }
+      .sim-slide-caption p { font-size: 0.72rem; }
     }
     </style>
 </head>
@@ -1228,53 +1249,70 @@ code {
       <p>So I built <strong>Cammelot</strong>: a simulated Dutch town. Forty-five citizens with names, ages, pre-existing conditions, and GP assignments. Three general practitioners. One hospital. The citizens walk around a 16-bit pixel map that looks like it belongs on a 1994 Super Nintendo — but their diseases are drawn from 2025 RIVM prevalence data, their healthcare costs from NZa tariffs, and their waiting times from the Treeknorm, the Dutch legal norm for specialist care access.</p>
 
       <!-- Simulation screenshot slider -->
-      <div class="sim-slider" id="sim-slider">
-        <div class="sim-slider-track" id="sim-slider-track">
-          <div class="sim-slide">
-            <img src="img/slide-2.png" alt="Cammelot town overview — citizens walking between GP practices and hospital">
-            <div class="sim-slide-info">
-              <div class="sim-slide-title">The Town of Cammelot</div>
-              <div class="sim-slide-desc">45 AI citizens walk through a 16-bit pixel town. Each has a name, age, family, and health profile. Speech bubbles show their thoughts as they navigate between GP practices and the hospital.</div>
+      <div class="sim-slider" id="simSlider">
+        <div class="sim-slider-viewport">
+          <div class="sim-slider-track" id="simTrack">
+            <div class="sim-slide">
+              <img src="img/slide-2.png" alt="Cammelot town overview — citizens walking between GP practices and hospital" loading="lazy">
+              <div class="sim-slide-caption">
+                <h4>The Town of Cammelot</h4>
+                <p>Forty-five citizens walk through a pixel-art Dutch town. Each has a name, age, family, and health profile drawn from CBS and RIVM data. Speech bubbles surface their internal state as they navigate between three GP practices and a regional hospital.</p>
+              </div>
             </div>
-          </div>
-          <div class="sim-slide">
-            <img src="img/slide-1.png" alt="Citizen dossier — health data, personality, family, and care pathway">
-            <div class="sim-slide-info">
-              <div class="sim-slide-title">Citizen Dossier</div>
-              <div class="sim-slide-desc">Click any citizen to open their full profile: occupation, personality, family ties, digital literacy, health status (HP), assigned GP, and their care pathway from diagnosis to treatment.</div>
+            <div class="sim-slide">
+              <img src="img/slide-1.png" alt="Citizen dossier — health data, personality, family, and care pathway" loading="lazy">
+              <div class="sim-slide-caption">
+                <h4>Citizen Dossier</h4>
+                <p>Click any citizen to open their full profile: occupation, personality, family ties, digital literacy, current HP, assigned GP, active conditions, and their care pathway from first symptoms through referral to specialist treatment.</p>
+              </div>
             </div>
-          </div>
-          <div class="sim-slide">
-            <img src="img/slide-3.png" alt="Hospital building report — capacity, specialists, and patient queue">
-            <div class="sim-slide-info">
-              <div class="sim-slide-title">Hospital &amp; GP Reports</div>
-              <div class="sim-slide-desc">Click any building for a live report: bed occupancy, specialist queues, Treeknorm compliance, and recently discharged patients. This is where system bottlenecks become visible.</div>
+            <div class="sim-slide">
+              <img src="img/slide-3.png" alt="Hospital building report — capacity, specialists, and patient queue" loading="lazy">
+              <div class="sim-slide-caption">
+                <h4>Hospital &amp; GP Reports</h4>
+                <p>Click any building for a live operational report: bed occupancy, specialist queues, current Treeknorm compliance, and recently discharged patients. This is where system-level bottlenecks become visible.</p>
+              </div>
             </div>
           </div>
         </div>
-        <div class="sim-slider-nav">
-          <button class="sim-slider-btn" id="slider-prev" aria-label="Previous">‹</button>
-          <button class="sim-slider-dot active" data-slide="0"></button>
-          <button class="sim-slider-dot" data-slide="1"></button>
-          <button class="sim-slider-dot" data-slide="2"></button>
-          <button class="sim-slider-btn" id="slider-next" aria-label="Next">›</button>
+        <div class="sim-slider-controls">
+          <button class="sim-slider-arrow" id="sliderPrev" aria-label="Previous slide">‹</button>
+          <div class="sim-slider-indicator">
+            <button class="sim-slider-pip on" data-idx="0" aria-label="Slide 1"></button>
+            <button class="sim-slider-pip" data-idx="1" aria-label="Slide 2"></button>
+            <button class="sim-slider-pip" data-idx="2" aria-label="Slide 3"></button>
+          </div>
+          <button class="sim-slider-arrow" id="sliderNext" aria-label="Next slide">›</button>
+          <span class="sim-slider-counter"><span id="sliderNum">1</span> / 3</span>
         </div>
       </div>
       <script>
-      (function(){
-        var idx=0,total=3,track=document.getElementById("sim-slider-track");
-        var dots=document.querySelectorAll(".sim-slider-dot");
-        function go(n){idx=((n%total)+total)%total;track.style.transform="translateX(-"+idx*100+"%)";dots.forEach(function(d,i){d.className="sim-slider-dot"+(i===idx?" active":"");});}
-        document.getElementById("slider-prev").addEventListener("click",function(){go(idx-1);});
-        document.getElementById("slider-next").addEventListener("click",function(){go(idx+1);});
-        dots.forEach(function(d){d.addEventListener("click",function(){go(parseInt(this.dataset.slide));});});
-        var timer=setInterval(function(){go(idx+1);},6000);
-        var el=document.getElementById("sim-slider");
-        el.addEventListener("mouseenter",function(){clearInterval(timer);});
-        el.addEventListener("mouseleave",function(){timer=setInterval(function(){go(idx+1);},6000);});
-        var sx=0;
-        el.addEventListener("touchstart",function(e){sx=e.touches[0].clientX;},{passive:true});
-        el.addEventListener("touchend",function(e){var dx=e.changedTouches[0].clientX-sx;if(Math.abs(dx)>40)go(idx+(dx<0?1:-1));},{passive:true});
+      (function () {
+        var cur = 0, total = 3;
+        var track = document.getElementById('simTrack');
+        var pips = document.querySelectorAll('.sim-slider-pip');
+        var num = document.getElementById('sliderNum');
+        function go(n) {
+          cur = ((n % total) + total) % total;
+          track.style.transform = 'translateX(-' + (cur * 100) + '%)';
+          pips.forEach(function (p, i) { p.className = 'sim-slider-pip' + (i === cur ? ' on' : ''); });
+          num.textContent = cur + 1;
+        }
+        document.getElementById('sliderPrev').onclick = function () { go(cur - 1); };
+        document.getElementById('sliderNext').onclick = function () { go(cur + 1); };
+        pips.forEach(function (p) { p.onclick = function () { go(+this.dataset.idx); }; });
+        // Auto-advance
+        var iv = setInterval(function () { go(cur + 1); }, 7000);
+        var box = document.getElementById('simSlider');
+        box.onmouseenter = function () { clearInterval(iv); };
+        box.onmouseleave = function () { iv = setInterval(function () { go(cur + 1); }, 7000); };
+        // Touch / swipe
+        var sx = 0;
+        box.addEventListener('touchstart', function (e) { sx = e.touches[0].clientX; }, { passive: true });
+        box.addEventListener('touchend', function (e) {
+          var dx = e.changedTouches[0].clientX - sx;
+          if (Math.abs(dx) > 40) go(cur + (dx < 0 ? 1 : -1));
+        }, { passive: true });
       })();
       </script>
 
