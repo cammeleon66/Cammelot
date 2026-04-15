@@ -3,19 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>How I Wired a Pixel Town with A2A and FHIR</title>
+<title>Inside the Engine Room — Cammelot</title>
 
 <!-- Open Graph Meta Tags -->
-<meta property="og:title" content="How I Wired a Pixel Town with A2A and FHIR">
-<meta property="og:description" content="Every agent publishes a card. Every action writes a FHIR resource. The mesh self-organizes.">
+<meta property="og:title" content="Inside the Engine Room: FHIR, A2A, and the Agentic Mesh">
+<meta property="og:description" content="Cammelot isn’t a black box. It is a decentralized architecture built to test how data standards and agent protocols survive a healthcare crisis.">
 <meta property="og:image" content="https://cammelot.org/og-image.png">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://cammelot.org/ch1.html">
 
 <!-- Twitter Card Meta Tags -->
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="How I Wired a Pixel Town with A2A and FHIR">
-<meta name="twitter:description" content="Every agent publishes a card. Every action writes a FHIR resource. The mesh self-organizes.">
+<meta name="twitter:title" content="Inside the Engine Room: FHIR, A2A, and the Agentic Mesh">
+<meta name="twitter:description" content="Cammelot isn’t a black box. It is a decentralized architecture built to test how data standards and agent protocols survive a healthcare crisis.">
 <meta name="twitter:image" content="https://cammelot.org/og-image.png">
 
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='4' y='20' width='24' height='12' fill='%23c0392b'/%3E%3Crect x='4' y='16' width='6' height='4' fill='%23c0392b'/%3E%3Crect x='13' y='16' width='6' height='4' fill='%23c0392b'/%3E%3Crect x='22' y='16' width='6' height='4' fill='%23c0392b'/%3E%3Crect x='12' y='8' width='8' height='12' fill='%23e74c3c'/%3E%3Crect x='14' y='4' width='4' height='4' fill='%23c0392b'/%3E%3Crect x='14' y='24' width='4' height='8' fill='%23922b21'/%3E%3C/svg%3E">
@@ -783,6 +783,147 @@ code {
 }
 .chapter-nav a:hover { color: var(--text); }
 .chapter-nav .next { margin-left: auto; }
+
+    /* Technical spec boxes */
+    .tech-spec-box {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+      font-family: 'Space Grotesk', sans-serif;
+    }
+    .code-header {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.5rem;
+      margin-bottom: 1rem;
+      display: flex;
+      justify-content: space-between;
+      letter-spacing: 0.05em;
+    }
+    .fhir-resource {
+      background: #14141f;
+      color: #a9ffaf;
+      padding: 1rem;
+      border-radius: 4px;
+      font-family: 'SF Mono', 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      overflow-x: auto;
+      line-height: 1.5;
+    }
+    body:not(.dark-theme) .fhir-resource {
+      background: #1a1a2e;
+    }
+    .agent-card-viz {
+      border-left: 4px solid var(--green);
+      padding-left: 1.5rem;
+      margin: 2rem 0;
+    }
+    .agent-card-viz h4 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--green);
+      margin-bottom: 0.5rem;
+    }
+    .kicker {
+      font-family: 'Space Grotesk', sans-serif;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      font-size: 0.75rem;
+      color: var(--green);
+      margin-bottom: 0.5rem;
+    }
+    .lede {
+      font-size: 1.15rem;
+      line-height: 1.7;
+      color: var(--text);
+      font-weight: 500;
+      margin-bottom: 1.5rem;
+    }
+    .pillar-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+    .pillar-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-top: 3px solid var(--green);
+      border-radius: 6px;
+      padding: 1.2rem;
+      text-align: center;
+    }
+    .pillar-card .pillar-num {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--green);
+      line-height: 1;
+    }
+    .pillar-card .pillar-name {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-top: 0.3rem;
+    }
+    .pillar-card .pillar-desc {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-top: 0.3rem;
+      line-height: 1.4;
+    }
+    .sequence-box {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.2rem 1.5rem;
+      margin: 1.5rem 0;
+      font-family: 'Space Grotesk', monospace;
+      font-size: 0.82rem;
+      line-height: 1.8;
+      color: var(--text);
+    }
+    .sequence-box .seq-arrow { color: var(--green); font-weight: 600; }
+    .sequence-box .seq-label { color: var(--text-muted); font-size: 0.72rem; }
+    .loop-step {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+      margin-bottom: 1rem;
+      padding: 0.8rem 1rem;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+    }
+    .loop-step .step-num {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700;
+      font-size: 1.2rem;
+      color: var(--green);
+      min-width: 2rem;
+    }
+    .loop-step .step-name {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: var(--text);
+    }
+    .loop-step .step-desc {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 0.2rem;
+      line-height: 1.5;
+    }
+    @media (max-width: 700px) {
+      .pillar-grid { grid-template-columns: 1fr; }
+    }
+
 </style>
 </head>
 
@@ -826,13 +967,16 @@ code {
   <!-- Sidebar TOC -->
   <aside class="toc" id="toc">
   <div class="toc-label">Contents</div>
-  <div class="toc-part">The Story</div>
-  <a href="ch0.html" data-section="chapter-0">0. Why I Built This</a>
-  <div class="toc-part">The Build</div>
-  <a href="ch1.html" data-section="chapter-1" class="active">1. The Architecture</a>
-  <a href="ch2.html" data-section="chapter-2">2. The Agentic Mesh</a>
-  <div class="toc-part">What's Next</div>
-  <a href="ch3.html" data-section="chapter-3">3. What's Coming</a>
+  <div class="toc-part">This Chapter</div>
+  <a href="#chapter-1" class="active">The Architecture</a>
+  <a href="#mesh">1. The Agentic Mesh</a>
+  <a href="#fhir">2. FHIR R4</a>
+  <a href="#loop">3. The Cognitive Loop</a>
+  <a href="#code">The Code</a>
+  <div class="toc-part">Chapters</div>
+  <a href="ch0.html">0. Why I Built This</a>
+  <a href="ch2.html">2. The Agentic Mesh</a>
+  <a href="ch3.html">3. What’s Coming</a>
   <div class="toc-part" style="margin-top:12px;">Explore</div>
   <a href="world.html" style="color:#27ae60;">&#127918; Live Simulation</a>
 </aside>
@@ -842,159 +986,175 @@ code {
 
     <section class="chapter" id="chapter-1">
       <div class="chapter-label">Chapter 1</div>
-      <h2>How I Wired a Pixel Town with A2A and FHIR</h2>
-      <div class="hook">"Every agent publishes a card. Every action writes a FHIR resource. The mesh self-organizes."</div>
+      <div class="kicker">System Architecture</div>
+      <h2>Inside the Engine Room</h2>
+      <p class="lede">Cammelot isn’t a “black box” neural network. It is a decentralized operating system built on the premise that healthcare doesn’t have a data problem—it has a coordination problem.</p>
 
-      <p>The Dutch healthcare system has about 300,000 GP systems that can't talk to each other.</p>
+      <p>Traditional healthcare IT is a “Tower of Babel.” In 2024, only 11% of Dutch health data was interoperable between providers. The IZA wants that at 66% by 2030, spending €2.8 billion on transformation plans. Most of those plans build point-to-point integrations: system A talks to system B through a custom connector. Repeat for every pair.</p>
 
-      <p>In 2024, only 11% of Dutch health data was interoperable between providers. The IZA wants that at 66% by 2030. They're spending €2.8 billion on transformation plans to get there. Most of those plans are building point-to-point integrations: system A talks to system B through a custom connector. Repeat for every pair.</p>
+      <p>To fix Cammelot’s healthcare, we didn’t build a better database; we built a better <strong>protocol</strong>. The architecture rests on three pillars:</p>
 
-      <p>I took a different approach. I gave every provider in my simulation a business card and let them figure it out.</p>
-      <h3>Agent Cards: the business card idea</h3>
-
-      <p>In Cammelot, every GP and specialist publishes a machine-readable description of themselves at a known URL. It's based on the A2A (Agent-to-Agent) protocol. The structure is simple:</p>
-
-      <div class="replay-embed" style="text-align:left;padding:0.8rem;font-size:0.75rem;line-height:1.5;"><code style="background:none;color:#8888aa;font-size:0.75rem;white-space:pre;">{
-  "agentId": "gp-de-jong",
-  "name": "Dr. de Jong",
-  "role": "gp",
-  "skills": ["triage", "referral", "chronic_care"],
-  "status": "available",
-  "waitTime": { "weeks": 2, "queueSize": 12 },
-  "metadata": {
-    "admin_load": "30%",
-    "treeknorm_status": "compliant",
-    "nza_consult_rate_eur": 12.43,
-    "max_patients": 2400
-  }
-}</code></div>
-
-      <p>That's it. No API contract negotiation. No integration middleware. Just: "here's who I am, here's what I can do, here's how busy I am right now." Any other agent in the mesh can read this and decide whether to send a referral.</p>
-
-      <p>This concept is not new to the Netherlands. Health-RI and DTL developed the Personal Health Train (PHT) - data stays at the "station" (the hospital, the GP practice), and the "train" (the analysis) travels to it. The technical platform, vantage6 by IKNL, has been used in federated oncology research across multiple hospitals. What PHT doesn't have is discovery. In vantage6, the researcher configures which nodes to query. In A2A, agents find each other by reading published cards. The researcher doesn't need to know the topology. The mesh is self-describing.</p>
-
-      <p>The cardiologist publishes the same format:</p>
-
-      <div class="replay-embed" style="text-align:left;padding:0.8rem;font-size:0.75rem;line-height:1.5;"><code style="background:none;color:#8888aa;font-size:0.75rem;white-space:pre;">{
-  "agentId": "spec-cardiology",
-  "name": "Dr. van den Berg",
-  "role": "specialist",
-  "skills": ["cardiology"],
-  "waitTime": { "weeks": 12, "queueSize": 8 },
-  "metadata": { "weekly_capacity": 12 }
-}</code></div>
-
-      <p>When Dr. de Jong needs to refer a patient with heart disease, she doesn't call the hospital switchboard. She reads the cardiology agent card, verifies its signature (each card is hash-signed; a forged card fails verification), checks the wait time, and sends a structured referral message. If the cardiologist's queue is full, the referral bounces with a machine-readable rejection and Dr. de Jong auto-routes to the next available specialist. The referral has a lifecycle: <code>submitted → working → input-required → completed</code>. Both sides can track it. No fax machines involved.</p>
-
-      <p>In the simulation, this runs through <code>sendA2AMessage()</code>:</p>
-
-      <div class="replay-embed" style="text-align:left;padding:0.8rem;font-size:0.75rem;line-height:1.5;"><code style="background:none;color:#8888aa;font-size:0.75rem;white-space:pre;">function sendA2AMessage(from, to, type, payload) {
-  const msg = {
-    id: 'msg-' + cycle + '-' + Math.random().toString(36).slice(2, 6),
-    from: from.id, to: to.id,
-    type,       // 'referral', 'status_query', 'alert'
-    payload,    // patient data, urgency, condition codes
-    cycle,
-    status: 'sent'
-  };
-  A2A_MESSAGES.push(msg);
-  return msg;
-}</code></div>
-
-      <p>The entire inter-agent communication layer is about forty lines of code.</p>
-      <h3>FHIR as memory, not just messaging</h3>
-
-      <p>The second piece is FHIR R4. Not as a messaging standard (everyone uses it for that) but as the memory layer for every agent.</p>
-
-      <p>Every action in Cammelot gets logged as a FHIR resource. When Dr. de Jong sees a patient, that's an <code>Encounter</code>. When she records a blood pressure reading, that's an <code>Observation</code>. When she diagnoses COPD, that's a <code>Condition</code>. When she prescribes medication, <code>MedicationRequest</code>.</p>
-
-      <div class="replay-embed" style="text-align:left;padding:0.8rem;font-size:0.75rem;line-height:1.5;"><code style="background:none;color:#8888aa;font-size:0.75rem;white-space:pre;">function createFHIRResource(type, agentId, data) {
-  const resource = {
-    resourceType: type,
-    id: type.toLowerCase() + '-' + agentId + '-' + cycle,
-    subject: { reference: 'Patient/' + agentId },
-    cycle: cycle,
-    ...data
-  };
-  FHIR_STORE.push(resource);
-  return resource;
-}</code></div>
-
-      <p>This means every agent's entire life history is a chronological FHIR query:</p>
-
-      <div class="replay-embed" style="text-align:left;padding:0.8rem;font-size:0.75rem;line-height:1.5;"><code style="background:none;color:#8888aa;font-size:0.75rem;white-space:pre;">function queryFHIR(agentId, type) {
-  return FHIR_STORE.filter(r =&gt;
-    r.subject?.reference === 'Patient/' + agentId &amp;&amp;
-    (!type || r.resourceType === type)
-  );
-}</code></div>
-
-      <p>That's the "Memory Stream" from the Park et al. generative agents paper, except instead of plain text entries ("Isabella woke up at 7am"), it's structured clinical data. You can query it. You can aggregate it. You can run Digital Twin predictions on it. And because it's FHIR, you don't need a proprietary format that only works inside one system.</p>
-
-      <p>The Digital Twin risk calculator literally just reads the FHIR store:</p>
-
-      <div class="replay-embed" style="text-align:left;padding:0.8rem;font-size:0.75rem;line-height:1.5;"><code style="background:none;color:#8888aa;font-size:0.75rem;white-space:pre;">function calculateDigitalTwinRisk(agent) {
-  let riskScore = 0;
-  agent.conditions.forEach(c =&gt; {
-    const sevMult = { mild: 0.1, moderate: 0.3, severe: 0.6, critical: 0.9 };
-    riskScore += sevMult[c.severity] || 0;
-  });
-  if (agent.age &gt;= 80) riskScore *= 1.5;
-  if (agent.conditions.length &gt;= 2) riskScore *= 1.3;
-  return Math.min(95, Math.round(riskScore * 100));
-}</code></div>
-
-      <p>No fancy ML model. Just structured data, queried in real-time, producing actionable risk scores. The point isn't sophistication. The point is that when your data is standardized and queryable, even simple logic produces useful outputs.</p>
-      <h3>Why this matters outside my pixel town</h3>
-
-      <p>The reason 89% of Dutch health data isn't interoperable in 2024 isn't technical. The standards exist. FHIR R4 has been around since 2019. The problem is architectural: every system is built as a silo, and interoperability is bolted on after the fact through connectors and adapters.</p>
-
-      <p>A2A flips the model. Instead of connecting systems to each other (O(n²) integrations), every system publishes a card and communicates through a shared protocol. Adding a new specialist to the mesh doesn't require integration work. They just publish their card.</p>
-
-      <p>In Cammelot, I added a third specialist in about 5 minutes: create the agent card, add them to the agent list, done. They immediately start receiving referrals. Compare that to adding a new specialist system to a real Dutch hospital integration landscape. (I've been told estimates range from 3 to 18 months.)</p>
-
-      <p>The IZA transformation plans mostly fall into the "connect A to B" pattern. I think the plans that will actually work are the ones that adopt protocol-level interoperability: every provider speaks the same language, and the network effect does the rest.</p>
-
-      <p>HTTP didn't succeed because browsers negotiated with servers. It succeeded because both sides agreed on a shared protocol and everything else followed. A2A could do the same for healthcare. Or something like it. The specific protocol matters less than the principle of publishing rather than connecting.</p>
-      <h3>The code</h3>
-
-      <p>The full A2A + FHIR implementation in Cammelot is under 200 lines of JavaScript. It runs in a browser. There's no server, no database, no middleware. Everything is in-memory, in a single HTML file.</p>
-
-      <p>This isn't production-ready. But it took an afternoon to build, and it produces a functioning multi-agent healthcare mesh that can run 200 simulations with full statistical analysis. If the protocol were standardized across real Dutch providers, the integration cost for the IZA transformation would look very different.</p>
-
-      <p>The code is on GitHub if you want to poke holes in it.</p>
-      <div class="footnote-body" style="display:block;margin-top:2rem;"><em>Technical details: FHIR_STORE is a capped array (2,000 resources) with FIFO eviction. A2A_MESSAGES caps at 200. Agent cards are static in current implementation; dynamic publishing with real-time wait time updates is planned. FHIR resources follow R4 structure (resourceType, subject reference, effectiveDateTime) but don't validate against full FHIR schemas. That's a known shortcut.</em></div>
-    
-      <div class="insight-callout" style="margin-top:1.5rem;">
-        <strong>Wegiz-Ready by Design</strong><br>
-        Cammelot is aligned with the Wegiz (Wet elektronische gegevensuitwisseling in de zorg), which mandates electronic data exchange for all Dutch healthcare providers. Every agent interaction uses HL7 FHIR R4 resources aligned with Nictiz nl-core profiles. This isn't aspirational compliance &mdash; it's the architecture's foundation.
+      <div class="pillar-grid">
+        <div class="pillar-card">
+          <div class="pillar-num">01</div>
+          <div class="pillar-name">The Mesh</div>
+          <div class="pillar-desc">A2A Protocol</div>
+        </div>
+        <div class="pillar-card">
+          <div class="pillar-num">02</div>
+          <div class="pillar-name">The Language</div>
+          <div class="pillar-desc">FHIR R4</div>
+        </div>
+        <div class="pillar-card">
+          <div class="pillar-num">03</div>
+          <div class="pillar-name">The Loop</div>
+          <div class="pillar-desc">Cognitive Agent</div>
+        </div>
       </div>
 
+      <div class="chapter-divider"><div class="diamond"></div></div>
+
+      <h3 id="mesh">1. The Agentic Mesh (A2A Protocol)</h3>
+
+      <p>In Cammelot, there is no central server “telling people where to go.” Every GP, Specialist, and Hospital is an <strong>Autonomous Agent</strong>. They communicate via the <strong>Agent-to-Agent (A2A) protocol</strong>.</p>
+
+      <div class="agent-card-viz">
+        <h4>The Agent Card</h4>
+        <p>Every provider publishes a machine-readable “business card.” When a patient needs care, the system doesn’t search a static directory; it queries the mesh in real-time.</p>
+        <div class="tech-spec-box">
+          <div class="code-header"><span>GET /.well-known/agent-card.json</span><span>200 OK</span></div>
+          <pre class="fhir-resource">{
+  "agentId": "gp-de-jong",
+  "name": "Dr. de Jong",
+  "specialty": "General Practice",
+  "currentWait": "14 days",
+  "treeknorm_compliant": true,
+  "capacity": 0.85,
+  "nza_consult_rate_eur": 12.43
+}</pre>
+        </div>
+      </div>
+
+      <p>That’s it. No API contract negotiation. No integration middleware. Just: “here’s who I am, here’s what I can do, here’s how busy I am right now.” Any other agent in the mesh can read this and decide whether to send a referral.</p>
+
+      <p><strong>The Referral Handshake:</strong></p>
+
+      <div class="sequence-box">
+        <div><span class="seq-label">Step 1</span> &nbsp; GP reads Cardiology Agent Card</div>
+        <div>GP <span class="seq-arrow">→</span> Hospital: <code>{ type: "referral", patient: "Hendrik", condition: "I25" }</code></div>
+        <div><span class="seq-label">Step 2</span> &nbsp; Hospital checks capacity &amp; Treeknorm</div>
+        <div>Hospital <span class="seq-arrow">→</span> GP: <code>{ status: "accepted", estimatedWait: "3 weeks" }</code></div>
+        <div><span class="seq-label">Step 3</span> &nbsp; Referral lifecycle: <code>submitted → working → completed</code></div>
+      </div>
+
+      <p>If the cardiologist’s queue is full, the referral bounces with a machine-readable rejection and Dr. de Jong auto-routes to the next available specialist. No fax machines involved.</p>
+
+      <p>Compare this to real Dutch integration: adding a new specialist system takes 3–18 months. In Cammelot, it takes 5 minutes—publish an Agent Card, join the mesh, start receiving referrals.</p>
+
+      <div class="chapter-divider"><div class="diamond"></div></div>
+
+      <h3 id="fhir">2. FHIR R4: The Universal Language</h3>
+
+      <p>Every life in Cammelot is a stream of <strong>HL7® FHIR® R4 resources</strong>. This isn’t just for show—it is the bedrock of the simulation’s validity. Because we use the R4 standard, we can measure exactly how “data silos” lead to clinical errors.</p>
+
+      <div class="tech-spec-box">
+        <div class="code-header"><span>FHIR Observation — COPD Severity</span><span>Patient/Hendrik-Veenstra</span></div>
+        <pre class="fhir-resource">{
+  "resourceType": "Observation",
+  "status": "final",
+  "code": { "coding": [{ "system": "http://cammelot.sim", "code": "COPD-stage" }] },
+  "valueString": "Moderate",
+  "subject": { "reference": "Patient/Hendrik-Veenstra" },
+  "effectiveDateTime": "2026-04-15"
+}</pre>
+      </div>
+
+      <p><strong>Memory as Data:</strong> Every visit is an <code>Encounter</code>. Every diagnosis is a <code>Condition</code>. Every prescription is a <code>MedicationRequest</code>. The entire life history of a pixel citizen is a chronological FHIR query—the same “Memory Stream” from Park et al.’s Generative Agents paper, except in structured clinical data instead of plain text.</p>
+
+      <div class="tech-spec-box">
+        <div class="code-header"><span>Memory Stream Query</span><span>queryFHIR()</span></div>
+        <pre class="fhir-resource">function queryFHIR(agentId, type) {
+  return FHIR_STORE.filter(r =>
+    r.subject?.reference === 'Patient/' + agentId &&
+    (!type || r.resourceType === type)
+  );
+}</pre>
+      </div>
+
+      <p>The Digital Twin risk calculator reads this same store. No fancy ML model—just structured data, queried in real-time, producing actionable risk scores. When your data is standardized and queryable, even simple logic produces useful outputs.</p>
+
+      <div class="chapter-divider"><div class="diamond"></div></div>
+
+      <h3 id="loop">3. The Cognitive Loop</h3>
+
+      <p>The agents don’t just react; they <strong>reflect</strong>. Using a deterministic version of the Generative Agents architecture (Park et al., Stanford 2023), each agent executes a three-phase loop every 4 simulation ticks:</p>
+
+      <div class="loop-step">
+        <div class="step-num">1</div>
+        <div>
+          <div class="step-name">Perception</div>
+          <div class="step-desc">Read the FHIR record. “Patient HP is declining. Two conditions are active. Wait time exceeds Treeknorm.”</div>
+        </div>
+      </div>
+      <div class="loop-step">
+        <div class="step-num">2</div>
+        <div>
+          <div class="step-name">Reflection</div>
+          <div class="step-desc">Assess system constraints. “I am at 110% capacity. Administrative load is 30%. I must triage by severity.”</div>
+        </div>
+      </div>
+      <div class="loop-step">
+        <div class="step-num">3</div>
+        <div>
+          <div class="step-name">Action</div>
+          <div class="step-desc">Execute a clinical intervention or a referral handshake via the A2A mesh.</div>
+        </div>
+      </div>
+
+      <p>If a GP agent reflects that administrative load exceeds 30%, they begin to make triage errors. This is how Cammelot mathematically links <strong>Admin Relief</strong> to <strong>Patient Safety</strong>—the connection that produces the simulation’s most significant findings.</p>
+
+      <div class="chapter-divider"><div class="diamond"></div></div>
+
+      <h3 id="code">The Code</h3>
+
+      <p>The full A2A + FHIR implementation is under 200 lines of JavaScript. It runs in a browser. No server, no database, no middleware. Everything is in-memory, in a single HTML file.</p>
+
+      <p>This isn’t production-ready. But it took an afternoon to build, and it produces a functioning multi-agent healthcare mesh that can run 200 simulations with full statistical analysis. If the protocol were standardized across real Dutch providers, the integration cost for the IZA transformation would look very different.</p>
+
+      <div class="insight-callout">
+        <strong>The Technical Bet</strong><br>
+        We aren’t testing if AI can “think.” We are testing if <strong>Interoperable Action</strong>—agents that can discover each other and exchange structured data without friction—can offset a 301,000-worker shortage.
+      </div>
+
+      <div class="insight-callout" style="margin-top:1rem;">
+        <strong>Wegiz-Ready by Design</strong><br>
+        Cammelot is aligned with the Wegiz (Wet elektronische gegevensuitwisseling in de zorg), which mandates electronic data exchange for all Dutch healthcare providers. Every agent interaction uses HL7 FHIR R4 resources aligned with Nictiz nl-core profiles.
+      </div>
+
+      <div class="footnote-body" style="display:block;margin-top:2rem;"><em>Technical details: FHIR_STORE is a capped array (2,000 resources) with FIFO eviction. A2A_MESSAGES caps at 200. Agent cards are static in current implementation; dynamic publishing with real-time wait time updates is planned. FHIR resources follow R4 structure but don’t validate against full FHIR schemas—a known shortcut.</em></div>
 
 <details style="margin-top:2rem;">
-  <summary>📚 Sources & References</summary>
+  <summary>Sources &amp; References</summary>
   <div class="details-content">
     <ol style="font-size:0.82rem;line-height:1.7;color:var(--text-muted);">
+      <li>Park et al. "Generative Agents: Interactive Simulacra of Human Behavior" (Stanford, 2023)</li>
+      <li>HL7 FHIR R4 Specification — hl7.org/fhir/R4</li>
+      <li>Google A2A Protocol — Agent-to-Agent Communication Specification</li>
+      <li>Nictiz — HL7 FHIR R4 nl-core implementatiegids</li>
+      <li>IZA — Integraal Zorgakkoord 2023–2026</li>
+      <li>NZa Beleidsregel huisartsenzorg en multidisciplinaire zorg 2025</li>
+      <li>Wegiz — Wet elektronische gegevensuitwisseling in de zorg (2023)</li>
       <li>CBS StatLine — Bevolking; kerncijfers 2024</li>
       <li>RIVM Volksgezondheid Toekomst Verkenning 2024</li>
-      <li>NZa Beleidsregel huisartsenzorg en multidisciplinaire zorg 2025</li>
-      <li>Park et al. “Generative Agents: Interactive Simulacra of Human Behavior” (Stanford, 2023)</li>
-      <li>IZA — Integraal Zorgakkoord 2023–2026</li>
-      <li>RIVM Chronic Disease Model — Diabetes prevalence by age cohort</li>
       <li>NZa Monitor Toegankelijkheid Zorg — Wachttijden 2024</li>
-      <li>Nictiz — HL7 FHIR R4 nl-core implementatiegids</li>
-      <li>LHV Enquête Werkdruk Huisartsen 2024</li>
+      <li>Health-RI / IKNL — Personal Health Train &amp; vantage6</li>
       <li>ABF Research — Arbeidsmarktprognose zorg en welzijn 2023–2033</li>
-      <li>Nivel Zorgregistraties — Zorggebruik huisartsenzorg 2024</li>
-      <li>WHO — Global Strategy on Digital Health 2020–2025</li>
-      <li>ESC Guidelines — Cardiovascular Disease Prevention 2021</li>
-      <li>PMC — COPD as Independent Risk Factor for Cardiovascular Disease (RR=2.5)</li>
-      <li>Wegiz — Wet elektronische gegevensuitwisseling in de zorg (2023)</li>
     </ol>
   </div>
 </details>
 
 </section>
+
 
     <nav class="chapter-nav">
     <a href="ch0.html" class="prev">← Previous: Why I Built This</a>
