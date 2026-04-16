@@ -5368,6 +5368,52 @@ function showMemorial(grave) {
   d.innerHTML = html;
 }
 
+// === Lightweight per-tick update (no DOM rebuild) ===
+function updateAgentLive(a) {
+  // Only update dynamic values in the existing panel DOM.
+  // This avoids flickering and scroll reset that full selectAgent() causes.
+
+  // 1. HP bar
+  var hp = Math.max(0, Math.round(a.hp));
+  var hpInner = document.querySelector('.hp-inner');
+  if (hpInner) {
+    hpInner.style.width = hp + '%';
+    hpInner.className = 'hp-inner ' + (hp > 50 ? 'g' : hp > 20 ? 'y' : hp > 0 ? 'r' : 'd');
+  }
+  var hpLabel = document.querySelector('.hp-label');
+  if (hpLabel) hpLabel.textContent = hp + ' / 100 HP';
+
+  // 2. State badge
+  var stateLabels = {roaming:'Walking in town',going_to_gp:'Going to GP',queuing:'Waiting in queue',at_gp:'At GP consultation',going_to_hospital:'Going to Hospital',emergency:'\ud83d\ude91 Emergency Transport',at_hospital:'Receiving treatment',recovering:'Recovering',dead:'Deceased'};
+  var stateBadge = document.querySelector('.state-badge');
+  if (stateBadge) {
+    var newLabel = stateLabels[a.behaviorState] || a.behaviorState || 'Idle';
+    if (stateBadge.textContent !== newLabel) {
+      stateBadge.textContent = newLabel;
+      stateBadge.className = 'state-badge ' + (a.behaviorState || 'roaming');
+    }
+  }
+
+  // 3. Wait time
+  var waitRow = document.querySelector('[data-tooltip*="How long this citizen"]');
+  if (waitRow && a.waitWeeks > 0) {
+    waitRow.textContent = (Math.round(a.waitWeeks * 10) / 10) + ' weeks';
+  }
+
+  // 4. HP sparkline (redraw canvas without rebuilding DOM)
+  var sparkCanvas = document.getElementById('hp-spark');
+  if (sparkCanvas && a.hpHistory && a.hpHistory.length > 1) {
+    var data = a.hpHistory.slice(-200);
+    animateSparkline(sparkCanvas, data);
+  }
+
+  // 5. Portrait grayscale on death
+  var portraitCv = document.getElementById('portrait-cv');
+  if (portraitCv) {
+    portraitCv.style.filter = a.hp <= 0 ? 'grayscale(100%)' : '';
+  }
+}
+
 function selectAgent(a){
   // Walkthrough: auto-advance when user clicks a citizen during "Meet a Citizen" step
   if (window._wtAwaitClick) {
@@ -7285,7 +7331,7 @@ function tick(){
   updateUI();
   updateTicker(); // Sprint 6
   if (timelineVisible) drawTimeline(); // Sprint 16
-  if(selectedAgent){const a=agents.find(e=>e.id===selectedAgent);if(a)selectAgent(a);}
+  if(selectedAgent){const a=agents.find(e=>e.id===selectedAgent);if(a)updateAgentLive(a);}
   // Auto-save removed for website version
 }
 
