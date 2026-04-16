@@ -1053,11 +1053,11 @@ code {
     }
     .sim-slider-track {
       display: flex;
-      width: 300%;
+      width: 400%;
       transition: transform 0.5s ease;
     }
     .sim-slide {
-      width: calc(100% / 3);
+      width: calc(100% / 4);
       flex-shrink: 0;
       position: relative;
       display: flex;
@@ -1315,6 +1315,15 @@ code {
                 <p>Click any building for a live operational report: bed occupancy, specialist queues, current Treeknorm compliance, and recently discharged patients. This is where system-level bottlenecks become visible.</p>
               </div>
             </div>
+            <div class="sim-slide">
+              <div class="sim-slide-img-wrap">
+                <img src="img/slide-4.png" alt="Deceased patients — mortality events from system delays" loading="lazy">
+              </div>
+              <div class="sim-slide-caption">
+                <h4>When the System Fails</h4>
+                <p>Citizens who die from preventable delays become ghost sprites. Each death is traceable to a specific bottleneck: weeks waited, condition severity, and the referral that came too late.</p>
+              </div>
+            </div>
           </div>
         </div>
         <div class="sim-slider-controls">
@@ -1323,20 +1332,21 @@ code {
             <button class="sim-slider-pip on" data-idx="0" aria-label="Slide 1"></button>
             <button class="sim-slider-pip" data-idx="1" aria-label="Slide 2"></button>
             <button class="sim-slider-pip" data-idx="2" aria-label="Slide 3"></button>
+            <button class="sim-slider-pip" data-idx="3" aria-label="Slide 4"></button>
           </div>
           <button class="sim-slider-arrow" id="sliderNext" aria-label="Next slide">›</button>
-          <span class="sim-slider-counter"><span id="sliderNum">1</span> / 3</span>
+          <span class="sim-slider-counter"><span id="sliderNum">1</span> / 4</span>
         </div>
       </div>
       <script>
       (function () {
-        var cur = 0, total = 3;
+        var cur = 0, total = 4;
         var track = document.getElementById('simTrack');
         var pips = document.querySelectorAll('.sim-slider-pip');
         var num = document.getElementById('sliderNum');
         function go(n) {
           cur = ((n % total) + total) % total;
-          track.style.transform = 'translateX(-' + (cur * 33.3333) + '%)';
+          track.style.transform = 'translateX(-' + (cur * 25) + '%)';
           pips.forEach(function (p, i) { p.className = 'sim-slider-pip' + (i === cur ? ' on' : ''); });
           num.textContent = cur + 1;
         }
