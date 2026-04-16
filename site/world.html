@@ -9644,15 +9644,21 @@ autoTimer = setInterval(tick, 500);
 var playBtnInSim = document.getElementById('btn-play');
 if (playBtnInSim) playBtnInSim.textContent = '⏸ Pause';
 } // end non-embed block
-// Safety fallback: if autoTimer didn't start, force-start after 2 seconds
+// Safety: force-start sim + remove any blocking overlays after 1 second
 setTimeout(function() {
   if (!autoTimer) {
-    console.warn('Cammelot: autoTimer was null, force-starting');
     autoTimer = setInterval(tick, 500);
     var pb = document.getElementById('btn-play');
     if (pb) pb.textContent = '⏸ Pause';
   }
-}, 2000);
+  // Nuclear cleanup: remove ALL overlays that could block canvas clicks
+  ['walkthrough-overlay','play-overlay','intro-overlay','attract-overlay'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) { el.remove(); console.log('Removed overlay: ' + id); }
+  });
+  var wiz = document.getElementById('wizard-overlay');
+  if (wiz) wiz.style.display = 'none';
+}, 1000);
 // Sprint 17.3: Start attract mode timer
 // Sprint 29: Attract mode disabled for cleaner UX
 // resetAttractTimer();
@@ -10791,183 +10797,8 @@ document.getElementById('btn-tours').addEventListener('click', function() {
   showTourSelection();
 });
 
-// === FIRST VISIT: Interactive walkthrough (click-through overlay) ===
-(function() {
-  var WALKTHROUGH_STEPS = [
-    {
-      icon: "\ud83c\udff0",
-      title: "Welcome to Cammelot",
-      text: 'This is a simulated Dutch town with <span class="wt-highlight">45 AI citizens</span>, 3 GP practices, and 1 hospital. Each citizen has real medical conditions based on Dutch health data.',
-      detail: 'Built on CBS, RIVM, and NZa data \u2014 Dutch national statistics on demographics, disease prevalence, and healthcare capacity. The simulation is already running \u2014 look at the citizens walking around.'
-    },
-    {
-      icon: "\ud83d\udcf0",
-      title: "The Town Feed",
-      text: 'The panel on the right shows the <span class="wt-highlight">Town Feed</span> \u2014 a live stream of GP visits, hospital admissions, referrals, and health events.',
-      detail: 'As the simulation runs, new events appear here. Filter by Deaths, Hospital, GP, or Social to focus on what interests you.'
-    },
-    {
-      icon: "\ud83d\udc46",
-      title: "Meet a Citizen",
-      text: '<span class="wt-highlight">Click any person</span> walking in the town to open their medical dossier \u2014 age, conditions, HP, biography, and their journey through the healthcare system.',
-      detail: 'Go ahead \u2014 click someone on the map now. The walkthrough continues when you do.',
-      awaitClick: true
-    },
-    {
-      icon: "\u26a1",
-      title: "IST vs SOLL",
-      text: 'Use the <span class="wt-highlight">IST / SOLL toggle</span> at the top. IST shows today\u2019s Dutch healthcare crisis. SOLL shows what an AI-native overhaul could look like.',
-      detail: '30% admin burden drops to <5%. 12-week waits drop to <4 weeks. Toggle between them and watch outcomes change in real time.'
-    },
-    {
-      icon: "\u25b6\ufe0f",
-      title: "Ready to Explore",
-      text: 'Press <span class="wt-highlight">\u25b6 Play</span> to keep the simulation running. Use \u23e9 \u00d7100 for fast-forward, or \u21ba Reset to start over.',
-      detail: 'Explore the Gazette (\ud83d\udcf0), Stats (\ud83d\udcca), Timeline (\ud83d\udcc8), and more. Every data point traces back to real Dutch healthcare sources.'
-    }
-  ];
-
-  var currentStep = 0;
-
-  function buildWalkthrough() {
-    var overlay = document.createElement("div");
-    overlay.className = "walkthrough-overlay";
-    overlay.id = "walkthrough-overlay";
-
-    var modal = document.createElement("div");
-    modal.className = "walkthrough-modal";
-
-    modal.innerHTML =
-      '<h2>\ud83c\udff0 CAMMELOT</h2>' +
-      '<div class="wt-subtitle">A 60-second interactive introduction</div>' +
-      '<div class="walkthrough-step" id="wt-step-content"></div>' +
-      '<div class="walkthrough-dots" id="wt-dots"></div>' +
-      '<div class="walkthrough-footer">' +
-        '<span class="wt-step-label" id="wt-step-label"></span>' +
-        '<div class="wt-btns" id="wt-btns"></div>' +
-      '</div>';
-
-    overlay.appendChild(modal);
-    document.body.appendChild(overlay);
-
-    // Build dots
-    var dotsEl = document.getElementById("wt-dots");
-    for (var i = 0; i < WALKTHROUGH_STEPS.length; i++) {
-      var dot = document.createElement("div");
-      dot.className = "dot";
-      dotsEl.appendChild(dot);
-    }
-
-    renderStep();
-
-    requestAnimationFrame(function() {
-      requestAnimationFrame(function() { overlay.classList.add("visible"); });
-    });
-  }
-
-  function renderStep() {
-    var step = WALKTHROUGH_STEPS[currentStep];
-    var stepDiv = document.getElementById("wt-step-content");
-    if (!stepDiv) return;
-
-    stepDiv.innerHTML =
-      '<div class="wt-icon">' + step.icon + '</div>' +
-      '<div>' + step.text + '</div>' +
-      (step.detail ? '<div class="wt-detail">' + step.detail + '</div>' : "");
-
-    // Update dots
-    var dots = document.getElementById("wt-dots").children;
-    for (var i = 0; i < dots.length; i++) {
-      dots[i].className = "dot" + (i === currentStep ? " active" : (i < currentStep ? " done" : ""));
-    }
-
-    // Step label
-    document.getElementById("wt-step-label").textContent = (currentStep + 1) + " / " + WALKTHROUGH_STEPS.length;
-
-    // Buttons
-    var btnsDiv = document.getElementById("wt-btns");
-    btnsDiv.innerHTML = "";
-
-    // Skip/Back button
-    if (currentStep > 0) {
-      var backBtn = document.createElement("button");
-      backBtn.className = "wt-btn secondary";
-      backBtn.textContent = "\u2190 Back";
-      backBtn.addEventListener("click", function() {
-        window._wtAwaitClick = false;
-        currentStep--;
-        renderStep();
-      });
-      btnsDiv.appendChild(backBtn);
-    } else {
-      var skipBtn = document.createElement("button");
-      skipBtn.className = "wt-btn secondary";
-      skipBtn.textContent = "Skip";
-      skipBtn.addEventListener("click", closeWalkthrough);
-      btnsDiv.appendChild(skipBtn);
-    }
-
-    // Handle awaitClick step
-    if (step.awaitClick) {
-      window._wtAwaitClick = true;
-      window._wtAdvance = function() {
-        window._wtAwaitClick = false;
-        window._wtAdvance = null;
-        currentStep++;
-        renderStep();
-      };
-      var waitLabel = document.createElement("span");
-      waitLabel.style.cssText = 'font:12px/1 "Space Grotesk",sans-serif;color:#FFB300;padding:8px 14px;opacity:.8';
-      waitLabel.textContent = "\u2190 click a citizen on the map";
-      btnsDiv.appendChild(waitLabel);
-      // Also add a small skip-ahead link
-      var skipAhead = document.createElement("button");
-      skipAhead.className = "wt-btn secondary";
-      skipAhead.style.fontSize = "11px";
-      skipAhead.textContent = "Skip \u2192";
-      skipAhead.addEventListener("click", function() {
-        window._wtAwaitClick = false;
-        window._wtAdvance = null;
-        currentStep++;
-        renderStep();
-      });
-      btnsDiv.appendChild(skipAhead);
-    } else if (currentStep < WALKTHROUGH_STEPS.length - 1) {
-      var nextBtn = document.createElement("button");
-      nextBtn.className = "wt-btn primary";
-      nextBtn.textContent = "Next \u2192";
-      nextBtn.addEventListener("click", function() { currentStep++; renderStep(); });
-      btnsDiv.appendChild(nextBtn);
-    } else {
-      var startBtn = document.createElement("button");
-      startBtn.className = "wt-btn primary";
-      startBtn.textContent = "\u25b6 Start Simulation";
-      startBtn.addEventListener("click", closeWalkthrough);
-      btnsDiv.appendChild(startBtn);
-    }
-  }
-
-  function closeWalkthrough() {
-    window._wtAwaitClick = false;
-    window._wtAdvance = null;
-    var overlay = document.getElementById("walkthrough-overlay");
-    if (overlay) {
-      overlay.classList.remove("visible");
-      overlay.style.pointerEvents = "none";
-      setTimeout(function() { overlay.remove(); }, 400);
-    }
-    // Ensure simulation actually starts
-    resumeSimulation();
-  }
-
-  // Show walkthrough after initial render + pre-ticks
-  setTimeout(buildWalkthrough, 400);
-  // Auto-dismiss walkthrough after 30s if user hasn't closed it
-  setTimeout(function() {
-    var overlay = document.getElementById("walkthrough-overlay");
-    if (overlay) closeWalkthrough();
-  }, 30000);
-})();
+// Walkthrough removed — was blocking canvas clicks.
+// Simulation auto-starts; users can click citizens, GPs, and hospital directly.
 
 // Sprint S2: Taxi meter toggle button
 document.getElementById('btn-taximeter').addEventListener('click', function() {
