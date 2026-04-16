@@ -586,15 +586,17 @@ pre code {
 <div class="mobile-toc-backdrop" id="mobile-toc-backdrop"></div>
 <nav class="mobile-toc-overlay" id="mobile-toc-overlay">
   <div class="toc-part">The Crisis</div>
-  <a href="#why-system-breaks" class="mobile-toc-link">Why the System Breaks</a>
+  <a href="#the-paradox" class="mobile-toc-link">The Paradox</a>
+  <a href="#admin-burden" class="mobile-toc-link">Administrative Burden</a>
+  <a href="#waiting-lists" class="mobile-toc-link">Waiting Lists</a>
+  <a href="#data-fragmentation" class="mobile-toc-link">Data Fragmentation</a>
   <div class="toc-part">The Model</div>
-  <a href="#how-cammelot-models" class="mobile-toc-link">How Cammelot Models This</a>
   <a href="#capacity-formula" class="mobile-toc-link">The Capacity Formula</a>
-  <div class="toc-part">The Data</div>
-  <a href="#disease-engine" class="mobile-toc-link">The Disease Engine</a>
   <a href="#hp-drain" class="mobile-toc-link">HP Drain &amp; Mortality</a>
-  <a href="#assumptions" class="mobile-toc-link">Modeling Decisions</a>
-  <a href="#what-200-runs-show" class="mobile-toc-link">What 200 Runs Show</a>
+  <a href="#disease-engine" class="mobile-toc-link">Disease Engine</a>
+  <div class="toc-part">The Evidence</div>
+  <a href="#baseline-results" class="mobile-toc-link">Baseline Results</a>
+  <a href="#assumptions" class="mobile-toc-link">Caveats</a>
   <div class="toc-part" style="margin-top:12px;">Explore</div>
   <a href="world.html" class="mobile-toc-link" style="color:#27ae60;">&#127918; Live Simulation</a>
 </nav>
@@ -604,15 +606,20 @@ pre code {
   <aside class="toc" id="toc">
   <div class="toc-label">Contents</div>
   <div class="toc-part">The Crisis</div>
-  <a href="#why-system-breaks" data-section="why-system-breaks">Why the System Breaks</a>
+  <a href="#the-paradox" data-section="the-paradox">The Paradox</a>
+  <a href="#admin-burden" data-section="admin-burden">Administrative Burden</a>
+  <a href="#waiting-lists" data-section="waiting-lists">Waiting Lists</a>
+  <a href="#data-fragmentation" data-section="data-fragmentation">Data Fragmentation</a>
   <div class="toc-part">The Model</div>
-  <a href="#how-cammelot-models" data-section="how-cammelot-models">How Cammelot Models This</a>
   <a href="#capacity-formula" data-section="capacity-formula">The Capacity Formula</a>
-  <div class="toc-part">The Data</div>
-  <a href="#disease-engine" data-section="disease-engine">The Disease Engine</a>
   <a href="#hp-drain" data-section="hp-drain">HP Drain &amp; Mortality</a>
-  <a href="#assumptions" data-section="assumptions">Modeling Decisions</a>
-  <a href="#what-200-runs-show" data-section="what-200-runs-show">What 200 Runs Show</a>
+  <a href="#disease-engine" data-section="disease-engine">Disease Engine</a>
+  <div class="toc-part">The Evidence</div>
+  <a href="#baseline-results" data-section="baseline-results">Baseline Results</a>
+  <a href="#assumptions" data-section="assumptions">Caveats</a>
+  <div class="toc-part" style="margin-top:12px;">Chapters</div>
+  <a href="ch1.html">1. How It Works</a>
+  <a href="ch3.html">3. The AI-Native Overhaul</a>
   <div class="toc-part" style="margin-top:12px;">Explore</div>
   <a href="world.html" style="color:#27ae60;">&#127918; Live Simulation</a>
 </aside>
@@ -620,20 +627,16 @@ pre code {
   <!-- Main Content -->
   <main class="content">
 
-    <section class="chapter" id="chapter-2">
+    <section class="chapter visible" id="the-paradox">
       <div class="chapter-label">Chapter 2</div>
       <h2>The Current System</h2>
-      <div class="hook">“Before you can fix something, you have to prove it’s broken. With numbers.”</div>
+      <p class="hook">&ldquo;Before you can fix something, you have to prove it&rsquo;s broken. With numbers.&rdquo;</p>
 
-      <p>The Netherlands has one of Europe’s best-funded healthcare systems. Universal coverage. High patient satisfaction. Excellent acute care outcomes. By most international rankings, it’s a top-five system globally.</p>
+      <p>The Netherlands ranks among Europe&rsquo;s best healthcare systems. Universal coverage. High patient satisfaction. Excellent acute care outcomes. By WHO and Commonwealth Fund rankings, top five globally.</p>
 
-      <p>It’s still breaking.</p>
+      <p>It is breaking anyway. The Dutch call it <em>zorginfarct</em>&thinsp;&mdash;&thinsp;care infarction.</p>
 
-      <p>The Dutch call it the <em>zorginfarct</em> — care infarction. Not a future scenario. Not a projection. It’s happening now: waiting lists that exceed legal norms, GP practices that close to new patients, specialists who can’t see referrals for months. The IZA (Integraal Zorgakkoord) projects a shortage of <strong>301,000 healthcare workers by 2035</strong> (ABF Research). That’s not a staffing gap. That’s a systemic failure.</p>
-
-      <p>The demographics are unforgiving. Twenty percent of the Dutch population is over 65. Among those 75 and older, 96% have at least one chronic condition (RIVM 2024). Forty-five percent have two or more. The system was designed for acute care in a younger population. The population aged. The system didn’t adapt.</p>
-
-      <p>This chapter explains the specific mechanisms by which the Dutch healthcare system is failing — and how Cammelot models each one.</p>
+      <p>Not a projection. Not a scenario analysis. It is happening now: 38% of specialist referrals exceed legal wait norms. GP practices close to new patients. The IZA projects a shortfall of 301,000 healthcare workers by 2035 (ABF Research, 2023). That number is not a gap in a staffing plan. It is a structural impossibility: the system cannot be operated with the workforce that will exist.</p>
 
       <div class="metric-callout">
         <div class="metric-card">
@@ -642,11 +645,11 @@ pre code {
         </div>
         <div class="metric-card">
           <div class="metric-value ist">30%</div>
-          <div class="metric-label">GP time lost to admin</div>
+          <div class="metric-label">GP time on administration</div>
         </div>
         <div class="metric-card">
-          <div class="metric-value ist">12 wk</div>
-          <div class="metric-label">Avg specialist wait</div>
+          <div class="metric-value ist">11%</div>
+          <div class="metric-label">Data interoperability</div>
         </div>
         <div class="metric-card">
           <div class="metric-value ist">62%</div>
@@ -654,70 +657,127 @@ pre code {
         </div>
       </div>
 
-      <h3 id="why-system-breaks">Why the System Breaks</h3>
+      <p>The demographics are unforgiving. Twenty percent of the population is over 65. Among those 75 and older, 96% have at least one chronic condition; 45% have two or more (RIVM, 2024). The system was designed for acute care in a younger population. The population aged. The system did not.</p>
 
-      <p>The zorginfarct is not a single failure. It’s three interlocking failure mechanisms, each making the others worse.</p>
+      <p>Three mechanisms drive the failure. Each makes the others worse.</p>
+    </section>
 
-      <p><strong>Administrative burden.</strong> A Dutch GP spends 30% of their working time on paperwork — electronic health records, referral letters, insurance coding, prescription management, quality reporting (LHV 2024). That’s not a technology problem. It’s a workflow architecture problem. The administrative burden is additive: every new regulation, every quality metric, every reporting requirement adds minutes per patient that never get removed. The cumulative effect is that a GP who could theoretically see 200 patients per week can effectively see about 124.</p>
+    <section class="chapter visible" id="admin-burden">
+      <h3>1. Administrative Burden</h3>
 
-      <p><strong>Waiting lists and Treeknorm violations.</strong> The Treeknorm is the Dutch legal norm for maximum acceptable wait times. Diagnostics: 4 weeks. Treatment: 7–12 weeks. These aren’t aspirational targets — they’re regulatory requirements. In practice: ophthalmology averages 12 weeks. Neurology and gynecology wait times have increased 50%+ since 2022. Among MRI and CT diagnostics, 28.9% exceed the 4-week norm (NZa 2024). When patients wait beyond the Treeknorm, their conditions deteriorate. What could have been treated in primary care becomes an emergency department visit. What could have been outpatient becomes inpatient. The system creates the complexity it can’t handle.</p>
+      <p>A Dutch GP spends 30% of working time on administration: EHR documentation, referral letters, insurance coding, prescription management, quality reporting (LHV, 2024). This is not a technology complaint. It is an architectural fact.</p>
 
-      <p><strong>Data fragmentation.</strong> The Netherlands has roughly 12,000 GP practices, 90 hospital organisations, and 8 academic medical centres. Most data exchange between them still uses EDIFACT — a messaging standard from the 1980s originally designed for shipping container logistics. Only 11% of Dutch health data is interoperable between providers (IZA 2023). The national EHR is a virtual pointer system: it doesn’t store data, it points to it. Five providers treating the same patient maintain five independent records. The IZA has allocated €2.8 billion in transformation funding to reach 66% interoperability by 2030. Over 270 transformation plans were submitted before the postbus closed in July 2025.</p>
+      <p>The burden is additive. Every regulation, every quality metric, every reporting requirement adds minutes per patient. Nothing is removed. A GP who could theoretically see 200 patients per week sees about 124. The remaining 76 consultations are consumed by the system itself.</p>
 
-      <h3 id="how-cammelot-models">How Cammelot Models This</h3>
+      <p>Sick leave (ziekteverzuim) removes another 8% (CBS). Combined with administrative loss, a GP operates at 62% of theoretical capacity before the first patient arrives.</p>
 
-      <p>Cammelot is a browser-based agent simulation that reproduces these failure mechanisms in miniature. The simulation creates a small Dutch town with the following structure:</p>
+      <div class="insight-callout warning">
+        <strong>The compounding effect</strong>
+        Administrative burden does not just reduce volume. It degrades quality. GPs under time pressure make faster referral decisions, write shorter handover notes, and miss follow-up actions. The administrative overhead creates the clinical errors that generate more administrative overhead.
+      </div>
+    </section>
 
-      <ul style="margin-bottom:1.1rem;padding-left:1.5rem;">
-        <li><strong>45 citizen agents</strong> with names, ages, and health conditions drawn from CBS/RIVM demographic distributions</li>
-        <li><strong>3 GP practices</strong>: Dr. de Jong (2,400 max patients), Dr. Bakker (2,000), Dr. Visser (1,800)</li>
-        <li><strong>1 regional hospital</strong> with 3 specialist departments: Cardiology (Dr. van den Berg, 12/week), Endocrinology (Dr. Mulder, 15/week), Pulmonology (Dr. Janssen, 10/week)</li>
-      </ul>
+    <section class="chapter visible" id="waiting-lists">
+      <h3>2. Waiting Lists</h3>
 
-      <p>Each citizen starts with <strong>100 health points (HP)</strong>. Citizens develop conditions following RIVM prevalence rates, visit their assigned GP, receive referrals, and wait. The simulation runs in 500ms ticks, each representing roughly one day of simulated time.</p>
+      <p>The Treeknorm is the Dutch legal maximum for specialist wait times. Diagnostics: 4 weeks. Treatment: 7&ndash;12 weeks. These are not targets. They are regulatory requirements.</p>
 
-      <p>The critical design choice: mortality in Cammelot is a <em>consequence of system delay</em>, not random chance. When a citizen waits beyond the Treeknorm threshold, their health deteriorates at a rate determined by their condition severity and the system’s administrative burden. HP reaches zero, the citizen dies, and their sprite turns grey. Every death in the simulation is traceable to a specific bottleneck.</p>
+      <p>Current reality:</p>
 
-      <h3 id="capacity-formula">The Capacity Formula</h3>
-
-      <p>The core equation governing GP effectiveness in Cammelot:</p>
-
-      <pre><code>C_eff = C_total × (1 − L_admin − V_ziekte) × E_ai</code></pre>
-
-      <div class="metric-callout">
-        <div class="metric-card">
-          <div class="metric-value ist">0.30</div>
-          <div class="metric-label">L_admin (admin burden)</div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-value ist">0.08</div>
-          <div class="metric-label">V_ziekte (sick leave)</div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-value ist">1.0</div>
-          <div class="metric-label">E_ai (no AI assist)</div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-value ist">0.62</div>
-          <div class="metric-label">C_eff (result)</div>
-        </div>
+      <div class="stats-table-wrap">
+        <table class="stats-table">
+          <thead><tr><th>Department</th><th>Norm</th><th>Actual</th><th>Source</th></tr></thead>
+          <tbody>
+            <tr><td class="metric-name">Ophthalmology</td><td>7 weeks</td><td class="sig">12 weeks</td><td>NZa 2024</td></tr>
+            <tr><td class="metric-name">Neurology</td><td>7 weeks</td><td class="sig">+50% since 2022</td><td>NZa 2024</td></tr>
+            <tr><td class="metric-name">Gynaecology</td><td>7 weeks</td><td class="sig">+50% since 2022</td><td>NZa 2024</td></tr>
+            <tr><td class="metric-name">MRI/CT diagnostics</td><td>4 weeks</td><td class="sig">28.9% exceed norm</td><td>NZa 2024</td></tr>
+          </tbody>
+        </table>
       </div>
 
-      <p>In IST mode (current system): <code>L_admin = 0.30</code> (30% administrative burden, LHV 2024), <code>V_ziekte = 0.08</code> (8% sick leave / ziekteverzuim, CBS), <code>E_ai = 1.0</code> (no AI assistance). The result: <code>C_eff = 0.62</code>. GPs operate at 62% of their theoretical capacity before seeing their first patient.</p>
+      <p>The mechanism is self-reinforcing. When patients wait beyond the Treeknorm, conditions deteriorate. What could have been treated in primary care becomes an emergency visit. What could have been outpatient becomes inpatient. The system generates the complexity it cannot handle.</p>
+    </section>
 
-      <p>This isn’t an abstract number. It means that a GP practice with a norm of 2,400 patients has an effective capacity of roughly 1,488 patient-equivalent slots. The remaining 912 slots are consumed by administration, sick leave, and structural overhead. Every patient beyond 1,488 adds pressure that manifests as longer consultations, shorter attention spans, delayed referrals, and eventually — burnout.</p>
+    <section class="chapter visible" id="data-fragmentation">
+      <h3>3. Data Fragmentation</h3>
 
-      <h3 id="disease-engine">The Disease Engine</h3>
+      <p>The Netherlands has approximately 12,000 GP practices, 90 hospital organisations, and 8 academic medical centres. Most data exchange uses EDIFACT&thinsp;&mdash;&thinsp;a 1980s messaging standard originally designed for shipping container logistics.</p>
+
+      <p>Only 11% of Dutch health data is interoperable between providers (IZA, 2023). The national EHR is a virtual pointer system: it does not store data, it points to it. Five providers treating the same patient maintain five independent records.</p>
+
+      <p>The IZA allocated &euro;2.8 billion in transformation funding to reach 66% interoperability by 2030. Over 270 plans were submitted before the postbus closed in July 2025. The Wegiz (Wet elektronische gegevensuitwisseling in de zorg) mandates electronic exchange but does not prescribe how.</p>
+
+      <div class="insight-callout">
+        <strong>The coordination cost</strong>
+        Adding a new specialist system to the Dutch healthcare network takes 3&ndash;18 months of integration work. In Cammelot&rsquo;s A2A mesh, it takes five minutes: publish an agent card, join the mesh. The gap between these two numbers is the cost of the current architecture.
+      </div>
+    </section>
+
+    <section class="chapter visible" id="capacity-formula">
+      <h3>The Capacity Formula</h3>
+
+      <p>Cammelot models GP effectiveness with a single equation:</p>
+
+      <div class="insight-callout" style="text-align:center;font-family:'Space Grotesk',sans-serif;font-size:1.1rem;font-weight:600;letter-spacing:0.02em;background:var(--code-bg);border-left-color:var(--red);">
+        C<sub>eff</sub> = C<sub>total</sub> &times; (1 &minus; L<sub>admin</sub> &minus; V<sub>ziekte</sub>) &times; E<sub>ai</sub>
+      </div>
+
+      <div class="stats-table-wrap">
+        <table class="stats-table">
+          <thead><tr><th>Variable</th><th>IST Value</th><th>Source</th></tr></thead>
+          <tbody>
+            <tr><td class="metric-name">L<sub>admin</sub></td><td>0.30</td><td>LHV 2024 (administrative burden)</td></tr>
+            <tr><td class="metric-name">V<sub>ziekte</sub></td><td>0.08</td><td>CBS (sick leave / ziekteverzuim)</td></tr>
+            <tr><td class="metric-name">E<sub>ai</sub></td><td>1.0</td><td>No AI assistance in IST mode</td></tr>
+            <tr><td class="metric-name"><strong>C<sub>eff</sub></strong></td><td class="sig"><strong>0.62</strong></td><td>62% of theoretical capacity</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>Concretely: a GP practice with a norm of 2,400 patients has an effective capacity of 1,488 patient-equivalent slots. The remaining 912 are consumed by paperwork, sick leave, and structural overhead. Every patient beyond 1,488 adds pressure that manifests as shorter consultations, delayed referrals, and burnout.</p>
+    </section>
+
+    <section class="chapter visible" id="hp-drain">
+      <h3>HP Drain and Mortality</h3>
+
+      <p>Mortality in Cammelot is a consequence of system delay, not random chance. When specialist wait time exceeds the Treeknorm threshold, health points drain:</p>
+
+      <div class="insight-callout" style="text-align:center;font-family:'Space Grotesk',sans-serif;font-size:1rem;font-weight:600;letter-spacing:0.02em;background:var(--code-bg);border-left-color:var(--red);">
+        HP<sub>drain</sub> = drainRate &times; (t<sub>wait</sub> &minus; T<sub>treeknorm</sub>) &times; severityMultiplier &times; (1 + adminBurden)
+      </div>
+
+      <div class="stats-table-wrap">
+        <table class="stats-table">
+          <thead><tr><th>Parameter</th><th>Value</th><th>Effect</th></tr></thead>
+          <tbody>
+            <tr><td class="metric-name">drainRate</td><td>3</td><td>HP lost per week overdue</td></tr>
+            <tr><td class="metric-name">severity: mild</td><td>&times;0.5</td><td>Half drain rate</td></tr>
+            <tr><td class="metric-name">severity: moderate</td><td>&times;1.0</td><td>Full drain rate</td></tr>
+            <tr><td class="metric-name">severity: severe</td><td>&times;2.0</td><td>Double drain rate</td></tr>
+            <tr><td class="metric-name">severity: critical</td><td>&times;4.0</td><td>Quadruple drain rate</td></tr>
+            <tr><td class="metric-name">adminBurden</td><td>+30%</td><td>Administrative delays compound clinical delays</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p><strong>HP &le; 20:</strong> citizen enters distressed state, receives urgent referral priority. <strong>HP &le; 0:</strong> death&thinsp;&mdash;&thinsp;the sprite turns grey. The <code>(1 + adminBurden)</code> term models a specific claim: administrative overhead does not just reduce capacity, it accelerates patient deterioration by delaying every step of the care chain.</p>
+
+      <p>Natural mortality (from CBS life tables) is tracked separately. The simulation distinguishes &ldquo;died at age 92&rdquo; from &ldquo;died after waiting 18 weeks for a cardiologist.&rdquo;</p>
+    </section>
+
+    <section class="chapter visible" id="disease-engine">
+      <h3>Disease Engine</h3>
 
       <details>
-        <summary>⚙️ Technical deep-dive: ICD-10 conditions and Markov transitions</summary>
+        <summary>ICD-10 conditions and Markov transitions</summary>
         <div class="details-content">
-          <p>Cammelot models 10 chronic conditions using ICD-10 codes, each with prevalence rates drawn from RIVM 2024 data:</p>
+          <p>Cammelot models 10 chronic conditions with ICD-10 codes. Prevalence rates are from RIVM 2024:</p>
           <div class="stats-table-wrap">
             <table class="stats-table">
               <thead><tr><th>Condition</th><th>ICD-10</th><th>NL Prevalence</th></tr></thead>
               <tbody>
-                <tr><td>Hypertension</td><td>I10</td><td>High (age-dependent)</td></tr>
+                <tr><td>Hypertension</td><td>I10</td><td>Age-dependent</td></tr>
                 <tr><td>Type 2 Diabetes</td><td>E11</td><td>1.2 million</td></tr>
                 <tr><td>COPD</td><td>J44</td><td>600,000+</td></tr>
                 <tr><td>Cardiovascular Disease</td><td>I25</td><td>12% (65+)</td></tr>
@@ -726,116 +786,96 @@ pre code {
                 <tr><td>Depression</td><td>F32</td><td>Age-dependent</td></tr>
                 <tr><td>Anxiety</td><td>F41</td><td>Age-dependent</td></tr>
                 <tr><td>Dementia</td><td>F03</td><td>300,000+</td></tr>
-                <tr><td>Cancer (Lung)</td><td>C34</td><td>Age-dependent</td></tr>
+                <tr><td>Lung Cancer</td><td>C34</td><td>Age-dependent</td></tr>
               </tbody>
             </table>
           </div>
 
-          <p>Each condition progresses through a 5-state Markov chain: <strong>healthy → mild → moderate → severe → critical → deceased</strong>. Transition probabilities are evaluated per tick. The key mechanism: when a patient’s specialist wait time exceeds the Treeknorm threshold, probability mass shifts toward worse states. Waiting doesn’t just delay treatment — it actively accelerates disease progression.</p>
+          <p>Each condition progresses through a five-state Markov chain: healthy &rarr; mild &rarr; moderate &rarr; severe &rarr; critical. Transition probabilities are evaluated per tick. When specialist wait time exceeds Treeknorm, probability mass shifts toward worse states. Waiting does not just delay treatment&thinsp;&mdash;&thinsp;it accelerates disease progression.</p>
 
-          <p><strong>Comorbidity multipliers</strong> model the clinical reality that conditions interact:</p>
-          <ul>
-            <li>COPD → Cardiovascular Disease: relative risk = 2.5 (PMC)</li>
-            <li>Type 2 Diabetes → Cardiovascular Disease: relative risk = 2.0 (ESC Guidelines)</li>
-            <li>Hypertension → Cardiovascular Disease: relative risk = 1.8 (ESC Guidelines)</li>
-          </ul>
-          <p>A patient with both COPD and Type 2 Diabetes faces a compounded cardiovascular risk that the system’s waiting lists make materially worse.</p>
+          <p><strong>Comorbidity multipliers</strong> model documented clinical interactions:</p>
+          <div class="stats-table-wrap">
+            <table class="stats-table">
+              <thead><tr><th>Interaction</th><th>Relative Risk</th><th>Source</th></tr></thead>
+              <tbody>
+                <tr><td>COPD &rarr; Cardiovascular Disease</td><td class="sig">2.5</td><td>PMC meta-analysis</td></tr>
+                <tr><td>Type 2 Diabetes &rarr; CVD</td><td class="sig">2.0</td><td>ESC Guidelines 2021</td></tr>
+                <tr><td>Hypertension &rarr; CVD</td><td class="sig">1.8</td><td>ESC Guidelines 2021</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </details>
+    </section>
 
-      <h3 id="hp-drain">HP Drain and Mortality</h3>
+    <section class="chapter visible" id="baseline-results">
+      <h3>What 200 Runs Show</h3>
 
-      <p>When specialist wait times exceed the Treeknorm threshold, health points drain according to:</p>
-
-      <pre><code>HP_drain = drainRate × (t_wait − T_treeknorm) × severityMultiplier × (1 + adminBurden)</code></pre>
+      <p>The IST baseline, averaged across 200 independent runs (3,000 ticks each):</p>
 
       <div class="stats-table-wrap">
         <table class="stats-table">
-          <thead><tr><th>Parameter</th><th>Value</th><th>Meaning</th></tr></thead>
+          <thead><tr><th>Metric</th><th>IST Mean</th><th>Interpretation</th></tr></thead>
           <tbody>
-            <tr><td>drainRate</td><td>3</td><td>HP lost per week overdue</td></tr>
-            <tr><td>severityMultiplier (healthy)</td><td>0</td><td>No drain if healthy</td></tr>
-            <tr><td>severityMultiplier (mild)</td><td>0.5</td><td>Half rate</td></tr>
-            <tr><td>severityMultiplier (moderate)</td><td>1.0</td><td>Full rate</td></tr>
-            <tr><td>severityMultiplier (severe)</td><td>2.0</td><td>Double rate</td></tr>
-            <tr><td>severityMultiplier (critical)</td><td>4.0</td><td>Quadruple rate</td></tr>
-            <tr><td>adminBurden</td><td>0.30</td><td>+30% drain (admin delays compound clinical delays)</td></tr>
+            <tr><td class="metric-name">System-failure deaths</td><td class="sig">4.2 / run</td><td>Deaths from wait time exceeding Treeknorm</td></tr>
+            <tr><td class="metric-name">Treeknorm violations</td><td class="sig">38%</td><td>Referrals exceeding legal wait norm</td></tr>
+            <tr><td class="metric-name">Avg specialist wait</td><td>9.4 weeks</td><td>Across all departments</td></tr>
+            <tr><td class="metric-name">GP burnout events</td><td>1.8 / run</td><td>GP at capacity ceiling</td></tr>
+            <tr><td class="metric-name">Cost per citizen / year</td><td>&euro;2,847</td><td>NZa tariff-based (GP + specialist + hospital)</td></tr>
           </tbody>
         </table>
       </div>
 
-      <p>Two thresholds trigger state changes: <strong>HP ≤ 20</strong> puts the citizen in a distressed state with urgent referral priority. <strong>HP ≤ 0</strong> means death — the citizen’s sprite turns grey (a “ghost”). The <code>(1 + adminBurden)</code> term is deliberate: administrative overhead doesn’t just reduce capacity, it actively accelerates patient deterioration by delaying every step of the care chain.</p>
+      <p>The critical number is the 38% Treeknorm violation rate. More than one in three specialist referrals exceeds the legal maximum wait time. Each violation feeds back into the system: conditions worsen, emergency visits increase, specialist queues grow longer.</p>
 
-      <h3 id="assumptions">Modeling Decisions and Assumptions</h3>
+      <div class="insight-callout warning">
+        <strong>The structural argument</strong>
+        The current system does not fail because people are not trying. It fails because the architecture&thinsp;&mdash;&thinsp;administrative, clinical, and digital&thinsp;&mdash;&thinsp;was designed for a younger, healthier population with fewer chronic conditions. The demographics changed. The architecture did not. Chapter 3 examines what happens when you change the architecture instead.
+      </div>
+    </section>
+
+    <section class="chapter visible" id="assumptions">
+      <h3>Caveats</h3>
 
       <details>
-        <summary>⚠️ Limitations and honest caveats</summary>
+        <summary>Modeling decisions and limitations</summary>
         <div class="details-content">
-          <p>Cammelot is a simplified model. These are the assumptions and their implications:</p>
           <ul>
-            <li><strong>Population of 45 is small.</strong> Stochastic variance is high. Individual runs can produce outlier results. This is why we report averages across 200 runs, not individual simulations.</li>
-            <li><strong>Disease progression is simplified.</strong> The 5-state Markov chain (healthy → mild → moderate → severe → critical) is not clinical reality. Real disease trajectories involve remission, acute exacerbations, treatment response variation, and comorbidity interactions that are far more complex than our transition matrices capture.</li>
-            <li><strong>GP capacity model assumes uniform distribution</strong> of patient complexity. In practice, some consultations are 5-minute prescription renewals; others are 45-minute multimorbidity assessments. Our model treats them equivalently.</li>
-            <li><strong>Mortality from system delay is modeled, not observed.</strong> No randomised controlled trial exists for “what happens if you make people wait.” Our HP drain mechanism is a modeling construct, not a clinical finding. The <em>direction</em> is supported by evidence (delayed treatment worsens outcomes), but the specific drain rates are calibrated parameters, not measured values.</li>
-            <li><strong>All parameters derive from published Dutch data sources</strong> (CBS, RIVM, NZa, IZA, LHV), but the model is a simplification. We do not claim predictive accuracy for individual patients. We claim that the system dynamics — bottleneck formation, queue growth, capacity erosion — reproduce the qualitative patterns observed in the real Dutch healthcare system.</li>
-            <li><strong>Natural mortality</strong> (age-based, from CBS life tables) is tracked separately from system-failure mortality. The simulation distinguishes between “died because they were 92” and “died because they waited 18 weeks for a cardiologist.”</li>
+            <li><strong>N=45 is small.</strong> Stochastic variance is high. We report means across 200 runs, not individual results.</li>
+            <li><strong>Disease progression is simplified.</strong> The five-state Markov chain omits remission, acute exacerbations, and treatment response variation.</li>
+            <li><strong>Uniform patient complexity.</strong> A 5-minute prescription renewal and a 45-minute multimorbidity assessment are treated equivalently.</li>
+            <li><strong>Mortality from delay is modeled, not observed.</strong> The direction is evidence-supported (delayed treatment worsens outcomes). The specific drain rates are calibrated parameters, not measured values.</li>
+            <li><strong>Parameters derive from published sources</strong> (CBS, RIVM, NZa, IZA, LHV) but the model is a simplification. We claim qualitative pattern reproduction, not predictive accuracy.</li>
           </ul>
         </div>
       </details>
 
-      <h3 id="what-200-runs-show">What 200 Runs Show</h3>
+      <div class="footnote-body" style="display:block;margin-top:1.5rem;"><em>Disclosure: I work at Microsoft. My employer builds and sells AI products. I built Cammelot as a personal applied research project, not a Microsoft product. The code is open source. All opinions are my own.</em></div>
 
-      <p>The IST baseline, averaged across 200 independent simulation runs (3,000 ticks each):</p>
-
-      <div class="stats-table-wrap">
-        <table class="stats-table">
-          <thead><tr><th>Metric</th><th>IST Average</th><th>Note</th></tr></thead>
-          <tbody>
-            <tr><td>System-failure deaths</td><td class="sig">4.2 per run</td><td>Deaths attributable to wait time exceeding Treeknorm</td></tr>
-            <tr><td>Treeknorm violations</td><td class="sig">38%</td><td>Percentage of referrals exceeding legal wait norms</td></tr>
-            <tr><td>Average specialist wait</td><td>9.4 weeks</td><td>Across all departments</td></tr>
-            <tr><td>GP burnout events</td><td>1.8 per run</td><td>GP reaching capacity ceiling</td></tr>
-            <tr><td>Cost per citizen/year</td><td>€2,847</td><td>GP + specialist + hospital costs (NZa tariffs)</td></tr>
-          </tbody>
-        </table>
-      </div>
-
-      <p>These numbers establish the baseline that SOLL mode (Chapter 3) attempts to improve. The critical metric is the 38% Treeknorm violation rate — more than one in three specialist referrals exceeds the legal maximum wait time, with measurable mortality consequences.</p>
-
-      <div class="insight-callout">
-        <strong>The structural argument</strong>
-        The current system doesn’t fail because people aren’t trying. It fails because the architecture — administrative, clinical, and digital — was designed for a younger, healthier population with fewer chronic conditions. The demographics changed. The architecture didn’t.
-      </div>
-
-      <div class="footnote-body" style="display:block;margin-top:2rem;"><em>Disclosure: I work at Microsoft. My employer builds and sells AI products and cloud infrastructure. I built Cammelot as a personal applied research project, not a Microsoft product. The code is open source. All opinions are my own.</em></div>
-
-      <details style="margin-top:1.5rem;">
-        <summary>📚 Sources &amp; References</summary>
+      <details style="margin-top:1rem;">
+        <summary>Sources &amp; References</summary>
         <div class="details-content">
           <ol style="font-size:0.82rem;line-height:1.7;color:var(--text-muted);">
-            <li>CBS StatLine — Bevolking; kerncijfers 2024</li>
+            <li>CBS StatLine &mdash; Bevolking; kerncijfers 2024</li>
             <li>RIVM Volksgezondheid Toekomst Verkenning 2024</li>
             <li>NZa Beleidsregel huisartsenzorg en multidisciplinaire zorg 2025</li>
-            <li>NZa Monitor Toegankelijkheid Zorg — Wachttijden 2024</li>
-            <li>IZA — Integraal Zorgakkoord 2023–2026</li>
-            <li>ABF Research — Arbeidsmarktprognose zorg en welzijn 2023–2033</li>
-            <li>LHV Enquête Werkdruk Huisartsen 2024</li>
-            <li>RIVM Chronic Disease Model — Prevalence by age cohort</li>
-            <li>Nivel Zorgregistraties — Zorggebruik huisartsenzorg 2024</li>
-            <li>ESC Guidelines — Cardiovascular Disease Prevention 2021</li>
-            <li>PMC — COPD as Independent Risk Factor for Cardiovascular Disease (RR=2.5)</li>
-            <li>Wegiz — Wet elektronische gegevensuitwisseling in de zorg (2023)</li>
-            <li>Park et al. “Generative Agents: Interactive Simulacra of Human Behavior” (Stanford, 2023)</li>
+            <li>NZa Monitor Toegankelijkheid Zorg &mdash; Wachttijden 2024</li>
+            <li>IZA &mdash; Integraal Zorgakkoord 2023&ndash;2026</li>
+            <li>ABF Research &mdash; Arbeidsmarktprognose zorg en welzijn 2023&ndash;2033</li>
+            <li>LHV Enqu&ecirc;te Werkdruk Huisartsen 2024</li>
+            <li>RIVM Chronic Disease Model &mdash; Prevalence by age cohort</li>
+            <li>Nivel Zorgregistraties &mdash; Zorggebruik huisartsenzorg 2024</li>
+            <li>ESC Guidelines &mdash; Cardiovascular Disease Prevention 2021</li>
+            <li>PMC &mdash; COPD as Independent Risk Factor for CVD (RR=2.5)</li>
+            <li>Wegiz &mdash; Wet elektronische gegevensuitwisseling in de zorg (2023)</li>
           </ol>
         </div>
       </details>
-
     </section>
 
     <nav class="chapter-nav">
-    <a href="ch1.html" class="prev">← Previous: How It Works</a>
-      <a href="index.html" class="prev">← Home</a>
-      <a href="ch3.html" class="next">The AI-Native Overhaul →</a>
+      <a href="ch1.html" class="prev">&larr; How It Works</a>
+      <a href="ch3.html" class="next">The AI-Native Overhaul &rarr;</a>
     </nav>
   </main>
 
@@ -848,55 +888,42 @@ pre code {
 
 <!-- Footer -->
 <footer class="site-footer">
-  <p>CAMMELOT: 45 pixel citizens. 200 simulations. Real Dutch data.</p>
+  <p>CAMMELOT: 45 pixel citizens. 200 simulation runs. Real Dutch data.</p>
   <p style="margin-top:0.4rem;">Built by <a href="https://www.linkedin.com/in/simonecammel/" target="_blank">Simone Cammel</a></p>
   <div class="footer-sources">
-    Data sources: CBS (Centraal Bureau voor de Statistiek) · RIVM (Rijksinstituut voor Volksgezondheid en Milieu) · NZa (Nederlandse Zorgautoriteit) · LHV · IZA 2023–2026
+    Data: CBS &middot; RIVM &middot; NZa &middot; LHV &middot; IZA 2023&ndash;2026
   </div>
 </footer>
 
-
 <script>
-// ── Reading Progress Bar ──
 const progressBar = document.getElementById('progress-bar');
 function updateProgress() {
   const scrollTop = window.scrollY;
   const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-  const pct = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
-  progressBar.style.width = pct + '%';
+  progressBar.style.width = (docHeight > 0 ? (scrollTop / docHeight) * 100 : 0) + '%';
 }
 
-// ── Back to Top ──
 const backToTop = document.getElementById('back-to-top');
 function updateBackToTop() {
-  if (window.scrollY > 600) {
-    backToTop.classList.add('visible');
-  } else {
-    backToTop.classList.remove('visible');
-  }
+  backToTop.classList.toggle('visible', window.scrollY > 600);
 }
-backToTop.addEventListener('click', () => {
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-});
+backToTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
 
 const themeToggle = document.getElementById('theme-toggle');
-const savedTheme = localStorage.getItem('cammelot-theme');
-if (savedTheme === 'dark') {
+if (localStorage.getItem('cammelot-theme') === 'dark') {
   document.body.classList.add('dark-theme');
-  themeToggle.textContent = '☀️';
+  themeToggle.textContent = '\u2600\uFE0F';
 }
 themeToggle.addEventListener('click', () => {
   document.body.classList.toggle('dark-theme');
   const isDark = document.body.classList.contains('dark-theme');
-  themeToggle.textContent = isDark ? '☀️' : '🌙';
+  themeToggle.textContent = isDark ? '\u2600\uFE0F' : '\uD83C\uDF19';
   localStorage.setItem('cammelot-theme', isDark ? 'dark' : 'light');
 });
 
-// ── Mobile Hamburger ──
 const hamburger = document.getElementById('hamburger');
 const mobileOverlay = document.getElementById('mobile-toc-overlay');
 const mobileBackdrop = document.getElementById('mobile-toc-backdrop');
-
 hamburger.addEventListener('click', () => {
   hamburger.classList.toggle('open');
   mobileOverlay.classList.toggle('open');
@@ -915,65 +942,23 @@ document.querySelectorAll('.mobile-toc-link').forEach(a => {
   });
 });
 
-// Intersection observer for chapter elements
-const observer = new IntersectionObserver((entries) => {
+// Sidebar TOC active state
+const tocLinks = document.querySelectorAll('.toc a[data-section]');
+const sectionEls = document.querySelectorAll('section[id]');
+const sectionObserver = new IntersectionObserver((entries) => {
   entries.forEach(entry => {
     if (entry.isIntersecting) {
-      entry.target.classList.add('visible');
+      tocLinks.forEach(l => l.classList.remove('active'));
+      const active = document.querySelector('.toc a[data-section="' + entry.target.id + '"]');
+      if (active) active.classList.add('active');
     }
   });
-}, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
-document.querySelectorAll('.chapter').forEach(ch => observer.observe(ch));
+}, { threshold: 0.15, rootMargin: '-80px 0px -60% 0px' });
+sectionEls.forEach(s => sectionObserver.observe(s));
 
-// ── Sidebar TOC Active State ──
-const tocLinks = document.querySelectorAll('.toc a[data-section]');
-const sections = [];
-tocLinks.forEach(link => {
-  const id = link.getAttribute('data-section');
-  const el = document.getElementById(id);
-  if (el) sections.push({ id, el, link });
-});
-
-function updateTocActive() {
-  let current = '';
-  for (const s of sections) {
-    const rect = s.el.getBoundingClientRect();
-    if (rect.top <= 150) current = s.id;
-  }
-  tocLinks.forEach(l => l.classList.remove('active'));
-  if (current) {
-    const active = document.querySelector('.toc a[data-section="' + current + '"]');
-    if (active) active.classList.add('active');
-  }
-}
-
-// ── Footnotes ──
-document.querySelectorAll('.fn-ref').forEach(ref => {
-  ref.addEventListener('click', (e) => {
-    e.preventDefault();
-    const fnId = ref.dataset.fn;
-    let target = ref.parentElement;
-    while (target && target.nextElementSibling) {
-      target = target.nextElementSibling;
-      if (target.classList.contains('footnote-body') && target.dataset.fn === fnId) {
-        target.classList.toggle('open');
-        break;
-      }
-    }
-  });
-});
-
-// Combined scroll handler
-function onScroll() {
-  updateProgress();
-  updateBackToTop();
-  updateTocActive();
-}
+function onScroll() { updateProgress(); updateBackToTop(); }
 window.addEventListener('scroll', onScroll, { passive: true });
 onScroll();
-
-// Ensure chapter content is visible
-document.querySelectorAll('.chapter').forEach(el => el.classList.add('visible'));
 </script>
 </body>
 </html>
