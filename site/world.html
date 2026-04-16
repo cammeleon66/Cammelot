@@ -39,7 +39,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a1a2e;font-family:
 .ts .n{font-size:14px;font-weight:700;color:#fff;font-family:'JetBrains Mono',monospace}
 .ts .n.r{color:var(--red)}.ts .n.g{color:var(--green)}.ts .n.y{color:var(--gold)}
 .ts .l{font-size:8px;color:#a08060;text-transform:uppercase;margin-top:1px}
-.mode-tog{display:flex;border:2px solid var(--frame);border-radius:6px;overflow:hidden;background:#2a1508}
+.mode-tog{display:flex;border:2px solid var(--frame);border-radius:6px;overflow:hidden;background:#2a1508;flex-shrink:0}
 .mode-tog button{font:600 11px Inter,sans-serif;padding:6px 14px;border:0;cursor:pointer;background:transparent;color:#a08060;transition:.2s}
 .mode-tog .a-ist{background:rgba(229,57,53,.2);color:var(--red)}
 .mode-tog .a-soll{background:rgba(76,175,80,.2);color:var(--green)}
@@ -899,7 +899,7 @@ body.embed-mode #app{display:block!important}
         <button class="cb stop" id="btn-reset" title="Reset simulation">↺ Reset</button>
         <button class="cb warn" id="btn-gazette" title="The Cammelot Gazette">📰 Gazette</button>
         <button class="cb" id="btn-stats" title="Statistics">📊 Stats</button>
-        <button class="cb" id="btn-taximeter" title="Toggle Admin Waste Meter" style="opacity:0.4">💰</button>
+        <button class="cb" id="btn-taximeter" title="Toggle Admin Waste Meter">💰</button>
         <button class="cb" id="btn-heatmap" title="Heatmap">🗺</button>
         <button class="cb" id="btn-timeline" title="Timeline">📈</button>
         <button class="cb" id="btn-moments" title="Moments">🃏</button>
@@ -1214,6 +1214,7 @@ const NZA_GP_CONSULT_EUR = 12.43;        // Official NZa regular GP consultation
 const SIM_PREVENTABLE_DEATH_EUR = 5845;  // NZa avg DBC hospitalization cost (€4,900 ward + €945 overhead) — VWS/NZa 2024 Marktscan Ziekenhuiszorg
 const SIM_TREEKNORM_WEEK_EUR = 150;      // Simulation estimate (not official)
 let playgroundActive=false;
+let panelIsTownFeed=true;
 let S={res:6,msgs:0,waste:0};
 
 // ── Sprint S1: Crisis Visualization Globals ──
@@ -5362,6 +5363,7 @@ cv.addEventListener('touchend', function(e) {
 // Sprint 5: Memorial panel for grave markers
 function showMemorial(grave) {
   selectedAgent = null;
+  panelIsTownFeed=false;
   const d = document.getElementById('agent-detail');
   document.querySelector('.panel-header').textContent = 'MEMORIAL';
   const isSystem = grave.cause === 'system_failure';
@@ -5427,6 +5429,7 @@ function updateAgentLive(a) {
 }
 
 function selectAgent(a){
+  panelIsTownFeed=false;
   // Walkthrough: auto-advance when user clicks a citizen during "Meet a Citizen" step
   if (window._wtAwaitClick) {
     window._wtAwaitClick = false;
@@ -5789,6 +5792,7 @@ function formatEventText(e) {
 
 function showTownFeed() {
   selectedAgent = null;
+  panelIsTownFeed=true;
   const d = document.getElementById('agent-detail');
   document.querySelector('.panel-header').textContent = 'TOWN FEED';
 
@@ -5925,6 +5929,7 @@ function buildCapacityChart() {
 // ═══ BUILDING DASHBOARD (Sprint 2) ═══
 function selectBuilding(building){
   selectedAgent=null;
+  panelIsTownFeed=false;
   const d=document.getElementById('agent-detail');
   const ph=document.querySelector('.panel-header');
   ph.textContent='BUILDING REPORT';
@@ -6235,10 +6240,10 @@ function checkCommunityProtest() {
       var scoreA = 0, scoreB = 0;
       if (aA.age >= 65) scoreA += 2;
       if (aA.conditions && aA.conditions.length >= 2) scoreA += aA.conditions.length;
-      if (aA.waitWeeks > p.tree * 0.5) scoreA += 1;
+      if (aA.waitWeeks > M[mode].tree * 0.5) scoreA += 1;
       if (aB.age >= 65) scoreB += 2;
       if (aB.conditions && aB.conditions.length >= 2) scoreB += aB.conditions.length;
-      if (aB.waitWeeks > p.tree * 0.5) scoreB += 1;
+      if (aB.waitWeeks > M[mode].tree * 0.5) scoreB += 1;
       return scoreB - scoreA; // higher score = higher priority
     });
   }
@@ -7335,7 +7340,7 @@ function tick(){
   updateTicker(); // Sprint 6
   if (timelineVisible) drawTimeline(); // Sprint 16
   if(selectedAgent){const a=agents.find(e=>e.id===selectedAgent);if(a)updateAgentLive(a);}
-  else if(cycle%10===0){try{showTownFeed();}catch(e){}} // Auto-refresh feed every 10 ticks
+  else if(cycle%10===0&&panelIsTownFeed){try{showTownFeed();}catch(e){}} // Auto-refresh feed every 10 ticks
   // Auto-save removed for website version
 }
 
@@ -7572,6 +7577,7 @@ function applyURLParams(){
 
 function showPlayground(){
   selectedAgent=null;
+  panelIsTownFeed=false;
   var panel=document.getElementById('agent-detail');
   var p=M[mode];
   var html='<div class="pg-panel">';
@@ -7909,6 +7915,7 @@ function renderTrendSection() {
 
 function showGazette() {
   selectedAgent = null;
+  panelIsTownFeed=false;
   var d = document.getElementById('agent-detail');
   document.querySelector('.panel-header').textContent = '📰 THE CAMMELOT GAZETTE';
 
@@ -8709,6 +8716,7 @@ function buildComparisonHTML() {
 // ═══ Sprint S3: Treeknorm Violation Log ═══
 function showTreeknormLog() {
   selectedAgent = null;
+  panelIsTownFeed=false;
   var d = document.getElementById('agent-detail');
   document.querySelector('.panel-header').textContent = '⚖ TREEKNORM LOG';
 
@@ -8973,10 +8981,7 @@ function buildStatsHTML(){
       ${buildComparisonHTML()}
       ${buildBiasHTML()}
 
-      <div class="stats-footer">
-        <button class="cb" id="export-json">📥 Export JSON</button>
-        <button class="cb" id="export-csv">📥 Export CSV</button>
-      </div>
+
     </div>
   </div>`;
 }
@@ -9920,6 +9925,7 @@ function showMomentsGallery() {
   var d = document.getElementById('agent-detail');
   document.querySelector('.panel-header').textContent = 'MOMENTS';
   selectedAgent = null;
+  panelIsTownFeed=false;
   var items = MOMENTS.items.slice().reverse();
   var html = '<div class="panel-back" data-action="showTownFeed">← Town Feed</div>';
   html += '<div class="moments-gallery">';
@@ -10099,6 +10105,7 @@ function runInsightEngine() {
 }
 
 function showInsightsPanel() {
+  panelIsTownFeed=false;
   selectedAgent = null;
   document.querySelector('.panel-header').textContent = '💡 INSIGHTS';
   var insights = INSIGHT_LOG.slice().reverse();
@@ -10264,6 +10271,7 @@ function generateWeeklyReport() {
 }
 
 function showWeeklyReport() {
+  panelIsTownFeed=false;
   selectedAgent = null;
   document.querySelector('.panel-header').textContent = '📋 WEEKLY REPORTS';
   var html = '<div class="panel-back" data-action="showTownFeed">← Town Feed</div>';
@@ -11013,7 +11021,8 @@ document.getElementById('btn-tours').addEventListener('click', function() {
 document.getElementById('btn-taximeter').addEventListener('click', function() {
   if (typeof playUIClick === 'function') playUIClick();
   taxiMeterVisible = !taxiMeterVisible;
-  this.style.opacity = taxiMeterVisible ? '1' : '0.4';
+  this.style.opacity = taxiMeterVisible ? '1' : '0.6';
+  this.style.borderColor = taxiMeterVisible ? 'rgba(255,179,0,.5)' : '';
 });
 
 // Sprint 21: Mobile touch support for data-tooltip attributes
