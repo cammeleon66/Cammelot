@@ -9595,9 +9595,10 @@ try {
   // Pre-tick 10 times so the right panel has events on first load
   for(var i=0;i<10;i++) tick();
   showTownFeed();
-  // Do NOT start autoTimer yet — wait for tour to end or be skipped
+  // Auto-start simulation so citizens are already walking when walkthrough appears
+  autoTimer = setInterval(tick, 500);
   var playBtnInSim = document.getElementById('btn-play');
-  if (playBtnInSim) playBtnInSim.textContent = '▶ Play';
+  if (playBtnInSim) playBtnInSim.textContent = '⏸ Pause';
 } catch(e) {
   console.error('Cammelot init error:', e);
 }
