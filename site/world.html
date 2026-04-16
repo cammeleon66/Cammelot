@@ -922,8 +922,8 @@ body.embed-mode #app{display:block!important}
       <div class="panel-header">CITIZEN DOSSIER</div>
       <div id="agent-detail">
         <div class="ad-empty">
-          <div class="hint">👆</div>
-          Click on a citizen in the town<br>to view their medical dossier,<br>current thoughts, and care pathway.
+          <div class="hint">🏘</div>
+          Welcome to Cammelot!<br>Run the simulation to see<br>events appear here.
         </div>
       </div>
       <div id="sim-overview">
@@ -9588,21 +9588,25 @@ console.log('Cammelot: auto-starting (paused)...');
 stopLoadingAnimation();
 document.getElementById('load').classList.add('go');
 document.getElementById('play-overlay').style.display = 'none';
-try {
-  startNewGame();
-  console.log('Cammelot: startNewGame complete, rendering...');
-  render();
-  // Pre-tick 10 times so the right panel has events on first load
-  for(var i=0;i<10;i++) tick();
-  showTownFeed();
-  // Auto-start simulation so citizens are already walking when walkthrough appears
-  autoTimer = setInterval(tick, 500);
-  var playBtnInSim = document.getElementById('btn-play');
-  if (playBtnInSim) playBtnInSim.textContent = '⏸ Pause';
-} catch(e) {
-  console.error('Cammelot init error:', e);
-}
+// Initialize simulation (each step isolated so one failure doesn't kill everything)
+try { startNewGame(); console.log('Cammelot: startNewGame complete'); } catch(e) { console.error('Init error:', e); }
+try { render(); } catch(e) { console.error('Render error:', e); }
+try { for(var i=0;i<10;i++) tick(); } catch(e) { console.error('Pre-tick error:', e); }
+try { showTownFeed(); } catch(e) { console.error('TownFeed error:', e); }
+// ALWAYS start autoTimer — citizens must walk regardless of errors above
+autoTimer = setInterval(tick, 500);
+var playBtnInSim = document.getElementById('btn-play');
+if (playBtnInSim) playBtnInSim.textContent = '⏸ Pause';
 } // end non-embed block
+// Safety fallback: if autoTimer didn't start, force-start after 2 seconds
+setTimeout(function() {
+  if (!autoTimer) {
+    console.warn('Cammelot: autoTimer was null, force-starting');
+    autoTimer = setInterval(tick, 500);
+    var pb = document.getElementById('btn-play');
+    if (pb) pb.textContent = '⏸ Pause';
+  }
+}, 2000);
 // Sprint 17.3: Start attract mode timer
 // Sprint 29: Attract mode disabled for cleaner UX
 // resetAttractTimer();
@@ -10912,6 +10916,11 @@ document.getElementById('btn-tours').addEventListener('click', function() {
 
   // Show walkthrough after initial render + pre-ticks
   setTimeout(buildWalkthrough, 400);
+  // Auto-dismiss walkthrough after 30s if user hasn't closed it
+  setTimeout(function() {
+    var overlay = document.getElementById("walkthrough-overlay");
+    if (overlay) closeWalkthrough();
+  }, 30000);
 })();
 
 // Sprint S2: Taxi meter toggle button
