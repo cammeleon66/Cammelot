@@ -30,7 +30,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a1a2e;font-family:
 
 /* LAYOUT: Game left, Panel right (like AI Town) */
 #app{display:flex;width:100vw;height:100vh;flex-direction:column}
-#top{background:linear-gradient(180deg,#4a2c17 0%,#3a2010 100%);padding:8px 20px;display:flex;align-items:center;gap:16px;border-bottom:3px solid var(--frame)}
+#top{background:linear-gradient(180deg,#4a2c17 0%,#3a2010 100%);padding:8px 20px;display:flex;align-items:center;gap:16px;border-bottom:3px solid var(--frame);overflow:hidden;flex-shrink:0}
 #top h1{display:none}
 #top .top-logo{height:32px;filter:drop-shadow(0 1px 3px rgba(0,0,0,.4));image-rendering:auto}
 #top .sub{font-size:11px;color:#c4a882;font-style:italic}
@@ -361,53 +361,60 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a1a2e;font-family:
 }
 
 @media (max-width: 768px) {
-  #top { padding: 6px 10px; gap: 8px; flex-wrap: wrap; }
+  /* Top bar: compact, no overflow */
+  #top { padding: 4px 8px; gap: 4px; flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; }
   #top .sub { display: none; }
-  .top-stats { gap: 4px; }
-  .ts { padding: 3px 6px; }
-  .ts .n { font-size: 11px; }
-  .ts .l { font-size: 7px; }
+  .top-title { font-size: 12px; }
+  .top-stats { gap: 3px; margin-left: auto; flex-shrink: 0; }
+  .ts { padding: 2px 4px; min-width: 0; }
+  .ts .n { font-size: 9px; }
+  .ts .l { font-size: 6px; }
+  /* Hide less critical stats on mobile */
+  .ts:nth-child(n+6) { display: none; }
+  #btn-about, #btn-tours, #sound-toggle { display: none; }
   #sim-overview { display: none; }
-  /* Hide chatlog on mobile — Town Feed panel has the same info */
+  /* Hide chatlog + ticker on mobile */
   #chatlog { display: none !important; }
-  /* Shrink ticker on mobile */
   .event-ticker { display: none; }
 
+  /* Layout: game smaller, panel scrollable */
   #main { flex-direction: column; }
+  #game-wrap { height: 40vh; min-height: 200px; }
   #panel {
     width: 100%;
-    height: 45vh;
+    height: 60vh;
     border-left: none;
-    border-top: 3px solid var(--frame);
-    position: relative;
+    border-top: 2px solid var(--frame);
+    overflow-y: auto;
   }
-  #game-wrap { height: 55vh; }
 
-  /* Control bar */
-  #cbar { padding: 4px 8px; gap: 4px; }
-  .cb { font-size: 9px; padding: 4px 8px; }
+  /* Compact control bar */
+  #cbar { padding: 3px 6px; gap: 3px; bottom: 4px; }
+  .cb { font-size: 8px; padding: 3px 6px; }
 
-  /* Event ticker */
-  .event-ticker { bottom: 40px; height: 24px; }
-
-  /* Wizard responsive */
+  /* Wizard/stats responsive */
   .wizard-box { width: 95%; margin: 10px; padding: 16px; }
   .wizard-portrait { display: none; }
-
-  /* Stats overlay */
   .stats-panel { width: 95%; max-height: 80vh; }
+  .feed-list { max-height: calc(60vh - 100px); }
 
-  /* Feed adjustments */
-  .feed-list { max-height: calc(45vh - 120px); }
+  /* Site nav compact */
+  #site-nav { padding: 4px 8px !important; font-size: 11px !important; }
 }
 
 @media (max-width: 480px) {
-  .mode-tog button { padding: 4px 8px; font-size: 10px; }
-  #panel { height: 35vh; }
-  #game-wrap { height: 65vh; }
-  /* Hide non-essential toolbar buttons on small screens */
-  #btn-heatmap, #btn-timeline, #btn-moments, #btn-qa, #btn-treeknorm-log, #btn-methodology, #btn-taximeter { display: none; }
+  .mode-tog button { padding: 3px 6px; font-size: 9px; }
+  .mode-tog { flex-shrink: 0; }
+  /* On small phones: smaller game, bigger panel for dossier scrolling */
+  #game-wrap { height: 35vh; min-height: 180px; }
+  #panel { height: 65vh; }
+  /* Hide non-essential toolbar buttons */
+  #btn-heatmap, #btn-timeline, #btn-moments, #btn-qa, #btn-treeknorm-log, #btn-methodology, #btn-taximeter, #btn-gazette, #btn-stats { display: none; }
   .cinfo { display: none; }
+  /* Only show essential stats */
+  .ts:nth-child(n+4) { display: none; }
+  /* Welcome card compact */
+  #welcome-card { max-width: 100%; padding: 10px 14px 10px !important; font-size: 12px !important; bottom: 8px !important; }
 }
 
 /* ═══ SPRINT 15: UI POLISH — Micro-animations ═══ */
