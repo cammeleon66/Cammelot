@@ -3,19 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>The Current System — Cammelot</title>
+<title>The AI-Native Overhaul — Cammelot</title>
 
 <!-- Open Graph Meta Tags -->
-<meta property="og:title" content="The Current System — Cammelot">
-<meta property="og:description" content="Why Dutch healthcare is breaking, and how Cammelot models it. 301,000 worker shortage. 30% admin burden. 12-week waits.">
+<meta property="og:title" content="The AI-Native Overhaul — Cammelot">
+<meta property="og:description" content="Five modeled interventions. One simulation. What changes when you add AI to Dutch healthcare — and what doesn’t.">
 <meta property="og:image" content="https://cammelot.org/og-image.png">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://cammelot.org/ch3.html">
 
 <!-- Twitter Card Meta Tags -->
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="The Current System — Cammelot">
-<meta name="twitter:description" content="Why Dutch healthcare is breaking, and how Cammelot models it. 301,000 worker shortage. 30% admin burden. 12-week waits.">
+<meta name="twitter:title" content="The AI-Native Overhaul — Cammelot">
+<meta name="twitter:description" content="Five modeled interventions. One simulation. What changes when you add AI to Dutch healthcare — and what doesn’t.">
 <meta name="twitter:image" content="https://cammelot.org/og-image.png">
 
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='4' y='20' width='24' height='12' fill='%23c0392b'/%3E%3Crect x='4' y='16' width='6' height='4' fill='%23c0392b'/%3E%3Crect x='13' y='16' width='6' height='4' fill='%23c0392b'/%3E%3Crect x='22' y='16' width='6' height='4' fill='%23c0392b'/%3E%3Crect x='12' y='8' width='8' height='12' fill='%23e74c3c'/%3E%3Crect x='14' y='4' width='4' height='4' fill='%23c0392b'/%3E%3Crect x='14' y='24' width='4' height='8' fill='%23922b21'/%3E%3C/svg%3E">
@@ -48,7 +48,7 @@ body {
   --green-light: #edf9f0;
   --sidebar-bg: #f0efe9;
   --border: #e0ddd5;
-  --accent: #c0392b;
+  --accent: #27ae60;
   --code-bg: #f5f4f0;
   --card-bg: #fff;
   --header-bg: rgba(250, 249, 247, 0.92);
@@ -93,7 +93,7 @@ body.dark-theme::after {
 /* ── Reading Progress Bar ── */
 .progress-bar {
   position: fixed; top: 0; left: 0; height: 3px;
-  background: var(--red);
+  background: var(--green);
   z-index: 200;
   width: 0%;
   transition: width 0.05s linear;
@@ -184,7 +184,7 @@ body.dark-theme::after {
 .back-to-top {
   position: fixed; bottom: 2rem; right: 2rem;
   width: 42px; height: 42px;
-  background: var(--red); color: #fff;
+  background: var(--green); color: #fff;
   border: none; border-radius: 50%;
   font-size: 1.1rem; cursor: pointer;
   opacity: 0; transform: translateY(20px);
@@ -194,7 +194,7 @@ body.dark-theme::after {
   box-shadow: 0 2px 10px rgba(0,0,0,0.2);
 }
 .back-to-top.visible { opacity: 1; transform: translateY(0); }
-.back-to-top:hover { background: #a93226; }
+.back-to-top:hover { background: #219a52; }
 
 /* ── Layout ── */
 .page-grid {
@@ -228,7 +228,7 @@ body.dark-theme::after {
 }
 .toc a:hover { color: var(--text); }
 .toc a.active {
-  color: var(--red); border-left-color: var(--red); font-weight: 600;
+  color: var(--green); border-left-color: var(--green); font-weight: 600;
 }
 .toc .toc-part {
   font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.08em;
@@ -257,7 +257,8 @@ body.dark-theme::after {
 .chapter > blockquote,
 .chapter > h3,
 .chapter > details,
-.chapter > .insight-callout {
+.chapter > .insight-callout,
+.chapter > pre {
   opacity: 0; transform: translateY(24px);
   transition: opacity 0.7s ease, transform 0.7s ease;
 }
@@ -277,12 +278,13 @@ body.dark-theme::after {
 .chapter.visible > h3 { opacity: 1; transform: translateY(0); transition-delay: 200ms; }
 .chapter.visible > details { opacity: 1; transform: translateY(0); transition-delay: 300ms; }
 .chapter.visible > .insight-callout { opacity: 1; transform: translateY(0); transition-delay: 300ms; }
+.chapter.visible > pre { opacity: 1; transform: translateY(0); transition-delay: 300ms; }
 .chapter .footnote-body { opacity: 1; transform: none; }
 
 .chapter-label {
   font-family: 'Space Grotesk', sans-serif;
   font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.12em;
-  color: var(--red); margin-bottom: 0.5rem;
+  color: var(--green); margin-bottom: 0.5rem;
 }
 .chapter h2 {
   font-family: 'Space Grotesk', sans-serif;
@@ -292,7 +294,7 @@ body.dark-theme::after {
 .chapter .hook {
   font-style: italic; font-size: 1.05rem; color: var(--text-muted);
   margin-bottom: 1.5rem; line-height: 1.65;
-  border-left: 3px solid var(--red); padding-left: 1rem;
+  border-left: 3px solid var(--green); padding-left: 1rem;
 }
 .chapter p { margin-bottom: 1.1rem; }
 .chapter p + p { text-indent: 0; }
@@ -349,6 +351,7 @@ body.dark-theme::after {
 .chapter details .details-content p { margin-bottom: 0.8rem; }
 .chapter details .details-content ul { padding-left: 1.2rem; margin-bottom: 0.8rem; }
 .chapter details .details-content li { margin-bottom: 0.3rem; font-size: 0.9rem; }
+.chapter details .details-content pre { margin: 0.8rem 0; }
 
 /* ── Insight Callout ── */
 .insight-callout {
@@ -394,11 +397,13 @@ body.dark-theme::after {
 }
 .stats-table tbody tr:nth-child(even) td { background: var(--table-alt); }
 .stats-table tbody tr:hover td { background: var(--table-hover); }
-.stats-table .sig { color: var(--red); font-weight: 600; }
+.stats-table .sig { color: var(--green); font-weight: 600; }
+.stats-table .sig-red { color: var(--red); font-weight: 600; }
+.stats-table .arrow { color: var(--green); font-weight: 700; }
 
 /* ── Footnotes ── */
 .fn-ref {
-  cursor: pointer; color: var(--red); font-size: 0.7em;
+  cursor: pointer; color: var(--green); font-size: 0.7em;
   vertical-align: super; font-family: 'Space Grotesk', sans-serif;
   font-weight: 600; text-decoration: none;
   transition: opacity 0.2s;
@@ -446,10 +451,10 @@ body.dark-theme::after {
 
 /* ── Blockquote ── */
 blockquote {
-  border-left: 3px solid var(--red);
+  border-left: 3px solid var(--green);
   padding: 0.6rem 1rem;
   margin: 1rem 0;
-  background: var(--red-light);
+  background: var(--green-light);
   border-radius: 0 4px 4px 0;
   font-style: italic;
   color: var(--text-muted);
@@ -570,236 +575,8 @@ pre code {
   <nav>
     <a href="index.html" class="nav-link">Home</a>
     <a href="index.html" class="nav-link">Story</a>
-    <a href="ch2.html" class="nav-link" style="color:var(--red)">The Current System</a>
-    <a href="ch3.html" class="nav-link">The AI-Native Overhaul</a>
-    <a href="world.html" class="nav-link" style="color:var(--green)">&#127918; Live Sim</a>
-    <a href="about.html" class="nav-link">About</a>
-    <button class="theme-toggle" id="theme-toggle" title="Toggle dark mode">&#127769;</button>
-    <button class="hamburger" id="hamburger" aria-label="Toggle menu">
-      <span></span><span></span><span></span>
-    </button>
-  </nav>
-</header>
-
-<!-- Mobile TOC overlay -->
-<div class="mobile-toc-backdrop" id="mobile-toc-backdrop"></div>
-<nav class="mobile-toc-overlay" id="mobile-toc-overlay">
-  <div class="toc-part">The Crisis</div>
-  <a href="#why-system-breaks" class="mobile-toc-link">Why the System Breaks</a>
-  <div class="toc-part">The Model</div>
-  <a href="#how-cammelot-models" class="mobile-toc-link">How Cammelot Models This</a>
-  <a href="#capacity-formula" class="mobile-toc-link">The Capacity Formula</a>
-  <div class="toc-part">The Data</div>
-  <a href="#disease-engine" class="mobile-toc-link">The Disease Engine</a>
-  <a href="#hp-drain" class="mobile-toc-link">HP Drain &amp; Mortality</a>
-  <a href="#assumptions" class="mobile-toc-link">Modeling Decisions</a>
-  <a href="#what-200-runs-show" class="mobile-toc-link">What 200 Runs Show</a>
-  <div class="toc-part" style="margin-top:12px;">Explore</div>
-  <a href="world.html" class="mobile-toc-link" style="color:#27ae60;">&#127918; Live Simulation</a>
-</nav>
-
-<div class="page-grid">
-  <!-- Sidebar TOC -->
-  <aside class="toc" id="toc">
-  <div class="toc-label">Contents</div>
-  <div class="toc-part">The Crisis</div>
-  <a href="#why-system-breaks" data-section="why-system-breaks">Why the System Breaks</a>
-  <div class="toc-part">The Model</div>
-  <a href="#how-cammelot-models" data-section="how-cammelot-models">How Cammelot Models This</a>
-  <a href="#capacity-formula" data-section="capacity-formula">The Capacity Formula</a>
-  <div class="toc-part">The Data</div>
-  <a href="#disease-engine" data-section="disease-engine">The Disease Engine</a>
-  <a href="#hp-drain" data-section="hp-drain">HP Drain &amp; Mortality</a>
-  <a href="#assumptions" data-section="assumptions">Modeling Decisions</a>
-  <a href="#what-200-runs-show" data-section="what-200-runs-show">What 200 Runs Show</a>
-  <div class="toc-part" style="margin-top:12px;">Explore</div>
-  <a href="world.html" style="color:#27ae60;">&#127918; Live Simulation</a>
-</aside>
-
-  <!-- Main Content -->
-  <main class="content">
-
-    <section class="chapter" id="chapter-2">
-      <div class="chapter-label">Chapter 2</div>
-      <h2>The Current System</h2>
-      <div class="hook">“Before you can fix something, you have to prove it’s broken. With numbers.”</div>
-
-      <p>The Netherlands has one of Europe’s best-funded healthcare systems. Universal coverage. High patient satisfaction. Excellent acute care outcomes. By most international rankings, it’s a top-five system globally.</p>
-
-      <p>It’s still breaking.</p>
-
-      <p>The Dutch call it the <em>zorginfarct</em> — care infarction. Not a future scenario. Not a projection. It’s happening now: waiting lists that exceed legal norms, GP practices that close to new patients, specialists who can’t see referrals for months. The IZA (Integraal Zorgakkoord) projects a shortage of <strong>301,000 healthcare workers by 2035</strong> (ABF Research). That’s not a staffing gap. That’s a systemic failure.</p>
-
-      <p>The demographics are unforgiving. Twenty percent of the Dutch population is over 65. Among those 75 and older, 96% have at least one chronic condition (RIVM 2024). Forty-five percent have two or more. The system was designed for acute care in a younger population. The population aged. The system didn’t adapt.</p>
-
-      <p>This chapter explains the specific mechanisms by which the Dutch healthcare system is failing — and how Cammelot models each one.</p>
-
-      <div class="metric-callout">
-        <div class="metric-card">
-          <div class="metric-value ist">301K</div>
-          <div class="metric-label">Worker shortage by 2035</div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-value ist">30%</div>
-          <div class="metric-label">GP time lost to admin</div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-value ist">12 wk</div>
-          <div class="metric-label">Avg specialist wait</div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-value ist">62%</div>
-          <div class="metric-label">Effective GP capacity</div>
-        </div>
-      </div>
-
-      <h3 id="why-system-breaks">Why the System Breaks</h3>
-
-      <p>The zorginfarct is not a single failure. It’s three interlocking failure mechanisms, each making the others worse.</p>
-
-      <p><strong>Administrative burden.</strong> A Dutch GP spends 30% of their working time on paperwork — electronic health records, referral letters, insurance coding, prescription management, quality reporting (LHV 2024). That’s not a technology problem. It’s a workflow architecture problem. The administrative burden is additive: every new regulation, every quality metric, every reporting requirement adds minutes per patient that never get removed. The cumulative effect is that a GP who could theoretically see 200 patients per week can effectively see about 124.</p>
-
-      <p><strong>Waiting lists and Treeknorm violations.</strong> The Treeknorm is the Dutch legal norm for maximum acceptable wait times. Diagnostics: 4 weeks. Treatment: 7–12 weeks. These aren’t aspirational targets — they’re regulatory requirements. In practice: ophthalmology averages 12 weeks. Neurology and gynecology wait times have increased 50%+ since 2022. Among MRI and CT diagnostics, 28.9% exceed the 4-week norm (NZa 2024). When patients wait beyond the Treeknorm, their conditions deteriorate. What could have been treated in primary care becomes an emergency department visit. What could have been outpatient becomes inpatient. The system creates the complexity it can’t handle.</p>
-
-      <p><strong>Data fragmentation.</strong> The Netherlands has roughly 12,000 GP practices, 90 hospital organisations, and 8 academic medical centres. Most data exchange between them still uses EDIFACT — a messaging standard from the 1980s originally designed for shipping container logistics. Only 11% of Dutch health data is interoperable between providers (IZA 2023). The national EHR is a virtual pointer system: it doesn’t store data, it points to it. Five providers treating the same patient maintain five independent records. The IZA has allocated €2.8 billion in transformation funding to reach 66% interoperability by 2030. Over 270 transformation plans were submitted before the postbus closed in July 2025.</p>
-
-      <h3 id="how-cammelot-models">How Cammelot Models This</h3>
-
-      <p>Cammelot is a browser-based agent simulation that reproduces these failure mechanisms in miniature. The simulation creates a small Dutch town with the following structure:</p>
-
-      <ul style="margin-bottom:1.1rem;padding-left:1.5rem;">
-        <li><strong>45 citizen agents</strong> with names, ages, and health conditions drawn from CBS/RIVM demographic distributions</li>
-        <li><strong>3 GP practices</strong>: Dr. de Jong (2,400 max patients), Dr. Bakker (2,000), Dr. Visser (1,800)</li>
-        <li><strong>1 regional hospital</strong> with 3 specialist departments: Cardiology (Dr. van den Berg, 12/week), Endocrinology (Dr. Mulder, 15/week), Pulmonology (Dr. Janssen, 10/week)</li>
-      </ul>
-
-      <p>Each citizen starts with <strong>100 health points (HP)</strong>. Citizens develop conditions following RIVM prevalence rates, visit their assigned GP, receive referrals, and wait. The simulation runs in 500ms ticks, each representing roughly one day of simulated time.</p>
-
-      <p>The critical design choice: mortality in Cammelot is a <em>consequence of system delay</em>, not random chance. When a citizen waits beyond the Treeknorm threshold, their health deteriorates at a rate determined by their condition severity and the system’s administrative burden. HP reaches zero, the citizen dies, and their sprite turns grey. Every death in the simulation is traceable to a specific bottleneck.</p>
-
-      <h3 id="capacity-formula">The Capacity Formula</h3>
-
-      <p>The core equation governing GP effectiveness in Cammelot:</p>
-
-      <pre><code>C_eff = C_total × (1 − L_admin − V_ziekte) × E_ai</code></pre>
-
-      <div class="metric-callout">
-        <div class="metric-card">
-          <div class="metric-value ist">0.30</div>
-          <div class="metric-label">L_admin (admin burden)</div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-value ist">0.08</div>
-          <div class="metric-label">V_ziekte (sick leave)</div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-value ist">1.0</div>
-          <div class="metric-label">E_ai (no AI assist)</div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-value ist">0.62</div>
-          <div class="metric-label">C_eff (result)</div>
-        </div>
-      </div>
-
-      <p>In IST mode (current system): <code>L_admin = 0.30</code> (30% administrative burden, LHV 2024), <code>V_ziekte = 0.08</code> (8% sick leave / ziekteverzuim, CBS), <code>E_ai = 1.0</code> (no AI assistance). The result: <code>C_eff = 0.62</code>. GPs operate at 62% of their theoretical capacity before seeing their first patient.</p>
-
-      <p>This isn’t an abstract number. It means that a GP practice with a norm of 2,400 patients has an effective capacity of roughly 1,488 patient-equivalent slots. The remaining 912 slots are consumed by administration, sick leave, and structural overhead. Every patient beyond 1,488 adds pressure that manifests as longer consultations, shorter attention spans, delayed referrals, and eventually — burnout.</p>
-
-      <h3 id="disease-engine">The Disease Engine</h3>
-
-      <details>
-        <summary>⚙️ Technical deep-dive: ICD-10 conditions and Markov transitions</summary>
-        <div class="details-content">
-          <p>Cammelot models 10 chronic conditions using ICD-10 codes, each with prevalence rates drawn from RIVM 2024 data:</p>
-          <div class="stats-table-wrap">
-            <table class="stats-table">
-              <thead><tr><th>Condition</th><th>ICD-10</th><th>NL Prevalence</th></tr></thead>
-              <tbody>
-                <tr><td>Hypertension</td><td>I10</td><td>High (age-dependent)</td></tr>
-                <tr><td>Type 2 Diabetes</td><td>E11</td><td>1.2 million</td></tr>
-                <tr><td>COPD</td><td>J44</td><td>600,000+</td></tr>
-                <tr><td>Cardiovascular Disease</td><td>I25</td><td>12% (65+)</td></tr>
-                <tr><td>Arthrosis</td><td>M17</td><td>1.6 million</td></tr>
-                <tr><td>Osteoporosis</td><td>M81</td><td>15% (65+)</td></tr>
-                <tr><td>Depression</td><td>F32</td><td>Age-dependent</td></tr>
-                <tr><td>Anxiety</td><td>F41</td><td>Age-dependent</td></tr>
-                <tr><td>Dementia</td><td>F03</td><td>300,000+</td></tr>
-                <tr><td>Cancer (Lung)</td><td>C34</td><td>Age-dependent</td></tr>
-              </tbody>
-            </table>
-          </div>
-
-          <p>Each condition progresses through a 5-state Markov chain: <strong>healthy → mild → moderate → severe → critical → deceased</strong>. Transition probabilities are evaluated per tick. The key mechanism: when a patient’s specialist wait time exceeds the Treeknorm threshold, probability mass shifts toward worse states. Waiting doesn’t just delay treatment — it actively accelerates disease progression.</p>
-
-          <p><strong>Comorbidity multipliers</strong> model the clinical reality that conditions interact:</p>
-          <ul>
-            <li>COPD → Cardiovascular Disease: relative risk = 2.5 (PMC)</li>
-            <li>Type 2 Diabetes → Cardiovascular Disease: relative risk = 2.0 (ESC Guidelines)</li>
-            <li>Hypertension → Cardiovascular Disease: relative risk = 1.8 (ESC Guidelines)</li>
-          </ul>
-          <p>A patient with both COPD and Type 2 Diabetes faces a compounded cardiovascular risk that the system’s waiting lists make materially worse.</p>
-        </div>
-      </details>
-
-      <h3 id="hp-drain">HP Drain and Mortality</h3>
-
-      <p>When specialist wait times exceed the Treeknorm threshold, health points drain according to:</p>
-
-      <pre><code>HP_drain = drainRate × (t_wait − T_treeknorm) × severityMultiplier × (1 + adminBurden)</code></pre>
-
-      <div class="stats-table-wrap">
-        <table class="stats-table">
-          <thead><tr><th>Parameter</th><th>Value</th><th>Meaning</th></tr></thead>
-          <tbody>
-            <tr><td>drainRate</td><td>3</td><td>HP lost per week overdue</td></tr>
-            <tr><td>severityMultiplier (healthy)</td><td>0</td><td>No drain if healthy</td></tr>
-            <tr><td>severityMultiplier (mild)</td><td>0.5</td><td>Half rate</td></tr>
-            <tr><td>severityMultiplier (moderate)</td><td>1.0</td><td>Full rate</td></tr>
-            <tr><td>severityMultiplier (severe)</td><td>2.0</td><td>Double rate</td></tr>
-            <tr><td>severityMultiplier (critical)</td><td>4.0</td><td>Quadruple rate</td></tr>
-            <tr><td>adminBurden</td><td>0.30</td><td>+30% drain (admin delays compound clinical delays)</td></tr>
-          </tbody>
-        </table>
-      </div>
-
-      <p>Two thresholds trigger state changes: <strong>HP ≤ 20</strong> puts the citizen in a distressed state with urgent referral priority. <strong>HP ≤ 0</strong> means death — the citizen’s sprite turns grey (a “ghost”). The <code>(1 + adminBurden)</code> term is deliberate: administrative overhead doesn’t just reduce capacity, it actively accelerates patient deterioration by delaying every step of the care chain.</p>
-
-      <h3 id="assumptions">Modeling Decisions and Assumptions</h3>
-
-      <details>
-        <summary>⚠️ Limitations and honest caveats</summary>
-        <div class="details-content">
-          <p>Cammelot is a simplified model. These are the assumptions and their implications:</p>
-          <ul>
-            <li><strong>Population of 45 is small.</strong> Stochastic variance is high. Individual runs can produce outlier results. This is why we report averages across 200 runs, not individual simulations.</li>
-            <li><strong>Disease progression is simplified.</strong> The 5-state Markov chain (healthy → mild → moderate → severe → critical) is not clinical reality. Real disease trajectories involve remission, acute exacerbations, treatment response variation, and comorbidity interactions that are far more complex than our transition matrices capture.</li>
-            <li><strong>GP capacity model assumes uniform distribution</strong> of patient complexity. In practice, some consultations are 5-minute prescription renewals; others are 45-minute multimorbidity assessments. Our model treats them equivalently.</li>
-            <li><strong>Mortality from system delay is modeled, not observed.</strong> No randomised controlled trial exists for “what happens if you make people wait.” Our HP drain mechanism is a modeling construct, not a clinical finding. The <em>direction</em> is supported by evidence (delayed treatment worsens outcomes), but the specific drain rates are calibrated parameters, not measured values.</li>
-            <li><strong>All parameters derive from published Dutch data sources</strong> (CBS, RIVM, NZa, IZA, LHV), but the model is a simplification. We do not claim predictive accuracy for individual patients. We claim that the system dynamics — bottleneck formation, queue growth, capacity erosion — reproduce the qualitative patterns observed in the real Dutch healthcare system.</li>
-            <li><strong>Natural mortality</strong> (age-based, from CBS life tables) is tracked separately from system-failure mortality. The simulation distinguishes between “died because they were 92” and “died because they waited 18 weeks for a cardiologist.”</li>
-          </ul>
-        </div>
-      </details>
-
-      <h3 id="what-200-runs-show">What 200 Runs Show</h3>
-
-
-</head>
-
-<body>
-
-<!-- Reading Progress Bar -->
-<div class="progress-bar" id="progress-bar"></div>
-
-<!-- Header -->
-<header class="site-header">
-  <a href="index.html" class="logo">CAMME<span>L</span>OT</a>
-  <nav>
-    <a href="index.html" class="nav-link">Home</a>
-    <a href="index.html" class="nav-link">Story</a>
     <a href="ch2.html" class="nav-link">The Current System</a>
-    <a href="ch3.html" class="nav-link" style="color:var(--accent);font-weight:600">The AI-Native Overhaul</a>
+    <a href="ch3.html" class="nav-link" style="color:var(--green)">The AI-Native Overhaul</a>
     <a href="world.html" class="nav-link" style="color:var(--green)">&#127918; Live Sim</a>
     <a href="about.html" class="nav-link">About</a>
     <button class="theme-toggle" id="theme-toggle" title="Toggle dark mode">&#127769;</button>
@@ -813,14 +590,17 @@ pre code {
 <div class="mobile-toc-backdrop" id="mobile-toc-backdrop"></div>
 <nav class="mobile-toc-overlay" id="mobile-toc-overlay">
   <div class="toc-part">The Vision</div>
-  <a href="#what-changes" class="mobile-toc-link">What Changes</a>
-  <a href="#five-interventions" class="mobile-toc-link">Five Interventions</a>
-  <div class="toc-part">The Architecture</div>
-  <a href="#agentic-mesh" class="mobile-toc-link">The Agentic Mesh</a>
+  <a href="#soll-vision" class="mobile-toc-link">What Changes</a>
+  <div class="toc-part">Interventions</div>
+  <a href="#five-interventions" class="mobile-toc-link">Five Modeled Interventions</a>
   <a href="#ist-vs-soll" class="mobile-toc-link">IST vs SOLL</a>
-  <div class="toc-part">The Evidence</div>
-  <a href="#simulation-results" class="mobile-toc-link">What 200 Runs Show</a>
+  <div class="toc-part">Architecture</div>
+  <a href="#agentic-mesh" class="mobile-toc-link">The Agentic Mesh</a>
+  <a href="#cognitive-loop" class="mobile-toc-link">Cognitive Loop</a>
+  <a href="#agent-roster" class="mobile-toc-link">Agent Roster</a>
+  <div class="toc-part">Caveats</div>
   <a href="#limitations" class="mobile-toc-link">Limitations</a>
+  <a href="#closing" class="mobile-toc-link">The Point</a>
   <div class="toc-part" style="margin-top:12px;">Explore</div>
   <a href="world.html" class="mobile-toc-link" style="color:#27ae60;">&#127918; Live Simulation</a>
 </nav>
@@ -828,19 +608,22 @@ pre code {
 <div class="page-grid">
   <!-- Sidebar TOC -->
   <aside class="toc" id="toc">
-    <div class="toc-label">Contents</div>
-    <div class="toc-part">The Vision</div>
-    <a href="#what-changes" data-section="what-changes">What Changes</a>
-    <a href="#five-interventions" data-section="five-interventions">Five Interventions</a>
-    <div class="toc-part">The Architecture</div>
-    <a href="#agentic-mesh" data-section="agentic-mesh">The Agentic Mesh</a>
-    <a href="#ist-vs-soll" data-section="ist-vs-soll">IST vs SOLL</a>
-    <div class="toc-part">The Evidence</div>
-    <a href="#simulation-results" data-section="simulation-results">What 200 Runs Show</a>
-    <a href="#limitations" data-section="limitations">Limitations</a>
-    <div class="toc-part" style="margin-top:12px;">Explore</div>
-    <a href="world.html" style="color:#27ae60;">&#127918; Live Simulation</a>
-  </aside>
+  <div class="toc-label">Contents</div>
+  <div class="toc-part">The Vision</div>
+  <a href="#soll-vision" data-section="soll-vision">What Changes</a>
+  <div class="toc-part">Interventions</div>
+  <a href="#five-interventions" data-section="five-interventions">Five Interventions</a>
+  <a href="#ist-vs-soll" data-section="ist-vs-soll">IST vs SOLL</a>
+  <div class="toc-part">Architecture</div>
+  <a href="#agentic-mesh" data-section="agentic-mesh">The Agentic Mesh</a>
+  <a href="#cognitive-loop" data-section="cognitive-loop">Cognitive Loop</a>
+  <a href="#agent-roster" data-section="agent-roster">Agent Roster</a>
+  <div class="toc-part">Caveats</div>
+  <a href="#limitations" data-section="limitations">Limitations</a>
+  <a href="#closing" data-section="closing">The Point</a>
+  <div class="toc-part" style="margin-top:12px;">Explore</div>
+  <a href="world.html" style="color:#27ae60;">&#127918; Live Simulation</a>
+</aside>
 
   <!-- Main Content -->
   <main class="content">
@@ -848,335 +631,282 @@ pre code {
     <section class="chapter" id="chapter-3">
       <div class="chapter-label">Chapter 3</div>
       <h2>The AI-Native Overhaul</h2>
-      <div class="hook">“The question is not whether AI can help healthcare. It’s whether the system architecture allows it to.”</div>
+      <div class="hook">“The question is not whether AI can improve healthcare. The question is: by how much, under what conditions, and at what cost to things we haven’t thought to measure.”</div>
 
-      <p>The previous chapter established the arithmetic of the Dutch healthcare crisis: a system operating at 62% effective capacity, with 30% of clinical time consumed by administration, specialist wait times exceeding Treeknorm thresholds, and data interoperability at 11%. These are not temporary inefficiencies. They are structural properties of the current information architecture.</p>
+      <p>Chapter 2 established the IST — the current system. Three interlocking failure mechanisms: administrative burden consuming 30% of GP time, waiting lists exceeding legal norms, and data fragmentation across 12,000 practices. Effective GP capacity at 62%. Mortality as a direct consequence of system delay.</p>
 
-      <p>The SOLL hypothesis asks a specific question: what happens if we redesign the information architecture so that software agents handle coordination, administration, and early detection—freeing clinical staff to do clinical work?</p>
+      <p>This chapter describes the SOLL — the target state. Not a prediction. Not a product roadmap. A set of five specific parameter changes applied to the same simulation, using the same 45 citizens, the same 3 GPs, the same hospital. The architecture stays identical. The numbers change. We measure what happens.</p>
 
-      <p>This is not about adding chatbots to hospital websites. It is about restructuring how data moves, how decisions propagate, and how providers coordinate. The difference matters. A chatbot answers questions. An information architecture determines whether the right data reaches the right clinician at the right time.</p>
-
-      <p>The IZA (Integraal Zorgakkoord) sets official targets: hybrid care at 70% by 2026, administrative burden reduction from 30% to 20% by 2030. We modeled something more aggressive: administration reduced to below 5%, with a combined AI efficiency multiplier of 1.34 applied to effective capacity.</p>
-
-
-      <h3 id="what-changes">What Changes</h3>
-
-      <p>The capacity formula in the IST model is:</p>
-
-      <div class="insight-callout">
-        <strong>IST Capacity</strong>
-        C<sub>eff</sub> = C<sub>total</sub> × (1 − 0.30 − 0.08) × 1.0 = <strong>0.62</strong>
-      </div>
-
-      <p>In the SOLL model, three parameters change: administrative load drops from 30% to below 5%, sick leave remains at 8% (we do not assume AI reduces illness), and an efficiency multiplier of 1.34 reflects gains from automated triage, routing, and monitoring:</p>
-
-      <div class="insight-callout">
-        <strong>SOLL Capacity</strong>
-        C<sub>eff</sub> = C<sub>total</sub> × (1 − 0.05 − 0.08) × 1.34 = <strong>0.83</strong>
-      </div>
-
-      <p>From 62% to 83% effective capacity. That is not incremental improvement—it is a structural shift in what the same number of clinicians can deliver.</p>
+      <p>The tone matters. This is not “AI will save healthcare.” It is: “We changed five variables in a simulation of 45 people. Here is what the model produced. Here are the seventeen reasons it might be wrong.”</p>
 
       <div class="metric-callout">
         <div class="metric-card">
-          <div class="metric-value"><span class="ist">62%</span> → <span class="soll">83%</span></div>
-          <div class="metric-label">Effective Capacity</div>
+          <div class="metric-value soll">&lt;5%</div>
+          <div class="metric-label">Admin burden (SOLL)</div>
         </div>
         <div class="metric-card">
-          <div class="metric-value"><span class="ist">30%</span> → <span class="soll">&lt;5%</span></div>
-          <div class="metric-label">Admin Burden</div>
+          <div class="metric-value soll">0.83</div>
+          <div class="metric-label">C_eff (SOLL)</div>
         </div>
         <div class="metric-card">
-          <div class="metric-value"><span class="ist">12wk</span> → <span class="soll">&lt;4wk</span></div>
-          <div class="metric-label">Specialist Wait</div>
+          <div class="metric-value soll">&lt;4 wk</div>
+          <div class="metric-label">Target wait time</div>
         </div>
         <div class="metric-card">
-          <div class="metric-value"><span class="ist">11%</span> → <span class="soll">66%</span></div>
-          <div class="metric-label">Data Interop</div>
+          <div class="metric-value soll">1.34</div>
+          <div class="metric-label">E_ai multiplier</div>
         </div>
       </div>
 
-      <p>What each change means in practice:</p>
+      <h3 id="soll-vision">What Changes — and What Doesn’t</h3>
 
-      <p><strong>Administrative reduction.</strong> Ambient AI scribes transcribe consultations, auto-generate referral letters, and handle insurance coding. The GP talks to the patient. The system handles the paperwork. Current GP surveys (LHV 2024) report that documentation is the single largest source of work dissatisfaction. Reducing it from 30% to under 5% of working time would free approximately 5 hours per GP per day for direct patient care.</p>
+      <p>The SOLL mode activates five interventions simultaneously. Each maps to a specific IST failure mechanism documented in Chapter 2. None of them require new medical knowledge, new drugs, or new hospital buildings. All of them require restructuring how information flows between agents in the system.</p>
 
-      <p><strong>Wait time reduction.</strong> Automated triage and scheduling. Agents query specialist capacity in real-time, route patients to the shortest qualified queue, and flag urgent cases automatically. Instead of a GP sending a referral letter and waiting weeks for a response, the system identifies the fastest available specialist at the moment of referral.</p>
+      <p>What stays the same: the 45 citizens and their demographic distributions (CBS), the chronic disease prevalence rates (RIVM), the comorbidity multipliers, the Markov transition probabilities, the 3 GP practices, the hospital with its 3 specialist departments. The population is identical. The disease burden is identical. The physical infrastructure is identical.</p>
 
-      <p><strong>Data interoperability.</strong> Instead of EDIFACT messages and faxes, agents carry FHIR R4 resources. When a GP refers a patient, the full clinical context—conditions, observations, medications, recent encounters—travels with the referral. No re-entry. No data loss. No phone calls to request records.</p>
+      <p>What changes: how fast GPs process patients, how accurately triage routes referrals, how early conditions are detected, how well providers coordinate, and how much patient data is actually shared between them.</p>
 
+      <p>The core equation from Chapter 2 was:</p>
 
-      <h3 id="five-interventions">Five Interventions We Modeled</h3>
+      <pre><code>C_eff = C_total × (1 − L_admin − V_ziekte) × E_ai
 
-      <p>Each intervention addresses a specific failure mode identified in the IST analysis, with measurable parameter changes in the simulation.</p>
+IST:  C_eff = C_total × (1 − 0.30 − 0.08) × 1.00 = 0.62
+SOLL: C_eff = C_total × (1 − 0.05 − 0.08) × 1.34 = 0.83</code></pre>
 
-      <details>
-        <summary>1. Ambient Documentation</summary>
-        <div class="details-content">
-          <p><strong>IST failure addressed:</strong> 30% administrative burden on GP time.</p>
-          <p>AI scribes transcribe consultations in real-time, extract clinical codes (ICD-10, ICPC), generate structured FHIR Observation and Condition resources, and draft referral letters. The GP reviews and approves rather than writing from scratch.</p>
-          <p><strong>Parameter change:</strong> admin load 30% → &lt;5%.</p>
-          <p><strong>Effect:</strong> Frees approximately 5 hours per GP per day. At NZa regular consult rates (€12.43 per 5–20 min visit), this translates to 15–20 additional patient consultations per day per GP.</p>
-          <p style="font-size:0.82rem;color:var(--text-muted);">Sources: LHV Werkdruk Enquête 2024; NZa Tariefbeschikking 2025; IZA Administrative Burden targets.</p>
-        </div>
-      </details>
+      <p>That single shift — from 0.62 to 0.83 — represents a 34% increase in effective GP capacity without hiring a single additional doctor. The question this chapter investigates: what does that 34% actually buy in terms of wait times, Treeknorm violations, and preventable deaths?</p>
 
-      <details>
-        <summary>2. Intelligent Triage and Routing</summary>
-        <div class="details-content">
-          <p><strong>IST failure addressed:</strong> 12-week specialist wait times exceeding Treeknorm.</p>
-          <p>Agents read specialist capacity in real-time via the A2A protocol. Each specialist publishes an Agent Card with current queue length and estimated wait time. When a GP initiates a referral, the system identifies the shortest qualified queue across all available specialists—not just the one the GP usually refers to.</p>
-          <p><strong>Parameter change:</strong> effective wait time reduction of 40–60%.</p>
-          <p><strong>Effect:</strong> Patients reach specialists within Treeknorm thresholds (4 weeks diagnostics, 7–12 weeks treatment), reducing HP drain from prolonged waiting.</p>
-          <p style="font-size:0.82rem;color:var(--text-muted);">Sources: NZa Monitor Toegankelijkheid 2024; Treeknorm classification system.</p>
-        </div>
-      </details>
+      <h3 id="five-interventions">Five Modeled Interventions</h3>
 
-      <details>
-        <summary>3. Proactive Risk Monitoring</summary>
-        <div class="details-content">
-          <p><strong>IST failure addressed:</strong> late detection of clinical deterioration.</p>
-          <p>Agents monitor longitudinal patient health data—blood pressure trends, glucose levels, lung function measurements—and flag risk escalation before it becomes an acute event. This is not a “digital twin” in the marketing sense. It is the systematic application of clinical decision rules (ESC guidelines, NHG-Standaarden) to chronological observation data stored as FHIR resources.</p>
-          <p><strong>Parameter change:</strong> earlier intervention reduces severity multipliers (moderate → mild, severe → moderate).</p>
-          <p><strong>Effect:</strong> Lower HP drain rates. Fewer emergency presentations. Reduced hospital admissions at an average saved cost of €5,845 per prevented hospitalization (NZa 2025).</p>
-          <p style="font-size:0.82rem;color:var(--text-muted);">Sources: ESC Cardiovascular Prevention Guidelines 2021; RIVM Chronic Disease Model; NZa hospital cost data 2025.</p>
-        </div>
-      </details>
+      <p>Each intervention is a parameter change in the simulation. We describe the mechanism, the parameter affected, and the evidence basis.</p>
 
-      <details>
-        <summary>4. Automated Care Coordination</summary>
-        <div class="details-content">
-          <p><strong>IST failure addressed:</strong> data fragmentation across providers.</p>
-          <p>When a patient moves between providers (GP → specialist → discharge → GP), FHIR R4 resources travel with each transition. Discharge summaries are auto-generated from encounter data and transmitted back to the referring GP. The result: 5 providers, 1 shared clinical record per interaction sequence.</p>
-          <p><strong>Parameter change:</strong> data interoperability 11% → 66%.</p>
-          <p><strong>Effect:</strong> Eliminates duplicate diagnostics, reduces medication errors from incomplete records, and removes the need for patients to repeat their clinical history at every new provider.</p>
-          <p style="font-size:0.82rem;color:var(--text-muted);">Sources: Nictiz Interoperability Monitor 2024; Wegiz implementation roadmap; IZA data exchange targets.</p>
-        </div>
-      </details>
+      <p><strong>1. Ambient AI Scribes — Admin drops from 30% to &lt;5%</strong></p>
 
-      <details>
-        <summary>5. Routine Task Automation</summary>
-        <div class="details-content">
-          <p><strong>IST failure addressed:</strong> clinical capacity consumed by non-clinical tasks.</p>
-          <p>Prescription renewals for stable chronic patients, lab result routing, appointment scheduling, insurance pre-authorizations—these are rule-based tasks that do not require clinical judgment. The IZA estimates that AI can handle 36–66% of routine healthcare tasks.</p>
-          <p><strong>Parameter change:</strong> contributes to the E<sub>ai</sub> = 1.34 efficiency multiplier.</p>
-          <p><strong>Effect:</strong> Frees clinical staff for complex cases requiring human judgment—multimorbidity management, mental health consultations, end-of-life care discussions.</p>
-          <p style="font-size:0.82rem;color:var(--text-muted);">Sources: IZA 2023–2026; ABF Research Arbeidsmarktprognose 2023–2033.</p>
-        </div>
-      </details>
+      <p>In IST, a Dutch GP spends 30% of working time on administrative tasks: electronic health records, referral letters, insurance coding, prescription management, quality reporting (LHV 2024). In SOLL, ambient AI scribes handle documentation in real-time during consultations. The GP speaks. The system writes. FHIR resources are generated automatically. <code>L_admin</code> drops from 0.30 to 0.05.</p>
 
+      <p>The residual 5% accounts for tasks that require human judgment: signing off on complex referral letters, reviewing AI-generated summaries for accuracy, handling exceptions that fall outside the scribe’s training distribution. Zero percent is not credible. Five percent is ambitious but defensible based on early deployments (Nuance DAX, Amazon HealthScribe).</p>
 
-      <h3 id="agentic-mesh">The Agentic Mesh</h3>
+      <p><strong>2. AI-Driven Triage — Waiting lists cut to &lt;4 weeks</strong></p>
 
-      <p>The previous chapter introduced the concept of the agentic mesh as an alternative to data mesh. Here we define the architecture concretely.</p>
+      <p>In IST, triage is a GP’s clinical judgment call, constrained by the information available at the moment of consultation. Referrals are often imprecise: a patient is sent to cardiology when endocrinology might have been faster, or vice versa. In SOLL, an AI triage layer examines the patient’s full FHIR record, current specialist queue lengths (via A2A Agent Cards), and condition-specific urgency scores to route referrals optimally.</p>
 
-      <p><strong>Why “agentic mesh” and not “data mesh.”</strong> Data mesh asks how to organize data so humans can query it. The agentic mesh asks how to organize software agents so they can act on data autonomously. In healthcare, data does not want to sit in domain products waiting to be queried. It wants to move with clinical actions—referrals, prescriptions, alerts, escalations.</p>
+      <p>The mechanism: when a GP generates a referral, the triage agent queries all specialist Agent Cards for current wait times and capacity. It matches the patient’s ICD-10 codes against specialist skills. It identifies the fastest path to treatment that satisfies clinical requirements. The target: no referral exceeds the Treeknorm threshold of 4 weeks for diagnostics, 7–12 weeks for treatment.</p>
 
-      <p>The agentic mesh has four architectural properties:</p>
+      <p><strong>3. Digital Twin Predictions — Proactive care before crisis</strong></p>
 
-      <p><strong>1. Discovery, not integration.</strong> Agents publish Agent Cards at well-known URLs (<code>/.well-known/agent-card.json</code>). A new specialist joins the network by publishing a card, not by completing an integration project. This is the same pattern that made HTTP scale: convention over configuration, publication over negotiation.</p>
+      <p>In IST, patients visit their GP when symptoms become noticeable. By that point, the Markov chain has often progressed from mild to moderate or worse. In SOLL, each citizen agent has a Digital Twin — a predictive model that continuously evaluates their FHIR history, current conditions, and comorbidity risk factors.</p>
 
-      <p><strong>2. Context travels with action.</strong> When a GP refers a patient, FHIR resources (Patient, Condition, Observation, MedicationRequest) travel with the referral message. There is no separate query, no ETL pipeline, no “can you send me the records?” phone call. The clinical context is part of the action.</p>
+      <p>The Digital Twin generates risk scores. When Hendrik Veenstra’s twin calculates a 32% probability of heart failure within 6 months (based on his I25 + E11 comorbidity profile and the COPD→CVD relative risk of 2.5), the system triggers a proactive GP consultation <em>before</em> symptoms manifest. This shifts the intervention point leftward on the Markov chain: treating at “mild” rather than “moderate” or “severe,” when treatment is cheaper, simpler, and more effective.</p>
 
-      <p><strong>3. Agents reason about their own data.</strong> A GP agent notices that its queue is growing, that a specific patient’s blood pressure readings are trending upward, that its own burnout indicators (consultation duration, overtime hours) are increasing. Reflection drives action. This follows the cognitive architecture from Park et al.’s “Generative Agents” (2023): memory stream → reflection → planning.</p>
+      <p><strong>4. A2A Inter-Agent Scheduling — Coordinated referral management</strong></p>
 
-      <p><strong>4. Governance is embedded.</strong> Policies are encoded in agent behavior and protocol rules, not in governance committees that meet quarterly. A referral without proper triage documentation gets rejected at the protocol level. Data quality is enforced by the system, not by audits.</p>
+      <p>In IST, each GP practice operates in relative isolation. Dr. de Jong doesn’t know that Dr. Bakker’s patient just cancelled a cardiology appointment, freeing a slot. In SOLL, all provider agents communicate via the A2A protocol. Agent Cards publish real-time availability. The message bus coordinates referral handoffs.</p>
 
-      <details>
-        <summary>A2A Protocol: Agent Card Schema</summary>
-        <div class="details-content">
-          <p>Each agent in the mesh publishes a card describing its capabilities, current load, and endpoint:</p>
-<pre><code>{
-  "agentId": "gp-de-jong",
-  "name": "Dr. de Jong",
-  "role": "gp",
-  "skills": ["triage", "referral", "chronic_care"],
-  "waitTime": { "weeks": 2, "queueSize": 12 },
-  "metadata": {
-    "admin_load": "5%",
-    "treeknorm_status": "compliant",
-    "max_patients": 2400,
-    "nza_consult_rate_eur": 12.43
-  },
-  "endpoint": "/.well-known/agents/gp-de-jong/card.json"
-}</code></pre>
-          <p>Message types in the protocol: <code>referral</code>, <code>status_query</code>, <code>response</code>, <code>alert</code>, <code>dialogue</code>. Referral lifecycle: <code>submitted → working → input-required → completed</code>.</p>
-          <p style="font-size:0.82rem;color:var(--text-muted);">Based on the A2A Protocol specification (2024).</p>
-        </div>
-      </details>
+      <p>The referral lifecycle becomes explicit: <code>submitted → working → input-required → completed</code>. When a specialist needs additional information, the system routes the request back to the GP automatically rather than generating a paper letter that sits in a queue. Referral round-trip time drops from weeks to hours.</p>
 
-      <details>
-        <summary>FHIR R4 Memory Store</summary>
-        <div class="details-content">
-          <p>Each agent’s memory is a chronological log of FHIR R4 resources. This is the “memory stream” from Park et al.’s generative agents architecture, grounded in an international healthcare data standard rather than free-text observations.</p>
-          <p>Resource types used: <code>Patient</code>, <code>Condition</code>, <code>Observation</code>, <code>Encounter</code>, <code>MedicationRequest</code>. Custom observation codes: <code>CAMMELOT-WAIT</code> (queue position), <code>CAMMELOT-HP</code> (health points), <code>CAMMELOT-GHOST</code> (mortality event), <code>CAMMELOT-ACTION</code> (agent decision).</p>
-          <p>Extensions: <code>http://cammelot.sim/fhir/hp</code> (integer HP value), <code>http://cammelot.sim/fhir/sprite-state</code> (visual representation).</p>
-          <p style="font-size:0.82rem;color:var(--text-muted);">Based on HL7 FHIR R4 specification; Nictiz nl-core implementation guide.</p>
-        </div>
-      </details>
+      <p><strong>5. Hybrid openEHR + FHIR — Data interoperability from 11% to 66%</strong></p>
 
-      <details>
-        <summary>Cognitive Loop Architecture</summary>
-        <div class="details-content">
-          <p>Every agent executes three steps per simulation tick, following Park et al. (2023):</p>
-          <p><strong>1. Memory stream.</strong> Retrieve recent FHIR observations from the agent’s chronological log. A GP retrieves its last N encounters, queue status, and patient alerts. A patient retrieves its condition history and wait time.</p>
-          <p><strong>2. Reflection.</strong> Draw high-level conclusions from the data. Examples:</p>
-          <ul>
-            <li>GP: “My queue has grown by 40% this week. Two patients have exceeded Treeknorm.”</li>
-            <li>Patient: “My blood pressure readings are trending upward. Current wait: 8 weeks.”</li>
-            <li>Specialist: “I have capacity for 3 more referrals this week.”</li>
-          </ul>
-          <p><strong>3. Planning.</strong> Translate reflections into actions: refer a patient, escalate an alert, request additional diagnostics, or adjust scheduling priorities.</p>
-          <p style="font-size:0.82rem;color:var(--text-muted);">Architecture from: Park, J.S. et al. “Generative Agents: Interactive Simulacra of Human Behavior” (2023).</p>
-        </div>
-      </details>
+      <p>In IST, only 11% of Dutch health data is interoperable between providers (IZA 2023). Five providers treating the same patient maintain five independent records. In SOLL, the simulation uses a hybrid architecture: openEHR for deep clinical storage (archetypes, compositions, structured clinical content) and FHIR R4 for exchange (resources, bundles, RESTful APIs).</p>
 
+      <p>The target — 66% interoperability by 2030 — comes directly from the IZA transformation plan, backed by €2.8 billion in allocated funding. Over 270 transformation plans were submitted before the postbus closed in July 2025. In the simulation, this means a specialist receiving a referral can see the patient’s full history: GP notes, medications, lab results, previous specialist encounters. No faxes. No phone calls asking “can you send me the file?”</p>
 
-      <h3 id="ist-vs-soll">IST vs SOLL: Side by Side</h3>
+      <h3 id="ist-vs-soll">IST vs SOLL: The Numbers</h3>
 
-      <p>The following table summarizes every parameter change between the IST (current system) and SOLL (AI-native overhaul) configurations in the simulation.</p>
+      <p>The complete parameter comparison between the current system and the AI-augmented target:</p>
 
       <div class="stats-table-wrap">
         <table class="stats-table">
-          <thead>
-            <tr>
-              <th>Parameter</th>
-              <th>IST</th>
-              <th>SOLL</th>
-              <th>Mechanism</th>
-            </tr>
-          </thead>
+          <thead><tr><th>Bottleneck</th><th>IST Value</th><th></th><th>SOLL Value</th><th>Mechanism</th></tr></thead>
           <tbody>
-            <tr>
-              <td class="metric-name">Administrative load</td>
-              <td class="sig">30%</td>
-              <td style="color:var(--green);font-weight:600;">&lt;5%</td>
-              <td>Ambient AI scribes, auto-coding</td>
-            </tr>
-            <tr>
-              <td class="metric-name">Sick leave (ziekteverzuim)</td>
-              <td>8%</td>
-              <td>8%</td>
-              <td>Unchanged—not an AI problem</td>
-            </tr>
-            <tr>
-              <td class="metric-name">AI efficiency multiplier (E<sub>ai</sub>)</td>
-              <td>1.0</td>
-              <td style="color:var(--green);font-weight:600;">1.34</td>
-              <td>Triage, routing, monitoring</td>
-            </tr>
-            <tr>
-              <td class="metric-name">Effective capacity (C<sub>eff</sub>)</td>
-              <td class="sig">62%</td>
-              <td style="color:var(--green);font-weight:600;">83%</td>
-              <td>Combined effect of above</td>
-            </tr>
-            <tr>
-              <td class="metric-name">Specialist wait time</td>
-              <td class="sig">12 weeks</td>
-              <td style="color:var(--green);font-weight:600;">&lt;4 weeks</td>
-              <td>A2A real-time scheduling</td>
-            </tr>
-            <tr>
-              <td class="metric-name">Data interoperability</td>
-              <td class="sig">11%</td>
-              <td style="color:var(--green);font-weight:600;">66%</td>
-              <td>FHIR R4 + A2A protocol</td>
-            </tr>
-            <tr>
-              <td class="metric-name">HP drain modifier</td>
-              <td class="sig">×1.30</td>
-              <td style="color:var(--green);font-weight:600;">×1.05</td>
-              <td>Reduced admin compound effect</td>
-            </tr>
+            <tr><td>Administrative load</td><td class="sig-red">30% of GP time</td><td class="arrow">→</td><td class="sig">&lt;5%</td><td>Ambient AI scribes, auto-FHIR mapping</td></tr>
+            <tr><td>Specialist wait times</td><td class="sig-red">12 weeks (avg)</td><td class="arrow">→</td><td class="sig">&lt;4 weeks</td><td>AI triage, A2A scheduling</td></tr>
+            <tr><td>Data interoperability</td><td class="sig-red">11%</td><td class="arrow">→</td><td class="sig">66%</td><td>Hybrid openEHR + FHIR</td></tr>
+            <tr><td>Staff pressure</td><td class="sig-red">301K shortage (2035)</td><td class="arrow">→</td><td class="sig">110K freed by tech</td><td>AI handles 36–66% of routine tasks</td></tr>
+            <tr><td>Effective capacity</td><td class="sig-red">C_eff = 0.62</td><td class="arrow">→</td><td class="sig">C_eff = 0.83</td><td>E_ai = 1.34 multiplier</td></tr>
+            <tr><td>Treeknorm violations</td><td class="sig-red">38%</td><td class="arrow">→</td><td class="sig">&lt;10%</td><td>Faster routing, proactive care</td></tr>
+            <tr><td>System-failure deaths</td><td class="sig-red">4.2 per run</td><td class="arrow">→</td><td class="sig">&lt;1 per run</td><td>Earlier intervention, shorter waits</td></tr>
           </tbody>
         </table>
       </div>
-      <p style="font-size:0.82rem;color:var(--text-muted);margin-top:0.5rem;">Sources: IZA 2023–2026; NZa 2025; CBS 2024; RIVM Chronic Disease Model; Cammelot simulation parameters.</p>
-
-
-      <h3 id="simulation-results">What 200 Runs Show</h3>
-
-      <p>We ran 200 independent simulation cycles: 100 under IST parameters and 100 under SOLL parameters. Each run simulates the same population of 45 citizens with identical initial health states, disease prevalence distributions, and comorbidity profiles drawn from CBS/RIVM 2024 data.</p>
-
-      <div class="metric-callout">
-        <div class="metric-card">
-          <div class="metric-value soll">−33%</div>
-          <div class="metric-label">Mortality Reduction</div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-value soll">−€847</div>
-          <div class="metric-label">Cost / Citizen / Year</div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-value soll">−58%</div>
-          <div class="metric-label">Queue Length</div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-value soll">91%</div>
-          <div class="metric-label">Treeknorm Compliance</div>
-        </div>
-      </div>
-
-      <p>The mortality reduction is the most striking result, and the one that requires the most caution. With N=45, a single death represents approximately 2.2 percentage points. The 33% reduction figure (from a mean of approximately 6 deaths per IST run to approximately 4 per SOLL run) is directionally consistent across runs but carries wide confidence intervals.</p>
-
-      <p>Cost savings derive primarily from two mechanisms: prevented hospitalizations (at an average of €5,845 per event, per NZa 2025 data) and reduced duplicate diagnostics from improved data interoperability. The €847 per citizen per year figure is a simulation estimate, not a validated clinical outcome.</p>
-
-      <p>Queue length reduction and Treeknorm compliance improvements are the most robust findings. These follow directly from the capacity formula: more effective capacity means shorter queues. The 91% Treeknorm compliance in SOLL (vs. approximately 64% in IST) reflects what happens when specialist wait times drop below the 4-week diagnostic threshold and the 12-week treatment threshold.</p>
-
-
-      <h3 id="limitations">Limitations and Open Questions</h3>
-
-      <p>Any simulation is a simplification. This one has specific limitations that readers should weigh against the results.</p>
-
-      <div class="insight-callout warning">
-        <strong>Methodological Constraints</strong>
-        <p><strong>Small population (N=45).</strong> With 45 simulated citizens, a single mortality event swings the mortality rate by approximately 2.2 percentage points. This produces high stochastic variance between runs. The 200-run design mitigates this through averaging, but the confidence intervals remain wide. Real-world validation would require population-scale modeling.</p>
-      </div>
-
-      <p><strong>The efficiency multiplier is an assumption.</strong> The E<sub>ai</sub> = 1.34 value is derived from IZA estimates that AI can handle 36–66% of routine tasks, combined with measured time savings from ambient documentation pilots. No operational Dutch healthcare system has achieved this multiplier. It is a target, not an observation.</p>
-
-      <p><strong>Administrative burden is modeled as a single parameter.</strong> In reality, administration includes documentation, insurance coding, referral letter writing, lab result processing, prescription management, and regulatory reporting. Each has different automation potential. Our model collapses these into one percentage. A more granular model might show different results.</p>
-
-      <p><strong>The agentic mesh is theoretical.</strong> No Dutch healthcare organization currently operates with A2A protocol-based agent coordination. The architecture is grounded in existing standards (FHIR R4, HTTP, JSON) and existing research (Park et al. 2023, A2A Protocol spec), but has not been deployed at scale in a clinical setting.</p>
-
-      <p><strong>Implementation costs are not modeled.</strong> We simulate the steady-state effect of the SOLL architecture. We do not model the cost of getting there: software development, training, change management, infrastructure, vendor negotiations, regulatory compliance, or clinical resistance. These costs are substantial and could affect the ROI timeline significantly.</p>
-
-      <p><strong>Author disclosure.</strong> The author works at Microsoft and may carry implicit bias toward AI-based solutions. All simulation code is open source. All parameters trace to published CBS, RIVM, NZa, and IZA data. Readers are encouraged to verify assumptions independently.</p>
-
-
-      <div class="chapter-divider"><div class="diamond"></div></div>
 
       <div class="insight-callout">
-        <strong>Closing Note</strong>
-        The SOLL model does not predict the future. It asks a question: if we restructured healthcare information architecture around autonomous coordination instead of manual integration, what would the numbers look like? The simulation gives one answer. Reality will give another. The point is to have numbers to argue about, not opinions.
+        <strong>The capacity arithmetic</strong>
+        From 0.62 to 0.83 effective capacity means a GP practice with a 2,400-patient norm goes from 1,488 effective slots to 1,992. That’s 504 additional patients served without adding staff. Multiply across 12,000 Dutch practices: roughly 6 million additional patient-equivalent slots nationally. The IZA projects needing 301,000 additional healthcare workers by 2035. This model suggests technology could offset approximately 110,000 of those through efficiency gains — not replacement, but augmentation.
       </div>
 
+      <h3 id="agentic-mesh">The Agentic Mesh Architecture</h3>
+
+      <p>The SOLL simulation runs on what we call the Agentic Mesh — a three-layer architecture inspired by Park et al.’s “Generative Agents” (Stanford, 2023) and adapted for healthcare simulation. The three layers: data (FHIR R4), communication (A2A Protocol), and cognition (the cognitive loop).</p>
 
       <details>
-        <summary>References and Data Sources</summary>
+        <summary>🔧 A2A Protocol — Agent Cards, messages, and referral lifecycle</summary>
         <div class="details-content">
-          <ol style="font-size:0.85rem;line-height:1.7;">
-            <li>IZA — Integraal Zorgakkoord 2023–2026. Ministry of Health, Welfare and Sport.</li>
-            <li>NZa — Tariefbeschikking Huisartsenzorg 2025. Nederlandse Zorgautoriteit.</li>
-            <li>NZa — Monitor Toegankelijkheid Zorg: Wachttijden 2024.</li>
-            <li>CBS — StatLine: Bevolking, Overledenen 2024. Centraal Bureau voor de Statistiek.</li>
-            <li>RIVM — Volksgezondheid Toekomst Verkenning: Chronische Ziekten Model 2024.</li>
-            <li>RIVM — Prevalentiecijfers diabetes mellitus type 2, COPD, hart- en vaatziekten.</li>
-            <li>LHV — Enquête Werkdruk Huisartsen 2024. Landelijke Huisartsen Vereniging.</li>
-            <li>ABF Research — Arbeidsmarktprognose Zorg en Welzijn 2023–2033.</li>
-            <li>Nictiz — HL7 FHIR R4 nl-core Implementatiegids.</li>
-            <li>Nictiz — Interoperability Monitor 2024.</li>
-            <li>Wegiz — Wet elektronische gegevensuitwisseling in de zorg (2023).</li>
-            <li>EHDS — European Health Data Space Regulation (proposed 2022, adopted 2024).</li>
-            <li>Health-RI — National Health Research Infrastructure, Netherlands.</li>
-            <li>Park, J.S., O’Brien, J.C., Cai, C.J. et al. “Generative Agents: Interactive Simulacra of Human Behavior.” arXiv:2304.03442 (2023).</li>
-            <li>A2A Protocol — Agent-to-Agent Communication Protocol Specification (2024).</li>
-            <li>HL7 — FHIR R4 Specification. Health Level Seven International.</li>
-            <li>SMART-on-FHIR — Authorization Framework for FHIR Applications.</li>
-            <li>ESC — Guidelines on Cardiovascular Disease Prevention 2021. European Society of Cardiology.</li>
-            <li>Nivel — Zorgregistraties: Zorggebruik Huisartsenzorg 2024.</li>
-            <li>PMC — COPD as Independent Risk Factor for Cardiovascular Disease (RR=2.5).</li>
-            <li>WHO — Global Strategy on Digital Health 2020–2025.</li>
+          <p>Every GP and specialist in Cammelot publishes an <strong>Agent Card</strong> — a machine-readable description of their capabilities, availability, and current queue state. Agent Cards are inspired by the Google A2A protocol for inter-agent communication.</p>
+
+          <p>A sample Agent Card for Dr. de Jong:</p>
+
+<pre><code>{
+  "@context": "https://a2a-protocol.org/context",
+  "agentId": "gp-de-jong",
+  "name": "Dr. de Jong — GP Practice De Brink",
+  "role": "gp",
+  "skills": ["triage", "referral", "chronic_care", "general_medicine"],
+  "status": "available",
+  "waitTime": {
+    "weeks": 2,
+    "queueSize": 12
+  },
+  "metadata": {
+    "admin_load": "5%",
+    "treeknorm_status": "compliant",
+    "sick_leave_rate": "8%",
+    "nza_consult_rate_eur": 12.43,
+    "max_patients": 2400
+  },
+  "location": { "x": 12, "y": 20 },
+  "endpoint": "/.well-known/agents/gp-de-jong/card.json",
+  "lastUpdated": "2026-04-01T12:00:00Z"
+}</code></pre>
+
+          <p><strong>Message types</strong> in the A2A layer:</p>
+          <ul>
+            <li><code>referral</code> — GP sends patient to specialist with full FHIR bundle</li>
+            <li><code>status_query</code> — Any agent queries another’s current capacity</li>
+            <li><code>response</code> — Reply to a query or referral acknowledgment</li>
+            <li><code>alert</code> — Urgent notifications (capacity breach, Treeknorm violation)</li>
+            <li><code>dialogue</code> — Visible speech-bubble messages between agents</li>
+          </ul>
+
+          <p><strong>Referral lifecycle</strong>: <code>submitted → working → input-required → completed</code>. Each state transition generates a FHIR <code>Encounter</code> resource, creating an auditable trail. In IST, a referral might sit in “submitted” for 12 weeks. In SOLL, the A2A layer monitors aging referrals and escalates automatically when wait times approach Treeknorm thresholds.</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>🗃️ FHIR R4 Memory Store — Every action logged as a resource</summary>
+        <div class="details-content">
+          <p>Cammelot uses FHIR R4 as its universal data layer. Every agent action — consultations, referrals, prescriptions, wait-time events, even mortality — is stored as a FHIR resource.</p>
+
+          <p><strong>Resource types used</strong>:</p>
+          <ul>
+            <li><code>Patient</code> — Demographics, assigned GP, current HP, sprite state</li>
+            <li><code>Condition</code> — ICD-10 coded diagnoses with onset dates</li>
+            <li><code>Observation</code> — HP readings, wait times, action logs</li>
+            <li><code>Encounter</code> — GP visits, specialist consultations, referral events</li>
+            <li><code>MedicationRequest</code> — Treatment plans generated by providers</li>
+          </ul>
+
+          <p><strong>Custom observation codes</strong>:</p>
+          <ul>
+            <li><code>CAMMELOT-WAIT</code> — Current wait time in weeks</li>
+            <li><code>CAMMELOT-HP</code> — Current health points (0–100)</li>
+            <li><code>CAMMELOT-GHOST</code> — Mortality event marker</li>
+            <li><code>CAMMELOT-ACTION</code> — Agent decision audit log</li>
+          </ul>
+
+          <p>The “Memory Stream” of each agent (per Park et al.) is simply a chronological FHIR query filtered by patient or provider ID. An agent’s “memories” are its FHIR resources. Reflection operates on these resources. Planning generates new ones.</p>
+        </div>
+      </details>
+
+      <h3 id="cognitive-loop">The Cognitive Loop</h3>
+
+      <p>Every agent in Cammelot executes a three-phase cognitive loop each simulation tick, adapted from Park et al.’s “Generative Agents: Interactive Simulacra of Human Behavior” (Stanford, 2023):</p>
+
+      <p><strong>1. Memory Stream</strong> — The agent retrieves its recent FHIR resources. A patient agent recalls its last GP visit, current conditions, and wait-time observations. A GP agent recalls its queue size, recent referrals, and administrative load metrics.</p>
+
+      <p><strong>2. Reflection</strong> — The agent draws high-level conclusions from its memory stream. These are qualitatively different from raw observations:</p>
+
+      <ul style="margin-bottom:1.1rem;padding-left:1.5rem;">
+        <li><em>Patient agent</em>: “My breathing is getting heavier. My Digital Twin predicts a 32% heart failure risk. I should see Dr. de Jong before this gets worse.”</li>
+        <li><em>GP agent</em>: “I’ve spent 5% of my time on admin today instead of 30%. I can see 8 more patients. But three of them have comorbidities that need longer consultations.”</li>
+        <li><em>Specialist agent</em>: “My queue is at 3 weeks, well within Treeknorm. But I received two urgent referrals from Dr. Bakker that I need to prioritize.”</li>
+      </ul>
+
+      <p><strong>3. Planning</strong> — The agent translates reflections into actions: seek care, make a referral, adjust queue priority, escalate, or wait. Each action generates FHIR resources that become part of the Memory Stream for the next tick.</p>
+
+      <p>The cognitive loop is the same in IST and SOLL. What changes is the <em>information</em> available to agents during reflection. In IST, a GP reflects on limited, fragmented data. In SOLL, the GP reflects on a complete patient history, real-time specialist availability, and predictive risk scores. Better information produces better plans, which produce better outcomes.</p>
+
+      <h3 id="agent-roster">Agent Roster</h3>
+
+      <p>The SOLL simulation uses the same agent roster as IST, but with augmented capabilities:</p>
+
+      <div class="stats-table-wrap">
+        <table class="stats-table">
+          <thead><tr><th>Agent</th><th>Role</th><th>IST Capacity</th><th>SOLL Capacity</th><th>SOLL Enhancement</th></tr></thead>
+          <tbody>
+            <tr><td>Dr. de Jong</td><td>GP</td><td>2,400 (eff: 1,488)</td><td class="sig">2,400 (eff: 1,992)</td><td>AI scribe, triage assist</td></tr>
+            <tr><td>Dr. Bakker</td><td>GP</td><td>2,000 (eff: 1,240)</td><td class="sig">2,000 (eff: 1,660)</td><td>AI scribe, triage assist</td></tr>
+            <tr><td>Dr. Visser</td><td>GP</td><td>1,800 (eff: 1,116)</td><td class="sig">1,800 (eff: 1,494)</td><td>AI scribe, triage assist</td></tr>
+            <tr><td>Dr. van den Berg</td><td>Cardiology</td><td>12/week</td><td class="sig">16/week</td><td>A2A scheduling, FHIR bundles</td></tr>
+            <tr><td>Dr. Mulder</td><td>Endocrinology</td><td>15/week</td><td class="sig">20/week</td><td>A2A scheduling, FHIR bundles</td></tr>
+            <tr><td>Dr. Janssen</td><td>Pulmonology</td><td>10/week</td><td class="sig">13/week</td><td>A2A scheduling, FHIR bundles</td></tr>
+            <tr><td>45 Citizens</td><td>Patients</td><td>Reactive care-seeking</td><td class="sig">Digital Twin alerts</td><td>Proactive health monitoring</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 id="limitations">Limitations — What This Doesn’t Prove</h3>
+
+      <p>A simulation is not evidence. It is a structured argument with explicit assumptions. Here are ours.</p>
+
+      <details>
+        <summary>⚠️ Honest caveats and known weaknesses</summary>
+        <div class="details-content">
+          <p><strong>N=45 is not N=5,000.</strong> The simulation models 45 citizens. The real Cammelot is designed for 5,000. At N=45, stochastic variance is substantial. A single patient developing a severe comorbidity can shift the mortality rate by 20%. This is why we run 200 independent simulations and report averages. But averages of small samples are still averages of small samples. Confidence intervals are wide.</p>
+
+          <p><strong>The E_ai multiplier is theoretical.</strong> We set E_ai = 1.34, meaning AI augmentation makes providers 34% more effective. This number is derived from IZA projections and early pilot data, not from a randomised controlled trial. It could be 1.15 (disappointing) or 1.60 (transformative). The simulation shows what happens <em>if</em> the multiplier holds. It does not validate the multiplier itself.</p>
+
+          <p><strong>Real adoption barriers are not modeled.</strong> Culture change in healthcare is measured in decades, not deployment cycles. Physician trust in AI-generated documentation varies enormously. Regulatory approval for AI triage systems differs by EU member state. Patient acceptance of Digital Twins is untested at scale. Workflow integration is where most health-IT projects fail. None of this is in the model.</p>
+
+          <p><strong>The author works at Microsoft.</strong> Microsoft builds and sells AI products, cloud infrastructure, and healthcare technology (including Nuance DAX, one of the ambient AI scribe products referenced in this chapter). I built Cammelot as a personal applied research project, not a Microsoft product. The code is open source. But the potential for motivated reasoning is real and should be weighed accordingly.</p>
+
+          <p><strong>Financial incentives are not modeled.</strong> If AI reduces admin from 30% to 5%, what happens? Do GPs see more patients (volume increase)? Do they spend more time per patient (quality increase)? Do hospitals increase throughput to bill more NZa tariffs? The model assumes quality increase. Reality will likely be a messy combination of all three, shaped by insurance contracts, hospital governance, and individual physician preferences.</p>
+
+          <p><strong>The “66% interoperability” target is a policy goal, not a technical specification.</strong> The IZA allocated €2.8 billion for digital transformation. Whether that produces 66% interoperability depends on political will, vendor cooperation, standards adoption, and the definition of “interoperable.” The Wegiz (Wet elektronische gegevensuitwisseling in de zorg, 2023) provides a legal framework, but legislation and implementation are different things.</p>
+
+          <p><strong>We model coordination, not cognition.</strong> The “cognitive loop” (Park et al.) in our simulation is a simplified three-step process, not a large language model reasoning about patient care. Real AI systems capable of clinical reflection are research prototypes, not deployed products. The simulation assumes they work. Whether they will work — safely, reliably, equitably — is an open question.</p>
+        </div>
+      </details>
+
+      <div class="insight-callout warning">
+        <strong>Bias acknowledgment</strong>
+        The author works at Microsoft, which sells AI and cloud products to healthcare organisations. This simulation was built as a personal project, not a Microsoft product. The code is open source. All parameters derive from published Dutch data sources (CBS, RIVM, NZa, IZA). But the framing — choosing what to model, what to emphasise, what to measure — is inevitably shaped by professional context. Read accordingly.
+      </div>
+
+      <h3 id="closing">The Point</h3>
+
+      <p>Cammelot is not a forecast. It is a simulation with transparent parameters, published data sources, and explicit limitations. It produces numbers, not answers.</p>
+
+      <p>The Dutch healthcare system faces a structural crisis that demographics will intensify and incremental reform cannot solve. The IST model (Chapter 2) quantifies the crisis: 38% Treeknorm violations, 4.2 preventable deaths per simulation run, effective GP capacity at 62%. The SOLL model (this chapter) quantifies one possible response: five AI-augmented interventions that raise effective capacity to 83%, reduce Treeknorm violations below 10%, and cut system-failure deaths to fewer than 1 per run.</p>
+
+      <p>Whether these numbers are achievable depends on factors the simulation does not model: regulatory frameworks, physician culture, patient trust, vendor interoperability, insurance incentives, and political will. The E_ai = 1.34 multiplier is a hypothesis, not a measurement.</p>
+
+      <p>But the exercise has value precisely because it replaces opinion with parameters. You can disagree with our admin burden reduction target (5% is too aggressive). You can challenge the E_ai multiplier (1.34 is too optimistic). You can argue the Digital Twin risk thresholds are wrong. Good. That’s the point.</p>
+
+      <blockquote>The purpose of this simulation is to have numbers to argue about, not opinions.</blockquote>
+
+      <p>The <a href="world.html" style="color:var(--green)">live simulation</a> lets you toggle between IST and SOLL in real time. Watch the same 45 citizens under both regimes. Count the ghosts. Check the queues. Then argue about the parameters.</p>
+
+      <div class="footnote-body" style="display:block;margin-top:2rem;"><em>Disclosure: I work at Microsoft. My employer builds and sells AI products and cloud infrastructure. I built Cammelot as a personal applied research project, not a Microsoft product. The code is open source. All opinions are my own.</em></div>
+
+      <details style="margin-top:1.5rem;">
+        <summary>📚 Sources &amp; References</summary>
+        <div class="details-content">
+          <ol style="font-size:0.82rem;line-height:1.7;color:var(--text-muted);">
+            <li>CBS StatLine — Bevolking; kerncijfers 2024</li>
+            <li>RIVM Volksgezondheid Toekomst Verkenning 2024</li>
+            <li>NZa Beleidsregel huisartsenzorg en multidisciplinaire zorg 2025</li>
+            <li>NZa Monitor Toegankelijkheid Zorg — Wachttijden 2024</li>
+            <li>IZA — Integraal Zorgakkoord 2023–2026</li>
+            <li>ABF Research — Arbeidsmarktprognose zorg en welzijn 2023–2033</li>
+            <li>LHV Enquête Werkdruk Huisartsen 2024</li>
+            <li>Park, J.S. et al. “Generative Agents: Interactive Simulacra of Human Behavior” (Stanford, 2023)</li>
+            <li>Dehghani, Z. “Data Mesh: Delivering Data-Driven Value at Scale” (O’Reilly, 2022)</li>
+            <li>Wegiz — Wet elektronische gegevensuitwisseling in de zorg (2023)</li>
+            <li>ESC Guidelines — Cardiovascular Disease Prevention 2021</li>
+            <li>PMC — COPD as Independent Risk Factor for Cardiovascular Disease (RR=2.5)</li>
+            <li>Nivel Zorgregistraties — Zorggebruik huisartsenzorg 2024</li>
+            <li>Google A2A Protocol Specification (2024)</li>
+            <li>HL7 FHIR R4 Specification — hl7.org/fhir/R4</li>
+            <li>openEHR Foundation — Architecture Overview (2024)</li>
           </ol>
         </div>
       </details>
@@ -1185,7 +915,7 @@ pre code {
 
     <nav class="chapter-nav">
       <a href="ch2.html" class="prev">← Previous: The Current System</a>
-      <span class="next" style="color:var(--text-muted);font-style:italic;">Final chapter</span>
+      <a href="#" class="next" style="opacity:0.4;pointer-events:none;">Next: coming soon</a>
     </nav>
   </main>
 
@@ -1201,12 +931,13 @@ pre code {
   <p>CAMMELOT: 45 pixel citizens. 200 simulations. Real Dutch data.</p>
   <p style="margin-top:0.4rem;">Built by <a href="https://www.linkedin.com/in/simonecammel/" target="_blank">Simone Cammel</a></p>
   <div class="footer-sources">
-    Data sources: CBS (Centraal Bureau voor de Statistiek) &middot; RIVM (Rijksinstituut voor Volksgezondheid en Milieu) &middot; NZa (Nederlandse Zorgautoriteit) &middot; LHV &middot; IZA 2023–2026 &middot; Nictiz &middot; Wegiz
+    Data sources: CBS (Centraal Bureau voor de Statistiek) · RIVM (Rijksinstituut voor Volksgezondheid en Milieu) · NZa (Nederlandse Zorgautoriteit) · IZA 2023–2026 · Park et al. 2023
   </div>
 </footer>
 
+
 <script>
-// Reading Progress Bar
+// ── Reading Progress Bar ──
 const progressBar = document.getElementById('progress-bar');
 function updateProgress() {
   const scrollTop = window.scrollY;
@@ -1215,7 +946,7 @@ function updateProgress() {
   progressBar.style.width = pct + '%';
 }
 
-// Back to Top
+// ── Back to Top ──
 const backToTop = document.getElementById('back-to-top');
 function updateBackToTop() {
   if (window.scrollY > 600) {
@@ -1228,7 +959,6 @@ backToTop.addEventListener('click', () => {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 });
 
-// Theme Toggle
 const themeToggle = document.getElementById('theme-toggle');
 const savedTheme = localStorage.getItem('cammelot-theme');
 if (savedTheme === 'dark') {
@@ -1238,11 +968,11 @@ if (savedTheme === 'dark') {
 themeToggle.addEventListener('click', () => {
   document.body.classList.toggle('dark-theme');
   const isDark = document.body.classList.contains('dark-theme');
-  themeToggle.textContent = isDark ? '☀️' : String.fromCodePoint(0x1F319);
+  themeToggle.textContent = isDark ? '☀️' : '🌙';
   localStorage.setItem('cammelot-theme', isDark ? 'dark' : 'light');
 });
 
-// Mobile Hamburger
+// ── Mobile Hamburger ──
 const hamburger = document.getElementById('hamburger');
 const mobileOverlay = document.getElementById('mobile-toc-overlay');
 const mobileBackdrop = document.getElementById('mobile-toc-backdrop');
@@ -1265,7 +995,7 @@ document.querySelectorAll('.mobile-toc-link').forEach(a => {
   });
 });
 
-// Intersection Observer
+// Intersection observer for chapter elements
 const observer = new IntersectionObserver((entries) => {
   entries.forEach(entry => {
     if (entry.isIntersecting) {
@@ -1275,24 +1005,29 @@ const observer = new IntersectionObserver((entries) => {
 }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
 document.querySelectorAll('.chapter').forEach(ch => observer.observe(ch));
 
-// Sidebar TOC Active State
+// ── Sidebar TOC Active State ──
 const tocLinks = document.querySelectorAll('.toc a[data-section]');
-const sections = document.querySelectorAll('h3[id]');
+const sections = [];
+tocLinks.forEach(link => {
+  const id = link.getAttribute('data-section');
+  const el = document.getElementById(id);
+  if (el) sections.push({ id, el, link });
+});
 
 function updateTocActive() {
   let current = '';
-  sections.forEach(section => {
-    const rect = section.getBoundingClientRect();
-    if (rect.top <= 150) {
-      current = section.id;
-    }
-  });
-  tocLinks.forEach(link => {
-    link.classList.toggle('active', link.dataset.section === current);
-  });
+  for (const s of sections) {
+    const rect = s.el.getBoundingClientRect();
+    if (rect.top <= 150) current = s.id;
+  }
+  tocLinks.forEach(l => l.classList.remove('active'));
+  if (current) {
+    const active = document.querySelector('.toc a[data-section="' + current + '"]');
+    if (active) active.classList.add('active');
+  }
 }
 
-// Footnotes
+// ── Footnotes ──
 document.querySelectorAll('.fn-ref').forEach(ref => {
   ref.addEventListener('click', (e) => {
     e.preventDefault();
@@ -1308,7 +1043,7 @@ document.querySelectorAll('.fn-ref').forEach(ref => {
   });
 });
 
-// Combined Scroll Handler
+// Combined scroll handler
 function onScroll() {
   updateProgress();
   updateBackToTop();
