@@ -5400,12 +5400,7 @@ function updateAgentLive(a) {
     waitRow.textContent = (Math.round(a.waitWeeks * 10) / 10) + ' weeks';
   }
 
-  // 4. HP sparkline (redraw canvas without rebuilding DOM)
-  var sparkCanvas = document.getElementById('hp-spark');
-  if (sparkCanvas && a.hpHistory && a.hpHistory.length > 1) {
-    var data = a.hpHistory.slice(-200);
-    animateSparkline(sparkCanvas, data);
-  }
+  // HP sparkline removed
 
   // 5. Portrait grayscale on death
   var portraitCv = document.getElementById('portrait-cv');
@@ -5582,12 +5577,7 @@ function selectAgent(a){
       ${a.insideBuilding?`<div class="ac-row"><span class="k">Location</span><span class="v mid">${BUILDINGS.find(b=>b.id===a.insideBuilding)?.label||a.insideBuilding}</span></div>`:''}
     </div>`;
 
-    // HP Sparkline (Sprint 3)
-    if(a.hpHistory && a.hpHistory.length > 1){
-      html+=`<div class="ac-section"><h4>HP Over Time</h4>
-        <div class="hp-spark-wrap"><canvas id="hp-spark" width="260" height="40"></canvas></div>
-      </div>`;
-    }
+    // HP sparkline removed — Health Status bar is sufficient
 
     // Care Pathway Visual (Sprint 3)
     const pathwayStages=[
@@ -5746,11 +5736,7 @@ function selectAgent(a){
       }
     }
     // Draw HP Sparkline on canvas (Sprint 3) — Sprint 16: Animated
-    const sparkCanvas=document.getElementById('hp-spark');
-    if(sparkCanvas && a.hpHistory && a.hpHistory.length>1){
-      const data=a.hpHistory.slice(-200);
-      animateSparkline(sparkCanvas, data);
-    }
+    // HP sparkline removed
   }
 
   if (agentChanged) {
