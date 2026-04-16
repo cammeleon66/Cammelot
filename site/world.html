@@ -7335,6 +7335,7 @@ function tick(){
   updateTicker(); // Sprint 6
   if (timelineVisible) drawTimeline(); // Sprint 16
   if(selectedAgent){const a=agents.find(e=>e.id===selectedAgent);if(a)updateAgentLive(a);}
+  else if(cycle%10===0){try{showTownFeed();}catch(e){}} // Auto-refresh feed every 10 ticks
   // Auto-save removed for website version
 }
 
