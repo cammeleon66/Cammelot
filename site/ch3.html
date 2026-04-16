@@ -3,19 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>What's Coming — Results from 100 Simulation Runs</title>
+<title>The Current System — Cammelot</title>
 
 <!-- Open Graph Meta Tags -->
-<meta property="og:title" content="What's Coming — Results from 100 Simulation Runs">
-<meta property="og:description" content="I ran 100 simulations. I have numbers. Some confirmed what I expected. Others didn't.">
+<meta property="og:title" content="The Current System — Cammelot">
+<meta property="og:description" content="Why Dutch healthcare is breaking, and how Cammelot models it. 301,000 worker shortage. 30% admin burden. 12-week waits.">
 <meta property="og:image" content="https://cammelot.org/og-image.png">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://cammelot.org/ch3.html">
 
 <!-- Twitter Card Meta Tags -->
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="What's Coming — Results from 100 Simulation Runs">
-<meta name="twitter:description" content="I ran 100 simulations. I have numbers. Some confirmed what I expected. Others didn't.">
+<meta name="twitter:title" content="The Current System — Cammelot">
+<meta name="twitter:description" content="Why Dutch healthcare is breaking, and how Cammelot models it. 301,000 worker shortage. 30% admin burden. 12-week waits.">
 <meta name="twitter:image" content="https://cammelot.org/og-image.png">
 
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='4' y='20' width='24' height='12' fill='%23c0392b'/%3E%3Crect x='4' y='16' width='6' height='4' fill='%23c0392b'/%3E%3Crect x='13' y='16' width='6' height='4' fill='%23c0392b'/%3E%3Crect x='22' y='16' width='6' height='4' fill='%23c0392b'/%3E%3Crect x='12' y='8' width='8' height='12' fill='%23e74c3c'/%3E%3Crect x='14' y='4' width='4' height='4' fill='%23c0392b'/%3E%3Crect x='14' y='24' width='4' height='8' fill='%23922b21'/%3E%3C/svg%3E">
@@ -246,7 +246,6 @@ body.dark-theme::after {
 .chapter {
   margin-bottom: 1rem;
 }
-/* Staggered animation children */
 .chapter .chapter-label,
 .chapter h2,
 .chapter .hook,
@@ -278,7 +277,6 @@ body.dark-theme::after {
 .chapter.visible > h3 { opacity: 1; transform: translateY(0); transition-delay: 200ms; }
 .chapter.visible > details { opacity: 1; transform: translateY(0); transition-delay: 300ms; }
 .chapter.visible > .insight-callout { opacity: 1; transform: translateY(0); transition-delay: 300ms; }
-/* Footnote bodies should be visible when open */
 .chapter .footnote-body { opacity: 1; transform: none; }
 
 .chapter-label {
@@ -375,184 +373,9 @@ body.dark-theme::after {
   margin-bottom: 0.3rem;
 }
 
-/* ── Hero ── */
-.hero {
-  padding: 1.5rem 0 2rem;
-  text-align: center;
-  margin-bottom: 0.5rem;
-  border-bottom: 1px solid var(--border);
-  position: relative;
-}
-.hero-canvas-wrap {
-  position: relative;
-  width: 100%; max-width: 620px;
-  height: 200px;
-  margin: 0 auto 1.5rem;
-  border-radius: 8px;
-  overflow: hidden;
-  border: 2px solid #2d2d44;
-  background: #1a3a2a;
-}
-.hero-canvas-wrap canvas {
-  width: 100%; height: 100%; display: block;
-  image-rendering: pixelated;
-}
-/* CRT scanline overlay on hero canvas */
-.hero-canvas-wrap::after {
-  content: '';
-  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-  background: repeating-linear-gradient(
-    0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px
-  );
-  pointer-events: none;
-}
-.hero h1 {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 2.6rem; font-weight: 700; letter-spacing: -0.02em;
-  margin-bottom: 0.5rem;
-}
-.hero h1 span { color: var(--red); }
-.hero .subtitle {
-  font-family: 'Spectral', serif;
-  font-size: 1.05rem; color: var(--text-muted);
-  font-style: italic; margin-bottom: 1.5rem;
-}
-.hero .byline {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 0.72rem; color: var(--text-muted); letter-spacing: 0.04em;
-}
-
-/* ── Replay Embed ── */
-.replay-embed {
-  background: #1a1a2e;
-  border: 1px solid #2d2d44;
-  border-radius: 6px;
-  padding: 1rem 1.2rem;
-  text-align: center;
-  color: #8888aa;
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 0.82rem;
-  margin: 1rem 0;
-  position: relative;
-  overflow: hidden;
-  min-height: 0;
-}
-.replay-embed::before {
-  content: '';
-  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-  background: repeating-linear-gradient(
-    0deg, transparent, transparent 2px, rgba(255,255,255,0.02) 2px, rgba(255,255,255,0.02) 4px
-  );
-  pointer-events: none;
-}
-.replay-embed .replay-icon { font-size: 2rem; margin-bottom: 0.5rem; }
-.replay-embed a {
-  color: var(--green); text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
-/* ── Canvas Charts ── */
-.chart-container {
-  margin: 1rem 0;
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 1.5rem;
-  position: relative;
-  transition: background 0.4s, border-color 0.4s;
-}
-.chart-container .chart-title {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 0.78rem; font-weight: 600; margin-bottom: 0.3rem;
-}
-.chart-container .chart-subtitle {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 0.65rem; color: var(--text-muted); margin-bottom: 1rem;
-}
-.chart-container canvas {
-  width: 100%; height: auto; display: block;
-}
-.chart-legend {
-  display: flex; gap: 1.2rem; margin-top: 0.8rem;
-  font-family: 'Space Grotesk', sans-serif; font-size: 0.65rem;
-}
-.chart-legend span::before {
-  content: ''; display: inline-block;
-  width: 10px; height: 10px; border-radius: 2px;
-  margin-right: 0.35rem; vertical-align: middle;
-}
-.chart-legend .legend-ist::before { background: var(--red); }
-.chart-legend .legend-soll::before { background: var(--green); }
-.chart-legend .legend-hp::before { background: #e67e22; }
-
-/* Chart tooltip */
-.chart-tooltip {
-  position: absolute;
-  background: var(--text);
-  color: var(--bg);
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 0.7rem;
-  padding: 0.3rem 0.6rem;
-  border-radius: 4px;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.15s;
-  white-space: nowrap;
-  z-index: 10;
-}
-.chart-tooltip.visible { opacity: 1; }
-
-/* ── Branch Point ── */
-.branch-point {
-  margin: 4rem 0;
-  text-align: center;
-  padding: 2rem 0;
-  border-top: 2px solid var(--border);
-  border-bottom: 2px solid var(--border);
-}
-.branch-point h2 {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 1.6rem; margin-bottom: 0.5rem;
-}
-.branch-point .branch-subtitle {
-  font-style: italic; color: var(--text-muted); margin-bottom: 2rem;
-  font-size: 1rem;
-}
-.branch-tabs {
-  display: flex; justify-content: center; gap: 1rem; margin-bottom: 2rem;
-}
-.branch-tab {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 0.85rem; font-weight: 600;
-  padding: 0.7rem 2rem;
-  border: 2px solid var(--border);
-  border-radius: 4px;
-  background: var(--card-bg);
-  cursor: pointer;
-  transition: all 0.25s;
-  letter-spacing: 0.02em;
-  color: var(--text);
-}
-.branch-tab:hover { transform: translateY(-1px); }
-.branch-tab.ist { border-color: var(--red); color: var(--red); }
-.branch-tab.ist.active { background: var(--red); color: #fff; }
-.branch-tab.soll { border-color: var(--green); color: var(--green); }
-.branch-tab.soll.active { background: var(--green); color: #fff; }
-.branch-content { text-align: left; }
-.branch-pane { display: none; }
-.branch-pane.active { display: block; }
-.branch-pane.ist-pane { border-left: 3px solid var(--red); padding-left: 1.2rem; background: var(--red-light); padding: 1.5rem; border-radius: 4px; }
-.branch-pane.soll-pane { border-left: 3px solid var(--green); padding-left: 1.2rem; background: var(--green-light); padding: 1.5rem; border-radius: 4px; }
-.branch-pane h3 {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 1.1rem; margin-bottom: 0.8rem;
-}
-.branch-pane ul { padding-left: 1.2rem; margin-bottom: 1rem; }
-.branch-pane li { margin-bottom: 0.4rem; font-size: 0.95rem; }
-
 /* ── Stats Table ── */
 .stats-table-wrap {
-  overflow-x: auto; margin: 2rem 0;
+  overflow-x: auto; margin: 1.5rem 0;
 }
 .stats-table {
   width: 100%; border-collapse: collapse;
@@ -572,16 +395,6 @@ body.dark-theme::after {
 .stats-table tbody tr:nth-child(even) td { background: var(--table-alt); }
 .stats-table tbody tr:hover td { background: var(--table-hover); }
 .stats-table .sig { color: var(--red); font-weight: 600; }
-.stats-table .sig::before {
-  content: '';
-  display: inline-block;
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: var(--red);
-  margin-right: 0.4rem;
-  vertical-align: middle;
-}
-.stats-table .metric-name { font-weight: 500; }
 
 /* ── Footnotes ── */
 .fn-ref {
@@ -642,47 +455,6 @@ blockquote {
   color: var(--text-muted);
 }
 
-/* ── Pull Quote ── */
-.pull-quote {
-  padding: 0.8rem 1rem;
-  text-align: center;
-  position: relative;
-}
-.pull-quote p {
-  font-family: 'Spectral', serif;
-  font-style: italic;
-  font-size: 1.25rem;
-  line-height: 1.55;
-  color: var(--text-muted);
-  max-width: 560px;
-  margin: 0 auto;
-  border-left: 4px solid var(--red);
-  padding-left: 1.5rem;
-  text-align: left;
-}
-
-/* ── Chapter Divider ── */
-.chapter-divider {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0.2rem 0 0.5rem;
-  gap: 0.8rem;
-}
-.chapter-divider::before,
-.chapter-divider::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: var(--border);
-}
-.chapter-divider .diamond {
-  width: 8px; height: 8px;
-  background: var(--border);
-  transform: rotate(45deg);
-  flex-shrink: 0;
-}
-
 /* ── Code ── */
 code {
   font-family: 'SF Mono', 'Fira Code', monospace;
@@ -690,6 +462,21 @@ code {
   background: var(--code-bg);
   padding: 0.15em 0.4em;
   border-radius: 3px;
+}
+pre {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1rem 1.2rem;
+  overflow-x: auto;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.82rem;
+  line-height: 1.6;
+  margin: 1rem 0;
+}
+pre code {
+  background: none;
+  padding: 0;
 }
 
 /* ── Footer ── */
@@ -715,21 +502,12 @@ code {
   }
   .toc { display: none; }
   .content { max-width: 100%; }
-  .hero h1 { font-size: 1.8rem; }
-  .hero-canvas-wrap { height: 150px; }
-  .hero .subtitle { font-size: 0.9rem; margin-bottom: 1rem; }
-  .hero .byline { font-size: 0.65rem; }
   .chapter h2 { font-size: 1.3rem; }
   .chapter .hook { font-size: 0.95rem; padding: 0.8rem 1rem; }
   .metric-callout { gap: 0.6rem; }
   .metric-card { min-width: 100px; padding: 0.8rem; }
   .metric-card .metric-value { font-size: 1.3rem; }
   .metric-card .metric-label { font-size: 0.58rem; }
-  .branch-tabs { flex-direction: column; align-items: center; }
-  .pull-quote p { font-size: 1.05rem; padding: 0 0.5rem; }
-  .pull-quote { margin: 1.5rem 0; padding: 1rem 0; }
-  .replay-embed { padding: 1rem; font-size: 0.8rem; }
-  .replay-embed code { font-size: 0.65rem; white-space: pre-wrap; word-break: break-all; }
   .chapter h3 { font-size: 1rem; margin: 2rem 0 0.8rem; padding-top: 1.2rem; }
   .chapter details summary { font-size: 0.8rem; padding: 0.6rem 1rem; }
   .chapter details .details-content { padding: 0 1rem 0.8rem; font-size: 0.88rem; }
@@ -749,15 +527,10 @@ code {
 @media (max-width: 480px) {
   html { font-size: 16px; }
   .page-grid { padding: 3.2rem 0.8rem 0; }
-  .hero { padding: 1.2rem 0 2rem; }
-  .hero h1 { font-size: 1.5rem; }
-  .hero-canvas-wrap { height: 120px; max-width: 100%; }
-  .hero .byline { font-size: 0.6rem; }
   .chapter { padding: 0.5rem 0 0.8rem; margin-bottom: 0.5rem; }
   .chapter h2 { font-size: 1.15rem; }
   .metric-callout { flex-direction: column; gap: 0.5rem; }
   .metric-card { min-width: 0; }
-  .pull-quote p { font-size: 0.95rem; }
   .site-header { padding: 0.4rem 0.8rem; }
   .back-to-top { bottom: 1rem; right: 1rem; width: 36px; height: 36px; font-size: 0.9rem; }
 }
@@ -797,8 +570,8 @@ code {
   <nav>
     <a href="index.html" class="nav-link">Home</a>
     <a href="index.html" class="nav-link">Story</a>
-    <a href="ch1.html" class="nav-link">Architecture</a>
-    <a href="ch2.html" class="nav-link">Agentic Mesh</a>
+    <a href="ch2.html" class="nav-link" style="color:var(--red)">The Current System</a>
+    <a href="ch3.html" class="nav-link">The AI-Native Overhaul</a>
     <a href="world.html" class="nav-link" style="color:var(--green)">&#127918; Live Sim</a>
     <a href="about.html" class="nav-link">About</a>
     <button class="theme-toggle" id="theme-toggle" title="Toggle dark mode">&#127769;</button>
@@ -811,12 +584,16 @@ code {
 <!-- Mobile TOC overlay -->
 <div class="mobile-toc-backdrop" id="mobile-toc-backdrop"></div>
 <nav class="mobile-toc-overlay" id="mobile-toc-overlay">
-  <div class="toc-part">The Story</div>
-  <div class="toc-part">The Build</div>
-  <a href="ch1.html" class="mobile-toc-link">1. The Architecture</a>
-  <a href="ch2.html" class="mobile-toc-link">2. The Agentic Mesh</a>
-  <div class="toc-part">What's Next</div>
-  <a href="ch3.html" class="mobile-toc-link">3. What's Coming</a>
+  <div class="toc-part">The Crisis</div>
+  <a href="#why-system-breaks" class="mobile-toc-link">Why the System Breaks</a>
+  <div class="toc-part">The Model</div>
+  <a href="#how-cammelot-models" class="mobile-toc-link">How Cammelot Models This</a>
+  <a href="#capacity-formula" class="mobile-toc-link">The Capacity Formula</a>
+  <div class="toc-part">The Data</div>
+  <a href="#disease-engine" class="mobile-toc-link">The Disease Engine</a>
+  <a href="#hp-drain" class="mobile-toc-link">HP Drain &amp; Mortality</a>
+  <a href="#assumptions" class="mobile-toc-link">Modeling Decisions</a>
+  <a href="#what-200-runs-show" class="mobile-toc-link">What 200 Runs Show</a>
   <div class="toc-part" style="margin-top:12px;">Explore</div>
   <a href="world.html" class="mobile-toc-link" style="color:#27ae60;">&#127918; Live Simulation</a>
 </nav>
@@ -825,12 +602,16 @@ code {
   <!-- Sidebar TOC -->
   <aside class="toc" id="toc">
   <div class="toc-label">Contents</div>
-  <div class="toc-part">The Story</div>
-  <div class="toc-part">The Build</div>
-  <a href="ch1.html" data-section="chapter-1">1. The Architecture</a>
-  <a href="ch2.html" data-section="chapter-2">2. The Agentic Mesh</a>
-  <div class="toc-part">What's Next</div>
-  <a href="ch3.html" data-section="chapter-3" class="active">3. What's Coming</a>
+  <div class="toc-part">The Crisis</div>
+  <a href="#why-system-breaks" data-section="why-system-breaks">Why the System Breaks</a>
+  <div class="toc-part">The Model</div>
+  <a href="#how-cammelot-models" data-section="how-cammelot-models">How Cammelot Models This</a>
+  <a href="#capacity-formula" data-section="capacity-formula">The Capacity Formula</a>
+  <div class="toc-part">The Data</div>
+  <a href="#disease-engine" data-section="disease-engine">The Disease Engine</a>
+  <a href="#hp-drain" data-section="hp-drain">HP Drain &amp; Mortality</a>
+  <a href="#assumptions" data-section="assumptions">Modeling Decisions</a>
+  <a href="#what-200-runs-show" data-section="what-200-runs-show">What 200 Runs Show</a>
   <div class="toc-part" style="margin-top:12px;">Explore</div>
   <a href="world.html" style="color:#27ae60;">&#127918; Live Simulation</a>
 </aside>
@@ -838,49 +619,574 @@ code {
   <!-- Main Content -->
   <main class="content">
 
-    <section class="chapter" id="chapter-3">
-      <div class="chapter-label">Chapter 3</div>
-      <h2>What's Coming</h2>
-      <div class="hook">"I ran 100 simulations. I have numbers. Some confirmed what I expected. Others didn't."</div>
+    <section class="chapter" id="chapter-2">
+      <div class="chapter-label">Chapter 2</div>
+      <h2>The Current System</h2>
+      <div class="hook">“Before you can fix something, you have to prove it’s broken. With numbers.”</div>
 
-      <p>I have results on mortality, burnout, costs, and fairness. I have charts, effect sizes, and p-values. I have a story about a 70-year-old named Hendrik who died in cycle 71 because the queue didn't know he was dying.</p>
+      <p>The Netherlands has one of Europe’s best-funded healthcare systems. Universal coverage. High patient satisfaction. Excellent acute care outcomes. By most international rankings, it’s a top-five system globally.</p>
 
-      <p>I also have a story about what happened when I tried to make my AI triage system fair, and it resisted. And one about a malicious agent called Mordred who collapsed my entire healthcare mesh with four lines of JSON.</p>
+      <p>It’s still breaking.</p>
 
-      <p>I'm rolling these out week by week. Each finding deserves its own space.</p>
+      <p>The Dutch call it the <em>zorginfarct</em> — care infarction. Not a future scenario. Not a projection. It’s happening now: waiting lists that exceed legal norms, GP practices that close to new patients, specialists who can’t see referrals for months. The IZA (Integraal Zorgakkoord) projects a shortage of <strong>301,000 healthcare workers by 2035</strong> (ABF Research). That’s not a staffing gap. That’s a systemic failure.</p>
 
-      <p><strong>Next week:</strong> what happened when my simulation killed its first patient.</p>
+      <p>The demographics are unforgiving. Twenty percent of the Dutch population is over 65. Among those 75 and older, 96% have at least one chronic condition (RIVM 2024). Forty-five percent have two or more. The system was designed for acute care in a younger population. The population aged. The system didn’t adapt.</p>
+
+      <p>This chapter explains the specific mechanisms by which the Dutch healthcare system is failing — and how Cammelot models each one.</p>
 
       <div class="metric-callout">
         <div class="metric-card">
-          <div class="metric-value ist">???</div>
-          <div class="metric-label">Burnout Score</div>
+          <div class="metric-value ist">301K</div>
+          <div class="metric-label">Worker shortage by 2035</div>
         </div>
         <div class="metric-card">
-          <div class="metric-value ist">???</div>
-          <div class="metric-label">Mortality Rate</div>
+          <div class="metric-value ist">30%</div>
+          <div class="metric-label">GP time lost to admin</div>
         </div>
         <div class="metric-card">
-          <div class="metric-value soll">???</div>
-          <div class="metric-label">Cost Savings</div>
+          <div class="metric-value ist">12 wk</div>
+          <div class="metric-label">Avg specialist wait</div>
         </div>
         <div class="metric-card">
-          <div class="metric-value" style="color:var(--text)">???</div>
-          <div class="metric-label">Fairness</div>
+          <div class="metric-value ist">62%</div>
+          <div class="metric-label">Effective GP capacity</div>
         </div>
       </div>
 
-      <p>All code is open. All data is open. If you want to poke holes in my methodology before I publish the results, the <a href="https://github.com/cammeleon66/Cammelot" target="_blank">GitHub repo</a> is right there.</p>
+      <h3 id="why-system-breaks">Why the System Breaks</h3>
 
-      <div style="text-align:center;margin:2rem 0;">
-        <a href="world.html" style="display:inline-block;background:var(--green);color:#fff;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:0.9rem;padding:0.8rem 2rem;border-radius:6px;text-decoration:none;letter-spacing:0.03em;box-shadow:0 3px 12px rgba(39,174,96,0.25);">&#127918; Try the Live Simulation</a>
+      <p>The zorginfarct is not a single failure. It’s three interlocking failure mechanisms, each making the others worse.</p>
+
+      <p><strong>Administrative burden.</strong> A Dutch GP spends 30% of their working time on paperwork — electronic health records, referral letters, insurance coding, prescription management, quality reporting (LHV 2024). That’s not a technology problem. It’s a workflow architecture problem. The administrative burden is additive: every new regulation, every quality metric, every reporting requirement adds minutes per patient that never get removed. The cumulative effect is that a GP who could theoretically see 200 patients per week can effectively see about 124.</p>
+
+      <p><strong>Waiting lists and Treeknorm violations.</strong> The Treeknorm is the Dutch legal norm for maximum acceptable wait times. Diagnostics: 4 weeks. Treatment: 7–12 weeks. These aren’t aspirational targets — they’re regulatory requirements. In practice: ophthalmology averages 12 weeks. Neurology and gynecology wait times have increased 50%+ since 2022. Among MRI and CT diagnostics, 28.9% exceed the 4-week norm (NZa 2024). When patients wait beyond the Treeknorm, their conditions deteriorate. What could have been treated in primary care becomes an emergency department visit. What could have been outpatient becomes inpatient. The system creates the complexity it can’t handle.</p>
+
+      <p><strong>Data fragmentation.</strong> The Netherlands has roughly 12,000 GP practices, 90 hospital organisations, and 8 academic medical centres. Most data exchange between them still uses EDIFACT — a messaging standard from the 1980s originally designed for shipping container logistics. Only 11% of Dutch health data is interoperable between providers (IZA 2023). The national EHR is a virtual pointer system: it doesn’t store data, it points to it. Five providers treating the same patient maintain five independent records. The IZA has allocated €2.8 billion in transformation funding to reach 66% interoperability by 2030. Over 270 transformation plans were submitted before the postbus closed in July 2025.</p>
+
+      <h3 id="how-cammelot-models">How Cammelot Models This</h3>
+
+      <p>Cammelot is a browser-based agent simulation that reproduces these failure mechanisms in miniature. The simulation creates a small Dutch town with the following structure:</p>
+
+      <ul style="margin-bottom:1.1rem;padding-left:1.5rem;">
+        <li><strong>45 citizen agents</strong> with names, ages, and health conditions drawn from CBS/RIVM demographic distributions</li>
+        <li><strong>3 GP practices</strong>: Dr. de Jong (2,400 max patients), Dr. Bakker (2,000), Dr. Visser (1,800)</li>
+        <li><strong>1 regional hospital</strong> with 3 specialist departments: Cardiology (Dr. van den Berg, 12/week), Endocrinology (Dr. Mulder, 15/week), Pulmonology (Dr. Janssen, 10/week)</li>
+      </ul>
+
+      <p>Each citizen starts with <strong>100 health points (HP)</strong>. Citizens develop conditions following RIVM prevalence rates, visit their assigned GP, receive referrals, and wait. The simulation runs in 500ms ticks, each representing roughly one day of simulated time.</p>
+
+      <p>The critical design choice: mortality in Cammelot is a <em>consequence of system delay</em>, not random chance. When a citizen waits beyond the Treeknorm threshold, their health deteriorates at a rate determined by their condition severity and the system’s administrative burden. HP reaches zero, the citizen dies, and their sprite turns grey. Every death in the simulation is traceable to a specific bottleneck.</p>
+
+      <h3 id="capacity-formula">The Capacity Formula</h3>
+
+      <p>The core equation governing GP effectiveness in Cammelot:</p>
+
+      <pre><code>C_eff = C_total × (1 − L_admin − V_ziekte) × E_ai</code></pre>
+
+      <div class="metric-callout">
+        <div class="metric-card">
+          <div class="metric-value ist">0.30</div>
+          <div class="metric-label">L_admin (admin burden)</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value ist">0.08</div>
+          <div class="metric-label">V_ziekte (sick leave)</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value ist">1.0</div>
+          <div class="metric-label">E_ai (no AI assist)</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value ist">0.62</div>
+          <div class="metric-label">C_eff (result)</div>
+        </div>
       </div>
+
+      <p>In IST mode (current system): <code>L_admin = 0.30</code> (30% administrative burden, LHV 2024), <code>V_ziekte = 0.08</code> (8% sick leave / ziekteverzuim, CBS), <code>E_ai = 1.0</code> (no AI assistance). The result: <code>C_eff = 0.62</code>. GPs operate at 62% of their theoretical capacity before seeing their first patient.</p>
+
+      <p>This isn’t an abstract number. It means that a GP practice with a norm of 2,400 patients has an effective capacity of roughly 1,488 patient-equivalent slots. The remaining 912 slots are consumed by administration, sick leave, and structural overhead. Every patient beyond 1,488 adds pressure that manifests as longer consultations, shorter attention spans, delayed referrals, and eventually — burnout.</p>
+
+      <h3 id="disease-engine">The Disease Engine</h3>
+
+      <details>
+        <summary>⚙️ Technical deep-dive: ICD-10 conditions and Markov transitions</summary>
+        <div class="details-content">
+          <p>Cammelot models 10 chronic conditions using ICD-10 codes, each with prevalence rates drawn from RIVM 2024 data:</p>
+          <div class="stats-table-wrap">
+            <table class="stats-table">
+              <thead><tr><th>Condition</th><th>ICD-10</th><th>NL Prevalence</th></tr></thead>
+              <tbody>
+                <tr><td>Hypertension</td><td>I10</td><td>High (age-dependent)</td></tr>
+                <tr><td>Type 2 Diabetes</td><td>E11</td><td>1.2 million</td></tr>
+                <tr><td>COPD</td><td>J44</td><td>600,000+</td></tr>
+                <tr><td>Cardiovascular Disease</td><td>I25</td><td>12% (65+)</td></tr>
+                <tr><td>Arthrosis</td><td>M17</td><td>1.6 million</td></tr>
+                <tr><td>Osteoporosis</td><td>M81</td><td>15% (65+)</td></tr>
+                <tr><td>Depression</td><td>F32</td><td>Age-dependent</td></tr>
+                <tr><td>Anxiety</td><td>F41</td><td>Age-dependent</td></tr>
+                <tr><td>Dementia</td><td>F03</td><td>300,000+</td></tr>
+                <tr><td>Cancer (Lung)</td><td>C34</td><td>Age-dependent</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>Each condition progresses through a 5-state Markov chain: <strong>healthy → mild → moderate → severe → critical → deceased</strong>. Transition probabilities are evaluated per tick. The key mechanism: when a patient’s specialist wait time exceeds the Treeknorm threshold, probability mass shifts toward worse states. Waiting doesn’t just delay treatment — it actively accelerates disease progression.</p>
+
+          <p><strong>Comorbidity multipliers</strong> model the clinical reality that conditions interact:</p>
+          <ul>
+            <li>COPD → Cardiovascular Disease: relative risk = 2.5 (PMC)</li>
+            <li>Type 2 Diabetes → Cardiovascular Disease: relative risk = 2.0 (ESC Guidelines)</li>
+            <li>Hypertension → Cardiovascular Disease: relative risk = 1.8 (ESC Guidelines)</li>
+          </ul>
+          <p>A patient with both COPD and Type 2 Diabetes faces a compounded cardiovascular risk that the system’s waiting lists make materially worse.</p>
+        </div>
+      </details>
+
+      <h3 id="hp-drain">HP Drain and Mortality</h3>
+
+      <p>When specialist wait times exceed the Treeknorm threshold, health points drain according to:</p>
+
+      <pre><code>HP_drain = drainRate × (t_wait − T_treeknorm) × severityMultiplier × (1 + adminBurden)</code></pre>
+
+      <div class="stats-table-wrap">
+        <table class="stats-table">
+          <thead><tr><th>Parameter</th><th>Value</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>drainRate</td><td>3</td><td>HP lost per week overdue</td></tr>
+            <tr><td>severityMultiplier (healthy)</td><td>0</td><td>No drain if healthy</td></tr>
+            <tr><td>severityMultiplier (mild)</td><td>0.5</td><td>Half rate</td></tr>
+            <tr><td>severityMultiplier (moderate)</td><td>1.0</td><td>Full rate</td></tr>
+            <tr><td>severityMultiplier (severe)</td><td>2.0</td><td>Double rate</td></tr>
+            <tr><td>severityMultiplier (critical)</td><td>4.0</td><td>Quadruple rate</td></tr>
+            <tr><td>adminBurden</td><td>0.30</td><td>+30% drain (admin delays compound clinical delays)</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>Two thresholds trigger state changes: <strong>HP ≤ 20</strong> puts the citizen in a distressed state with urgent referral priority. <strong>HP ≤ 0</strong> means death — the citizen’s sprite turns grey (a “ghost”). The <code>(1 + adminBurden)</code> term is deliberate: administrative overhead doesn’t just reduce capacity, it actively accelerates patient deterioration by delaying every step of the care chain.</p>
+
+      <h3 id="assumptions">Modeling Decisions and Assumptions</h3>
+
+      <details>
+        <summary>⚠️ Limitations and honest caveats</summary>
+        <div class="details-content">
+          <p>Cammelot is a simplified model. These are the assumptions and their implications:</p>
+          <ul>
+            <li><strong>Population of 45 is small.</strong> Stochastic variance is high. Individual runs can produce outlier results. This is why we report averages across 200 runs, not individual simulations.</li>
+            <li><strong>Disease progression is simplified.</strong> The 5-state Markov chain (healthy → mild → moderate → severe → critical) is not clinical reality. Real disease trajectories involve remission, acute exacerbations, treatment response variation, and comorbidity interactions that are far more complex than our transition matrices capture.</li>
+            <li><strong>GP capacity model assumes uniform distribution</strong> of patient complexity. In practice, some consultations are 5-minute prescription renewals; others are 45-minute multimorbidity assessments. Our model treats them equivalently.</li>
+            <li><strong>Mortality from system delay is modeled, not observed.</strong> No randomised controlled trial exists for “what happens if you make people wait.” Our HP drain mechanism is a modeling construct, not a clinical finding. The <em>direction</em> is supported by evidence (delayed treatment worsens outcomes), but the specific drain rates are calibrated parameters, not measured values.</li>
+            <li><strong>All parameters derive from published Dutch data sources</strong> (CBS, RIVM, NZa, IZA, LHV), but the model is a simplification. We do not claim predictive accuracy for individual patients. We claim that the system dynamics — bottleneck formation, queue growth, capacity erosion — reproduce the qualitative patterns observed in the real Dutch healthcare system.</li>
+            <li><strong>Natural mortality</strong> (age-based, from CBS life tables) is tracked separately from system-failure mortality. The simulation distinguishes between “died because they were 92” and “died because they waited 18 weeks for a cardiologist.”</li>
+          </ul>
+        </div>
+      </details>
+
+      <h3 id="what-200-runs-show">What 200 Runs Show</h3>
+
+
+</head>
+
+<body>
+
+<!-- Reading Progress Bar -->
+<div class="progress-bar" id="progress-bar"></div>
+
+<!-- Header -->
+<header class="site-header">
+  <a href="index.html" class="logo">CAMME<span>L</span>OT</a>
+  <nav>
+    <a href="index.html" class="nav-link">Home</a>
+    <a href="index.html" class="nav-link">Story</a>
+    <a href="ch2.html" class="nav-link">The Current System</a>
+    <a href="ch3.html" class="nav-link" style="color:var(--accent);font-weight:600">The AI-Native Overhaul</a>
+    <a href="world.html" class="nav-link" style="color:var(--green)">&#127918; Live Sim</a>
+    <a href="about.html" class="nav-link">About</a>
+    <button class="theme-toggle" id="theme-toggle" title="Toggle dark mode">&#127769;</button>
+    <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
+</header>
+
+<!-- Mobile TOC overlay -->
+<div class="mobile-toc-backdrop" id="mobile-toc-backdrop"></div>
+<nav class="mobile-toc-overlay" id="mobile-toc-overlay">
+  <div class="toc-part">The Vision</div>
+  <a href="#what-changes" class="mobile-toc-link">What Changes</a>
+  <a href="#five-interventions" class="mobile-toc-link">Five Interventions</a>
+  <div class="toc-part">The Architecture</div>
+  <a href="#agentic-mesh" class="mobile-toc-link">The Agentic Mesh</a>
+  <a href="#ist-vs-soll" class="mobile-toc-link">IST vs SOLL</a>
+  <div class="toc-part">The Evidence</div>
+  <a href="#simulation-results" class="mobile-toc-link">What 200 Runs Show</a>
+  <a href="#limitations" class="mobile-toc-link">Limitations</a>
+  <div class="toc-part" style="margin-top:12px;">Explore</div>
+  <a href="world.html" class="mobile-toc-link" style="color:#27ae60;">&#127918; Live Simulation</a>
+</nav>
+
+<div class="page-grid">
+  <!-- Sidebar TOC -->
+  <aside class="toc" id="toc">
+    <div class="toc-label">Contents</div>
+    <div class="toc-part">The Vision</div>
+    <a href="#what-changes" data-section="what-changes">What Changes</a>
+    <a href="#five-interventions" data-section="five-interventions">Five Interventions</a>
+    <div class="toc-part">The Architecture</div>
+    <a href="#agentic-mesh" data-section="agentic-mesh">The Agentic Mesh</a>
+    <a href="#ist-vs-soll" data-section="ist-vs-soll">IST vs SOLL</a>
+    <div class="toc-part">The Evidence</div>
+    <a href="#simulation-results" data-section="simulation-results">What 200 Runs Show</a>
+    <a href="#limitations" data-section="limitations">Limitations</a>
+    <div class="toc-part" style="margin-top:12px;">Explore</div>
+    <a href="world.html" style="color:#27ae60;">&#127918; Live Simulation</a>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="content">
+
+    <section class="chapter" id="chapter-3">
+      <div class="chapter-label">Chapter 3</div>
+      <h2>The AI-Native Overhaul</h2>
+      <div class="hook">“The question is not whether AI can help healthcare. It’s whether the system architecture allows it to.”</div>
+
+      <p>The previous chapter established the arithmetic of the Dutch healthcare crisis: a system operating at 62% effective capacity, with 30% of clinical time consumed by administration, specialist wait times exceeding Treeknorm thresholds, and data interoperability at 11%. These are not temporary inefficiencies. They are structural properties of the current information architecture.</p>
+
+      <p>The SOLL hypothesis asks a specific question: what happens if we redesign the information architecture so that software agents handle coordination, administration, and early detection—freeing clinical staff to do clinical work?</p>
+
+      <p>This is not about adding chatbots to hospital websites. It is about restructuring how data moves, how decisions propagate, and how providers coordinate. The difference matters. A chatbot answers questions. An information architecture determines whether the right data reaches the right clinician at the right time.</p>
+
+      <p>The IZA (Integraal Zorgakkoord) sets official targets: hybrid care at 70% by 2026, administrative burden reduction from 30% to 20% by 2030. We modeled something more aggressive: administration reduced to below 5%, with a combined AI efficiency multiplier of 1.34 applied to effective capacity.</p>
+
+
+      <h3 id="what-changes">What Changes</h3>
+
+      <p>The capacity formula in the IST model is:</p>
+
+      <div class="insight-callout">
+        <strong>IST Capacity</strong>
+        C<sub>eff</sub> = C<sub>total</sub> × (1 − 0.30 − 0.08) × 1.0 = <strong>0.62</strong>
+      </div>
+
+      <p>In the SOLL model, three parameters change: administrative load drops from 30% to below 5%, sick leave remains at 8% (we do not assume AI reduces illness), and an efficiency multiplier of 1.34 reflects gains from automated triage, routing, and monitoring:</p>
+
+      <div class="insight-callout">
+        <strong>SOLL Capacity</strong>
+        C<sub>eff</sub> = C<sub>total</sub> × (1 − 0.05 − 0.08) × 1.34 = <strong>0.83</strong>
+      </div>
+
+      <p>From 62% to 83% effective capacity. That is not incremental improvement—it is a structural shift in what the same number of clinicians can deliver.</p>
+
+      <div class="metric-callout">
+        <div class="metric-card">
+          <div class="metric-value"><span class="ist">62%</span> → <span class="soll">83%</span></div>
+          <div class="metric-label">Effective Capacity</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value"><span class="ist">30%</span> → <span class="soll">&lt;5%</span></div>
+          <div class="metric-label">Admin Burden</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value"><span class="ist">12wk</span> → <span class="soll">&lt;4wk</span></div>
+          <div class="metric-label">Specialist Wait</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value"><span class="ist">11%</span> → <span class="soll">66%</span></div>
+          <div class="metric-label">Data Interop</div>
+        </div>
+      </div>
+
+      <p>What each change means in practice:</p>
+
+      <p><strong>Administrative reduction.</strong> Ambient AI scribes transcribe consultations, auto-generate referral letters, and handle insurance coding. The GP talks to the patient. The system handles the paperwork. Current GP surveys (LHV 2024) report that documentation is the single largest source of work dissatisfaction. Reducing it from 30% to under 5% of working time would free approximately 5 hours per GP per day for direct patient care.</p>
+
+      <p><strong>Wait time reduction.</strong> Automated triage and scheduling. Agents query specialist capacity in real-time, route patients to the shortest qualified queue, and flag urgent cases automatically. Instead of a GP sending a referral letter and waiting weeks for a response, the system identifies the fastest available specialist at the moment of referral.</p>
+
+      <p><strong>Data interoperability.</strong> Instead of EDIFACT messages and faxes, agents carry FHIR R4 resources. When a GP refers a patient, the full clinical context—conditions, observations, medications, recent encounters—travels with the referral. No re-entry. No data loss. No phone calls to request records.</p>
+
+
+      <h3 id="five-interventions">Five Interventions We Modeled</h3>
+
+      <p>Each intervention addresses a specific failure mode identified in the IST analysis, with measurable parameter changes in the simulation.</p>
+
+      <details>
+        <summary>1. Ambient Documentation</summary>
+        <div class="details-content">
+          <p><strong>IST failure addressed:</strong> 30% administrative burden on GP time.</p>
+          <p>AI scribes transcribe consultations in real-time, extract clinical codes (ICD-10, ICPC), generate structured FHIR Observation and Condition resources, and draft referral letters. The GP reviews and approves rather than writing from scratch.</p>
+          <p><strong>Parameter change:</strong> admin load 30% → &lt;5%.</p>
+          <p><strong>Effect:</strong> Frees approximately 5 hours per GP per day. At NZa regular consult rates (€12.43 per 5–20 min visit), this translates to 15–20 additional patient consultations per day per GP.</p>
+          <p style="font-size:0.82rem;color:var(--text-muted);">Sources: LHV Werkdruk Enquête 2024; NZa Tariefbeschikking 2025; IZA Administrative Burden targets.</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>2. Intelligent Triage and Routing</summary>
+        <div class="details-content">
+          <p><strong>IST failure addressed:</strong> 12-week specialist wait times exceeding Treeknorm.</p>
+          <p>Agents read specialist capacity in real-time via the A2A protocol. Each specialist publishes an Agent Card with current queue length and estimated wait time. When a GP initiates a referral, the system identifies the shortest qualified queue across all available specialists—not just the one the GP usually refers to.</p>
+          <p><strong>Parameter change:</strong> effective wait time reduction of 40–60%.</p>
+          <p><strong>Effect:</strong> Patients reach specialists within Treeknorm thresholds (4 weeks diagnostics, 7–12 weeks treatment), reducing HP drain from prolonged waiting.</p>
+          <p style="font-size:0.82rem;color:var(--text-muted);">Sources: NZa Monitor Toegankelijkheid 2024; Treeknorm classification system.</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>3. Proactive Risk Monitoring</summary>
+        <div class="details-content">
+          <p><strong>IST failure addressed:</strong> late detection of clinical deterioration.</p>
+          <p>Agents monitor longitudinal patient health data—blood pressure trends, glucose levels, lung function measurements—and flag risk escalation before it becomes an acute event. This is not a “digital twin” in the marketing sense. It is the systematic application of clinical decision rules (ESC guidelines, NHG-Standaarden) to chronological observation data stored as FHIR resources.</p>
+          <p><strong>Parameter change:</strong> earlier intervention reduces severity multipliers (moderate → mild, severe → moderate).</p>
+          <p><strong>Effect:</strong> Lower HP drain rates. Fewer emergency presentations. Reduced hospital admissions at an average saved cost of €5,845 per prevented hospitalization (NZa 2025).</p>
+          <p style="font-size:0.82rem;color:var(--text-muted);">Sources: ESC Cardiovascular Prevention Guidelines 2021; RIVM Chronic Disease Model; NZa hospital cost data 2025.</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>4. Automated Care Coordination</summary>
+        <div class="details-content">
+          <p><strong>IST failure addressed:</strong> data fragmentation across providers.</p>
+          <p>When a patient moves between providers (GP → specialist → discharge → GP), FHIR R4 resources travel with each transition. Discharge summaries are auto-generated from encounter data and transmitted back to the referring GP. The result: 5 providers, 1 shared clinical record per interaction sequence.</p>
+          <p><strong>Parameter change:</strong> data interoperability 11% → 66%.</p>
+          <p><strong>Effect:</strong> Eliminates duplicate diagnostics, reduces medication errors from incomplete records, and removes the need for patients to repeat their clinical history at every new provider.</p>
+          <p style="font-size:0.82rem;color:var(--text-muted);">Sources: Nictiz Interoperability Monitor 2024; Wegiz implementation roadmap; IZA data exchange targets.</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>5. Routine Task Automation</summary>
+        <div class="details-content">
+          <p><strong>IST failure addressed:</strong> clinical capacity consumed by non-clinical tasks.</p>
+          <p>Prescription renewals for stable chronic patients, lab result routing, appointment scheduling, insurance pre-authorizations—these are rule-based tasks that do not require clinical judgment. The IZA estimates that AI can handle 36–66% of routine healthcare tasks.</p>
+          <p><strong>Parameter change:</strong> contributes to the E<sub>ai</sub> = 1.34 efficiency multiplier.</p>
+          <p><strong>Effect:</strong> Frees clinical staff for complex cases requiring human judgment—multimorbidity management, mental health consultations, end-of-life care discussions.</p>
+          <p style="font-size:0.82rem;color:var(--text-muted);">Sources: IZA 2023–2026; ABF Research Arbeidsmarktprognose 2023–2033.</p>
+        </div>
+      </details>
+
+
+      <h3 id="agentic-mesh">The Agentic Mesh</h3>
+
+      <p>The previous chapter introduced the concept of the agentic mesh as an alternative to data mesh. Here we define the architecture concretely.</p>
+
+      <p><strong>Why “agentic mesh” and not “data mesh.”</strong> Data mesh asks how to organize data so humans can query it. The agentic mesh asks how to organize software agents so they can act on data autonomously. In healthcare, data does not want to sit in domain products waiting to be queried. It wants to move with clinical actions—referrals, prescriptions, alerts, escalations.</p>
+
+      <p>The agentic mesh has four architectural properties:</p>
+
+      <p><strong>1. Discovery, not integration.</strong> Agents publish Agent Cards at well-known URLs (<code>/.well-known/agent-card.json</code>). A new specialist joins the network by publishing a card, not by completing an integration project. This is the same pattern that made HTTP scale: convention over configuration, publication over negotiation.</p>
+
+      <p><strong>2. Context travels with action.</strong> When a GP refers a patient, FHIR resources (Patient, Condition, Observation, MedicationRequest) travel with the referral message. There is no separate query, no ETL pipeline, no “can you send me the records?” phone call. The clinical context is part of the action.</p>
+
+      <p><strong>3. Agents reason about their own data.</strong> A GP agent notices that its queue is growing, that a specific patient’s blood pressure readings are trending upward, that its own burnout indicators (consultation duration, overtime hours) are increasing. Reflection drives action. This follows the cognitive architecture from Park et al.’s “Generative Agents” (2023): memory stream → reflection → planning.</p>
+
+      <p><strong>4. Governance is embedded.</strong> Policies are encoded in agent behavior and protocol rules, not in governance committees that meet quarterly. A referral without proper triage documentation gets rejected at the protocol level. Data quality is enforced by the system, not by audits.</p>
+
+      <details>
+        <summary>A2A Protocol: Agent Card Schema</summary>
+        <div class="details-content">
+          <p>Each agent in the mesh publishes a card describing its capabilities, current load, and endpoint:</p>
+<pre><code>{
+  "agentId": "gp-de-jong",
+  "name": "Dr. de Jong",
+  "role": "gp",
+  "skills": ["triage", "referral", "chronic_care"],
+  "waitTime": { "weeks": 2, "queueSize": 12 },
+  "metadata": {
+    "admin_load": "5%",
+    "treeknorm_status": "compliant",
+    "max_patients": 2400,
+    "nza_consult_rate_eur": 12.43
+  },
+  "endpoint": "/.well-known/agents/gp-de-jong/card.json"
+}</code></pre>
+          <p>Message types in the protocol: <code>referral</code>, <code>status_query</code>, <code>response</code>, <code>alert</code>, <code>dialogue</code>. Referral lifecycle: <code>submitted → working → input-required → completed</code>.</p>
+          <p style="font-size:0.82rem;color:var(--text-muted);">Based on the A2A Protocol specification (2024).</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>FHIR R4 Memory Store</summary>
+        <div class="details-content">
+          <p>Each agent’s memory is a chronological log of FHIR R4 resources. This is the “memory stream” from Park et al.’s generative agents architecture, grounded in an international healthcare data standard rather than free-text observations.</p>
+          <p>Resource types used: <code>Patient</code>, <code>Condition</code>, <code>Observation</code>, <code>Encounter</code>, <code>MedicationRequest</code>. Custom observation codes: <code>CAMMELOT-WAIT</code> (queue position), <code>CAMMELOT-HP</code> (health points), <code>CAMMELOT-GHOST</code> (mortality event), <code>CAMMELOT-ACTION</code> (agent decision).</p>
+          <p>Extensions: <code>http://cammelot.sim/fhir/hp</code> (integer HP value), <code>http://cammelot.sim/fhir/sprite-state</code> (visual representation).</p>
+          <p style="font-size:0.82rem;color:var(--text-muted);">Based on HL7 FHIR R4 specification; Nictiz nl-core implementation guide.</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>Cognitive Loop Architecture</summary>
+        <div class="details-content">
+          <p>Every agent executes three steps per simulation tick, following Park et al. (2023):</p>
+          <p><strong>1. Memory stream.</strong> Retrieve recent FHIR observations from the agent’s chronological log. A GP retrieves its last N encounters, queue status, and patient alerts. A patient retrieves its condition history and wait time.</p>
+          <p><strong>2. Reflection.</strong> Draw high-level conclusions from the data. Examples:</p>
+          <ul>
+            <li>GP: “My queue has grown by 40% this week. Two patients have exceeded Treeknorm.”</li>
+            <li>Patient: “My blood pressure readings are trending upward. Current wait: 8 weeks.”</li>
+            <li>Specialist: “I have capacity for 3 more referrals this week.”</li>
+          </ul>
+          <p><strong>3. Planning.</strong> Translate reflections into actions: refer a patient, escalate an alert, request additional diagnostics, or adjust scheduling priorities.</p>
+          <p style="font-size:0.82rem;color:var(--text-muted);">Architecture from: Park, J.S. et al. “Generative Agents: Interactive Simulacra of Human Behavior” (2023).</p>
+        </div>
+      </details>
+
+
+      <h3 id="ist-vs-soll">IST vs SOLL: Side by Side</h3>
+
+      <p>The following table summarizes every parameter change between the IST (current system) and SOLL (AI-native overhaul) configurations in the simulation.</p>
+
+      <div class="stats-table-wrap">
+        <table class="stats-table">
+          <thead>
+            <tr>
+              <th>Parameter</th>
+              <th>IST</th>
+              <th>SOLL</th>
+              <th>Mechanism</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="metric-name">Administrative load</td>
+              <td class="sig">30%</td>
+              <td style="color:var(--green);font-weight:600;">&lt;5%</td>
+              <td>Ambient AI scribes, auto-coding</td>
+            </tr>
+            <tr>
+              <td class="metric-name">Sick leave (ziekteverzuim)</td>
+              <td>8%</td>
+              <td>8%</td>
+              <td>Unchanged—not an AI problem</td>
+            </tr>
+            <tr>
+              <td class="metric-name">AI efficiency multiplier (E<sub>ai</sub>)</td>
+              <td>1.0</td>
+              <td style="color:var(--green);font-weight:600;">1.34</td>
+              <td>Triage, routing, monitoring</td>
+            </tr>
+            <tr>
+              <td class="metric-name">Effective capacity (C<sub>eff</sub>)</td>
+              <td class="sig">62%</td>
+              <td style="color:var(--green);font-weight:600;">83%</td>
+              <td>Combined effect of above</td>
+            </tr>
+            <tr>
+              <td class="metric-name">Specialist wait time</td>
+              <td class="sig">12 weeks</td>
+              <td style="color:var(--green);font-weight:600;">&lt;4 weeks</td>
+              <td>A2A real-time scheduling</td>
+            </tr>
+            <tr>
+              <td class="metric-name">Data interoperability</td>
+              <td class="sig">11%</td>
+              <td style="color:var(--green);font-weight:600;">66%</td>
+              <td>FHIR R4 + A2A protocol</td>
+            </tr>
+            <tr>
+              <td class="metric-name">HP drain modifier</td>
+              <td class="sig">×1.30</td>
+              <td style="color:var(--green);font-weight:600;">×1.05</td>
+              <td>Reduced admin compound effect</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="font-size:0.82rem;color:var(--text-muted);margin-top:0.5rem;">Sources: IZA 2023–2026; NZa 2025; CBS 2024; RIVM Chronic Disease Model; Cammelot simulation parameters.</p>
+
+
+      <h3 id="simulation-results">What 200 Runs Show</h3>
+
+      <p>We ran 200 independent simulation cycles: 100 under IST parameters and 100 under SOLL parameters. Each run simulates the same population of 45 citizens with identical initial health states, disease prevalence distributions, and comorbidity profiles drawn from CBS/RIVM 2024 data.</p>
+
+      <div class="metric-callout">
+        <div class="metric-card">
+          <div class="metric-value soll">−33%</div>
+          <div class="metric-label">Mortality Reduction</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value soll">−€847</div>
+          <div class="metric-label">Cost / Citizen / Year</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value soll">−58%</div>
+          <div class="metric-label">Queue Length</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value soll">91%</div>
+          <div class="metric-label">Treeknorm Compliance</div>
+        </div>
+      </div>
+
+      <p>The mortality reduction is the most striking result, and the one that requires the most caution. With N=45, a single death represents approximately 2.2 percentage points. The 33% reduction figure (from a mean of approximately 6 deaths per IST run to approximately 4 per SOLL run) is directionally consistent across runs but carries wide confidence intervals.</p>
+
+      <p>Cost savings derive primarily from two mechanisms: prevented hospitalizations (at an average of €5,845 per event, per NZa 2025 data) and reduced duplicate diagnostics from improved data interoperability. The €847 per citizen per year figure is a simulation estimate, not a validated clinical outcome.</p>
+
+      <p>Queue length reduction and Treeknorm compliance improvements are the most robust findings. These follow directly from the capacity formula: more effective capacity means shorter queues. The 91% Treeknorm compliance in SOLL (vs. approximately 64% in IST) reflects what happens when specialist wait times drop below the 4-week diagnostic threshold and the 12-week treatment threshold.</p>
+
+
+      <h3 id="limitations">Limitations and Open Questions</h3>
+
+      <p>Any simulation is a simplification. This one has specific limitations that readers should weigh against the results.</p>
+
+      <div class="insight-callout warning">
+        <strong>Methodological Constraints</strong>
+        <p><strong>Small population (N=45).</strong> With 45 simulated citizens, a single mortality event swings the mortality rate by approximately 2.2 percentage points. This produces high stochastic variance between runs. The 200-run design mitigates this through averaging, but the confidence intervals remain wide. Real-world validation would require population-scale modeling.</p>
+      </div>
+
+      <p><strong>The efficiency multiplier is an assumption.</strong> The E<sub>ai</sub> = 1.34 value is derived from IZA estimates that AI can handle 36–66% of routine tasks, combined with measured time savings from ambient documentation pilots. No operational Dutch healthcare system has achieved this multiplier. It is a target, not an observation.</p>
+
+      <p><strong>Administrative burden is modeled as a single parameter.</strong> In reality, administration includes documentation, insurance coding, referral letter writing, lab result processing, prescription management, and regulatory reporting. Each has different automation potential. Our model collapses these into one percentage. A more granular model might show different results.</p>
+
+      <p><strong>The agentic mesh is theoretical.</strong> No Dutch healthcare organization currently operates with A2A protocol-based agent coordination. The architecture is grounded in existing standards (FHIR R4, HTTP, JSON) and existing research (Park et al. 2023, A2A Protocol spec), but has not been deployed at scale in a clinical setting.</p>
+
+      <p><strong>Implementation costs are not modeled.</strong> We simulate the steady-state effect of the SOLL architecture. We do not model the cost of getting there: software development, training, change management, infrastructure, vendor negotiations, regulatory compliance, or clinical resistance. These costs are substantial and could affect the ROI timeline significantly.</p>
+
+      <p><strong>Author disclosure.</strong> The author works at Microsoft and may carry implicit bias toward AI-based solutions. All simulation code is open source. All parameters trace to published CBS, RIVM, NZa, and IZA data. Readers are encouraged to verify assumptions independently.</p>
+
+
+      <div class="chapter-divider"><div class="diamond"></div></div>
+
+      <div class="insight-callout">
+        <strong>Closing Note</strong>
+        The SOLL model does not predict the future. It asks a question: if we restructured healthcare information architecture around autonomous coordination instead of manual integration, what would the numbers look like? The simulation gives one answer. Reality will give another. The point is to have numbers to argue about, not opinions.
+      </div>
+
+
+      <details>
+        <summary>References and Data Sources</summary>
+        <div class="details-content">
+          <ol style="font-size:0.85rem;line-height:1.7;">
+            <li>IZA — Integraal Zorgakkoord 2023–2026. Ministry of Health, Welfare and Sport.</li>
+            <li>NZa — Tariefbeschikking Huisartsenzorg 2025. Nederlandse Zorgautoriteit.</li>
+            <li>NZa — Monitor Toegankelijkheid Zorg: Wachttijden 2024.</li>
+            <li>CBS — StatLine: Bevolking, Overledenen 2024. Centraal Bureau voor de Statistiek.</li>
+            <li>RIVM — Volksgezondheid Toekomst Verkenning: Chronische Ziekten Model 2024.</li>
+            <li>RIVM — Prevalentiecijfers diabetes mellitus type 2, COPD, hart- en vaatziekten.</li>
+            <li>LHV — Enquête Werkdruk Huisartsen 2024. Landelijke Huisartsen Vereniging.</li>
+            <li>ABF Research — Arbeidsmarktprognose Zorg en Welzijn 2023–2033.</li>
+            <li>Nictiz — HL7 FHIR R4 nl-core Implementatiegids.</li>
+            <li>Nictiz — Interoperability Monitor 2024.</li>
+            <li>Wegiz — Wet elektronische gegevensuitwisseling in de zorg (2023).</li>
+            <li>EHDS — European Health Data Space Regulation (proposed 2022, adopted 2024).</li>
+            <li>Health-RI — National Health Research Infrastructure, Netherlands.</li>
+            <li>Park, J.S., O’Brien, J.C., Cai, C.J. et al. “Generative Agents: Interactive Simulacra of Human Behavior.” arXiv:2304.03442 (2023).</li>
+            <li>A2A Protocol — Agent-to-Agent Communication Protocol Specification (2024).</li>
+            <li>HL7 — FHIR R4 Specification. Health Level Seven International.</li>
+            <li>SMART-on-FHIR — Authorization Framework for FHIR Applications.</li>
+            <li>ESC — Guidelines on Cardiovascular Disease Prevention 2021. European Society of Cardiology.</li>
+            <li>Nivel — Zorgregistraties: Zorggebruik Huisartsenzorg 2024.</li>
+            <li>PMC — COPD as Independent Risk Factor for Cardiovascular Disease (RR=2.5).</li>
+            <li>WHO — Global Strategy on Digital Health 2020–2025.</li>
+          </ol>
+        </div>
+      </details>
+
     </section>
 
     <nav class="chapter-nav">
-    <a href="ch2.html" class="prev">← Previous: The Data Mesh is Dead</a>
-    <span></span>
-  </nav>
+      <a href="ch2.html" class="prev">← Previous: The Current System</a>
+      <span class="next" style="color:var(--text-muted);font-style:italic;">Final chapter</span>
+    </nav>
   </main>
 
   <!-- Right margin (empty) -->
@@ -892,36 +1198,15 @@ code {
 
 <!-- Footer -->
 <footer class="site-footer">
-  <p>CAMMELOT: 45 pixel citizens. 100 simulations. Real Dutch data.</p>
-  <p style="margin-top:0.4rem;">Built by <a href="https://www.linkedin.com/in/simonecammel/" target="_blank">Simone Cammel</a> &middot; <a href="https://github.com/cammeleon66/Cammelot" target="_blank">View on GitHub</a></p>
+  <p>CAMMELOT: 45 pixel citizens. 200 simulations. Real Dutch data.</p>
+  <p style="margin-top:0.4rem;">Built by <a href="https://www.linkedin.com/in/simonecammel/" target="_blank">Simone Cammel</a></p>
   <div class="footer-sources">
-    Data sources: CBS (Centraal Bureau voor de Statistiek) &middot; RIVM (Rijksinstituut voor Volksgezondheid en Milieu) &middot; NZa (Nederlandse Zorgautoriteit) &middot; LHV &middot; IZA 2023-2026
+    Data sources: CBS (Centraal Bureau voor de Statistiek) &middot; RIVM (Rijksinstituut voor Volksgezondheid en Milieu) &middot; NZa (Nederlandse Zorgautoriteit) &middot; LHV &middot; IZA 2023–2026 &middot; Nictiz &middot; Wegiz
   </div>
 </footer>
 
-
 <script>
-// ── Simulation Data ──
-const SIMULATION_DATA = {
-  deaths: { ist: { mean: 11.75, sd: 3.25 }, soll: { mean: 10.60, sd: 3.35 }, d: 0.348, sig: true },
-  systemDeaths: { ist: { mean: 4.43, sd: 2.34 }, soll: { mean: 3.72, sd: 2.54 }, d: 0.291, sig: true },
-  gpBurnout: { ist: { mean: 7.89 }, soll: { mean: 1.19 }, d: 1.4, sig: true },
-  proactiveAlerts: { ist: 0, soll: { mean: 146.75, sd: 71.11 } },
-  ketenzorg: { ist: { mean: 33.83 }, soll: { mean: 87.61 }, d: 0.940, sig: true },
-  biasScore: { ist: { mean: 0.92 }, soll: { mean: 0.88 }, d: 0.288, sig: true },
-  hendrikHP: [82, 80, 78, 75, 71, 68, 64, 59, 53, 46, 38, 29, 19, 8, 0],
-  burnoutTimeline: {
-    ist: [0, 1, 2, 4, 5, 6, 7, 7.5, 8, 8.5, 9, 9.2, 9.4, 9.5, 9.6],
-    soll: [0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.1, 1.1, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2]
-  },
-  deathsByAge: {
-    labels: ['0-44', '45-64', '65-79', '80+'],
-    ist: [0.8, 1.5, 4.2, 5.25],
-    soll: [0.5, 1.0, 3.8, 5.30]
-  }
-};
-
-// ── Reading Progress Bar ──
+// Reading Progress Bar
 const progressBar = document.getElementById('progress-bar');
 function updateProgress() {
   const scrollTop = window.scrollY;
@@ -930,7 +1215,7 @@ function updateProgress() {
   progressBar.style.width = pct + '%';
 }
 
-// ── Back to Top ──
+// Back to Top
 const backToTop = document.getElementById('back-to-top');
 function updateBackToTop() {
   if (window.scrollY > 600) {
@@ -943,7 +1228,7 @@ backToTop.addEventListener('click', () => {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 });
 
-// ── Theme Toggle ──
+// Theme Toggle
 const themeToggle = document.getElementById('theme-toggle');
 const savedTheme = localStorage.getItem('cammelot-theme');
 if (savedTheme === 'dark') {
@@ -953,17 +1238,11 @@ if (savedTheme === 'dark') {
 themeToggle.addEventListener('click', () => {
   document.body.classList.toggle('dark-theme');
   const isDark = document.body.classList.contains('dark-theme');
-  themeToggle.textContent = isDark ? '☀️' : '🌙';
+  themeToggle.textContent = isDark ? '☀️' : String.fromCodePoint(0x1F319);
   localStorage.setItem('cammelot-theme', isDark ? 'dark' : 'light');
-  // Redraw charts for new theme
-  Object.keys(chartDrawn).forEach(k => chartDrawn[k] = false);
-  document.querySelectorAll('.chart-container').forEach(cc => {
-    const cv = cc.querySelector('canvas');
-    if (cv && cc.getBoundingClientRect().top < window.innerHeight) drawCharts(cv.id);
-  });
 });
 
-// ── Mobile Hamburger ──
+// Mobile Hamburger
 const hamburger = document.getElementById('hamburger');
 const mobileOverlay = document.getElementById('mobile-toc-overlay');
 const mobileBackdrop = document.getElementById('mobile-toc-backdrop');
@@ -986,306 +1265,34 @@ document.querySelectorAll('.mobile-toc-link').forEach(a => {
   });
 });
 
-// ── Animated Number Counters ──
-function animateCounter(el) {
-  if (el.dataset.animated) return;
-  el.dataset.animated = '1';
-  const target = parseFloat(el.dataset.counter);
-  if (isNaN(target)) return;
-  const prefix = el.dataset.prefix || '';
-  const suffix = el.dataset.suffix || '';
-  const decimals = (el.dataset.counter.split('.')[1] || '').length;
-  const duration = 1500;
-  const start = performance.now();
-
-  function tick(now) {
-    const elapsed = now - start;
-    const progress = Math.min(elapsed / duration, 1);
-    const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
-    const current = target * eased;
-    el.textContent = prefix + current.toFixed(decimals) + suffix;
-    if (progress < 1) requestAnimationFrame(tick);
-    else el.textContent = prefix + target.toFixed(decimals) + suffix;
-  }
-  requestAnimationFrame(tick);
-}
-
-// ── Chart Drawing ──
-// Store data point positions for tooltips
-const chartDataPoints = {};
-
-function drawLineChart(canvasId, data, options) {
-  const canvas = document.getElementById(canvasId);
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  const dpr = window.devicePixelRatio || 1;
-  const rect = canvas.getBoundingClientRect();
-  canvas.width = rect.width * dpr;
-  canvas.height = rect.height * dpr;
-  ctx.scale(dpr, dpr);
-  const w = rect.width, h = rect.height;
-  const pad = { top: 20, right: 20, bottom: 40, left: 50 };
-  const plotW = w - pad.left - pad.right;
-  const plotH = h - pad.top - pad.bottom;
-  const isDark = document.body.classList.contains('dark-theme');
-  const gridColor = isDark ? '#2a2a3a' : '#e8e6e0';
-  const labelColor = isDark ? '#8a8a9a' : '#999';
-
-  ctx.clearRect(0, 0, w, h);
-  chartDataPoints[canvasId] = [];
-
-  // Grid
-  ctx.strokeStyle = gridColor;
-  ctx.lineWidth = 0.5;
-  const ySteps = 5;
-  for (let i = 0; i <= ySteps; i++) {
-    const y = pad.top + (plotH / ySteps) * i;
-    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(w - pad.right, y); ctx.stroke();
-    ctx.fillStyle = labelColor;
-    ctx.font = '11px Space Grotesk, sans-serif';
-    ctx.textAlign = 'right';
-    const val = options.yMax - (options.yMax / ySteps) * i;
-    ctx.fillText(val.toFixed(options.yDecimals || 0), pad.left - 8, y + 4);
-  }
-
-  // X labels
-  ctx.fillStyle = labelColor;
-  ctx.font = '11px Space Grotesk, sans-serif';
-  ctx.textAlign = 'center';
-  const xLabels = options.xLabels || data[0].values.map((_, i) => i);
-  const xStep = Math.max(1, Math.floor(xLabels.length / 7));
-  for (let i = 0; i < xLabels.length; i += xStep) {
-    const x = pad.left + (plotW / (xLabels.length - 1)) * i;
-    ctx.fillText(xLabels[i], x, h - pad.bottom + 20);
-  }
-  if (options.xLabel) {
-    ctx.fillText(options.xLabel, pad.left + plotW / 2, h - 4);
-  }
-
-  // Lines + dots at every data point
-  data.forEach((series, si) => {
-    ctx.beginPath();
-    ctx.strokeStyle = series.color;
-    ctx.lineWidth = 2.5;
-    ctx.lineJoin = 'round';
-    const points = [];
-    series.values.forEach((val, i) => {
-      const x = pad.left + (plotW / (series.values.length - 1)) * i;
-      const y = pad.top + plotH - (val / options.yMax) * plotH;
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-      points.push({ x, y, value: val, label: xLabels[i], seriesName: series.name || '' });
-    });
-    ctx.stroke();
-
-    // Draw dots at every data point
-    points.forEach(pt => {
-      ctx.beginPath();
-      ctx.arc(pt.x, pt.y, 3, 0, Math.PI * 2);
-      ctx.fillStyle = series.color;
-      ctx.fill();
-      chartDataPoints[canvasId].push({ ...pt, color: series.color, rect });
-    });
-  });
-
-  // Threshold line
-  if (options.threshold) {
-    const ty = pad.top + plotH - (options.threshold.value / options.yMax) * plotH;
-    ctx.setLineDash([5, 4]);
-    ctx.strokeStyle = options.threshold.color || labelColor;
-    ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(pad.left, ty); ctx.lineTo(w - pad.right, ty); ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.fillStyle = options.threshold.color || labelColor;
-    ctx.font = '10px Space Grotesk, sans-serif';
-    ctx.textAlign = 'left';
-    ctx.fillText(options.threshold.label, w - pad.right + 4, ty + 3);
-  }
-}
-
-function drawBarChart(canvasId, labels, datasets, options) {
-  const canvas = document.getElementById(canvasId);
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  const dpr = window.devicePixelRatio || 1;
-  const rect = canvas.getBoundingClientRect();
-  canvas.width = rect.width * dpr;
-  canvas.height = rect.height * dpr;
-  ctx.scale(dpr, dpr);
-  const w = rect.width, h = rect.height;
-  const pad = { top: 20, right: 20, bottom: 40, left: 50 };
-  const plotW = w - pad.left - pad.right;
-  const plotH = h - pad.top - pad.bottom;
-  const isDark = document.body.classList.contains('dark-theme');
-  const gridColor = isDark ? '#2a2a3a' : '#e8e6e0';
-  const labelColor = isDark ? '#8a8a9a' : '#999';
-
-  ctx.clearRect(0, 0, w, h);
-  chartDataPoints[canvasId] = [];
-
-  // Grid
-  ctx.strokeStyle = gridColor;
-  ctx.lineWidth = 0.5;
-  const ySteps = 5;
-  for (let i = 0; i <= ySteps; i++) {
-    const y = pad.top + (plotH / ySteps) * i;
-    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(w - pad.right, y); ctx.stroke();
-    ctx.fillStyle = labelColor;
-    ctx.font = '11px Space Grotesk, sans-serif';
-    ctx.textAlign = 'right';
-    const val = options.yMax - (options.yMax / ySteps) * i;
-    ctx.fillText(val.toFixed(1), pad.left - 8, y + 4);
-  }
-
-  const groupW = plotW / labels.length;
-  const barW = groupW / (datasets.length + 1);
-  const barGap = barW * 0.3;
-
-  labels.forEach((label, i) => {
-    ctx.fillStyle = labelColor;
-    ctx.font = '11px Space Grotesk, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(label, pad.left + groupW * i + groupW / 2, h - pad.bottom + 20);
-
-    datasets.forEach((ds, j) => {
-      const x = pad.left + groupW * i + barW * j + barGap + groupW * 0.15;
-      const barH = (ds.values[i] / options.yMax) * plotH;
-      const y = pad.top + plotH - barH;
-
-      ctx.fillStyle = ds.color;
-      ctx.beginPath();
-      const r = 3;
-      ctx.moveTo(x, y + r);
-      ctx.arcTo(x, y, x + r, y, r);
-      ctx.arcTo(x + barW - barGap, y, x + barW - barGap, y + r, r);
-      ctx.lineTo(x + barW - barGap, pad.top + plotH);
-      ctx.lineTo(x, pad.top + plotH);
-      ctx.closePath();
-      ctx.fill();
-
-      // Value on top
-      ctx.fillStyle = ds.color;
-      ctx.font = '10px Space Grotesk, sans-serif';
-      ctx.textAlign = 'center';
-      const cx = x + (barW - barGap) / 2;
-      ctx.fillText(ds.values[i].toFixed(1), cx, y - 6);
-
-      // Store tooltip point at top center of bar
-      chartDataPoints[canvasId].push({
-        x: cx, y: y, value: ds.values[i], label: label,
-        color: ds.color, rect, seriesName: ds.name || ''
-      });
-    });
-  });
-}
-
-// ── Chart Tooltips ──
-document.querySelectorAll('.chart-container canvas').forEach(canvas => {
-  const tooltipEl = canvas.parentElement.querySelector('.chart-tooltip');
-  if (!tooltipEl) return;
-
-  canvas.addEventListener('mousemove', (e) => {
-    const rect = canvas.getBoundingClientRect();
-    const mx = e.clientX - rect.left;
-    const my = e.clientY - rect.top;
-    const points = chartDataPoints[canvas.id] || [];
-    let closest = null, minDist = 25;
-    points.forEach(pt => {
-      const d = Math.sqrt((pt.x - mx) ** 2 + (pt.y - my) ** 2);
-      if (d < minDist) { minDist = d; closest = pt; }
-    });
-    if (closest) {
-      tooltipEl.textContent = (closest.label != null ? closest.label + ': ' : '') + closest.value.toFixed(2);
-      const containerRect = canvas.parentElement.getBoundingClientRect();
-      tooltipEl.style.left = (closest.x + rect.left - containerRect.left - tooltipEl.offsetWidth/2) + 'px';
-      tooltipEl.style.top = (closest.y + rect.top - containerRect.top - 32) + 'px';
-      tooltipEl.classList.add('visible');
-    } else {
-      tooltipEl.classList.remove('visible');
-    }
-  });
-  canvas.addEventListener('mouseleave', () => {
-    tooltipEl.classList.remove('visible');
-  });
-});
-
-// ── Animated Chart Drawing ──
-const chartDrawn = {};
-
-function drawCharts(id) {
-  if (chartDrawn[id]) return;
-  chartDrawn[id] = true;
-
-  if (id === 'chart-hendrik') {
-    const cycles = SIMULATION_DATA.hendrikHP.map((_, i) => i * 5);
-    drawLineChart('chart-hendrik', [
-      { values: SIMULATION_DATA.hendrikHP, color: '#e67e22', name: 'HP' }
-    ], {
-      yMax: 100, xLabels: cycles, xLabel: 'Cycle',
-      threshold: { value: 20, label: 'Critical HP', color: '#c0392b' }
-    });
-  }
-  if (id === 'chart-burnout') {
-    const cycles = SIMULATION_DATA.burnoutTimeline.ist.map((_, i) => i * 100);
-    drawLineChart('chart-burnout', [
-      { values: SIMULATION_DATA.burnoutTimeline.ist, color: '#c0392b', name: 'IST' },
-      { values: SIMULATION_DATA.burnoutTimeline.soll, color: '#27ae60', name: 'SOLL' }
-    ], { yMax: 10, xLabels: cycles, xLabel: 'Cycle', yDecimals: 0 });
-  }
-  if (id === 'chart-age') {
-    drawBarChart('chart-age',
-      SIMULATION_DATA.deathsByAge.labels,
-      [
-        { values: SIMULATION_DATA.deathsByAge.ist, color: '#c0392b', name: 'IST' },
-        { values: SIMULATION_DATA.deathsByAge.soll, color: '#27ae60', name: 'SOLL' }
-      ],
-      { yMax: 6 }
-    );
-  }
-}
-
-// ── Intersection Observer (scroll animations + chart drawing + counters) ──
+// Intersection Observer
 const observer = new IntersectionObserver((entries) => {
   entries.forEach(entry => {
     if (entry.isIntersecting) {
       entry.target.classList.add('visible');
-      // Draw charts when their container enters viewport
-      const canvas = entry.target.querySelector('canvas');
-      if (canvas) drawCharts(canvas.id);
-      // Animate counters
-      entry.target.querySelectorAll('[data-counter]').forEach(animateCounter);
     }
   });
 }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
-
 document.querySelectorAll('.chapter').forEach(ch => observer.observe(ch));
 
-// Also observe chart containers directly
-document.querySelectorAll('.chart-container').forEach(cc => {
-  const obs2 = new IntersectionObserver((entries) => {
-    entries.forEach(e => {
-      if (e.isIntersecting) {
-        const canvas = e.target.querySelector('canvas');
-        if (canvas) drawCharts(canvas.id);
-      }
-    });
-  }, { threshold: 0.3 });
-  obs2.observe(cc);
-});
+// Sidebar TOC Active State
+const tocLinks = document.querySelectorAll('.toc a[data-section]');
+const sections = document.querySelectorAll('h3[id]');
 
-// Also observe metric callouts for counter animation
-document.querySelectorAll('.metric-callout').forEach(mc => {
-  const obs3 = new IntersectionObserver((entries) => {
-    entries.forEach(e => {
-      if (e.isIntersecting) {
-        e.target.querySelectorAll('[data-counter]').forEach(animateCounter);
-      }
-    });
-  }, { threshold: 0.5 });
-  obs3.observe(mc);
-});
+function updateTocActive() {
+  let current = '';
+  sections.forEach(section => {
+    const rect = section.getBoundingClientRect();
+    if (rect.top <= 150) {
+      current = section.id;
+    }
+  });
+  tocLinks.forEach(link => {
+    link.classList.toggle('active', link.dataset.section === current);
+  });
+}
 
-// ── Footnotes ──
+// Footnotes
 document.querySelectorAll('.fn-ref').forEach(ref => {
   ref.addEventListener('click', (e) => {
     e.preventDefault();
@@ -1301,30 +1308,14 @@ document.querySelectorAll('.fn-ref').forEach(ref => {
   });
 });
 
-// Combined scroll handler
+// Combined Scroll Handler
 function onScroll() {
   updateProgress();
   updateBackToTop();
+  updateTocActive();
 }
 window.addEventListener('scroll', onScroll, { passive: true });
 onScroll();
-
-// ── Redraw charts on resize ──
-let resizeTimer;
-window.addEventListener('resize', () => {
-  clearTimeout(resizeTimer);
-  resizeTimer = setTimeout(() => {
-    chartDrawn['chart-hendrik'] = false;
-    chartDrawn['chart-burnout'] = false;
-    chartDrawn['chart-age'] = false;
-    document.querySelectorAll('.chart-container').forEach(cc => {
-      const canvas = cc.querySelector('canvas');
-      if (canvas && cc.getBoundingClientRect().top < window.innerHeight) {
-        drawCharts(canvas.id);
-      }
-    });
-  }, 200);
-});
 
 // Ensure chapter content is visible
 document.querySelectorAll('.chapter').forEach(el => el.classList.add('visible'));

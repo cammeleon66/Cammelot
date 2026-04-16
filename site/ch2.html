@@ -3,19 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>The Data Mesh is Dead. Long Live the Agentic Mesh.</title>
+<title>The Current System — Cammelot</title>
 
 <!-- Open Graph Meta Tags -->
-<meta property="og:title" content="The Data Mesh is Dead. Long Live the Agentic Mesh.">
-<meta property="og:description" content="Data mesh promised decentralized ownership. It delivered decentralized abandonment.">
+<meta property="og:title" content="The Current System — Cammelot">
+<meta property="og:description" content="Why Dutch healthcare is breaking, and how Cammelot models it. 301,000 worker shortage. 30% admin burden. 12-week waits.">
 <meta property="og:image" content="https://cammelot.org/og-image.png">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://cammelot.org/ch2.html">
 
 <!-- Twitter Card Meta Tags -->
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="The Data Mesh is Dead. Long Live the Agentic Mesh.">
-<meta name="twitter:description" content="Data mesh promised decentralized ownership. It delivered decentralized abandonment.">
+<meta name="twitter:title" content="The Current System — Cammelot">
+<meta name="twitter:description" content="Why Dutch healthcare is breaking, and how Cammelot models it. 301,000 worker shortage. 30% admin burden. 12-week waits.">
 <meta name="twitter:image" content="https://cammelot.org/og-image.png">
 
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='4' y='20' width='24' height='12' fill='%23c0392b'/%3E%3Crect x='4' y='16' width='6' height='4' fill='%23c0392b'/%3E%3Crect x='13' y='16' width='6' height='4' fill='%23c0392b'/%3E%3Crect x='22' y='16' width='6' height='4' fill='%23c0392b'/%3E%3Crect x='12' y='8' width='8' height='12' fill='%23e74c3c'/%3E%3Crect x='14' y='4' width='4' height='4' fill='%23c0392b'/%3E%3Crect x='14' y='24' width='4' height='8' fill='%23922b21'/%3E%3C/svg%3E">
@@ -246,7 +246,6 @@ body.dark-theme::after {
 .chapter {
   margin-bottom: 1rem;
 }
-/* Staggered animation children */
 .chapter .chapter-label,
 .chapter h2,
 .chapter .hook,
@@ -278,7 +277,6 @@ body.dark-theme::after {
 .chapter.visible > h3 { opacity: 1; transform: translateY(0); transition-delay: 200ms; }
 .chapter.visible > details { opacity: 1; transform: translateY(0); transition-delay: 300ms; }
 .chapter.visible > .insight-callout { opacity: 1; transform: translateY(0); transition-delay: 300ms; }
-/* Footnote bodies should be visible when open */
 .chapter .footnote-body { opacity: 1; transform: none; }
 
 .chapter-label {
@@ -375,184 +373,9 @@ body.dark-theme::after {
   margin-bottom: 0.3rem;
 }
 
-/* ── Hero ── */
-.hero {
-  padding: 1.5rem 0 2rem;
-  text-align: center;
-  margin-bottom: 0.5rem;
-  border-bottom: 1px solid var(--border);
-  position: relative;
-}
-.hero-canvas-wrap {
-  position: relative;
-  width: 100%; max-width: 620px;
-  height: 200px;
-  margin: 0 auto 1.5rem;
-  border-radius: 8px;
-  overflow: hidden;
-  border: 2px solid #2d2d44;
-  background: #1a3a2a;
-}
-.hero-canvas-wrap canvas {
-  width: 100%; height: 100%; display: block;
-  image-rendering: pixelated;
-}
-/* CRT scanline overlay on hero canvas */
-.hero-canvas-wrap::after {
-  content: '';
-  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-  background: repeating-linear-gradient(
-    0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px
-  );
-  pointer-events: none;
-}
-.hero h1 {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 2.6rem; font-weight: 700; letter-spacing: -0.02em;
-  margin-bottom: 0.5rem;
-}
-.hero h1 span { color: var(--red); }
-.hero .subtitle {
-  font-family: 'Spectral', serif;
-  font-size: 1.05rem; color: var(--text-muted);
-  font-style: italic; margin-bottom: 1.5rem;
-}
-.hero .byline {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 0.72rem; color: var(--text-muted); letter-spacing: 0.04em;
-}
-
-/* ── Replay Embed ── */
-.replay-embed {
-  background: #1a1a2e;
-  border: 1px solid #2d2d44;
-  border-radius: 6px;
-  padding: 1rem 1.2rem;
-  text-align: center;
-  color: #8888aa;
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 0.82rem;
-  margin: 1rem 0;
-  position: relative;
-  overflow: hidden;
-  min-height: 0;
-}
-.replay-embed::before {
-  content: '';
-  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-  background: repeating-linear-gradient(
-    0deg, transparent, transparent 2px, rgba(255,255,255,0.02) 2px, rgba(255,255,255,0.02) 4px
-  );
-  pointer-events: none;
-}
-.replay-embed .replay-icon { font-size: 2rem; margin-bottom: 0.5rem; }
-.replay-embed a {
-  color: var(--green); text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
-/* ── Canvas Charts ── */
-.chart-container {
-  margin: 1rem 0;
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 1.5rem;
-  position: relative;
-  transition: background 0.4s, border-color 0.4s;
-}
-.chart-container .chart-title {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 0.78rem; font-weight: 600; margin-bottom: 0.3rem;
-}
-.chart-container .chart-subtitle {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 0.65rem; color: var(--text-muted); margin-bottom: 1rem;
-}
-.chart-container canvas {
-  width: 100%; height: auto; display: block;
-}
-.chart-legend {
-  display: flex; gap: 1.2rem; margin-top: 0.8rem;
-  font-family: 'Space Grotesk', sans-serif; font-size: 0.65rem;
-}
-.chart-legend span::before {
-  content: ''; display: inline-block;
-  width: 10px; height: 10px; border-radius: 2px;
-  margin-right: 0.35rem; vertical-align: middle;
-}
-.chart-legend .legend-ist::before { background: var(--red); }
-.chart-legend .legend-soll::before { background: var(--green); }
-.chart-legend .legend-hp::before { background: #e67e22; }
-
-/* Chart tooltip */
-.chart-tooltip {
-  position: absolute;
-  background: var(--text);
-  color: var(--bg);
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 0.7rem;
-  padding: 0.3rem 0.6rem;
-  border-radius: 4px;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.15s;
-  white-space: nowrap;
-  z-index: 10;
-}
-.chart-tooltip.visible { opacity: 1; }
-
-/* ── Branch Point ── */
-.branch-point {
-  margin: 4rem 0;
-  text-align: center;
-  padding: 2rem 0;
-  border-top: 2px solid var(--border);
-  border-bottom: 2px solid var(--border);
-}
-.branch-point h2 {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 1.6rem; margin-bottom: 0.5rem;
-}
-.branch-point .branch-subtitle {
-  font-style: italic; color: var(--text-muted); margin-bottom: 2rem;
-  font-size: 1rem;
-}
-.branch-tabs {
-  display: flex; justify-content: center; gap: 1rem; margin-bottom: 2rem;
-}
-.branch-tab {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 0.85rem; font-weight: 600;
-  padding: 0.7rem 2rem;
-  border: 2px solid var(--border);
-  border-radius: 4px;
-  background: var(--card-bg);
-  cursor: pointer;
-  transition: all 0.25s;
-  letter-spacing: 0.02em;
-  color: var(--text);
-}
-.branch-tab:hover { transform: translateY(-1px); }
-.branch-tab.ist { border-color: var(--red); color: var(--red); }
-.branch-tab.ist.active { background: var(--red); color: #fff; }
-.branch-tab.soll { border-color: var(--green); color: var(--green); }
-.branch-tab.soll.active { background: var(--green); color: #fff; }
-.branch-content { text-align: left; }
-.branch-pane { display: none; }
-.branch-pane.active { display: block; }
-.branch-pane.ist-pane { border-left: 3px solid var(--red); padding-left: 1.2rem; background: var(--red-light); padding: 1.5rem; border-radius: 4px; }
-.branch-pane.soll-pane { border-left: 3px solid var(--green); padding-left: 1.2rem; background: var(--green-light); padding: 1.5rem; border-radius: 4px; }
-.branch-pane h3 {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 1.1rem; margin-bottom: 0.8rem;
-}
-.branch-pane ul { padding-left: 1.2rem; margin-bottom: 1rem; }
-.branch-pane li { margin-bottom: 0.4rem; font-size: 0.95rem; }
-
 /* ── Stats Table ── */
 .stats-table-wrap {
-  overflow-x: auto; margin: 2rem 0;
+  overflow-x: auto; margin: 1.5rem 0;
 }
 .stats-table {
   width: 100%; border-collapse: collapse;
@@ -572,16 +395,6 @@ body.dark-theme::after {
 .stats-table tbody tr:nth-child(even) td { background: var(--table-alt); }
 .stats-table tbody tr:hover td { background: var(--table-hover); }
 .stats-table .sig { color: var(--red); font-weight: 600; }
-.stats-table .sig::before {
-  content: '';
-  display: inline-block;
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: var(--red);
-  margin-right: 0.4rem;
-  vertical-align: middle;
-}
-.stats-table .metric-name { font-weight: 500; }
 
 /* ── Footnotes ── */
 .fn-ref {
@@ -642,47 +455,6 @@ blockquote {
   color: var(--text-muted);
 }
 
-/* ── Pull Quote ── */
-.pull-quote {
-  padding: 0.8rem 1rem;
-  text-align: center;
-  position: relative;
-}
-.pull-quote p {
-  font-family: 'Spectral', serif;
-  font-style: italic;
-  font-size: 1.25rem;
-  line-height: 1.55;
-  color: var(--text-muted);
-  max-width: 560px;
-  margin: 0 auto;
-  border-left: 4px solid var(--red);
-  padding-left: 1.5rem;
-  text-align: left;
-}
-
-/* ── Chapter Divider ── */
-.chapter-divider {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0.2rem 0 0.5rem;
-  gap: 0.8rem;
-}
-.chapter-divider::before,
-.chapter-divider::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: var(--border);
-}
-.chapter-divider .diamond {
-  width: 8px; height: 8px;
-  background: var(--border);
-  transform: rotate(45deg);
-  flex-shrink: 0;
-}
-
 /* ── Code ── */
 code {
   font-family: 'SF Mono', 'Fira Code', monospace;
@@ -690,6 +462,21 @@ code {
   background: var(--code-bg);
   padding: 0.15em 0.4em;
   border-radius: 3px;
+}
+pre {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1rem 1.2rem;
+  overflow-x: auto;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.82rem;
+  line-height: 1.6;
+  margin: 1rem 0;
+}
+pre code {
+  background: none;
+  padding: 0;
 }
 
 /* ── Footer ── */
@@ -715,21 +502,12 @@ code {
   }
   .toc { display: none; }
   .content { max-width: 100%; }
-  .hero h1 { font-size: 1.8rem; }
-  .hero-canvas-wrap { height: 150px; }
-  .hero .subtitle { font-size: 0.9rem; margin-bottom: 1rem; }
-  .hero .byline { font-size: 0.65rem; }
   .chapter h2 { font-size: 1.3rem; }
   .chapter .hook { font-size: 0.95rem; padding: 0.8rem 1rem; }
   .metric-callout { gap: 0.6rem; }
   .metric-card { min-width: 100px; padding: 0.8rem; }
   .metric-card .metric-value { font-size: 1.3rem; }
   .metric-card .metric-label { font-size: 0.58rem; }
-  .branch-tabs { flex-direction: column; align-items: center; }
-  .pull-quote p { font-size: 1.05rem; padding: 0 0.5rem; }
-  .pull-quote { margin: 1.5rem 0; padding: 1rem 0; }
-  .replay-embed { padding: 1rem; font-size: 0.8rem; }
-  .replay-embed code { font-size: 0.65rem; white-space: pre-wrap; word-break: break-all; }
   .chapter h3 { font-size: 1rem; margin: 2rem 0 0.8rem; padding-top: 1.2rem; }
   .chapter details summary { font-size: 0.8rem; padding: 0.6rem 1rem; }
   .chapter details .details-content { padding: 0 1rem 0.8rem; font-size: 0.88rem; }
@@ -749,15 +527,10 @@ code {
 @media (max-width: 480px) {
   html { font-size: 16px; }
   .page-grid { padding: 3.2rem 0.8rem 0; }
-  .hero { padding: 1.2rem 0 2rem; }
-  .hero h1 { font-size: 1.5rem; }
-  .hero-canvas-wrap { height: 120px; max-width: 100%; }
-  .hero .byline { font-size: 0.6rem; }
   .chapter { padding: 0.5rem 0 0.8rem; margin-bottom: 0.5rem; }
   .chapter h2 { font-size: 1.15rem; }
   .metric-callout { flex-direction: column; gap: 0.5rem; }
   .metric-card { min-width: 0; }
-  .pull-quote p { font-size: 0.95rem; }
   .site-header { padding: 0.4rem 0.8rem; }
   .back-to-top { bottom: 1rem; right: 1rem; width: 36px; height: 36px; font-size: 0.9rem; }
 }
@@ -797,8 +570,8 @@ code {
   <nav>
     <a href="index.html" class="nav-link">Home</a>
     <a href="index.html" class="nav-link">Story</a>
-    <a href="ch1.html" class="nav-link">Architecture</a>
-    <a href="ch2.html" class="nav-link">Agentic Mesh</a>
+    <a href="ch2.html" class="nav-link" style="color:var(--red)">The Current System</a>
+    <a href="ch3.html" class="nav-link">The AI-Native Overhaul</a>
     <a href="world.html" class="nav-link" style="color:var(--green)">&#127918; Live Sim</a>
     <a href="about.html" class="nav-link">About</a>
     <button class="theme-toggle" id="theme-toggle" title="Toggle dark mode">&#127769;</button>
@@ -811,12 +584,16 @@ code {
 <!-- Mobile TOC overlay -->
 <div class="mobile-toc-backdrop" id="mobile-toc-backdrop"></div>
 <nav class="mobile-toc-overlay" id="mobile-toc-overlay">
-  <div class="toc-part">The Story</div>
-  <div class="toc-part">The Build</div>
-  <a href="ch1.html" class="mobile-toc-link">1. The Architecture</a>
-  <a href="ch2.html" class="mobile-toc-link">2. The Agentic Mesh</a>
-  <div class="toc-part">What's Next</div>
-  <a href="ch3.html" class="mobile-toc-link">3. What's Coming</a>
+  <div class="toc-part">The Crisis</div>
+  <a href="#why-system-breaks" class="mobile-toc-link">Why the System Breaks</a>
+  <div class="toc-part">The Model</div>
+  <a href="#how-cammelot-models" class="mobile-toc-link">How Cammelot Models This</a>
+  <a href="#capacity-formula" class="mobile-toc-link">The Capacity Formula</a>
+  <div class="toc-part">The Data</div>
+  <a href="#disease-engine" class="mobile-toc-link">The Disease Engine</a>
+  <a href="#hp-drain" class="mobile-toc-link">HP Drain &amp; Mortality</a>
+  <a href="#assumptions" class="mobile-toc-link">Modeling Decisions</a>
+  <a href="#what-200-runs-show" class="mobile-toc-link">What 200 Runs Show</a>
   <div class="toc-part" style="margin-top:12px;">Explore</div>
   <a href="world.html" class="mobile-toc-link" style="color:#27ae60;">&#127918; Live Simulation</a>
 </nav>
@@ -825,12 +602,16 @@ code {
   <!-- Sidebar TOC -->
   <aside class="toc" id="toc">
   <div class="toc-label">Contents</div>
-  <div class="toc-part">The Story</div>
-  <div class="toc-part">The Build</div>
-  <a href="ch1.html" data-section="chapter-1">1. The Architecture</a>
-  <a href="ch2.html" data-section="chapter-2" class="active">2. The Agentic Mesh</a>
-  <div class="toc-part">What's Next</div>
-  <a href="ch3.html" data-section="chapter-3">3. What's Coming</a>
+  <div class="toc-part">The Crisis</div>
+  <a href="#why-system-breaks" data-section="why-system-breaks">Why the System Breaks</a>
+  <div class="toc-part">The Model</div>
+  <a href="#how-cammelot-models" data-section="how-cammelot-models">How Cammelot Models This</a>
+  <a href="#capacity-formula" data-section="capacity-formula">The Capacity Formula</a>
+  <div class="toc-part">The Data</div>
+  <a href="#disease-engine" data-section="disease-engine">The Disease Engine</a>
+  <a href="#hp-drain" data-section="hp-drain">HP Drain &amp; Mortality</a>
+  <a href="#assumptions" data-section="assumptions">Modeling Decisions</a>
+  <a href="#what-200-runs-show" data-section="what-200-runs-show">What 200 Runs Show</a>
   <div class="toc-part" style="margin-top:12px;">Explore</div>
   <a href="world.html" style="color:#27ae60;">&#127918; Live Simulation</a>
 </aside>
@@ -840,341 +621,220 @@ code {
 
     <section class="chapter" id="chapter-2">
       <div class="chapter-label">Chapter 2</div>
-      <h2>The Data Mesh is Dead. Long Live the Agentic Mesh.</h2>
-      <div class="hook">"Data mesh promised decentralized ownership. It delivered decentralized abandonment."</div>
+      <h2>The Current System</h2>
+      <div class="hook">“Before you can fix something, you have to prove it’s broken. With numbers.”</div>
 
-      <p>In 2019, Zhamak Dehghani published a blog post that changed how enterprises think about data. The core idea of data mesh was elegant: stop dumping everything into a central lake. Let domain teams own their own data. Treat data as a product. Federate governance.</p>
+      <p>The Netherlands has one of Europe’s best-funded healthcare systems. Universal coverage. High patient satisfaction. Excellent acute care outcomes. By most international rankings, it’s a top-five system globally.</p>
 
-      <p>Five years later, the track record is mixed. Zalando, Netflix, PayPal adopted data mesh. Many more tried and failed. The recurring complaints are predictable: federated governance turns into governance-by-committee, domain teams resent the new responsibility because it's rarely compensated, and employees report severe lack of comprehension of what data mesh even means (that last one is from actual academic research, not my opinion).</p>
+      <p>It’s still breaking.</p>
 
-      <p>I think data mesh was the right diagnosis applied to the wrong patient. The problem was real: centralised data teams become bottlenecks. The solution assumed that data wants to sit in one place and be queried. What if data doesn't want to sit anywhere? What if data wants to move?</p>
-      <h3>The Dutch healthcare data problem, specifically</h3>
+      <p>The Dutch call it the <em>zorginfarct</em> — care infarction. Not a future scenario. Not a projection. It’s happening now: waiting lists that exceed legal norms, GP practices that close to new patients, specialists who can’t see referrals for months. The IZA (Integraal Zorgakkoord) projects a shortage of <strong>301,000 healthcare workers by 2035</strong> (ABF Research). That’s not a staffing gap. That’s a systemic failure.</p>
 
-      <p>The Netherlands has a healthcare data landscape that makes the data mesh failures look quaint.</p>
+      <p>The demographics are unforgiving. Twenty percent of the Dutch population is over 65. Among those 75 and older, 96% have at least one chronic condition (RIVM 2024). Forty-five percent have two or more. The system was designed for acute care in a younger population. The population aged. The system didn’t adapt.</p>
 
-      <p>There are roughly 12,000 GP practices. About 90 hospital organisations. Eight academic medical centres. Hundreds of mental health, rehabilitation, and home care providers. Every one of them has an EHR (electronic health record). The GP systems mostly run HIS (Huisartsinformatiesysteem) software from a handful of vendors. Hospitals run their own systems. Pharmacies have their own. The national EHR from 2012 is a "virtual EHR" - a reference server that knows which local EHR stores what kind of patient record. It doesn't actually store data. It points to data.</p>
+      <p>This chapter explains the specific mechanisms by which the Dutch healthcare system is failing — and how Cammelot models each one.</p>
 
-      <p>Most data exchange still happens via EDIFACT - a messaging standard from the 1980s that was originally designed for shipping container logistics. In 2024, only about 11% of Dutch health data was interoperable between providers.</p>
-
-      <p>The IZA (Integraal Zorgakkoord) wants that at 66% by 2030. They're spending €2.8 billion on transformation plans to get there. Over 270 plans submitted before the postbus closed in July 2025.</p>
-
-      <p>The Wegiz (Wet elektronische gegevensuitwisseling in de zorg) - the law mandating electronic data exchange in healthcare - came into effect to force the issue. But mandating exchange and achieving it are different things. The law says you must exchange. It doesn't say how. And "how" is where every integration project in Dutch healthcare goes to die.</p>
-      <h3>Why data mesh won't save healthcare</h3>
-
-      <p>A data mesh advocate would look at this and say: give each domain (GPs, hospitals, pharmacies) ownership of their data products. Let them publish standardised data contracts. Build a self-serve data platform. Federate the governance.</p>
-
-      <p>It sounds reasonable. It doesn't survive contact with the Dutch healthcare system.</p>
-
-      <details>
-        <summary>The three problems with data mesh in healthcare</summary>
-        <div class="details-content">
-          <p><strong>Problem 1: Domain ownership presupposes willing domain owners.</strong></p>
-
-          <p>In data mesh, domain teams are supposed to take end-to-end responsibility for their data products. In Dutch healthcare, a GP practice with 2 GPs and a practice nurse is not a "domain team" in the Thoughtworks sense. They're three people drowning in 30% administrative overhead trying to see patients. Asking them to also maintain a data product with quality metrics, documentation, and access controls is asking them to become a software team. They are not a software team. They are doctors.</p>
-
-<details>
-  <summary>⚙️ Administrative Burden: Three Scenarios</summary>
-  <div class="details-content">
-    <div class="stats-table-wrap">
-      <table>
-        <thead><tr><th>Scenario</th><th>Admin Load</th><th>Consults/Week</th><th>Mortality Impact</th></tr></thead>
-        <tbody>
-          <tr><td>IST (Current)</td><td>30%</td><td>120</td><td>Baseline</td></tr>
-          <tr><td>IZA Target (2026)</td><td>25%</td><td>135</td><td>−3.5%</td></tr>
-          <tr><td>SOLL (AI-Native)</td><td>10%</td><td>180</td><td>−12%</td></tr>
-        </tbody>
-      </table>
-    </div>
-    <p style="font-size:0.8rem;color:var(--text-muted);margin-top:0.5rem;">Source: IZA 2023–2026 targets; NZa 2025 capacity norms; Cammelot 200-run simulation</p>
-  </div>
-</details>
-
-
-          <p>The same applies to most hospitals. The IT departments are running EHR systems, not building data products. They have vendor contracts with Chipsoft or Epic or Nexus. The data sits inside those systems, behind vendor-specific APIs. The hospital doesn't own the data product in any meaningful engineering sense. The vendor does.</p>
-
-          <p>Data mesh works when you have autonomous engineering teams that can iterate on data quality. Healthcare has autonomous clinical teams that want the computer to stop breaking.</p>
-
-          <p><strong>Problem 2: Data contracts assume stable schemas.</strong></p>
-
-          <p>In retail or fintech, a data contract between "orders" and "payments" domains can be versioned and maintained because the schema is well-understood and relatively stable. In healthcare, the clinical data model is vast, evolving, and clinically nuanced. FHIR R4 defines over 150 resource types. A single patient encounter might generate Condition, Observation, Encounter, Procedure, MedicationRequest, DiagnosticReport, and ServiceRequest resources, each with dozens of fields and extensions.</p>
-
-          <p>The Dutch healthcare standards body Nictiz publishes "Zibs" (Zorginformatiebouwstenen - care information building blocks) that try to standardise clinical concepts across systems. There are over 150 Zibs. They're good. They're also insufficient, because the clinical reality is messier than any schema can capture.</p>
-
-          <p>A data mesh data contract between "GP practice" and "hospital" would need to cover every possible clinical exchange scenario. That's not a contract. That's a standards body. We already have several of those. They've been working on it for decades.</p>
-
-          <p><strong>Problem 3: Federated governance in healthcare is called "regulation" and it already exists and it already doesn't work well enough.</strong></p>
-
-          <p>Healthcare is the most regulated data domain in existence. GDPR, the Wgbo (Wet geneeskundige behandelingsovereenkomst), NEN 7510 (information security), NEN 7512 (trust infrastructure), NEN 7513 (logging). The governance is not missing. There is too much governance and not enough interoperability.</p>
-
-          <p>Data mesh's federated governance model assumes that governance is the thing you need to create. In healthcare, governance is the thing that's preventing data from moving. Adding another governance layer on top of existing regulation is not a solution. It's another committee.</p>
+      <div class="metric-callout">
+        <div class="metric-card">
+          <div class="metric-value ist">301K</div>
+          <div class="metric-label">Worker shortage by 2035</div>
         </div>
-      </details>
-
-      <div class="insight-callout">
-        <strong>The core insight</strong>
-        Data mesh asks: "How do we organise data so humans can query it?" The agentic mesh asks: "How do we organise agents so they can act on it?"
+        <div class="metric-card">
+          <div class="metric-value ist">30%</div>
+          <div class="metric-label">GP time lost to admin</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value ist">12 wk</div>
+          <div class="metric-label">Avg specialist wait</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value ist">62%</div>
+          <div class="metric-label">Effective GP capacity</div>
+        </div>
       </div>
 
-      <h3>What an agentic mesh does differently</h3>
+      <h3 id="why-system-breaks">Why the System Breaks</h3>
 
-      <p>The difference is agency. In a data mesh, data is passive. It sits in a domain, behind a contract, waiting for someone to pull it. In an agentic mesh, data is carried by agents that can discover each other, negotiate, and act.</p>
+      <p>The zorginfarct is not a single failure. It’s three interlocking failure mechanisms, each making the others worse.</p>
 
-      <p>In Cammelot, my healthcare simulation, I built this. Every GP and specialist is an autonomous agent. Each publishes an Agent Card - a machine-readable description of capabilities, wait times, and capacity - at a well-known URL. This follows the A2A (Agent-to-Agent) protocol, which Google published as an open standard in 2025.</p>
+      <p><strong>Administrative burden.</strong> A Dutch GP spends 30% of their working time on paperwork — electronic health records, referral letters, insurance coding, prescription management, quality reporting (LHV 2024). That’s not a technology problem. It’s a workflow architecture problem. The administrative burden is additive: every new regulation, every quality metric, every reporting requirement adds minutes per patient that never get removed. The cumulative effect is that a GP who could theoretically see 200 patients per week can effectively see about 124.</p>
 
-      <div class="replay-embed" style="text-align:left;padding:0.8rem;font-size:0.75rem;line-height:1.5;"><code style="background:none;color:#8888aa;font-size:0.75rem;white-space:pre;">{
-  "agentId": "gp-de-jong",
-  "name": "Dr. de Jong",
-  "role": "gp",
-  "skills": ["triage", "referral", "chronic_care"],
-  "status": "available",
-  "waitTime": { "weeks": 2, "queueSize": 12 },
-  "metadata": { "admin_load": "30%", "max_patients": 2400 }
-}</code></div>
+      <p><strong>Waiting lists and Treeknorm violations.</strong> The Treeknorm is the Dutch legal norm for maximum acceptable wait times. Diagnostics: 4 weeks. Treatment: 7–12 weeks. These aren’t aspirational targets — they’re regulatory requirements. In practice: ophthalmology averages 12 weeks. Neurology and gynecology wait times have increased 50%+ since 2022. Among MRI and CT diagnostics, 28.9% exceed the 4-week norm (NZa 2024). When patients wait beyond the Treeknorm, their conditions deteriorate. What could have been treated in primary care becomes an emergency department visit. What could have been outpatient becomes inpatient. The system creates the complexity it can’t handle.</p>
 
-      <p>When Dr. de Jong needs to refer a patient with heart disease, she doesn't query a data lake. She doesn't look up a data product. Her agent reads the cardiology agent card, checks the wait time, and sends a referral. The referral has a lifecycle (submitted → working → completed). Both sides track it. The data moves with the action.</p>
+      <p><strong>Data fragmentation.</strong> The Netherlands has roughly 12,000 GP practices, 90 hospital organisations, and 8 academic medical centres. Most data exchange between them still uses EDIFACT — a messaging standard from the 1980s originally designed for shipping container logistics. Only 11% of Dutch health data is interoperable between providers (IZA 2023). The national EHR is a virtual pointer system: it doesn’t store data, it points to it. Five providers treating the same patient maintain five independent records. The IZA has allocated €2.8 billion in transformation funding to reach 66% interoperability by 2030. Over 270 transformation plans were submitted before the postbus closed in July 2025.</p>
 
-      <p>The patient's medical history is stored as FHIR R4 resources, the international healthcare data standard. But it's not stored in a data product that someone queries. It's the agent's memory. The agent carries its own context. When the agent interacts with another agent, relevant context flows with the interaction, through communication rather than a data pipeline.</p>
+      <h3 id="how-cammelot-models">How Cammelot Models This</h3>
 
-      <p>This is not theoretical. The A2A protocol (version 1.0.0, released under the Linux Foundation) already specifies discovery, negotiation, task lifecycle, streaming, and push notifications. FHIR R4 has been a published standard since 2019. SMART-on-FHIR provides OAuth-based authorization scoping. The pieces exist. They've never been assembled into a mesh.</p>
-      <h3>The four properties that matter</h3>
+      <p>Cammelot is a browser-based agent simulation that reproduces these failure mechanisms in miniature. The simulation creates a small Dutch town with the following structure:</p>
 
-      <p><strong>1. Discovery, not integration.</strong></p>
-
-      <p>In the current Dutch landscape, adding a new specialist to a hospital's referral network requires integration work that takes, by most estimates I've heard, 3 to 18 months. In an agentic mesh, the specialist publishes an Agent Card and other agents discover it. The network grows by publication, not by connection. This is the same architectural pattern that made the web scale: HTTP didn't require every browser to negotiate with every server. Both sides spoke the same protocol.</p>
-
-      <p><strong>2. Context travels with action.</strong></p>
-
-      <p>In a data mesh, if a GP needs a patient's hospital records, they query the hospital's data product. In an agentic mesh, when the hospital agent sends a discharge summary, the relevant FHIR resources travel with the message. The receiving GP agent has the context it needs to act. No query. No pipeline. No ETL.</p>
-
-      <p>This isn't just more convenient. It changes the security model. In a data mesh, you need to secure every data product's access point. In an agentic mesh, you need to secure the communication channel and scope the data per interaction. SMART-on-FHIR already defines this: OAuth tokens scoped to specific patients and resource types per interaction.</p>
-
-      <p><strong>3. Agents can reason about their own data.</strong></p>
-
-      <p>A data product doesn't know when it's stale, incomplete, or contradictory. An agent can. In Cammelot, each GP agent runs a reflection cycle: it notices when its queue is growing, when burnout is climbing, when patients in the waiting list are deteriorating. These reflections drive action - referrals, escalations, alerts.</p>
-
-      <p>Extend this to a real-world agentic mesh. A GP agent notices that a patient's blood pressure Observations have been trending upward over three consecutive encounters. It doesn't wait for the GP to notice. It flags the trend, suggests a medication review, and - if authorised - sends a status query to the cardiology agent to check current wait times. The data is the same as in a data mesh. The difference is that something acts on it without being asked.</p>
-
-      <p><strong>4. Governance is embedded, not federated.</strong></p>
-
-      <p>This matters most in the Dutch context. Data mesh says: create a federated governance group that agrees on policies. An agentic mesh says: encode the policies in the agent behaviour and enforce them at the protocol level.</p>
-
-      <p>If a GP agent tries to refer a patient to a specialist without meeting the triage threshold, the specialist agent rejects the referral automatically, with a machine-readable reason. If a patient's data is requested without proper SMART-on-FHIR scoping, the request is denied at the protocol level. If an agent card claims a wait time that's inconsistent with its processing rate, anomaly detection flags it (this is the Mordred attack from my security red-teaming post).</p>
-
-      <p>You don't need a governance committee to enforce these rules. You need them encoded in the protocol. The governance meeting is replaced by a test suite.</p>
-      <h3>What this looks like in practice</h3>
-
-      <p>Imagine a 72-year-old patient in Amersfoort with COPD and type 2 diabetes. Today's data flow:</p>
-
-      <ol>
-        <li>GP sees patient. Dictates notes into HIS. Sends EDIFACT referral to hospital. Maybe.</li>
-        <li>Hospital receives referral. Manually enters it into their system. Waits 4-12 weeks.</li>
-        <li>Specialist sees patient. Writes a letter back to the GP. On paper. Or maybe a PDF in a portal.</li>
-        <li>GP receives letter. Types key findings into their own HIS. The two records are now inconsistent.</li>
-        <li>Pharmacist has a third, independent record. The home care nurse has a fourth.</li>
-      </ol>
-
-<details>
-  <summary>📊 Type 2 Diabetes Prevalence by Age & Gender (RIVM 2024)</summary>
-  <div class="details-content">
-    <div class="stats-table-wrap">
-      <table>
-        <thead><tr><th>Age Group</th><th>Men</th><th>Women</th></tr></thead>
-        <tbody>
-          <tr><td>30–39</td><td>1.0%</td><td>0.8%</td></tr>
-          <tr><td>40–49</td><td>3.5%</td><td>2.8%</td></tr>
-          <tr><td>50–59</td><td>7.0%</td><td>5.5%</td></tr>
-          <tr><td>60–70</td><td>14.0%</td><td>11.0%</td></tr>
-          <tr><td>70–79</td><td>18.0%</td><td>15.0%</td></tr>
-        </tbody>
-      </table>
-    </div>
-    <p style="font-size:0.8rem;color:var(--text-muted);margin-top:0.5rem;">Source: RIVM Chronic Disease Model 2024; VZinfo.nl diabetes prevalence</p>
-  </div>
-</details>
-
-
-      <p>Five providers. Five records. Zero automated interoperability. The data mesh version would give each provider a data product. The GP queries the hospital's data product. Better than nothing. But still pull-based, still requires integration per data product pair, still assumes someone is asking the right question.</p>
-
-      <p>The agentic mesh version:</p>
-
-      <ol>
-        <li>GP agent sees patient. FHIR resources (Encounter, Observation, Condition) are created automatically from the consultation. The agent's reflection cycle notices the COPD Markov trajectory is trending toward severe.</li>
-        <li>GP agent reads the pulmonology agent card. Wait time: 6 weeks. Below Treeknorm. Sends A2A referral with embedded FHIR context (relevant Conditions, recent Observations, medication list).</li>
-        <li>Pulmonology agent receives the referral. Validates the triage threshold. Accepts. The patient enters the queue with priority calculated from clinical severity and comorbidity risk.</li>
-        <li>During the wait, the patient's Digital Twin agent monitors the FHIR Observation stream. COPD exacerbation risk rises. The agent sends a proactive alert to the GP agent and the pulmonology agent.</li>
-        <li>Pulmonology agent bumps the patient's priority. The GP agent initiates ketenzorg (chronic care management) while the patient waits.</li>
-        <li>After treatment, the pulmonology agent sends a structured discharge message with FHIR resources. The GP agent's memory is updated. The pharmacy agent receives the MedicationRequest directly.</li>
-      </ol>
-
-      <p>Same five providers. One shared protocol. Data moves with action. No one queries anything. No one types anything twice. Governance is enforced by the agents' behaviour, not by a committee.</p>
-      <h3>The bigger picture: research and benchmarks</h3>
-
-      <p>Everything above - the referral mesh, the Agent Cards, the FHIR memory - is what I built first. After writing the initial version of this post, I went back and added two new agent types to the simulation: a Research Agent that runs federated population health queries across GP practices, and a Benchmark Agent that collects quality metrics from providers. Both run only in SOLL mode. The Research Agent checks consent flags, enforces k-anonymity (cohort ≥ 10), and logs results as FHIR resources. In a 100-run validation, it completed 30 queries per run, encountered ~52 consent refusals (~5% opt-out rate), and had its diabetes-specific cohort suppressed ~29 times because the town is too small for condition-specific anonymity.</p>
-
-      <p>I then ran five targeted experiments (20 runs each, 3000 cycles) to stress-test the claims in this post:</p>
-
-      <ul>
-        <li><strong>Opt-out sensitivity.</strong> Varying opt-out rate from 5% to 50%. At 50%, the research agent encounters 544 consent refusals per run (up from 63 at 5%), but patient outcomes (deaths, wait times, burnout) are statistically unchanged. The research agent is read-only infrastructure - it doesn't affect care delivery.</li>
-        <li><strong>K-anonymity threshold.</strong> Lowering k from 10 to 3 increased successful research queries from 30 to 42 per run (the diabetes cohort passes more often). At k=20, only population-health queries succeed. This is the privacy-utility tradeoff in practice: stricter thresholds mean less granular science.</li>
-        <li><strong>Research frequency.</strong> Querying every 50, 100, 200, or 500 cycles - no measurable impact on GP burnout or mortality at any frequency.</li>
-        <li><strong>Benchmark frequency.</strong> Same result: continuous benchmarking (every 50 cycles) vs. rare benchmarking (every 500) has no mortality impact, but faster benchmarking catches quality problems sooner.</li>
-        <li><strong>Mordred v2</strong> (see T2). Both forged-card and replay attacks were blocked by signature verification. System metrics were indistinguishable from unattacked baseline.</li>
+      <ul style="margin-bottom:1.1rem;padding-left:1.5rem;">
+        <li><strong>45 citizen agents</strong> with names, ages, and health conditions drawn from CBS/RIVM demographic distributions</li>
+        <li><strong>3 GP practices</strong>: Dr. de Jong (2,400 max patients), Dr. Bakker (2,000), Dr. Visser (1,800)</li>
+        <li><strong>1 regional hospital</strong> with 3 specialist departments: Cardiology (Dr. van den Berg, 12/week), Endocrinology (Dr. Mulder, 15/week), Pulmonology (Dr. Janssen, 10/week)</li>
       </ul>
 
-      <p>The referral scenario is one interaction type. But the same architecture applies to research and quality benchmarks — two things the current system handles poorly.</p>
+      <p>Each citizen starts with <strong>100 health points (HP)</strong>. Citizens develop conditions following RIVM prevalence rates, visit their assigned GP, receive referrals, and wait. The simulation runs in 500ms ticks, each representing roughly one day of simulated time.</p>
+
+      <p>The critical design choice: mortality in Cammelot is a <em>consequence of system delay</em>, not random chance. When a citizen waits beyond the Treeknorm threshold, their health deteriorates at a rate determined by their condition severity and the system’s administrative burden. HP reaches zero, the citizen dies, and their sprite turns grey. Every death in the simulation is traceable to a specific bottleneck.</p>
+
+      <h3 id="capacity-formula">The Capacity Formula</h3>
+
+      <p>The core equation governing GP effectiveness in Cammelot:</p>
+
+      <pre><code>C_eff = C_total × (1 − L_admin − V_ziekte) × E_ai</code></pre>
+
+      <div class="metric-callout">
+        <div class="metric-card">
+          <div class="metric-value ist">0.30</div>
+          <div class="metric-label">L_admin (admin burden)</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value ist">0.08</div>
+          <div class="metric-label">V_ziekte (sick leave)</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value ist">1.0</div>
+          <div class="metric-label">E_ai (no AI assist)</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value ist">0.62</div>
+          <div class="metric-label">C_eff (result)</div>
+        </div>
+      </div>
+
+      <p>In IST mode (current system): <code>L_admin = 0.30</code> (30% administrative burden, LHV 2024), <code>V_ziekte = 0.08</code> (8% sick leave / ziekteverzuim, CBS), <code>E_ai = 1.0</code> (no AI assistance). The result: <code>C_eff = 0.62</code>. GPs operate at 62% of their theoretical capacity before seeing their first patient.</p>
+
+      <p>This isn’t an abstract number. It means that a GP practice with a norm of 2,400 patients has an effective capacity of roughly 1,488 patient-equivalent slots. The remaining 912 slots are consumed by administration, sick leave, and structural overhead. Every patient beyond 1,488 adds pressure that manifests as longer consultations, shorter attention spans, delayed referrals, and eventually — burnout.</p>
+
+      <h3 id="disease-engine">The Disease Engine</h3>
 
       <details>
-        <summary>Deep dive: Personal Health Train, vantage6, and the evolution to agents</summary>
+        <summary>⚙️ Technical deep-dive: ICD-10 conditions and Markov transitions</summary>
         <div class="details-content">
-          <p>The concept of sending computation to where data lives, instead of centralising data, is not new. In fact, the Netherlands is one of the pioneers. The Personal Health Train (PHT), developed by Health-RI (the Dutch national health research infrastructure) and DTL (Dutch Techcentre for Life Sciences), explicitly uses this metaphor: data stays at the "station" (the hospital, the GP practice), and the "train" (the analysis) travels to it.</p>
+          <p>Cammelot models 10 chronic conditions using ICD-10 codes, each with prevalence rates drawn from RIVM 2024 data:</p>
+          <div class="stats-table-wrap">
+            <table class="stats-table">
+              <thead><tr><th>Condition</th><th>ICD-10</th><th>NL Prevalence</th></tr></thead>
+              <tbody>
+                <tr><td>Hypertension</td><td>I10</td><td>High (age-dependent)</td></tr>
+                <tr><td>Type 2 Diabetes</td><td>E11</td><td>1.2 million</td></tr>
+                <tr><td>COPD</td><td>J44</td><td>600,000+</td></tr>
+                <tr><td>Cardiovascular Disease</td><td>I25</td><td>12% (65+)</td></tr>
+                <tr><td>Arthrosis</td><td>M17</td><td>1.6 million</td></tr>
+                <tr><td>Osteoporosis</td><td>M81</td><td>15% (65+)</td></tr>
+                <tr><td>Depression</td><td>F32</td><td>Age-dependent</td></tr>
+                <tr><td>Anxiety</td><td>F41</td><td>Age-dependent</td></tr>
+                <tr><td>Dementia</td><td>F03</td><td>300,000+</td></tr>
+                <tr><td>Cancer (Lung)</td><td>C34</td><td>Age-dependent</td></tr>
+              </tbody>
+            </table>
+          </div>
 
-          <p>The technical implementation is vantage6, an open-source Privacy Enhancing Technology (PET) platform built by IKNL (Integraal Kankercentrum Nederland). It works: a researcher defines an algorithm, the vantage6 server distributes it to participating nodes, each node runs the computation locally on its own data, and only aggregated results return to the researcher. Federated learning, federated statistics, multi-party computation - vantage6 supports all of them. It has been used in oncology research across multiple hospitals.</p>
+          <p>Each condition progresses through a 5-state Markov chain: <strong>healthy → mild → moderate → severe → critical → deceased</strong>. Transition probabilities are evaluated per tick. The key mechanism: when a patient’s specialist wait time exceeds the Treeknorm threshold, probability mass shifts toward worse states. Waiting doesn’t just delay treatment — it actively accelerates disease progression.</p>
 
-          <p>So the idea of "questions traveling to data" already exists in the Dutch healthcare ecosystem. The agentic mesh is not that idea. Or rather, it's an evolution of it.</p>
-
-          <p>The difference is in what travels. In vantage6, what travels is a containerised algorithm. It runs on data, produces a result, and stops. It has no state, no memory, no ability to discover what other data exists, and no ability to negotiate access on the fly. It's batch computation that happens to be federated.</p>
-
-          <p>In an agentic mesh, what travels is an agent. It can discover other agents (via Agent Cards). It can negotiate (present credentials, request specific FHIR scopes). It can reason about what it finds (is this cohort large enough? does the aggregate make sense given what I already know from three other nodes?). And it maintains state across interactions.</p>
-
-          <p>Consider a concrete research scenario. A university epidemiologist wants to know the average HbA1c trajectory of type 2 diabetes patients who also have COPD in the eastern Netherlands. Today's process: write a research protocol, obtain METC approval (medical ethics committee), negotiate data sharing agreements with each participating hospital and GP practice, wait for each institution's data manager to extract and de-identify the data, assemble it centrally, and finally run the analysis. Nivel, the Netherlands Institute for Health Services Research, has built an impressive infrastructure for this - their Primary Care Database receives data from hundreds of GP practices. But even Nivel's process requires each practice to participate in the registration, and researchers must formally request access through a governance protocol with steering committees.</p>
-
-          <p>With vantage6, this is faster: the algorithm goes to the data. But the researcher still needs to know in advance which nodes have relevant data. The discovery is manual. The consent verification is separate from the computation. The algorithm can't adapt based on what it finds at the first node.</p>
-
-          <p>In an agentic mesh, the research agent carries a signed protocol (METC-approved), a SMART-on-FHIR scope definition, and a consent verification requirement. It discovers GP agents on the mesh via their Agent Cards - which advertise, among other things, whether the practice participates in research protocols and what disease populations they serve. The agent visits each relevant node. At each GP agent, it presents credentials. The GP agent checks: does this patient have an active research consent for this study type? If yes, the agent runs the FHIR query locally and returns the aggregate. If the cohort at this node is too small for anonymity (say, fewer than 10 patients), the agent flags it and moves on without returning data.</p>
-
-          <p>The difference: discovery is automated, consent is verified per-interaction, and the agent can reason about statistical sufficiency as it goes. The raw data never leaves the practice. The agent is stateful - it knows what it has already collected and what it still needs.</p>
+          <p><strong>Comorbidity multipliers</strong> model the clinical reality that conditions interact:</p>
+          <ul>
+            <li>COPD → Cardiovascular Disease: relative risk = 2.5 (PMC)</li>
+            <li>Type 2 Diabetes → Cardiovascular Disease: relative risk = 2.0 (ESC Guidelines)</li>
+            <li>Hypertension → Cardiovascular Disease: relative risk = 1.8 (ESC Guidelines)</li>
+          </ul>
+          <p>A patient with both COPD and Type 2 Diabetes faces a compounded cardiovascular risk that the system’s waiting lists make materially worse.</p>
         </div>
       </details>
 
+      <h3 id="hp-drain">HP Drain and Mortality</h3>
+
+      <p>When specialist wait times exceed the Treeknorm threshold, health points drain according to:</p>
+
+      <pre><code>HP_drain = drainRate × (t_wait − T_treeknorm) × severityMultiplier × (1 + adminBurden)</code></pre>
+
+      <div class="stats-table-wrap">
+        <table class="stats-table">
+          <thead><tr><th>Parameter</th><th>Value</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>drainRate</td><td>3</td><td>HP lost per week overdue</td></tr>
+            <tr><td>severityMultiplier (healthy)</td><td>0</td><td>No drain if healthy</td></tr>
+            <tr><td>severityMultiplier (mild)</td><td>0.5</td><td>Half rate</td></tr>
+            <tr><td>severityMultiplier (moderate)</td><td>1.0</td><td>Full rate</td></tr>
+            <tr><td>severityMultiplier (severe)</td><td>2.0</td><td>Double rate</td></tr>
+            <tr><td>severityMultiplier (critical)</td><td>4.0</td><td>Quadruple rate</td></tr>
+            <tr><td>adminBurden</td><td>0.30</td><td>+30% drain (admin delays compound clinical delays)</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>Two thresholds trigger state changes: <strong>HP ≤ 20</strong> puts the citizen in a distressed state with urgent referral priority. <strong>HP ≤ 0</strong> means death — the citizen’s sprite turns grey (a “ghost”). The <code>(1 + adminBurden)</code> term is deliberate: administrative overhead doesn’t just reduce capacity, it actively accelerates patient deterioration by delaying every step of the care chain.</p>
+
+      <h3 id="assumptions">Modeling Decisions and Assumptions</h3>
+
       <details>
-        <summary>Deep dive: DICA quality benchmarks and the EHDS</summary>
+        <summary>⚠️ Limitations and honest caveats</summary>
         <div class="details-content">
-          <p><strong>Quality benchmarks: the DICA problem.</strong></p>
-
-          <p>DICA (Dutch Institute for Clinical Auditing) runs 26 quality registries for hospital care. Their tagline is "life saving data," and it's accurate - systematic quality measurement has measurably improved surgical outcomes in the Netherlands. They collect data from hospitals into registries like DSCA (colorectal cancer), DUCA (upper GI cancer), DHFA (hip fracture), and 23 others. Hospitals submit data, DICA analyses it, and the results go back as "mirror sessions" (spiegelsessies) where clinicians compare their outcomes with national benchmarks.</p>
-
-          <p>The problem is the data pipeline. Hospitals must extract, format, and submit data to DICA. This is manual work. DICA recently announced that batch costs for PROMs (Patient-Reported Outcome Measures) data submission were fully abolished as of January 2026 - which tells you that the cost of submitting data to quality registries was a real barrier. The benchmarks are retrospective: by the time you learn that your hospital's complication rate is above the national average, the patients have already been treated.</p>
-
-          <p>In an agentic mesh, a benchmark agent carries a standardised measurement definition (say: "30-day mortality after colorectal surgery, adjusted for ASA score and tumor stage"). It visits each hospital agent. Each hospital agent runs the calculation against its own FHIR store and returns one number. The benchmark agent aggregates. No data extraction. No manual formatting. No batch submission costs. The benchmark updates continuously instead of annually.</p>
-
-          <p><strong>The EHDS changes the legal landscape - and creates new problems.</strong></p>
-
-          <p>The European Health Data Space (EHDS, Regulation EU 2025/327) entered into force on March 26, 2025. It is the most significant piece of European health data legislation since GDPR. For secondary data use (research, benchmarks, policy), the EHDS mandates that each EU member state establish at least one Health Data Access Body (HDAB). Researchers apply to the HDAB, the HDAB processes the request, data holders are obligated to share, and analysis must happen in "secure processing environments" under HDAB control. Patients can opt out.</p>
-
-          <p>An agentic mesh is not a replacement for the EHDS - the regulation is law, and compliance isn't optional. But it could be the infrastructure layer that HDABs use to fulfil their mandate. Instead of manually coordinating data extraction from every hospital, an HDAB could dispatch a certified research agent into the mesh.</p>
+          <p>Cammelot is a simplified model. These are the assumptions and their implications:</p>
+          <ul>
+            <li><strong>Population of 45 is small.</strong> Stochastic variance is high. Individual runs can produce outlier results. This is why we report averages across 200 runs, not individual simulations.</li>
+            <li><strong>Disease progression is simplified.</strong> The 5-state Markov chain (healthy → mild → moderate → severe → critical) is not clinical reality. Real disease trajectories involve remission, acute exacerbations, treatment response variation, and comorbidity interactions that are far more complex than our transition matrices capture.</li>
+            <li><strong>GP capacity model assumes uniform distribution</strong> of patient complexity. In practice, some consultations are 5-minute prescription renewals; others are 45-minute multimorbidity assessments. Our model treats them equivalently.</li>
+            <li><strong>Mortality from system delay is modeled, not observed.</strong> No randomised controlled trial exists for “what happens if you make people wait.” Our HP drain mechanism is a modeling construct, not a clinical finding. The <em>direction</em> is supported by evidence (delayed treatment worsens outcomes), but the specific drain rates are calibrated parameters, not measured values.</li>
+            <li><strong>All parameters derive from published Dutch data sources</strong> (CBS, RIVM, NZa, IZA, LHV), but the model is a simplification. We do not claim predictive accuracy for individual patients. We claim that the system dynamics — bottleneck formation, queue growth, capacity erosion — reproduce the qualitative patterns observed in the real Dutch healthcare system.</li>
+            <li><strong>Natural mortality</strong> (age-based, from CBS life tables) is tracked separately from system-failure mortality. The simulation distinguishes between “died because they were 92” and “died because they waited 18 weeks for a cardiologist.”</li>
+          </ul>
         </div>
       </details>
 
-      <details>
-        <summary>Deep dive: Security (vantage6 breach) and data ownership</summary>
-        <div class="details-content">
-          <p><strong>The security question is not theoretical.</strong></p>
+      <h3 id="what-200-runs-show">What 200 Runs Show</h3>
 
-          <p>If you think "sending computation to data nodes" is inherently safe, consider what happened to vantage6 in March 2026. An attacker gained admin access to vantage6's Harbor container registry and injected malware into infrastructure Docker images - including node images, VPN clients, and algorithm base images. The malware was a downloader that, once executed, would fetch additional payloads from the internet. Several infrastructure images that had internet access (VPN clients, SSH tunnels, proxy containers) were compromised. The vantage6 team published an advisory on April 2, 2026, and the investigation is still ongoing.</p>
+      <p>The IST baseline, averaged across 200 independent simulation runs (3,000 ticks each):</p>
 
-          <p>This is exactly the attack vector that matters for federated computation: the "train" that visits your hospital's data can be tampered with before it arrives. In an agentic mesh, every agent presents an Agent Card with verifiable credentials. If the card doesn't validate against a trust anchor, the receiving agent refuses the interaction. The defence is protocol-level validation, not perimeter security.</p>
+      <div class="stats-table-wrap">
+        <table class="stats-table">
+          <thead><tr><th>Metric</th><th>IST Average</th><th>Note</th></tr></thead>
+          <tbody>
+            <tr><td>System-failure deaths</td><td class="sig">4.2 per run</td><td>Deaths attributable to wait time exceeding Treeknorm</td></tr>
+            <tr><td>Treeknorm violations</td><td class="sig">38%</td><td>Percentage of referrals exceeding legal wait norms</td></tr>
+            <tr><td>Average specialist wait</td><td>9.4 weeks</td><td>Across all departments</td></tr>
+            <tr><td>GP burnout events</td><td>1.8 per run</td><td>GP reaching capacity ceiling</td></tr>
+            <tr><td>Cost per citizen/year</td><td>€2,847</td><td>GP + specialist + hospital costs (NZa tariffs)</td></tr>
+          </tbody>
+        </table>
+      </div>
 
-          <p><strong>The open question: who owns derived conclusions?</strong></p>
-
-          <p>This is the thing I genuinely do not have a good answer for. Under GDPR, the data controller is whoever determines the purposes and means of processing personal data. When a researcher sends a federated query and 200 GP agents each return an aggregate, the individual aggregates may not constitute personal data - they're statistics. But the researcher's combined analysis might be re-identifiable in small cohorts. Who is the data controller of the combined result?</p>
-
-          <p>In a data mesh, ownership is at least theoretically clear: the domain owns its data product. In an agentic mesh, the data never leaves the domain. But conclusions do. And ownership of conclusions derived from federated computation across hundreds of independent data controllers is an unsolved legal question. I'm flagging this as an open research problem.</p>
-        </div>
-      </details>
-      <details>
-        <summary>Honest limitations and what I'm not claiming</summary>
-        <div class="details-content">
-          <p>The agentic mesh does not exist as a production system today. What exists is a simulation (Cammelot) that demonstrates the architectural pattern - including signed agent cards, scoped FHIR access, referral rate limiting, a research agent with consent verification and k-anonymity, and a benchmark agent that collects quality metrics. These are working code, validated across 100 simulation runs. But they operate on 45 synthetic agents, not 12,000 GP practices. The gap between simulation and production is measured in decades of technical debt, vendor lock-in, and regulatory complexity.</p>
-
-          <p>Agents don't replace humans. The agents I'm describing are infrastructure, not clinical decision-makers. They move data, flag risks, enforce protocols, and manage queues. The GP still decides. The specialist still treats. The agent handles the plumbing that currently consumes 30% of their time.</p>
-
-          <p>And data mesh wasn't wrong. The four principles - domain ownership, data as a product, self-serve platform, federated governance - are genuinely good ideas. They just assumed a world where data is the thing you optimise. In healthcare, the thing you optimise is the workflow. And workflows are what agents do.</p>
-        </div>
-      </details>
-
-      <h3>The uncomfortable question</h3>
-
-      <p>The IZA is spending €2.8 billion on transformation plans. Most of those plans are building integrations between existing systems. What if, instead, every provider published an agent card and every interaction followed a shared protocol?</p>
-
-      <p>I don't think anyone is going to rebuild Dutch healthcare IT around an agentic mesh in the next five years. But I do think the plans that will still be working in ten years are the ones that bet on protocol-level interoperability rather than integration-level connectivity. HTTP beat proprietary networks. FHIR is beating HL7v2. A2A might beat the connector model.</p>
+      <p>These numbers establish the baseline that SOLL mode (Chapter 3) attempts to improve. The critical metric is the 38% Treeknorm violation rate — more than one in three specialist referrals exceeds the legal maximum wait time, with measurable mortality consequences.</p>
 
       <div class="insight-callout">
-        <strong>The principle</strong>
-        Data mesh told us to decentralise the data. The agentic mesh says to decentralise the action. Publish rather than connect. Let the protocol do the work.
+        <strong>The structural argument</strong>
+        The current system doesn’t fail because people aren’t trying. It fails because the architecture — administrative, clinical, and digital — was designed for a younger, healthier population with fewer chronic conditions. The demographics changed. The architecture didn’t.
       </div>
-      <details>
-        <summary>References and sources</summary>
-        <div class="details-content" style="font-size:0.82rem;color:var(--text-muted);"><em>Dehghani, Z. "How to Move Beyond a Monolithic Data Lake to a Distributed Data Mesh" (2019, Thoughtworks). A2A Protocol Specification v1.0.0 (Linux Foundation / Google, 2025). FHIR R4 (HL7, 2019). SMART-on-FHIR v2.2.0 (HL7, 2023). IZA - Integraal Zorgakkoord (Dutch Ministry of Health, 2022). NZa market scan waiting times (2024). Bode et al., Vestues et al., Joshi et al. - empirical data mesh adoption challenges. openEHR Foundation (2003-present). Model Context Protocol (Anthropic, 2024). Nictiz Zibs - 150+ care information building blocks. CBS / RIVM 2025 demographic and prevalence data. Health-RI / DTL - Personal Health Train concept (2017-present). Moncada-Torres et al. "VANTAGE6: an open source priVAcy preserviNg federaTed leArninG infrastructurE for Secure Insight eXchange" (AMIA 2020). Vantage6 security advisory - Harbor registry breach (April 2, 2026, vantage6.ai). DICA - Dutch Institute for Clinical Auditing, 26 quality registries (dica.nl). Nivel Primary Care Database - GP registration data from hundreds of practices (nivel.nl). EHDS - Regulation (EU) 2025/327, European Health Data Space (entered into force March 26, 2025). GDPR - Regulation (EU) 2016/679 (2018). Wgbo - Wet geneeskundige behandelingsovereenkomst (Dutch patient rights law). Wegiz - Wet elektronische gegevensuitwisseling in de zorg (electronic data exchange in healthcare). FAIR data principles (Wilkinson et al., Scientific Data, 2016). TEHDAS Joint Action - Towards the European Health Data Space (EU4Health programme).</em></div>
-      </details>
 
       <div class="footnote-body" style="display:block;margin-top:2rem;"><em>Disclosure: I work at Microsoft. My employer builds and sells AI products and cloud infrastructure. I built Cammelot as a personal applied research project, not a Microsoft product. The code is open source. All opinions are my own.</em></div>
-    
-      
-<details>
-  <summary>💰 NZa 2025 GP Tariff Schedule</summary>
-  <div class="details-content">
-    <div class="stats-table-wrap">
-      <table>
-        <thead><tr><th>Item</th><th>Tariff (EUR)</th></tr></thead>
-        <tbody>
-          <tr><td>Registration &lt;65</td><td>€20.35/year</td></tr>
-          <tr><td>Registration 65–75</td><td>€23.95/year</td></tr>
-          <tr><td>Registration 75–85</td><td>€36.06/year</td></tr>
-          <tr><td>Registration 85+</td><td>€56.70/year</td></tr>
-          <tr><td>Regular consult (5–20 min)</td><td>€12.43</td></tr>
-          <tr><td>Extended consult (>20 min)</td><td>€24.85</td></tr>
-          <tr><td>MTVP (Meer Tijd voor Patiënt)</td><td>€3.23/quarter</td></tr>
-          <tr><td>Ketenzorg Diabetes</td><td>€63.36/quarter</td></tr>
-          <tr><td>Ketenzorg COPD</td><td>€50.19/quarter</td></tr>
-        </tbody>
-      </table>
-    </div>
-    <p style="font-size:0.8rem;color:var(--text-muted);margin-top:0.5rem;">Source: NZa Beleidsregel huisartsenzorg en multidisciplinaire zorg 2025</p>
-  </div>
-</details>
 
-      <div class="insight-callout" style="margin-top:1.5rem;">
-        <strong>The Economics of Prevention</strong><br>
-        One prevented COPD hospitalization saves &euro;44,439.93 in MSZ specialist costs (NZa 2025). A Digital Twin agent providing early detection and proactive primary care intervention doesn't just improve outcomes &mdash; it's an economic necessity for the Dutch treasury. At scale, ambient AI scribes combined with predictive monitoring could prevent thousands of avoidable escalations per year.
-      </div>
+      <details style="margin-top:1.5rem;">
+        <summary>📚 Sources &amp; References</summary>
+        <div class="details-content">
+          <ol style="font-size:0.82rem;line-height:1.7;color:var(--text-muted);">
+            <li>CBS StatLine — Bevolking; kerncijfers 2024</li>
+            <li>RIVM Volksgezondheid Toekomst Verkenning 2024</li>
+            <li>NZa Beleidsregel huisartsenzorg en multidisciplinaire zorg 2025</li>
+            <li>NZa Monitor Toegankelijkheid Zorg — Wachttijden 2024</li>
+            <li>IZA — Integraal Zorgakkoord 2023–2026</li>
+            <li>ABF Research — Arbeidsmarktprognose zorg en welzijn 2023–2033</li>
+            <li>LHV Enquête Werkdruk Huisartsen 2024</li>
+            <li>RIVM Chronic Disease Model — Prevalence by age cohort</li>
+            <li>Nivel Zorgregistraties — Zorggebruik huisartsenzorg 2024</li>
+            <li>ESC Guidelines — Cardiovascular Disease Prevention 2021</li>
+            <li>PMC — COPD as Independent Risk Factor for Cardiovascular Disease (RR=2.5)</li>
+            <li>Wegiz — Wet elektronische gegevensuitwisseling in de zorg (2023)</li>
+            <li>Park et al. “Generative Agents: Interactive Simulacra of Human Behavior” (Stanford, 2023)</li>
+          </ol>
+        </div>
+      </details>
 
-
-<details style="margin-top:2rem;">
-  <summary>📚 Sources & References</summary>
-  <div class="details-content">
-    <ol style="font-size:0.82rem;line-height:1.7;color:var(--text-muted);">
-      <li>CBS StatLine — Bevolking; kerncijfers 2024</li>
-      <li>RIVM Volksgezondheid Toekomst Verkenning 2024</li>
-      <li>NZa Beleidsregel huisartsenzorg en multidisciplinaire zorg 2025</li>
-      <li>Park et al. “Generative Agents: Interactive Simulacra of Human Behavior” (Stanford, 2023)</li>
-      <li>IZA — Integraal Zorgakkoord 2023–2026</li>
-      <li>RIVM Chronic Disease Model — Diabetes prevalence by age cohort</li>
-      <li>NZa Monitor Toegankelijkheid Zorg — Wachttijden 2024</li>
-      <li>Nictiz — HL7 FHIR R4 nl-core implementatiegids</li>
-      <li>LHV Enquête Werkdruk Huisartsen 2024</li>
-      <li>ABF Research — Arbeidsmarktprognose zorg en welzijn 2023–2033</li>
-      <li>Nivel Zorgregistraties — Zorggebruik huisartsenzorg 2024</li>
-      <li>WHO — Global Strategy on Digital Health 2020–2025</li>
-      <li>ESC Guidelines — Cardiovascular Disease Prevention 2021</li>
-      <li>PMC — COPD as Independent Risk Factor for Cardiovascular Disease (RR=2.5)</li>
-      <li>Wegiz — Wet elektronische gegevensuitwisseling in de zorg (2023)</li>
-    </ol>
-  </div>
-</details>
-
-</section>
-
-
-    <!-- Pull Quote -->
-    <!-- Pull Quote -->
-    <div class="pull-quote">
-      <p>"Data stays where it is. Agents come to the data."</p>
-    </div>
+    </section>
 
     <nav class="chapter-nav">
-    <a href="ch1.html" class="prev">← Previous: How I Wired a Pixel Town</a>
-    <a href="ch3.html" class="next">Next: What's Coming →</a>
-  </nav>
+      <a href="index.html" class="prev">← Home</a>
+      <a href="ch3.html" class="next">The AI-Native Overhaul →</a>
+    </nav>
   </main>
 
   <!-- Right margin (empty) -->
@@ -1186,10 +846,10 @@ code {
 
 <!-- Footer -->
 <footer class="site-footer">
-  <p>CAMMELOT: 45 pixel citizens. 100 simulations. Real Dutch data.</p>
-  <p style="margin-top:0.4rem;">Built by <a href="https://www.linkedin.com/in/simonecammel/" target="_blank">Simone Cammel</a> &middot; <a href="https://github.com/cammeleon66/Cammelot" target="_blank">View on GitHub</a></p>
+  <p>CAMMELOT: 45 pixel citizens. 200 simulations. Real Dutch data.</p>
+  <p style="margin-top:0.4rem;">Built by <a href="https://www.linkedin.com/in/simonecammel/" target="_blank">Simone Cammel</a></p>
   <div class="footer-sources">
-    Data sources: CBS (Centraal Bureau voor de Statistiek) &middot; RIVM (Rijksinstituut voor Volksgezondheid en Milieu) &middot; NZa (Nederlandse Zorgautoriteit) &middot; LHV &middot; IZA 2023-2026
+    Data sources: CBS (Centraal Bureau voor de Statistiek) · RIVM (Rijksinstituut voor Volksgezondheid en Milieu) · NZa (Nederlandse Zorgautoriteit) · LHV · IZA 2023–2026
   </div>
 </footer>
 
@@ -1221,12 +881,12 @@ const themeToggle = document.getElementById('theme-toggle');
 const savedTheme = localStorage.getItem('cammelot-theme');
 if (savedTheme === 'dark') {
   document.body.classList.add('dark-theme');
-  themeToggle.textContent = '\u2600\uFE0F';
+  themeToggle.textContent = '☀️';
 }
 themeToggle.addEventListener('click', () => {
   document.body.classList.toggle('dark-theme');
   const isDark = document.body.classList.contains('dark-theme');
-  themeToggle.textContent = isDark ? '\u2600\uFE0F' : '\uD83C\uDF19';
+  themeToggle.textContent = isDark ? '☀️' : '🌙';
   localStorage.setItem('cammelot-theme', isDark ? 'dark' : 'light');
 });
 
@@ -1263,6 +923,28 @@ const observer = new IntersectionObserver((entries) => {
 }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
 document.querySelectorAll('.chapter').forEach(ch => observer.observe(ch));
 
+// ── Sidebar TOC Active State ──
+const tocLinks = document.querySelectorAll('.toc a[data-section]');
+const sections = [];
+tocLinks.forEach(link => {
+  const id = link.getAttribute('data-section');
+  const el = document.getElementById(id);
+  if (el) sections.push({ id, el, link });
+});
+
+function updateTocActive() {
+  let current = '';
+  for (const s of sections) {
+    const rect = s.el.getBoundingClientRect();
+    if (rect.top <= 150) current = s.id;
+  }
+  tocLinks.forEach(l => l.classList.remove('active'));
+  if (current) {
+    const active = document.querySelector('.toc a[data-section="' + current + '"]');
+    if (active) active.classList.add('active');
+  }
+}
+
 // ── Footnotes ──
 document.querySelectorAll('.fn-ref').forEach(ref => {
   ref.addEventListener('click', (e) => {
@@ -1283,6 +965,7 @@ document.querySelectorAll('.fn-ref').forEach(ref => {
 function onScroll() {
   updateProgress();
   updateBackToTop();
+  updateTocActive();
 }
 window.addEventListener('scroll', onScroll, { passive: true });
 onScroll();
