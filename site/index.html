@@ -1185,7 +1185,6 @@ code {
 
 <!-- Reading Progress Bar -->
 <div class="progress-bar" id="progress-bar"></div>
-      </div>
 
 <!-- Header -->
 <header class="site-header">
@@ -1264,10 +1263,15 @@ code {
 
     <div class="chapter-divider"><div class="diamond"></div></div>
 
+    <!-- Intro paragraph (before any section heading) -->
+    <section class="research-section">
+      <p>The Cammelot project is a simulation framework designed to evaluate if artificial intelligence can effectively address the systemic challenges within the Dutch healthcare sector. By executing 200 independent simulation iterations, the platform generates a measurable dataset based on the interactions of 45 digital citizens, three general practitioners, and a singular hospital facility. This methodology moves the conversation away from vague opinions about productivity and toward repeatable results that are grounded in real-world data.</p>
+    </section>
+
+    <div class="chapter-divider"><div class="diamond"></div></div>
+
     <section id="motivation" class="research-section">
       <h2>Project Motivation and Researcher Positionality</h2>
-
-      <p>The Cammelot project is a simulation framework designed to evaluate if artificial intelligence can effectively address the systemic challenges within the Dutch healthcare sector. By executing 200 independent simulation iterations, the platform generates a measurable dataset based on the interactions of 45 digital citizens, three general practitioners, and a singular hospital facility. This methodology moves the conversation away from vague opinions about productivity and toward repeatable results that are grounded in real-world data.</p>
 
       <p>The development of this simulation is informed by my professional role at Microsoft; consequently, it is reasonable to assume an inherent bias toward the benefits of artificial intelligence. This potential for bias is the primary reason I constructed a system capable of proving my own assumptions wrong. In several critical areas of the simulation, the data suggests that AI is not a universal solution and may even introduce new systemic risks.</p>
 
@@ -1347,6 +1351,12 @@ code {
       })();
       </script>
 
+      <p><strong>Citizen Dossiers:</strong> Every agent possesses a profile detailing their occupation and digital literacy; these factors influence their care pathway from the first appearance of symptoms through to specialist treatment.</p>
+
+      <p><strong>Operational Monitoring:</strong> Users can access live reports for any building to observe bed occupancy and specialist queues. This transparency reveals the system-level bottlenecks that prevent the town from meeting the Treeknorm, which is the legal Dutch standard for healthcare access.</p>
+
+      <p><strong>Mortality and Health Points:</strong> Each citizen has a health points (HP) value that drains when waiting times for specialists exceed legal limits. If HP reaches zero, the agent becomes a ghost sprite and the event log identifies the specific bottleneck that caused the preventable death.</p>
+
       <div style="text-align:center;margin:1.5rem 0 0.5rem;">
         <a href="world.html" class="cta-button cta-sim">&#127918; Try the Simulation</a>
       </div>
@@ -1355,9 +1365,9 @@ code {
     <div class="chapter-divider"><div class="diamond"></div></div>
 
     <section id="ist" class="research-section">
-      <h2>The Crisis: The IST State</h2>
+      <h2>The Crisis: The IST State (Baseline)</h2>
 
-      <p>The “IST” state represents the current Dutch healthcare system as the control group for our research. Every number in this model is taken from published sources such as the LHV and ABF Research. Under this baseline, a general practitioner operates at only 62% of their total capacity.</p>
+      <p>The “IST” state represents the current Dutch healthcare system as the control group for our research. Every number in this model is taken from published sources such as the LHV and ABF Research. Under this baseline, a general practitioner operates at only 62% of their total capacity. This loss is calculated using a specific formula:</p>
 
       <p style="text-align:center;font-family:'Space Grotesk',sans-serif;font-size:0.95rem;margin:1.2rem 0;"><code>C<sub>eff</sub> = C<sub>total</sub> × (1 − 0.30 − 0.08) × 1.0 = 0.62</code></p>
 
@@ -1377,7 +1387,7 @@ code {
     <div class="chapter-divider"><div class="diamond"></div></div>
 
     <section id="soll" class="research-section">
-      <h2>The Intervention: The SOLL State</h2>
+      <h2>The Intervention: The SOLL State (Target Architecture)</h2>
 
       <p>The “SOLL” state represents a redesigned system where AI acts as the connective tissue between providers. It focuses on changing the underlying architecture rather than just adding a chatbot to the existing interface.</p>
 
@@ -1394,12 +1404,13 @@ code {
         </div>
       </div>
 
-      <div class="component-grid">
-        <div class="component-card"><h3>Ambient AI Scribes</h3><p>These tools handle documentation in real time, reducing the administrative burden on doctors from 30% to less than 5%.</p></div>
-        <div class="component-card"><h3>Digital Twin Monitoring</h3><p>Every citizen has a digital version of their health record that provides continuous risk assessment, triggering intervention when risk of heart failure reaches 25% rather than waiting for physical symptoms.</p></div>
-        <div class="component-card"><h3>A2A Protocol and Agent Cards</h3><p>Providers share machine-readable descriptions of their skills and current wait times, allowing referrals to be booked through structured negotiations in hours rather than weeks.</p></div>
-        <div class="component-card"><h3>Fairness Guardrails</h3><p>Protocols that prevent the AI from prioritizing “cheaper” or younger patients. These guardrails ensure that elderly patients with complex needs are not systematically deprioritized.</p></div>
-      </div>
+      <p><strong>Ambient AI Scribes:</strong> These tools handle documentation in real time, which reduces the administrative burden on doctors from 30% to less than 5%.</p>
+
+      <p><strong>Digital Twin Monitoring:</strong> Every citizen has a digital version of their health record that provides continuous risk assessment. For instance, the system might trigger a doctor’s visit when a patient’s risk of heart failure reaches 25% rather than waiting for them to experience physical symptoms.</p>
+
+      <p><strong>A2A Protocol and Agent Cards:</strong> Providers share machine-readable descriptions of their skills and current wait times. This allows for referrals to be booked through structured negotiations in a matter of hours rather than weeks of manual coordination.</p>
+
+      <p><strong>Fairness Guardrails:</strong> The system includes protocols that stop the AI from prioritizing “cheaper” or younger patients to improve speed. These guardrails ensure that elderly patients with complex needs are not systematically deprioritized.</p>
     </section>
 
     <div class="chapter-divider"><div class="diamond"></div></div>
@@ -1447,7 +1458,7 @@ code {
     <div style="text-align:center;margin:2rem 0;">
       <a href="world.html" class="cta-button cta-sim">&#127918; Try the Simulation</a>
       <div style="margin-top:0.8rem;">
-        <a href="ch1.html" class="cta-button">&#128214; Read Chapter 1: How It Works</a>
+        <a href="ch1.html" class="cta-button">&#128214; Read Chapter 1: The Mechanics</a>
       </div>
     </div>
 
