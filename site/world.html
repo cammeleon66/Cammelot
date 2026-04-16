@@ -318,14 +318,14 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a1a2e;font-family:
 
 /* ── Sprint 6: Event Ticker ── */
 .event-ticker{position:absolute;bottom:50px;left:0;right:0;height:28px;background:rgba(26,26,46,.85);border-top:1px solid rgba(255,179,0,.2);border-bottom:1px solid rgba(255,179,0,.2);overflow:hidden;z-index:4}
-.ticker-content{display:flex;gap:40px;white-space:nowrap;animation:ticker-scroll 60s linear infinite;padding:6px 0;font:500 11px 'JetBrains Mono',monospace;color:var(--parchment)}
+.ticker-content{display:flex;gap:40px;white-space:nowrap;padding:6px 0;font:500 11px 'JetBrains Mono',monospace;color:var(--parchment);position:relative}
 .ticker-item{cursor:pointer}
 .ticker-item:hover{color:var(--gold)}
 .ticker-item.death{color:#E53935}
 .ticker-item.hospital{color:#FF9800}
 .ticker-item.gp{color:#4CAF50}
 .ticker-item.social{color:#42A5F5}
-@keyframes ticker-scroll{from{transform:translateX(100%)}to{transform:translateX(-100%)}}
+/* ticker-scroll: replaced by JS-driven continuous scroll */
 
 /* ═══ SPRINT 7: Town Feed + Panel Back Button ═══ */
 .feed-filters { display:flex; gap:4px; padding:8px 0; flex-wrap:wrap; }
@@ -9335,36 +9335,69 @@ function continueGame(){
 
 // ═══ SPRINT 6: NARRATIVE EVENT TICKER ═══
 function updateTicker() {
-  const recent = EVENT_LOG.slice(-20).reverse();
-  const tickerEl = document.getElementById('ticker-content');
+  var tickerEl = document.getElementById('ticker-content');
   if (!tickerEl) return;
 
-  const items = recent.map(e => {
-    let icon, cls, text;
-    switch (e.type) {
-      case 'died': icon = '💀'; cls = 'death'; text = `${e.agentName} (HP${e.hp >= 0 ? e.hp : '?'}) died after waiting`; break;
-      case 'natural_death': icon = '🕊'; cls = ''; text = `${e.agentName} passed peacefully`; break;
-      case 'admitted': icon = '🏥'; cls = 'hospital'; text = `${e.agentName} admitted to hospital`; break;
-      case 'referred': icon = '🔄'; cls = 'gp'; text = `${e.agentName} referred to specialist`; break;
-      case 'treated': icon = '💊'; cls = 'hospital'; text = `${e.agentName} treatment complete`; break;
-      case 'worsened': icon = '⚠'; cls = 'death'; text = `${e.agentName}: ${e.detail}`; break;
-      case 'social_chat': icon = '💬'; cls = 'social'; text = `${e.agentName} chatted`; break;
-      case 'visited_gp': icon = '⚕'; cls = 'gp'; text = `${e.agentName} visiting GP`; break;
-      case 'discharged': icon = '🏠'; cls = 'gp'; text = `${e.agentName} discharged`; break;
-      case 'insight': icon = '💡'; cls = 'gp'; text = `${e.detail}`; break;
-      case 'sick_leave': icon = '😓'; cls = 'death'; text = `${e.agentName}: ${e.detail}`; break;
-      default: return '';
-    }
-    return `<span class="ticker-item ${cls}" data-agent="${e.agentId}">${icon} ${text}</span>`;
-  }).filter(Boolean);
-
-  // Sprint 23: System overload ticker prefix
-  if (window._systemOverload) {
-    items.unshift('<span class="ticker-item death">⚠ System Overload — All GPs burned out!</span>');
+  // Initialize ticker state if needed
+  if (!tickerEl._scrollPos) {
+    tickerEl._scrollPos = tickerEl.parentElement ? tickerEl.parentElement.clientWidth : 800;
+    tickerEl._lastEventIdx = 0;
+    tickerEl._speed = 0.8; // pixels per frame
+    tickerEl.style.transform = 'translateX(' + tickerEl._scrollPos + 'px)';
   }
 
-  tickerEl.innerHTML = items.join('');
+  // Only add NEW events (not already in ticker)
+  var newEvents = EVENT_LOG.slice(tickerEl._lastEventIdx);
+  tickerEl._lastEventIdx = EVENT_LOG.length;
+
+  newEvents.forEach(function(e) {
+    var icon, cls, text;
+    switch (e.type) {
+      case 'died': icon = '\ud83d\udc80'; cls = 'death'; text = (e.agentName||'?') + ' died after waiting'; break;
+      case 'natural_death': icon = '\ud83d\udd4a'; cls = ''; text = (e.agentName||'?') + ' passed peacefully'; break;
+      case 'admitted': icon = '\ud83c\udfe5'; cls = 'hospital'; text = (e.agentName||'?') + ' admitted to hospital'; break;
+      case 'referred': icon = '\ud83d\udd04'; cls = 'gp'; text = (e.agentName||'?') + ' referred to specialist'; break;
+      case 'treated': icon = '\ud83d\udc8a'; cls = 'hospital'; text = (e.agentName||'?') + ' treatment complete'; break;
+      case 'worsened': icon = '\u26a0'; cls = 'death'; text = (e.agentName||'?') + ': ' + (e.detail||'worsened'); break;
+      case 'social_chat': icon = '\ud83d\udcac'; cls = 'social'; text = (e.agentName||'?') + ' chatted'; break;
+      case 'visited_gp': icon = '\u2695'; cls = 'gp'; text = (e.agentName||'?') + ' visiting GP'; break;
+      case 'discharged': icon = '\ud83c\udfe0'; cls = 'gp'; text = (e.agentName||'?') + ' discharged'; break;
+      case 'insight': icon = '\ud83d\udca1'; cls = 'gp'; text = e.detail || 'insight'; break;
+      case 'sick_leave': icon = '\ud83d\ude13'; cls = 'death'; text = (e.agentName||'?') + ': ' + (e.detail||'sick leave'); break;
+      default: return;
+    }
+    var span = document.createElement('span');
+    span.className = 'ticker-item ' + cls;
+    span.setAttribute('data-agent', e.agentId || '');
+    span.textContent = icon + ' ' + text;
+    tickerEl.appendChild(span);
+  });
+
+  // Remove items that have scrolled fully off the left edge
+  while (tickerEl.firstChild) {
+    var item = tickerEl.firstChild;
+    var itemRight = tickerEl._scrollPos + item.offsetLeft + item.offsetWidth;
+    if (itemRight < -20) {
+      tickerEl.removeChild(item);
+    } else {
+      break;
+    }
+  }
 }
+
+// Ticker animation loop - smooth continuous scroll
+(function tickerLoop() {
+  var tickerEl = document.getElementById('ticker-content');
+  if (tickerEl && tickerEl._scrollPos !== undefined) {
+    tickerEl._scrollPos -= tickerEl._speed || 0.8;
+    // If all content scrolled off, reset position to right edge
+    if (tickerEl.children.length === 0 || tickerEl._scrollPos < -tickerEl.scrollWidth) {
+      tickerEl._scrollPos = tickerEl.parentElement ? tickerEl.parentElement.clientWidth : 800;
+    }
+    tickerEl.style.transform = 'translateX(' + tickerEl._scrollPos + 'px)';
+  }
+  requestAnimationFrame(tickerLoop);
+})();
 
 // Ticker click handler — select agent
 document.getElementById('ticker-content')?.addEventListener('click', function(ev) {
