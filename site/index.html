@@ -1401,17 +1401,17 @@ code {
 
 
 
-      <p>a GP is operating at sixty-two percent capacity before they see their first patient. The effective capacity formula: <code>C_eff = C_total × (1 − 0.30 − 0.08) × 1.0 = 62%</code>. Thirty percent lost to paperwork. Eight percent to sick leave. No AI assistance. The efficiency multiplier is 1.0.</p>
+      <p>A GP is operating at sixty-two percent capacity before they see their first patient, as the effective capacity formula makes plain: <code>C_eff = C_total × (1 − 0.30 − 0.08) × 1.0 = 62%</code>—thirty percent lost to paperwork, eight percent to sick leave, no AI assistance, and an efficiency multiplier of 1.0.</p>
 
-      <p>When citizens get sick in IST, they follow the same path real Dutch patients do: visit a GP, get triaged, get referred to a specialist, and wait. If the wait exceeds the Treeknorm threshold, their health deteriorates. The sicker you already are, the faster you decline. At some point, the sprite turns grey. A ghost. A preventable death caused not by the disease itself, but by the system’s inability to process the patient in time.</p>
+      <p>When citizens get sick in IST, they follow the same path real Dutch patients do: visit a GP, get triaged, get referred to a specialist, and wait. If the wait exceeds the Treeknorm threshold, their health deteriorates—HP drains at a rate shaped by severity, comorbidities, and the system’s administrative burden—and the sicker you already are, the faster you decline, until the sprite turns grey: a ghost, a preventable death caused not by the disease itself but by the system’s inability to process the patient in time.</p>
 
       <h3>How the Disease Engine Works</h3>
 
-      <p>Every citizen’s health trajectory is governed by <strong>Markov State Machines</strong> — probabilistic models calibrated to RIVM 2025 prevalence data. A patient with COPD transitions between states: healthy → mild → moderate → severe → critical. Each simulation tick, the chain rolls. There is no script. There is no predetermined outcome. The dice are loaded with real epidemiological data, and the results are stochastic.</p>
+      <p>Every citizen’s health trajectory is governed by <strong>Markov State Machines</strong>—probabilistic models calibrated to RIVM 2025 prevalence data. A patient with COPD transitions between states: healthy → mild → moderate → severe → critical. Each simulation tick the chain rolls—there is no script, no predetermined outcome, just dice loaded with real epidemiological data producing stochastic results.</p>
 
-      <p>Comorbidities compound the odds. Diabetes worsens cardiovascular disease (relative risk 2.0×). COPD accelerates heart failure (2.5×). Hypertension compounds both (1.8×). These aren’t arbitrary multipliers — they come from RIVM comorbidity research. A 72-year-old with diabetes and COPD isn’t just sicker. They’re on a steeper curve, and a 12-week wait hits them fundamentally differently than it hits a 35-year-old with a sports injury.</p>
+      <p>Comorbidities compound the odds: diabetes worsens cardiovascular disease (relative risk 2.0×), COPD accelerates heart failure (2.5×), and hypertension compounds both (1.8×)—multipliers drawn from RIVM comorbidity research, not conjecture. A 72-year-old with diabetes and COPD isn’t just sicker; they’re on a steeper curve, and a 12-week wait hits them fundamentally differently than it does a 35-year-old with a sports injury.</p>
 
-      <p>The simulation’s three core engines make this concrete. A <strong>disease engine</strong> built on Markov chains calibrated to RIVM 2025 prevalence data drives each citizen’s probabilistic trajectory through COPD, diabetes, cardiovascular disease, dementia, and arthrosis—not scripted, but stochastic. A <strong>regulatory framework</strong> based on NZa tariffs and Treeknormen governs patient flow: GP consults cost €12.43, a prevented hospitalization saves €5,845, and these are real numbers from published tariff tables. And an <strong>HP drain mechanism</strong> models the core claim that <em>system delay kills</em>—when wait times exceed the Treeknorm, health points drain at a rate determined by severity, comorbidities, and administrative burden, until the citizen becomes a ghost.</p>
+      <p>The economic layer mirrors this clinical realism: patient flow follows <strong>NZa tariffs</strong> and <strong>Treeknormen</strong>, the legal maximum waiting times for specialist care, with a regular GP consult costing €12.43 and each prevented hospitalization saving an estimated €5,845.</p>
     </section>
 
     <div class="chapter-divider"><div class="diamond"></div></div>
@@ -1456,7 +1456,7 @@ code {
 
       <h3>What Makes SOLL Work (and What Doesn’t)</h3>
 
-      <p>SOLL is not a single intervention but a stack that compounds. I’m not testing whether one AI tool helps—I’m testing what happens when you redesign the system end-to-end, and each research chapter isolates a different mechanism to determine whether it holds up under 100 simulation runs.</p>
+      <p>SOLL is not a single intervention but a stack that compounds. I’m not testing whether one AI tool helps—I’m testing what happens when you redesign the system end-to-end, and each research chapter isolates a different mechanism to determine whether it holds up under repeated, independent simulation.</p>
 
       <p>The interventions: <strong>Ambient AI scribes</strong> drop administrative load from 30% to less than 5%—the IZA’s 2030 target is 20%, and I’m more aggressive because this is the single largest capacity unlock. <strong>Digital Twin monitoring</strong> provides continuous risk assessment for every citizen, triggering alerts at 25% probability rather than waiting for symptoms to reach 60%, flagging problems weeks before they become emergencies. <strong>A2A Protocol and Agent Cards</strong> give every provider a machine-readable description of their skills, wait times, and capacity, turning referrals from faxes into the void into structured negotiations. And a <strong>fairness guardrail</strong> auto-disables optimization biases whenever any age group’s average wait exceeds 120% of the population mean—because optimizing for throughput without guardrails risks discriminating against the elderly, and testing whether guardrails actually work is one of the core research questions.</p>    </section>
 
@@ -1469,9 +1469,7 @@ code {
     <section id="experiment" class="research-section">
       <h2>The Experiment</h2>
 
-      <p>Every claim in this project will be tested using the same protocol: <strong>100 independent simulation runs per mode</strong> — 200 total. Each run simulates roughly 10 years (3,000 cycles). We are using statistics for significance, effect size and confidence intervals on every metric. Null results will be published alongside positive ones.</p>
-
-      <p>We do not rely on single demos. Every claim is tested across <strong>200 independent simulation runs</strong>, measuring statistical significance (<em>p</em> &lt; 0.05) and effect size. A population of 45 is small—stochastic variance is high enough that a single death in the 80+ group can swing mortality by 33 percentage points—so we report means across runs and flag this constraint wherever it matters.</p>
+      <p>Every claim in this project is tested under the same protocol: <strong>100 independent simulation runs per mode</strong>, 200 total, each simulating roughly ten years (3,000 cycles). We measure statistical significance (<em>p</em> &lt; 0.05), effect size, and confidence intervals on every metric, and null results are published alongside positive ones. A significant constraint is population size: with only 45 citizens, stochastic variance runs high—a single death in the 80+ age group can swing the mortality rate by 33 percentage points—so we report means across all runs and flag this limitation wherever it matters.</p>
 
       <p>On bias: I have worked in AI roles in Big Tech for the past six years, so assume I am biased toward AI. I chose the parameters, the architecture, and the disease models, and a different builder would make different choices. The code is open so you can change anything and re-run. If the data contradicts the optimist position, I will report it.</p>
     </section>
@@ -1492,7 +1490,7 @@ code {
       <p>When you optimize for throughput, do elderly patients—who take longer, cost more, and present with multimorbidity—get systematically deprioritized, and can guardrails prevent that? Is system delay itself a cause of mortality, or do patients die from disease regardless of queue length? And when you stack multiple AI interventions—scribes, digital twins, A2A scheduling, fairness guardrails—which combinations compound, which interfere, and where does the system push back?</p>
 
       <div class="hypothesis-box">
-        The answers are coming in the chapter series below. Every null result will be published alongside every positive one.
+        The answers are taking shape in the chapter series below.
       </div>
     </section>
 
