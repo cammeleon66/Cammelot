@@ -3223,6 +3223,14 @@ function spawnPopulation(count) {
       }
     }
   }
+  // Offset family members so they don't stack on exact same pixel
+  spawned.forEach(function(a) {
+    a.x += (Math.random() - 0.5) * 0.02;
+    a.y += (Math.random() - 0.5) * 0.02;
+    // Clamp to map bounds
+    a.x = Math.max(0.05, Math.min(0.95, a.x));
+    a.y = Math.max(0.05, Math.min(0.95, a.y));
+  });
   // Sprint 27: Assign friendships after all agents are spawned
   assignFriendships(spawned);
   return spawned;
