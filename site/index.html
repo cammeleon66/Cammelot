@@ -1270,9 +1270,9 @@ code {
 
       <p>I work at Microsoft. You should assume I’m biased toward AI. That’s exactly why I built something that could prove me wrong. In several important ways, it did.</p>
 
-      <p>Both online and offline, I still see the AI conversation stuck in a strange place. Proponents treat it as a productivity tool; a faster way to write emails. Critics dismiss it as hype. Neither side shows their math. “AI will solve the zorginfarct.” <em>How? Which interventions? In what order? With what side effects?</em> “AI is overhyped.” <em>Compared to what? The system that’s already producing a 301,000-worker shortage by 2035?</em></p>
+      <p>Both online and offline, I still see the AI conversation stuck in a strange place. Proponents treat it as a productivity tool; a faster way to write emails. Critics dismiss it as hype. Neither side shows their math. “AI will solve the care gridlock.” <em>How? Which interventions? In what order? With what side effects?</em> “AI is overhyped.” <em>Compared to what? The system that’s already producing a 301,000-worker shortage by 2035?</em></p>
 
-      <p>I wanted a simulation machine that produces numbers on this, where we can simulate what happens when AI completely overhauls the health industry and not just as a point solution in a digital world where most data is not interoperable. Not predictions but outputs you can measure. Run it, measure it, break it, run it again. Two hundred times. With statistics.</p>
+      <p>I wanted a simulation machine that produces numbers on this, where we can simulate what happens when AI completely overhauls the health industry and not just as a point solution in a digital world where most data is not interoperable. Not predictions, but outputs you can measure: run it, measure it, break it, and run it again—two hundred times, with statistics.</p>
 
       <p>So I built <strong>Cammelot</strong>: a simulated Dutch town. Forty-five citizens with names, ages, pre-existing conditions, and GP assignments. Three general practitioners. One hospital. The citizens walk around a 16-bit pixel map that looks like it belongs on a 1994 Super Nintendo, but their diseases are drawn from 2025 RIVM prevalence data, their healthcare costs from NZa tariffs, and their waiting times from the Treeknorm, the Dutch legal norm for specialist care access.</p>
 
@@ -1410,20 +1410,7 @@ code {
 
       <p>Comorbidities compound the odds. Diabetes worsens cardiovascular disease (relative risk 2.0×). COPD accelerates heart failure (2.5×). Hypertension compounds both (1.8×). These aren’t arbitrary multipliers — they come from RIVM comorbidity research. A 72-year-old with diabetes and COPD isn’t just sicker. They’re on a steeper curve, and a 12-week wait hits them fundamentally differently than it hits a 35-year-old with a sports injury.</p>
 
-      <div class="component-grid">
-        <div class="component-card" style="border-left-color: #e74c3c;">
-          <h3 style="color: #e74c3c;">The Disease Engine</h3>
-          <p>Markov chains calibrated to <strong>RIVM prevalence data (2025)</strong> for COPD, Diabetes Type 2, Cardiovascular disease, Dementia, and Arthrosis. Each citizen’s trajectory is probabilistic, not scripted.</p>
-        </div>
-        <div class="component-card" style="border-left-color: #e74c3c;">
-          <h3 style="color: #e74c3c;">The Regulatory Framework</h3>
-          <p>Patient flow follows <strong>NZa tariffs</strong> and <strong>Treeknormen</strong> — the legal maximum waiting times for specialist care. GP consults cost €12.43. A prevented hospitalization saves €5,845. These are real numbers.</p>
-        </div>
-        <div class="component-card" style="border-left-color: #e74c3c;">
-          <h3 style="color: #e74c3c;">HP Drain: The Mortality Mechanism</h3>
-          <p>Every citizen has a health bar. When wait times exceed the Treeknorm, HP drains at a rate determined by severity, comorbidities, and administrative burden. When it hits zero, the citizen becomes a ghost. This is the model’s core claim: <em>system delay kills</em>.</p>
-        </div>
-      </div>
+      <p>The simulation’s three core engines make this concrete. A <strong>disease engine</strong> built on Markov chains calibrated to RIVM 2025 prevalence data drives each citizen’s probabilistic trajectory through COPD, diabetes, cardiovascular disease, dementia, and arthrosis—not scripted, but stochastic. A <strong>regulatory framework</strong> based on NZa tariffs and Treeknormen governs patient flow: GP consults cost €12.43, a prevented hospitalization saves €5,845, and these are real numbers from published tariff tables. And an <strong>HP drain mechanism</strong> models the core claim that <em>system delay kills</em>—when wait times exceed the Treeknorm, health points drain at a rate determined by severity, comorbidities, and administrative burden, until the citizen becomes a ghost.</p>
     </section>
 
     <div class="chapter-divider"><div class="diamond"></div></div>
@@ -1435,24 +1422,9 @@ code {
     <section id="how-it-works" class="research-section">
       <h2>How It Actually Works</h2>
 
-      <p>Every citizen in Cammelot is an autonomous agent running a cognitive loop. Each agent, every simulation tick, does three things:</p>
+      <p>Every citizen in Cammelot is an autonomous agent running a cognitive loop derived from Park et al.’s “Generative Agents” architecture (Stanford, 2023), adapted from social simulation to healthcare. Each agent, every simulation tick, executes three phases: <strong>Memory</strong>—every action (GP visits, referrals, queue entries, diagnoses) is logged as an HL7® FHIR® R4 resource, the international healthcare data standard used by real hospitals. <strong>Reflection</strong>—agents assess their own state: a patient “realizes” their breathing is worsening, a GP notices burnout climbing, and these reflections drive behavior. <strong>Planning</strong>—based on memory and reflection, agents act: patients visit GPs, GPs triage and refer, specialists process queues. The system advances one tick and repeats 3,000 times—roughly ten simulated years.</p>
 
-      <div class="component-grid">
-        <div class="component-card">
-          <h3>1. Memory</h3>
-          <p>Every action — GP visits, referrals, queue entries, diagnoses — is logged as an <strong>HL7® FHIR® R4 resource</strong>. The international healthcare data standard. Not a toy format; the actual standard that hospitals use. Each agent’s “life history” is a chronological FHIR record: Conditions, Encounters, Observations, MedicationRequests.</p>
-        </div>
-        <div class="component-card">
-          <h3>2. Reflection</h3>
-          <p>Agents assess their own state. A patient “realizes” their breathing is getting worse. A GP notices their burnout climbing. These reflections drive behavior — when to seek care, when to refer, when to escalate. This is the Park et al. architecture applied to healthcare instead of a social village.</p>
-        </div>
-        <div class="component-card">
-          <h3>3. Planning</h3>
-          <p>Based on memory and reflection, agents act. Patients visit GPs. GPs triage and refer. Specialists process queues. The system runs forward one tick. Repeat 3,000 times — roughly ten simulated years.</p>
-        </div>
-      </div>
-
-      <p>Providers communicate through the <strong>A2A (Agent-to-Agent) protocol</strong>. Every GP and specialist publishes an Agent Card — a machine-readable description of their skills, current wait time, and queue depth. Referrals flow as structured messages. Wait times are real-time, not estimated. Think of it as an evolution of the Personal Health Train concept that the Netherlands pioneered through Health-RI — but where stateful agents discover each other, instead of stateless containers dispatched to known nodes.</p>
+<p>Providers communicate through the <strong>A2A (Agent-to-Agent) protocol</strong>. Every GP and specialist publishes an Agent Card — a machine-readable description of their skills, current wait time, and queue depth. Referrals flow as structured messages. Wait times are real-time, not estimated. Think of it as an evolution of the Personal Health Train concept that the Netherlands pioneered through Health-RI — but where stateful agents discover each other, instead of stateless containers dispatched to known nodes.</p>
     </section>
 
     <div class="chapter-divider"><div class="diamond"></div></div>
@@ -1471,39 +1443,21 @@ code {
       <div class="ist-soll-compare">
         <div class="mode-card ist-card">
           <h3>IST <span class="mode-tag">(Status Quo)</span></h3>
-          <p>A reactive system. <strong>30% admin overhead</strong>. 12-week waits. Fragmented data. Clinicians are the primary routers of information. The GP is a switchboard operator who happens to also practice medicine.</p>
+          <p>A reactive system where <strong>30% of GP time</strong> goes to admin, specialist waits reach 12 weeks, and data is fragmented across isolated systems. Clinicians serve as the primary routers of information—the GP is a switchboard operator who happens to also practice medicine.</p>
           <p style="margin-top:0.8rem;font-family:Space Grotesk,sans-serif;font-size:0.85rem;"><strong>Effective capacity:</strong> <code>62%</code></p>
         </div>
         <div class="mode-card soll-card">
           <h3>SOLL <span class="mode-tag">(Target Architecture)</span></h3>
-          <p>An <strong>Agentic Mesh</strong>. Providers publish Agent Cards. Autonomous agents negotiate capacity and referrals in real-time. Digital Twins monitor patients continuously. Admin drops to &lt;5%. The system acts before the patient deteriorates.</p>
+          <p>An <strong>Agentic Mesh</strong> where providers publish Agent Cards, autonomous agents negotiate capacity and referrals in real time, and Digital Twins monitor patients continuously—admin drops below 5% and the system intervenes before the patient deteriorates.</p>
           <p style="margin-top:0.8rem;font-family:Space Grotesk,sans-serif;font-size:0.85rem;"><strong>Effective capacity:</strong> <code>~121%</code></p>
         </div>
       </div>
 
       <h3>What Makes SOLL Work (and What Doesn’t)</h3>
 
-      <p>SOLL is not a single intervention. It’s a stack of interventions that compound. This is deliberate — I’m not testing whether “one AI tool helps.” I’m testing what happens when you redesign the system end-to-end. Each research chapter isolates a different mechanism and asks whether it holds up under 100 simulation runs.</p>
+      <p>SOLL is not a single intervention but a stack that compounds. I’m not testing whether one AI tool helps—I’m testing what happens when you redesign the system end-to-end, and each research chapter isolates a different mechanism to determine whether it holds up under 100 simulation runs.</p>
 
-      <div class="component-grid">
-        <div class="component-card">
-          <h3>Ambient AI Scribes</h3>
-          <p>Admin load drops from 30% to &lt;5%. The IZA 2030 target is 20% — I’m more aggressive. This is the single largest capacity unlock.</p>
-        </div>
-        <div class="component-card">
-          <h3>Digital Twin Monitoring</h3>
-          <p>Continuous risk assessment for every citizen. Alert threshold: 25% risk (vs. 60% in IST). Problems are flagged weeks before they become emergencies.</p>
-        </div>
-        <div class="component-card">
-          <h3>A2A Protocol &amp; Agent Cards</h3>
-          <p>Machine-readable discovery. Every provider publishes skills, wait times, and capacity. Referrals become structured negotiations, not faxes into the void.</p>
-        </div>
-        <div class="component-card">
-          <h3>Fairness Guardrail</h3>
-          <p>If any age group’s average wait exceeds 120% of the population mean, optimization biases auto-disable. Because optimizing for throughput without guardrails risks discriminating against the elderly. This is one of the key things we’re testing.</p>
-        </div>
-      </div>
-    </section>
+      <p>The interventions: <strong>Ambient AI scribes</strong> drop administrative load from 30% to less than 5%—the IZA’s 2030 target is 20%, and I’m more aggressive because this is the single largest capacity unlock. <strong>Digital Twin monitoring</strong> provides continuous risk assessment for every citizen, triggering alerts at 25% probability rather than waiting for symptoms to reach 60%, flagging problems weeks before they become emergencies. <strong>A2A Protocol and Agent Cards</strong> give every provider a machine-readable description of their skills, wait times, and capacity, turning referrals from faxes into the void into structured negotiations. And a <strong>fairness guardrail</strong> auto-disables optimization biases whenever any age group’s average wait exceeds 120% of the population mean—because optimizing for throughput without guardrails risks discriminating against the elderly, and testing whether guardrails actually work is one of the core research questions.</p>    </section>
 
     <div class="chapter-divider"><div class="diamond"></div></div>
 
@@ -1516,20 +1470,9 @@ code {
 
       <p>Every claim in this project will be tested using the same protocol: <strong>100 independent simulation runs per mode</strong> — 200 total. Each run simulates roughly 10 years (3,000 cycles). We are using statistics for significance, effect size and confidence intervals on every metric. Null results will be published alongside positive ones.</p>
 
-      <div class="transparency-grid">
-        <div class="transparency-item">
-          <h3>Statistical Rigor</h3>
-          <p>We do not rely on single demos. <strong>200 independent simulation runs</strong>, measuring significance (<em>p</em> &lt; 0.05) and effect size.</p>
-        </div>
-        <div class="transparency-item">
-          <h3>The N=45 Constraint</h3>
-          <p>A population of 45 is small. Stochastic variance is high: a single death in the 80+ group can swing mortality by 33 percentage points. We flag this limitation every time it matters and will provide the data of all trial runs.</p>
-        </div>
-        <div class="transparency-item">
-          <h3>Bias Acknowledgment</h3>
-          <p>I have worked in AI roles in Big Tech for the last 6 years, so assume i am a protagonist. I chose the parameters, the architecture, and the disease models. A different builder would make different choices. The code is open so you can change anything and re-run. If the data contradicts the optimist position, I will report it.</p>
-        </div>
-      </div>
+      <p>We do not rely on single demos. Every claim is tested across <strong>200 independent simulation runs</strong>, measuring statistical significance (<em>p</em> &lt; 0.05) and effect size. A population of 45 is small—stochastic variance is high enough that a single death in the 80+ group can swing mortality by 33 percentage points—so we report means across runs and flag this constraint wherever it matters.</p>
+
+      <p>On bias: I have worked in AI roles in Big Tech for the past six years, so assume I am biased toward AI. I chose the parameters, the architecture, and the disease models, and a different builder would make different choices. The code is open so you can change anything and re-run. If the data contradicts the optimist position, I will report it.</p>
     </section>
 
     <div class="chapter-divider"><div class="diamond"></div></div>
@@ -1543,35 +1486,12 @@ code {
 
       <p>Cammelot isn’t designed to prove that AI saves healthcare. It’s designed to test <em>specific, measurable claims</em> and to see which ones survive contact with a stochastic population. These are some of the questions driving the research:</p>
 
-      <div class="component-grid">
-        <div class="component-card">
-          <h3>Does reducing admin actually free GP capacity?</h3>
-          <p>If GPs spend 30% of their time on paperwork and we cut that to 5%, does that translate into more patients seen — or does the system just find new bottlenecks?</p>
-        </div>
-        <div class="component-card">
-          <h3>Can proactive detection prevent hospitalization?</h3>
-          <p>Digital twins flag risk early. But flagging risk without clinical capacity to act on it might just mean better-documented decline. Does early detection actually change outcomes?</p>
-        </div>
-        <div class="component-card">
-          <h3>What happens to wait times under an agentic mesh?</h3>
-          <p>A2A protocol, smart referrals, machine-readable agent cards. Can structured communication bring specialist wait times back within the Treeknorm — the 4-week legal maximum?</p>
-        </div>
-        <div class="component-card">
-          <h3>Does AI optimization discriminate by age?</h3>
-          <p>When you optimize for throughput, do elderly patients — who take longer, cost more, and present with multimorbidity — get systematically deprioritized? And can guardrails prevent that?</p>
-        </div>
-        <div class="component-card">
-          <h3>Is system delay itself a cause of mortality?</h3>
-          <p>The model’s core hypothesis: patients don’t die from disease alone — they die from system delay. If we compress wait times, does mortality actually shift?</p>
-        </div>
-        <div class="component-card">
-          <h3>What breaks when you scale AI assistance?</h3>
-          <p>SOLL stacks multiple interventions: scribes, digital twins, A2A protocol, fairness guardrails. Which combinations compound? Which interfere? Where does the system push back?</p>
-        </div>
-      </div>
+      <p>If GPs spend 30% of their time on paperwork and we cut that to 5%, does that translate into more patients seen—or does the system simply find new bottlenecks? Digital twins flag risk early, but flagging risk without clinical capacity to act on it might just mean better-documented decline: does early detection actually change outcomes? Can an A2A protocol with machine-readable agent cards bring specialist wait times back within the Treeknorm—the four-week legal maximum?</p>
+
+      <p>When you optimize for throughput, do elderly patients—who take longer, cost more, and present with multimorbidity—get systematically deprioritized, and can guardrails prevent that? Is system delay itself a cause of mortality, or do patients die from disease regardless of queue length? And when you stack multiple AI interventions—scribes, digital twins, A2A scheduling, fairness guardrails—which combinations compound, which interfere, and where does the system push back?</p>
 
       <div class="hypothesis-box">
-        <strong>The research protocol:</strong> 100 independent simulation runs per mode — 200 total. Each run simulates roughly 10 years (3,000 cycles), measuring significance and effect size. Every null result will be published alongside every positive one. The answers are coming in the chapter series below.
+        The answers are coming in the chapter series below. Every null result will be published alongside every positive one.
       </div>
     </section>
 
@@ -1584,7 +1504,304 @@ code {
     <section id="roadmap" class="research-section">
       <h2>What’s Next</h2>
 
-      <p>Over the coming weeks, we’re releasing a series of research posts. Each one isolates a different mechanism within the Dutch <em>zorgstelsel</em> and asks: does this specific link in the chain hold?</p>
+      <p>Over the coming weeks, we’re releasing a series of research posts. Each one isolates a different mechanism within the Dutch healthcare system and asks: does this specific link in the chain hold?</p>
+
+      <table class="roadmap-table">
+        <thead>
+          <tr>
+            <th>Post</th>
+            <th>The Primary Question</th>
+            <th>Focus</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>01: The Admin Tax</strong></td>
+            <td>Does a 25% reduction in paperwork directly save lives?</td>
+            <td>GP Capacity &amp; ROI</td>
+            <td><span class="coming-soon-badge">Soon</span></td>
+          </tr>
+          <tr>
+            <td><strong>02: The Waiting List</strong></td>
+            <td>Why 12-week waits are mathematically age-discriminatory</td>
+            <td>Treeknorm Impact</td>
+            <td><span class="coming-soon-badge">Soon</span></td>
+          </tr>
+          <tr>
+            <td><strong>03: The Inequality Drift</strong></td>
+            <td>Does AI triage amplify existing disparities in care?</td>
+            <td>Algorithmic Fairness</td>
+            <td><span class="coming-soon-badge">Soon</span></td>
+          </tr>
+          <tr>
+            <td><strong>04: The Digital Twin Bet</strong></td>
+            <td>Can proactive risk-scoring prevent the ER “Cliff”?</td>
+            <td>Predictive Monitoring</td>
+            <td><span class="coming-soon-badge">Soon</span></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>Beyond the health series, we’ll cover the architecture (FHIR memory, A2A protocol, security red-teaming), the applied research methodology (how to run your own simulation batch), and how the same structural model generalizes to education, retail, and government services.</p>
+
+      <p>The code is open source. The statistics are published. I am genuinely looking for people who think I’m wrong, especially if they can explain why or reach out if you have a great idea.</p>
+    </section>
+
+    <div class="chapter-divider"><div class="diamond"></div></div>
+
+    <!-- CTAs -->
+    <div style="text-align:center;margin:2rem 0;">
+      <a href="world.html" class="cta-button cta-sim">&#127918; Try the Simulation</a>
+      <div style="margin-top:0.8rem;">
+        <a href="ch1.html" class="cta-button">&#128214; Read Chapter 1: How It Works</a>
+      </div>
+    </div>
+
+    <!-- Footer line -->
+    <div class="footer-line">
+      <p><strong>Cammelot:</strong> 45 citizens. 200 simulations. Real Dutch data.</p>
+      <p class="sources">Data sources: CBS &middot; RIVM &middot; NZa &middot; IZA 2023–2026.<br>Built by Simone Cammel. </p>
+    </div>
+
+
+  </main>
+  <div></div>
+</div>
+
+<!-- Back to Top button -->
+<button class="back-to-top" id="back-to-top" aria-label="Back to top">&uarr;</button>
+
+<!-- Footer -->
+<footer class="site-footer">
+  <p>CAMMELOT: 45 pixel citizens. 100 simulations. Real Dutch data.</p>
+  <p style="margin-top:0.4rem;">Built by <a href="https://www.linkedin.com/in/simonecammel/" target="_blank">Simone Cammel</a> &middot; </p>
+  <div class="footer-sources">
+    Data sources: CBS (Centraal Bureau voor de Statistiek) &middot; RIVM (Rijksinstituut voor Volksgezondheid en Milieu) &middot; NZa (Nederlandse Zorgautoriteit) &middot; LHV &middot; IZA 2023-2026
+  </div>
+</footer>
+
+
+<script>
+// ── Hero Pixel Town Canvas ──
+(function initHeroCanvas() {
+  const canvas = document.getElementById('hero-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = 320, H = 100;
+  canvas.width = W; canvas.height = H;
+
+  // SNES palette
+  const GRASS1 = '#3a8c3f', GRASS2 = '#2e7a33';
+  const SKY = '#4a90d9';
+  const BUILDING_COLORS = ['#e74c3c','#3498db','#f39c12','#9b59b6','#1abc9c','#e67e22','#2ecc71','#c0392b'];
+  const ROOF_COLORS = ['#922b21','#21618c','#b7950b','#6c3483','#148f77','#af601a','#1e8449','#7b241c'];
+  const WATER = '#2980b9';
+
+  // Buildings
+  const buildings = [];
+  const bx = [20, 52, 80, 120, 155, 190, 228, 265];
+  for (let i = 0; i < 8; i++) {
+    const bw = 16 + Math.floor(Math.random()*12);
+    const bh = 18 + Math.floor(Math.random()*16);
+    buildings.push({ x: bx[i], y: H - 16 - bh, w: bw, h: bh, color: BUILDING_COLORS[i], roof: ROOF_COLORS[i] });
+  }
+
+  // Sprites
+  const sprites = [];
+  const SPRITE_COLORS = ['#e74c3c','#3498db','#f1c40f','#e67e22','#9b59b6'];
+  for (let i = 0; i < 5; i++) {
+    sprites.push({
+      x: 30 + Math.random() * 260,
+      y: H - 14 + Math.random() * 4,
+      dx: (Math.random() - 0.5) * 0.6,
+      color: SPRITE_COLORS[i],
+      frame: Math.floor(Math.random()*2)
+    });
+  }
+
+  function draw() {
+    // Sky gradient
+    const grad = ctx.createLinearGradient(0,0,0,H-16);
+    grad.addColorStop(0, SKY);
+    grad.addColorStop(1, '#87ceeb');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H - 16);
+
+    // Grass
+    for (let gx = 0; gx < W; gx += 4) {
+      ctx.fillStyle = (gx/4) % 2 === 0 ? GRASS1 : GRASS2;
+      ctx.fillRect(gx, H - 16, 4, 16);
+    }
+
+    // Small pond
+    ctx.fillStyle = WATER;
+    ctx.fillRect(140, H-12, 20, 8);
+    ctx.fillStyle = '#5dade2';
+    ctx.fillRect(142, H-10, 4, 2);
+
+    // Buildings
+    buildings.forEach(b => {
+      ctx.fillStyle = b.color;
+      ctx.fillRect(b.x, b.y, b.w, b.h);
+      // Roof
+      ctx.fillStyle = b.roof;
+      ctx.fillRect(b.x - 2, b.y - 4, b.w + 4, 4);
+      // Window
+      ctx.fillStyle = '#f9e79f';
+      const wx = b.x + 3, wy = b.y + 4;
+      ctx.fillRect(wx, wy, 3, 3);
+      if (b.w > 18) ctx.fillRect(wx + 8, wy, 3, 3);
+      // Door
+      ctx.fillStyle = '#6c3483';
+      ctx.fillRect(b.x + Math.floor(b.w/2) - 2, b.y + b.h - 6, 4, 6);
+    });
+
+    // Sprites
+    sprites.forEach(s => {
+      s.x += s.dx;
+      if (s.x < 10 || s.x > W - 10) s.dx *= -1;
+      s.frame = (s.frame + 0.03) % 2;
+      // Body
+      ctx.fillStyle = s.color;
+      ctx.fillRect(Math.floor(s.x), Math.floor(s.y) - 6, 4, 4);
+      // Head
+      ctx.fillStyle = '#fad7a0';
+      ctx.fillRect(Math.floor(s.x), Math.floor(s.y) - 9, 4, 3);
+      // Legs (animated)
+      ctx.fillStyle = '#2c3e50';
+      if (Math.floor(s.frame) === 0) {
+        ctx.fillRect(Math.floor(s.x), Math.floor(s.y) - 2, 2, 2);
+        ctx.fillRect(Math.floor(s.x) + 2, Math.floor(s.y) - 1, 2, 2);
+      } else {
+        ctx.fillRect(Math.floor(s.x), Math.floor(s.y) - 1, 2, 2);
+        ctx.fillRect(Math.floor(s.x) + 2, Math.floor(s.y) - 2, 2, 2);
+      }
+    });
+
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+// ── Reading Progress Bar ──
+const progressBar = document.getElementById('progress-bar');
+function updateProgress() {
+  const scrollTop = window.scrollY;
+  const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+  const pct = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+  progressBar.style.width = pct + '%';
+}
+
+// ── Back to Top ──
+const backToTop = document.getElementById('back-to-top');
+function updateBackToTop() {
+  if (window.scrollY > 600) {
+    backToTop.classList.add('visible');
+  } else {
+    backToTop.classList.remove('visible');
+  }
+}
+backToTop.addEventListener('click', () => {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+const themeToggle = document.getElementById('theme-toggle');
+const savedTheme = localStorage.getItem('cammelot-theme');
+if (savedTheme === 'dark') {
+  document.body.classList.add('dark-theme');
+  themeToggle.textContent = '\u2600\uFE0F';
+}
+themeToggle.addEventListener('click', () => {
+  document.body.classList.toggle('dark-theme');
+  const isDark = document.body.classList.contains('dark-theme');
+  themeToggle.textContent = isDark ? '\u2600\uFE0F' : '\uD83C\uDF19';
+  localStorage.setItem('cammelot-theme', isDark ? 'dark' : 'light');
+});
+
+// ── Mobile Hamburger ──
+const hamburger = document.getElementById('hamburger');
+const mobileOverlay = document.getElementById('mobile-toc-overlay');
+const mobileBackdrop = document.getElementById('mobile-toc-backdrop');
+
+hamburger.addEventListener('click', () => {
+  hamburger.classList.toggle('open');
+  mobileOverlay.classList.toggle('open');
+  mobileBackdrop.classList.toggle('open');
+});
+mobileBackdrop.addEventListener('click', () => {
+  hamburger.classList.remove('open');
+  mobileOverlay.classList.remove('open');
+  mobileBackdrop.classList.remove('open');
+});
+document.querySelectorAll('.mobile-toc-link').forEach(a => {
+  a.addEventListener('click', () => {
+    hamburger.classList.remove('open');
+    mobileOverlay.classList.remove('open');
+    mobileBackdrop.classList.remove('open');
+  });
+});
+
+// Combined scroll handler
+function onScroll() {
+  updateProgress();
+  updateBackToTop();
+}
+window.addEventListener('scroll', onScroll, { passive: true });
+onScroll();
+</script>
+</body>
+</html>
+<!-- deploy --><h3>What Makes SOLL Work (and What Doesn’t)</h3>
+
+      <p>SOLL is not a single intervention but a stack that compounds. I’m not testing whether one AI tool helps—I’m testing what happens when you redesign the system end-to-end, and each research chapter isolates a different mechanism to determine whether it holds up under 100 simulation runs.</p>
+
+      <p>The interventions: <strong>Ambient AI scribes</strong> drop administrative load from 30% to less than 5%—the IZA’s 2030 target is 20%, and I’m more aggressive because this is the single largest capacity unlock. <strong>Digital Twin monitoring</strong> provides continuous risk assessment for every citizen, triggering alerts at 25% probability rather than waiting for symptoms to reach 60%, flagging problems weeks before they become emergencies. <strong>A2A Protocol and Agent Cards</strong> give every provider a machine-readable description of their skills, wait times, and capacity, turning referrals from faxes into the void into structured negotiations. And a <strong>fairness guardrail</strong> auto-disables optimization biases whenever any age group’s average wait exceeds 120% of the population mean—because optimizing for throughput without guardrails risks discriminating against the elderly, and testing whether guardrails actually work is one of the core research questions.</p>
+
+    <!-- ════════════════════════════════════════════ -->
+    <!-- SECTION 5: THE EXPERIMENT                   -->
+    <!-- ════════════════════════════════════════════ -->
+
+    <section id="experiment" class="research-section">
+      <h2>The Experiment</h2>
+
+      <p>Every claim in this project will be tested using the same protocol: <strong>100 independent simulation runs per mode</strong> — 200 total. Each run simulates roughly 10 years (3,000 cycles). We are using statistics for significance, effect size and confidence intervals on every metric. Null results will be published alongside positive ones.</p>
+
+      <p>We do not rely on single demos. Every claim is tested across <strong>200 independent simulation runs</strong>, measuring statistical significance (<em>p</em> &lt; 0.05) and effect size. A population of 45 is small—stochastic variance is high enough that a single death in the 80+ group can swing mortality by 33 percentage points—so we report means across runs and flag this constraint wherever it matters.</p>
+
+      <p>On bias: I have worked in AI roles in Big Tech for the past six years, so assume I am biased toward AI. I chose the parameters, the architecture, and the disease models, and a different builder would make different choices. The code is open so you can change anything and re-run. If the data contradicts the optimist position, I will report it.</p>
+    </section>
+
+    <div class="chapter-divider"><div class="diamond"></div></div>
+
+    <!-- ════════════════════════════════════════════ -->
+    <!-- SECTION 6: THE QUESTIONS                    -->
+    <!-- ════════════════════════════════════════════ -->
+
+    <section id="questions" class="research-section">
+      <h2>The Questions We’re Asking</h2>
+
+      <p>Cammelot isn’t designed to prove that AI saves healthcare. It’s designed to test <em>specific, measurable claims</em> and to see which ones survive contact with a stochastic population. These are some of the questions driving the research:</p>
+
+      <p>If GPs spend 30% of their time on paperwork and we cut that to 5%, does that translate into more patients seen—or does the system simply find new bottlenecks? Digital twins flag risk early, but flagging risk without clinical capacity to act on it might just mean better-documented decline: does early detection actually change outcomes? Can an A2A protocol with machine-readable agent cards bring specialist wait times back within the Treeknorm—the four-week legal maximum?</p>
+
+      <p>When you optimize for throughput, do elderly patients—who take longer, cost more, and present with multimorbidity—get systematically deprioritized, and can guardrails prevent that? Is system delay itself a cause of mortality, or do patients die from disease regardless of queue length? And when you stack multiple AI interventions—scribes, digital twins, A2A scheduling, fairness guardrails—which combinations compound, which interfere, and where does the system push back?</p>
+
+      <div class="hypothesis-box">
+        The answers are coming in the chapter series below. Every null result will be published alongside every positive one.
+      </div>
+    </section>
+
+    <div class="chapter-divider"><div class="diamond"></div></div>
+
+    <!-- ════════════════════════════════════════════ -->
+    <!-- SECTION 7: WHAT’S NEXT (ROADMAP)              -->
+    <!-- ════════════════════════════════════════════ -->
+
+    <section id="roadmap" class="research-section">
+      <h2>What’s Next</h2>
+
+      <p>Over the coming weeks, we’re releasing a series of research posts. Each one isolates a different mechanism within the Dutch healthcare system and asks: does this specific link in the chain hold?</p>
 
       <table class="roadmap-table">
         <thead>

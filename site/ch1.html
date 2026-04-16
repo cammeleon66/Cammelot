@@ -628,11 +628,11 @@ pre code {
       <h2>How the Simulation Works</h2>
       <p class="hook">“The goal is not to predict the future. It is to produce numbers you can argue about instead of opinions you can’t.”</p>
 
-      <p>Cammelot is a simulated Dutch town. It runs in your browser. It contains forty-five citizens with names, ages, and medical histories drawn from CBS and RIVM data. They walk around a 16-bit pixel map, get sick, visit GPs, get referred to specialists, wait in queues, and—if the system fails them—die.</p>
+      <p>Cammelot is a simulated Dutch town that runs in your browser: forty-five citizens with names, ages, and medical histories drawn from CBS and RIVM data, walking around a 16-bit pixel map, getting sick, visiting GPs, getting referred to specialists, waiting in queues, and—if the system fails them—dying.</p>
 
       <p>Everything that happens in Cammelot is measurable. Every consultation has a cost from the NZa tariff tables. Every waiting time is checked against the Treeknorm, the Dutch legal norm for specialist care access. Every death is traceable to a specific bottleneck: how many weeks waited, which condition, which referral came too late.</p>
 
-      <p>It is deliberately small. Forty-five citizens, not five thousand. Three GPs, not twelve thousand. One hospital, not ninety. This is a design choice: small enough to trace every individual outcome, large enough to produce statistically meaningful differences across 200 runs.</p>
+      <p>It is deliberately small—forty-five citizens instead of five thousand, three GPs instead of twelve thousand, one hospital instead of ninety—because the design goal is a population small enough to trace every individual outcome yet large enough to produce statistically meaningful differences across 200 runs.</p>
     </section>
 
     <section class="chapter visible" id="the-town">
@@ -774,7 +774,7 @@ pre code {
     <section class="chapter visible" id="methodology">
       <h3>200 Runs</h3>
 
-      <p>A single simulation run tells you a story. Two hundred runs tell you a pattern.</p>
+      <p>A single simulation run tells you a story; two hundred runs reveal a pattern.</p>
 
       <p>Because the simulation involves stochastic elements—disease progression probabilities, queue ordering, comorbidity interactions—individual runs vary. A citizen who dies in run 47 might survive in run 48 because the queue cleared one tick earlier. To distinguish signal from noise, every scenario is run 200 times.</p>
 
