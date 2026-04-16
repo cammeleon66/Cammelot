@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>The AI-Native Overhaul — Cammelot</title>
+<title>Chapter 3: The AI-Native Overhaul — Cammelot</title>
 
 <!-- Open Graph Meta Tags -->
-<meta property="og:title" content="The AI-Native Overhaul — Cammelot">
+<meta property="og:title" content="Chapter 3: The AI-Native Overhaul — Cammelot">
 <meta property="og:description" content="Five modeled interventions. One simulation. What changes when you add AI to Dutch healthcare — and what doesn’t.">
 <meta property="og:image" content="https://cammelot.org/og-image.png">
 <meta property="og:type" content="website">
@@ -14,7 +14,7 @@
 
 <!-- Twitter Card Meta Tags -->
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="The AI-Native Overhaul — Cammelot">
+<meta name="twitter:title" content="Chapter 3: The AI-Native Overhaul — Cammelot">
 <meta name="twitter:description" content="Five modeled interventions. One simulation. What changes when you add AI to Dutch healthcare — and what doesn’t.">
 <meta name="twitter:image" content="https://cammelot.org/og-image.png">
 
@@ -591,16 +591,17 @@ pre code {
 <!-- Mobile TOC overlay -->
 <div class="mobile-toc-backdrop" id="mobile-toc-backdrop"></div>
 <nav class="mobile-toc-overlay" id="mobile-toc-overlay">
-  <div class="toc-part">The Argument</div>
-  <a href="#the-shift" class="mobile-toc-link">The Shift</a>
+  <div class="toc-part">The Model</div>
+  <a href="#soll-intro" class="mobile-toc-link">The SOLL State</a>
+  <a href="#capacity" class="mobile-toc-link">Mathematics of Capacity</a>
   <a href="#five-interventions" class="mobile-toc-link">Five Interventions</a>
-  <a href="#ist-vs-soll" class="mobile-toc-link">IST vs SOLL</a>
+  <a href="#digital-twin" class="mobile-toc-link">The Digital Twin</a>
   <div class="toc-part">Architecture</div>
   <a href="#agentic-mesh" class="mobile-toc-link">The Agentic Mesh</a>
-  <a href="#cognitive-loop" class="mobile-toc-link">Cognitive Loop</a>
-  <div class="toc-part">Honesty</div>
-  <a href="#limitations" class="mobile-toc-link">Limitations</a>
-  <a href="#the-point" class="mobile-toc-link">The Point</a>
+  <div class="toc-part">Evidence</div>
+  <a href="#ist-vs-soll" class="mobile-toc-link">IST vs. SOLL Results</a>
+  <a href="#limitations" class="mobile-toc-link">Limitations &amp; Bias</a>
+  <a href="#the-point" class="mobile-toc-link">Purpose of the Model</a>
   <div class="toc-part" style="margin-top:12px;">Explore</div>
   <a href="world.html" class="mobile-toc-link" style="color:#27ae60;">&#127918; Live Simulation</a>
 </nav>
@@ -609,18 +610,19 @@ pre code {
   <!-- Sidebar TOC -->
   <aside class="toc" id="toc">
   <div class="toc-label">Contents</div>
-  <div class="toc-part">The Argument</div>
-  <a href="#the-shift" data-section="the-shift">The Shift</a>
+  <div class="toc-part">The Model</div>
+  <a href="#soll-intro" data-section="soll-intro">The SOLL State</a>
+  <a href="#capacity" data-section="capacity">Mathematics of Capacity</a>
   <a href="#five-interventions" data-section="five-interventions">Five Interventions</a>
-  <a href="#ist-vs-soll" data-section="ist-vs-soll">IST vs SOLL</a>
+  <a href="#digital-twin" data-section="digital-twin">The Digital Twin</a>
   <div class="toc-part">Architecture</div>
   <a href="#agentic-mesh" data-section="agentic-mesh">The Agentic Mesh</a>
-  <a href="#cognitive-loop" data-section="cognitive-loop">Cognitive Loop</a>
-  <div class="toc-part">Honesty</div>
-  <a href="#limitations" data-section="limitations">Limitations</a>
-  <a href="#the-point" data-section="the-point">The Point</a>
+  <div class="toc-part">Evidence</div>
+  <a href="#ist-vs-soll" data-section="ist-vs-soll">IST vs. SOLL Results</a>
+  <a href="#limitations" data-section="limitations">Limitations &amp; Bias</a>
+  <a href="#the-point" data-section="the-point">Purpose of the Model</a>
   <div class="toc-part" style="margin-top:12px;">Chapters</div>
-  <a href="ch1.html">1. How It Works</a>
+  <a href="ch1.html">1. The Mechanics</a>
   <a href="ch2.html">2. The Current System</a>
   <div class="toc-part" style="margin-top:12px;">Explore</div>
   <a href="world.html" style="color:#27ae60;">&#127918; Live Simulation</a>
@@ -629,253 +631,160 @@ pre code {
   <!-- Main Content -->
   <main class="content">
 
-    <section class="chapter visible" id="the-shift">
+    <section class="chapter visible" id="soll-intro">
       <div class="chapter-label" style="color:var(--green);">Chapter 3</div>
       <h2>The AI-Native Overhaul</h2>
-      <p class="hook" style="border-left-color:var(--green);">&ldquo;We changed five variables in a simulation of 45 people. Here is what the model produced. Here are the reasons it might be wrong.&rdquo;</p>
 
-      <p>Chapter 2 established the IST: effective GP capacity at 62%. Treeknorm violations at 38%. System-failure deaths at 4.2 per run. Three interlocking failure mechanisms&thinsp;&mdash;&thinsp;administrative burden, waiting lists, data fragmentation&thinsp;&mdash;&thinsp;each making the others worse.</p>
+      <p>While Chapter 2 established the current baseline of the Dutch healthcare system—characterized by a 62% effective capacity and a 38% violation rate of legal wait times—this chapter examines a proposed “target state” known as the SOLL model. In this version of the simulation, we keep the same 45 citizens, three general practitioners, and single hospital, but we adjust five specific parameters to measure the systemic impact of an AI-native architecture.</p>
+    </section>
 
-      <p>This chapter describes the SOLL. Same 45 citizens. Same 3 GPs. Same hospital. Same diseases, same comorbidities, same Markov chains. Five parameter changes. We measure what happens.</p>
+    <section class="chapter visible" id="capacity">
+      <h3>The Mathematics of Capacity</h3>
 
-      <div class="insight-callout" style="text-align:center;font-family:'Space Grotesk',sans-serif;font-size:1rem;font-weight:600;letter-spacing:0.02em;background:var(--code-bg);border-left-color:var(--green);">
-        IST: &ensp;C<sub>eff</sub> = C<sub>total</sub> &times; (1 &minus; 0.30 &minus; 0.08) &times; 1.00 = <span style="color:var(--red);">0.62</span><br>
-        SOLL: C<sub>eff</sub> = C<sub>total</sub> &times; (1 &minus; 0.05 &minus; 0.08) &times; 1.34 = <span style="color:var(--green);">0.83</span>
-      </div>
-
-      <p>From 0.62 to 0.83—a 34% increase in effective GP capacity without hiring a single additional doctor. A practice with a 2,400-patient norm goes from 1,488 effective slots to 1,992. Multiply across 12,000 Dutch practices: roughly 6 million additional patient-equivalent slots nationally.</p>
+      <p>The primary shift in the SOLL model is the dramatic reduction of administrative tasks. By changing only five variables, the simulation shows a significant increase in the time doctors can spend with patients:</p>
 
       <div class="metric-callout">
         <div class="metric-card">
-          <div class="metric-value soll">&lt;5%</div>
-          <div class="metric-label">Admin burden (SOLL)</div>
+          <div class="metric-value ist">0.62</div>
+          <div class="metric-label">IST Effective Capacity</div>
         </div>
         <div class="metric-card">
           <div class="metric-value soll">0.83</div>
-          <div class="metric-label">Effective capacity</div>
+          <div class="metric-label">SOLL Effective Capacity</div>
         </div>
         <div class="metric-card">
-          <div class="metric-value soll">&lt;4 wk</div>
-          <div class="metric-label">Target wait time</div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-value soll">1.34</div>
-          <div class="metric-label">E<sub>ai</sub> multiplier</div>
+          <div class="metric-value soll">+34%</div>
+          <div class="metric-label">Clinical Availability Gain</div>
         </div>
       </div>
+
+      <p>This represents a 34% increase in clinical availability without the need to hire additional staff. In practical terms, a practice designed for 2,400 patients would gain roughly 500 extra “slots” for patient care. If applied across all 12,000 practices in the Netherlands, this would create approximately 6 million additional patient-equivalent openings nationally.</p>
     </section>
 
     <section class="chapter visible" id="five-interventions">
-      <h3>Five Interventions</h3>
+      <h3>Five Key Interventions</h3>
 
-      <p>Each maps to a specific IST failure from Chapter 2. None require new medical knowledge, new drugs, or new buildings. All require restructuring how information flows.</p>
+      <p>These changes do not require new medical discoveries or new buildings; instead, they focus on restructuring how information moves through the system.</p>
 
       <div class="stats-table-wrap">
         <table class="stats-table">
-          <thead><tr><th>#</th><th>Intervention</th><th>IST &rarr; SOLL</th><th>Mechanism</th></tr></thead>
+          <thead><tr><th>Intervention</th><th>Change</th><th>Technical Mechanism</th></tr></thead>
           <tbody>
-            <tr>
-              <td>1</td>
-              <td class="metric-name">Ambient AI Scribes</td>
-              <td>L<sub>admin</sub>: 30% &rarr; <span class="sig">&lt;5%</span></td>
-              <td>Real-time documentation during consultations. GP speaks, system writes, FHIR resources auto-generated.</td>
-            </tr>
-            <tr>
-              <td>2</td>
-              <td class="metric-name">AI-Driven Triage</td>
-              <td>Wait: 12wk &rarr; <span class="sig">&lt;4wk</span></td>
-              <td>Triage agent queries specialist Agent Cards for capacity. Routes by ICD-10 match, queue length, urgency.</td>
-            </tr>
-            <tr>
-              <td>3</td>
-              <td class="metric-name">Digital Twin Predictions</td>
-              <td>Reactive &rarr; <span class="sig">Proactive</span></td>
-              <td>Risk scores from FHIR history + comorbidity multipliers trigger GP consultation <em>before</em> symptoms manifest.</td>
-            </tr>
-            <tr>
-              <td>4</td>
-              <td class="metric-name">A2A Scheduling</td>
-              <td>Isolated &rarr; <span class="sig">Coordinated</span></td>
-              <td>Provider agents share real-time availability. Referral round-trip: weeks &rarr; hours.</td>
-            </tr>
-            <tr>
-              <td>5</td>
-              <td class="metric-name">Hybrid openEHR + FHIR</td>
-              <td>Interop: 11% &rarr; <span class="sig">66%</span></td>
-              <td>openEHR for storage, FHIR R4 for exchange. Specialist sees full patient history on referral.</td>
-            </tr>
+            <tr><td class="metric-name">Ambient AI Scribes</td><td>Admin 30% → &lt;5%</td><td>Systems record consultations and automatically generate medical records.</td></tr>
+            <tr><td class="metric-name">AI-Driven Triage</td><td>Wait 12wk → &lt;4wk</td><td>AI matching routes patients to specialists based on urgency and availability.</td></tr>
+            <tr><td class="metric-name">Digital Twins</td><td>Reactive → Proactive</td><td>Risk scores trigger a doctor’s visit before physical symptoms appear.</td></tr>
+            <tr><td class="metric-name">A2A Scheduling</td><td>Isolated → Coordinated</td><td>Software agents share real-time schedules to book referrals in hours.</td></tr>
+            <tr><td class="metric-name">Data Sharing</td><td>Interop 11% → 66%</td><td>Shared standards allow specialists to see a patient’s full history instantly.</td></tr>
           </tbody>
         </table>
       </div>
 
-      <p>The residual 5% admin accounts for tasks requiring human judgment: signing off complex referrals, reviewing AI summaries, handling exceptions. Zero percent is not credible. Five percent is ambitious but defensible based on early deployments (Nuance DAX, Amazon HealthScribe).</p>
-
-      <p>The Digital Twin is not a large language model making clinical decisions. It is a risk calculator reading structured FHIR data. When Hendrik Veenstra&rsquo;s twin calculates 32% heart failure probability (I25 + E11, COPD&rarr;CVD RR=2.5), it triggers a proactive GP visit. Intervention at &ldquo;mild&rdquo; rather than &ldquo;severe&rdquo;&thinsp;&mdash;&thinsp;cheaper, simpler, more effective.</p>
+      <p>The 5% administrative burden remaining in the model accounts for essential human tasks, such as a doctor signing off on a complex referral or reviewing an AI-generated summary.</p>
     </section>
 
-    <section class="chapter visible" id="ist-vs-soll">
-      <h3>IST vs SOLL</h3>
+    <section class="chapter visible" id="digital-twin">
+      <h3>Illustrative Example: The Digital Twin</h3>
 
-      <div class="stats-table-wrap">
-        <table class="stats-table">
-          <thead><tr><th>Metric</th><th>IST</th><th></th><th>SOLL</th><th>Mechanism</th></tr></thead>
-          <tbody>
-            <tr><td class="metric-name">Administrative load</td><td>30%</td><td>&rarr;</td><td class="sig">&lt;5%</td><td>Ambient AI scribes</td></tr>
-            <tr><td class="metric-name">Specialist wait</td><td>9.4 weeks</td><td>&rarr;</td><td class="sig">&lt;4 weeks</td><td>AI triage + A2A scheduling</td></tr>
-            <tr><td class="metric-name">Data interoperability</td><td>11%</td><td>&rarr;</td><td class="sig">66%</td><td>Hybrid openEHR + FHIR</td></tr>
-            <tr><td class="metric-name">Effective capacity</td><td>C<sub>eff</sub> = 0.62</td><td>&rarr;</td><td class="sig">C<sub>eff</sub> = 0.83</td><td>E<sub>ai</sub> = 1.34</td></tr>
-            <tr><td class="metric-name">Treeknorm violations</td><td>38%</td><td>&rarr;</td><td class="sig">&lt;10%</td><td>Faster routing, proactive care</td></tr>
-            <tr><td class="metric-name">System-failure deaths</td><td>4.2 / run</td><td>&rarr;</td><td class="sig">&lt;1 / run</td><td>Earlier intervention, shorter waits</td></tr>
-            <tr><td class="metric-name">Staff shortfall offset</td><td>301K (2035)</td><td>&rarr;</td><td class="sig">~110K freed</td><td>AI handles 36&ndash;66% routine tasks</td></tr>
-          </tbody>
-        </table>
+      <p>A “Digital Twin” in this simulation is not a creative AI; it is a risk calculator that reads a patient’s medical history. For example, if a citizen named Hendrik has a history of heart disease and COPD, his Digital Twin might calculate a 32% probability of heart failure. Because the system flags this early, Hendrik visits his GP while his condition is still “mild.” Treating a mild condition is generally cheaper and more effective than waiting for a patient to arrive at the hospital in a “critical” state.</p>
+
+      <div class="insight-callout">
+        <strong>Proactive vs. Reactive</strong>
+        The key difference is timing. In IST, patients seek care when symptoms become unbearable. In SOLL, the system detects risk trajectories and intervenes before the patient reaches a critical state. This shifts the cost curve from expensive emergency interventions to routine primary care.
       </div>
-
-      <p>The IZA projects needing 301,000 additional healthcare workers by 2035. This model suggests technology could offset approximately 110,000 through efficiency gains&thinsp;&mdash;&thinsp;not replacement, but augmentation. The remaining 191,000 still need to be trained, recruited, and retained.</p>
     </section>
 
     <section class="chapter visible" id="agentic-mesh">
-      <h3>The Agentic Mesh</h3>
+      <h3>The Agentic Mesh: How the System Communicates</h3>
 
-      <p>The SOLL simulation runs on a three-layer architecture: data (FHIR R4), communication (A2A Protocol), and cognition (the cognitive loop). This section is for technical readers.</p>
+      <p>The SOLL simulation uses a three-layer structure to allow different parts of the healthcare system to “talk” to one another. We call this the Agentic Mesh.</p>
 
-      <details>
-        <summary>A2A Protocol &mdash; Agent Cards and referral lifecycle</summary>
-        <div class="details-content">
-          <p>Every provider publishes an <strong>Agent Card</strong>&thinsp;&mdash;&thinsp;a machine-readable description of capabilities, availability, and queue state:</p>
-          <pre style="background:#14141f;color:#a9ffaf;padding:1rem;border-radius:4px;font-family:'SF Mono','JetBrains Mono',monospace;font-size:0.78rem;overflow-x:auto;line-height:1.5;">{
-  "agentId": "gp-de-jong",
-  "name": "Dr. de Jong",
-  "role": "gp",
-  "skills": ["triage", "referral", "chronic_care"],
-  "waitTime": { "weeks": 2, "queueSize": 12 },
-  "metadata": {
-    "admin_load": "5%",
-    "treeknorm_status": "compliant",
-    "nza_consult_rate_eur": 12.43,
-    "max_patients": 2400
-  }
-}</pre>
-          <p><strong>Message types:</strong> <code>referral</code>, <code>status_query</code>, <code>response</code>, <code>alert</code>, <code>dialogue</code>.</p>
-          <p><strong>Referral lifecycle:</strong> <code>submitted &rarr; working &rarr; input-required &rarr; completed</code>. Each transition generates a FHIR Encounter resource. In IST, a referral sits in &ldquo;submitted&rdquo; for 12 weeks. In SOLL, the A2A layer escalates automatically when wait times approach Treeknorm.</p>
+      <div class="component-grid" style="margin:1.5rem 0;">
+        <div class="component-card">
+          <h3>Agent Cards</h3>
+          <p>Every doctor and hospital department publishes a machine-readable “Agent Card.” This card describes what they do, how long their waiting list is, and their current capacity. Instead of a GP sending a fax and waiting weeks for a reply, the GP’s digital agent checks the specialist’s Agent Card and negotiates a referral almost instantly.</p>
         </div>
-      </details>
-
-      <details>
-        <summary>FHIR R4 Memory Store &mdash; Every action as a resource</summary>
-        <div class="details-content">
-          <p>Every agent action is stored as a FHIR R4 resource: <code>Patient</code>, <code>Condition</code> (ICD-10), <code>Observation</code> (HP, wait times), <code>Encounter</code> (visits), <code>MedicationRequest</code> (treatments).</p>
-          <p><strong>Custom observation codes:</strong></p>
-          <div class="stats-table-wrap">
-            <table class="stats-table">
-              <thead><tr><th>Code</th><th>Purpose</th></tr></thead>
-              <tbody>
-                <tr><td><code>CAMMELOT-WAIT</code></td><td>Current wait time in weeks</td></tr>
-                <tr><td><code>CAMMELOT-HP</code></td><td>Health points (0&ndash;100)</td></tr>
-                <tr><td><code>CAMMELOT-GHOST</code></td><td>Mortality event marker</td></tr>
-                <tr><td><code>CAMMELOT-ACTION</code></td><td>Agent decision audit log</td></tr>
-              </tbody>
-            </table>
-          </div>
-          <p>The &ldquo;Memory Stream&rdquo; (Park et al.) is a chronological FHIR query filtered by agent ID. An agent&rsquo;s memories are its FHIR resources. Reflection operates on these. Planning generates new ones.</p>
-          <p style="font-size:0.85rem;color:var(--text-muted);margin-top:0.8rem;"><em>Implementation note: FHIR_STORE is a capped array (2,000 resources, FIFO eviction). A2A_MESSAGES caps at 200. Resources follow R4 structure but skip full schema validation&thinsp;&mdash;&thinsp;a known simplification.</em></p>
+        <div class="component-card">
+          <h3>FHIR Memory Store</h3>
+          <p>Every action in the simulation—a diagnosis, a prescription, or a wait time—is stored as a standardized “resource.” This ensures that every agent has access to the same history, preventing the data fragmentation seen in the current system.</p>
         </div>
-      </details>
+        <div class="component-card">
+          <h3>The Cognitive Loop</h3>
+          <p>Every agent follows a three-step cycle: they look at their Memory (past visits), they Reflect on their current state (e.g., “I have more time because my admin work is done”), and they Plan their next action (e.g., “I will refer this patient to the specialist with the shortest queue”).</p>
+        </div>
+      </div>
     </section>
 
-    <section class="chapter visible" id="cognitive-loop">
-      <h3>The Cognitive Loop</h3>
+    <section class="chapter visible" id="ist-vs-soll">
+      <h3>Results: IST vs. SOLL</h3>
 
-      <p>Every agent executes a three-phase loop per tick, adapted from Park et al.&rsquo;s &ldquo;Generative Agents&rdquo; (Stanford, 2023):</p>
+      <p>When we compare the two systems across 200 simulation runs, the outcomes shift noticeably:</p>
 
       <div class="stats-table-wrap">
         <table class="stats-table">
-          <thead><tr><th>Phase</th><th>IST</th><th>SOLL</th></tr></thead>
+          <thead><tr><th>Metric</th><th>IST (Baseline)</th><th>SOLL (Target)</th><th>Change</th></tr></thead>
           <tbody>
-            <tr>
-              <td class="metric-name">1. Memory Stream</td>
-              <td>Fragmented records, missing history</td>
-              <td>Full FHIR history, all providers</td>
-            </tr>
-            <tr>
-              <td class="metric-name">2. Reflection</td>
-              <td>&ldquo;I&rsquo;ve spent 30% on admin. I must rush triage.&rdquo;</td>
-              <td>&ldquo;5% on admin. I can assess comorbidities properly.&rdquo;</td>
-            </tr>
-            <tr>
-              <td class="metric-name">3. Planning</td>
-              <td>Imprecise referral, no specialist visibility</td>
-              <td>Optimal routing via A2A, risk-scored priority</td>
-            </tr>
+            <tr><td class="metric-name">Specialist Wait</td><td class="sig">9.4 weeks</td><td style="color:var(--green);font-weight:600">&lt;4 weeks</td><td style="color:var(--green);font-weight:600">−58%</td></tr>
+            <tr><td class="metric-name">Treeknorm Violations</td><td class="sig">38%</td><td style="color:var(--green);font-weight:600">&lt;10%</td><td style="color:var(--green);font-weight:600">−74%</td></tr>
+            <tr><td class="metric-name">System-Failure Deaths</td><td class="sig">4.2 / run</td><td style="color:var(--green);font-weight:600">&lt;1 / run</td><td style="color:var(--green);font-weight:600">−76%</td></tr>
+            <tr><td class="metric-name">Effective Capacity</td><td class="sig">62%</td><td style="color:var(--green);font-weight:600">83%</td><td style="color:var(--green);font-weight:600">+34%</td></tr>
+            <tr><td class="metric-name">Worker Shortage Offset</td><td>301K projected</td><td style="color:var(--green);font-weight:600">~110K offset</td><td>Technology-driven efficiency</td></tr>
           </tbody>
         </table>
       </div>
-
-      <p>The loop is identical in both modes. What changes is the <em>information</em> available during reflection. Better data produces better plans. Better plans produce better outcomes. The architecture is the intervention.</p>
     </section>
 
     <section class="chapter visible" id="limitations">
-      <h3>Limitations</h3>
+      <h3>Research Limitations and Bias</h3>
 
-      <p>A simulation is not evidence. It is a structured argument with explicit assumptions.</p>
+      <p>As mentioned previously, I work at Microsoft, a company that provides AI and cloud infrastructure. This simulation is a personal project used to explore these ideas, and the results are based on theoretical parameters.</p>
 
-      <details open>
-        <summary>Seven caveats</summary>
+      <p>There are several reasons these results might be different in the real world:</p>
+
+      <details>
+        <summary>Specific limitations of the SOLL model</summary>
         <div class="details-content">
           <ul>
-            <li><strong>N=45 is not N=5,000.</strong> Stochastic variance is substantial. A single severe comorbidity case shifts mortality by 20%. We run 200 simulations and report means. Confidence intervals are wide.</li>
-            <li><strong>E<sub>ai</sub> = 1.34 is theoretical.</strong> Derived from IZA projections and pilot data, not from an RCT. Could be 1.15 (disappointing) or 1.60 (transformative). The simulation shows what happens <em>if</em> it holds.</li>
-            <li><strong>Adoption barriers are not modeled.</strong> Physician trust, regulatory approval, patient acceptance, workflow integration&thinsp;&mdash;&thinsp;where most health-IT projects fail. Not in the model.</li>
-            <li><strong>Financial incentives are absent.</strong> If AI frees 25% of GP time, does that become more patients (volume) or better care (quality)? We assume quality. Reality will be messier.</li>
-            <li><strong>66% interoperability is a policy goal.</strong> The IZA allocated &euro;2.8B. Whether that produces actual interoperability depends on political will, vendor cooperation, and the definition of &ldquo;interoperable.&rdquo;</li>
-            <li><strong>The cognitive loop is simplified.</strong> Three deterministic steps, not an LLM reasoning about patient care. Real AI systems capable of clinical reflection are research prototypes, not deployed products.</li>
-            <li><strong>The author works at Microsoft</strong>, which sells AI and cloud products to healthcare organisations. This is a personal project. The code is open source. But framing choices are inevitably shaped by professional context.</li>
+            <li><strong>Small Sample Size:</strong> With only 45 citizens, a single complex case can change the results significantly.</li>
+            <li><strong>Adoption Barriers:</strong> The model does not account for the time it takes for doctors to trust new tools or for laws to change.</li>
+            <li><strong>Human Behavior:</strong> If a doctor saves 25% of their time, they might choose to spend more time with each patient rather than seeing more patients. The model assumes they see more patients to fix the backlog, but reality is often more complex.</li>
+            <li><strong>Infrastructure Cost:</strong> The model does not price the implementation cost of building an Agentic Mesh across 12,000 practices.</li>
+            <li><strong>Parameters derive from published sources</strong> (CBS, RIVM, NZa, IZA, LHV) but the SOLL targets are projections, not observations.</li>
           </ul>
         </div>
       </details>
-    </section>
-
-    <section class="chapter visible" id="the-point">
-      <h3>The Point</h3>
-
-      <p>The Dutch healthcare system faces a structural crisis that demographics will intensify and incremental reform cannot solve. The IST model quantifies the crisis. The SOLL model quantifies one possible response.</p>
-
-      <p>Whether these numbers are achievable depends on factors the simulation does not model: regulatory frameworks, physician culture, patient trust, vendor interoperability, insurance incentives, political will.</p>
-
-      <p>But the exercise has value precisely because it replaces opinion with parameters. You can disagree with L<sub>admin</sub> = 5% (too aggressive). You can challenge E<sub>ai</sub> = 1.34 (too optimistic). You can argue the Digital Twin thresholds are wrong. Good. That is the point.</p>
-
-      <blockquote style="border-left-color:var(--green);">
-        The purpose of this simulation is to have numbers to argue about, not opinions.
-      </blockquote>
-
-      <p>The <a href="world.html">live simulation</a> lets you toggle between IST and SOLL in real time. Watch the same 45 citizens under both regimes. Count the ghosts. Check the queues. Then argue about the parameters.</p>
-
-      <div class="footnote-body" style="display:block;margin-top:1.5rem;"><em>Disclosure: I work at Microsoft. My employer builds and sells AI products and cloud infrastructure. I built Cammelot as a personal applied research project, not a Microsoft product. The code is open source. All opinions are my own.</em></div>
 
       <details style="margin-top:1rem;">
         <summary>Sources &amp; References</summary>
         <div class="details-content">
           <ol style="font-size:0.82rem;line-height:1.7;color:var(--text-muted);">
-            <li>CBS StatLine &mdash; Bevolking; kerncijfers 2024</li>
-            <li>RIVM Volksgezondheid Toekomst Verkenning 2024</li>
-            <li>NZa Beleidsregel huisartsenzorg en multidisciplinaire zorg 2025</li>
-            <li>NZa Monitor Toegankelijkheid Zorg &mdash; Wachttijden 2024</li>
-            <li>IZA &mdash; Integraal Zorgakkoord 2023&ndash;2026</li>
-            <li>ABF Research &mdash; Arbeidsmarktprognose zorg en welzijn 2023&ndash;2033</li>
-            <li>LHV Enqu&ecirc;te Werkdruk Huisartsen 2024</li>
-            <li>Park et al. &ldquo;Generative Agents: Interactive Simulacra of Human Behavior&rdquo; (Stanford, 2023)</li>
-            <li>Wegiz &mdash; Wet elektronische gegevensuitwisseling in de zorg (2023)</li>
-            <li>ESC Guidelines &mdash; Cardiovascular Disease Prevention 2021</li>
-            <li>Google A2A Protocol Specification (2024)</li>
-            <li>HL7 FHIR R4 Specification &mdash; hl7.org/fhir/R4</li>
-            <li>openEHR Foundation &mdash; Architecture Overview (2024)</li>
+            <li>IZA — Integraal Zorgakkoord 2023–2026 (transformation targets)</li>
+            <li>ABF Research — Arbeidsmarktprognose zorg en welzijn 2023–2033</li>
+            <li>NZa — Tariff schedules and capacity norms 2025</li>
+            <li>Park et al. — Generative Agents: Interactive Simulacra (Stanford, 2023)</li>
+            <li>HL7 FHIR R4 — International healthcare data standard</li>
+            <li>Wegiz — Wet elektronische gegevensuitwisseling in de zorg (2023)</li>
           </ol>
         </div>
       </details>
     </section>
 
+    <section class="chapter visible" id="the-point">
+      <h3>The Purpose of the Model</h3>
+
+      <p>The goal of this simulation is not to provide a perfect prediction of the future. Instead, it provides a set of numbers that we can argue about. You might think that a 5% administrative load is too low, or that the “AI multiplier” is too optimistic. That is a useful disagreement because it focuses on specific parameters rather than vague opinions. By using this simulation, we can test different ideas and see which ones actually have the potential to fix the “care gridlock” in Dutch healthcare.</p>
+
+      <div class="insight-callout">
+        <strong>Variables, Not Vibes</strong>
+        The value of the SOLL model is not in its predictions but in its testability. Every parameter can be changed and every result can be re-run. If you disagree with the assumptions, adjust them and see what happens. The code is open source.
+      </div>
+
+      <div style="text-align:center;margin:2rem 0;">
+        <a href="world.html" class="cta-button cta-sim" style="display:inline-block;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:0.9rem;padding:0.7rem 1.8rem;border-radius:6px;text-decoration:none;background:#27ae60;color:#fff;box-shadow:0 3px 12px rgba(39,174,96,0.25);">&#127918; Try the Simulation</a>
+      </div>
+    </section>
+
     <nav class="chapter-nav">
-      <a href="ch2.html" class="prev">&larr; The Current System</a>
+      <a href="ch2.html" class="prev">← The Current System</a>
     </nav>
   </main>
 
