@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>How the Simulation Works — Cammelot</title>
+<title>Chapter 1: The Mechanics of the Simulation — Cammelot</title>
 
 <!-- Open Graph Meta Tags -->
-<meta property="og:title" content="How the Simulation Works — Cammelot">
+<meta property="og:title" content="Chapter 1: The Mechanics of the Simulation — Cammelot">
 <meta property="og:description" content="Forty-five citizens, three GPs, one hospital. How a 16-bit pixel simulation models real Dutch healthcare data.">
 <meta property="og:image" content="https://cammelot.org/og-image.png">
 <meta property="og:type" content="website">
@@ -14,7 +14,7 @@
 
 <!-- Twitter Card Meta Tags -->
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="How the Simulation Works — Cammelot">
+<meta name="twitter:title" content="Chapter 1: The Mechanics of the Simulation — Cammelot">
 <meta name="twitter:description" content="Forty-five citizens, three GPs, one hospital. How a 16-bit pixel simulation models real Dutch healthcare data.">
 <meta name="twitter:image" content="https://cammelot.org/og-image.png">
 
@@ -587,13 +587,13 @@ pre code {
 <div class="mobile-toc-backdrop" id="mobile-toc-backdrop"></div>
 <nav class="mobile-toc-overlay" id="mobile-toc-overlay">
   <div class="toc-part">This Chapter</div>
-  <a href="#what-is-cammelot" class="mobile-toc-link">What Cammelot Is</a>
-  <a href="#the-town" class="mobile-toc-link">The Town</a>
-  <a href="#the-citizens" class="mobile-toc-link">The Citizens</a>
-  <a href="#the-providers" class="mobile-toc-link">The Providers</a>
-  <a href="#how-time-works" class="mobile-toc-link">How Time Works</a>
+  <a href="#mechanics" class="mobile-toc-link">The Mechanics</a>
+  <a href="#the-town" class="mobile-toc-link">The Town Environment</a>
+  <a href="#the-citizens" class="mobile-toc-link">Citizens as Agents</a>
+  <a href="#the-providers" class="mobile-toc-link">Healthcare Providers</a>
+  <a href="#simulation-loop" class="mobile-toc-link">The Simulation Loop</a>
   <a href="#what-we-measure" class="mobile-toc-link">What We Measure</a>
-  <a href="#methodology" class="mobile-toc-link">200 Runs</a>
+  <a href="#methodology" class="mobile-toc-link">200 Simulation Runs</a>
   <div class="toc-part" style="margin-top:12px;">Chapters</div>
   <a href="ch2.html" class="mobile-toc-link">2. The Current System</a>
   <a href="ch3.html" class="mobile-toc-link">3. The AI-Native Overhaul</a>
@@ -606,14 +606,14 @@ pre code {
   <aside class="toc" id="toc">
   <div class="toc-label">Contents</div>
   <div class="toc-part">The Simulation</div>
-  <a href="#what-is-cammelot" data-section="what-is-cammelot">What Cammelot Is</a>
-  <a href="#the-town" data-section="the-town">The Town</a>
-  <a href="#the-citizens" data-section="the-citizens">The Citizens</a>
-  <a href="#the-providers" data-section="the-providers">The Providers</a>
+  <a href="#mechanics" data-section="mechanics">The Mechanics</a>
+  <a href="#the-town" data-section="the-town">The Town Environment</a>
+  <a href="#the-citizens" data-section="the-citizens">Citizens as Agents</a>
+  <a href="#the-providers" data-section="the-providers">Healthcare Providers</a>
   <div class="toc-part">How It Runs</div>
-  <a href="#how-time-works" data-section="how-time-works">How Time Works</a>
+  <a href="#simulation-loop" data-section="simulation-loop">The Simulation Loop</a>
   <a href="#what-we-measure" data-section="what-we-measure">What We Measure</a>
-  <a href="#methodology" data-section="methodology">200 Runs</a>
+  <a href="#methodology" data-section="methodology">200 Simulation Runs</a>
   <div class="toc-part" style="margin-top:12px;">Chapters</div>
   <a href="ch2.html">2. The Current System</a>
   <a href="ch3.html">3. The AI-Native Overhaul</a>
@@ -624,24 +624,19 @@ pre code {
   <!-- Main Content -->
   <main class="content">
 
-    <section class="chapter visible" id="what-is-cammelot">
+    <section class="chapter visible" id="mechanics">
       <div class="chapter-label">Chapter 1</div>
-      <h2>How the Simulation Works</h2>
-      <p class="hook">“The goal is not to predict the future. It is to produce numbers you can argue about instead of opinions you can’t.”</p>
+      <h2>The Mechanics of the Simulation</h2>
 
-      <p>Cammelot is a simulated Dutch town that runs in your browser: forty-five citizens with names, ages, and medical histories drawn from CBS and RIVM data, walking around a 16-bit pixel map, getting sick, visiting GPs, getting referred to specialists, waiting in queues, and—if the system fails them—dying.</p>
+      <p>The primary objective of this project is to generate quantifiable data for discussion rather than relying on subjective opinions. Cammelot is a digital representation of a Dutch town that operates directly within a web browser; it follows the lives of forty-five citizens with names, ages, and medical histories drawn from CBS and RIVM datasets. As these digital citizens move through the town, they develop illnesses, visit general practitioners, and wait for specialist referrals. When the healthcare system fails to process them in time, these agents experience health declines that are recorded and measured.</p>
 
-      <p>Everything that happens in Cammelot is measurable. Every consultation has a cost from the NZa tariff tables. Every waiting time is checked against the Treeknorm, the Dutch legal norm for specialist care access. Every death is traceable to a specific bottleneck: how many weeks waited, which condition, which referral came too late.</p>
-
-      <p>It is deliberately small—forty-five citizens instead of five thousand, three GPs instead of twelve thousand, one hospital instead of ninety—because the design goal is a population small enough to trace every individual outcome yet large enough to produce statistically meaningful differences across 200 runs.</p>
+      <p>Every event within Cammelot is traceable and backed by real-world figures. Consultation costs are taken from the NZa tariff tables, and waiting times are checked against the Treeknorm, which is the legal standard for care access in the Netherlands. By keeping the population small at forty-five citizens and three GPs, the simulation allows us to track every individual outcome while still producing enough data to see clear patterns across 200 separate runs.</p>
     </section>
 
     <section class="chapter visible" id="the-town">
-      <h3>The Town</h3>
+      <h3>The Town Environment</h3>
 
-      <p>The map is a 64×48 tile grid rendered on an HTML5 canvas. Buildings are placed at fixed positions: three GP practices distributed across the town, one regional hospital, and residential areas where citizens live. The aesthetic is deliberately retro—a 16-bit SNES-style RPG—because it forces attention away from visual fidelity and toward system behavior. You watch the town the way you watch an ant farm: not admiring the scenery, but tracking the patterns.</p>
-
-      <p>Citizens move between locations using simple pathfinding. When a citizen needs care, they walk to their assigned GP. If referred, they walk to the hospital. If the queue is full, they wait. You can see the queues build up visually—sprites clustering around buildings, speech bubbles expressing frustration or pain.</p>
+      <p>The simulation map is a grid of 64 by 48 tiles where buildings are placed in fixed positions. There are three GP practices spread across the town and one regional hospital where specialists work. I chose a 16-bit “retro” visual style similar to a Super Nintendo game because it prevents the user from being distracted by high-end graphics; instead, the focus remains entirely on how the system behaves. You can watch the town much like an ant farm, where the goal is to observe patterns such as clusters of citizens forming queues around a building when the system becomes overloaded.</p>
 
       <div class="metric-callout">
         <div class="metric-card">
@@ -660,11 +655,13 @@ pre code {
     </section>
 
     <section class="chapter visible" id="the-citizens">
-      <h3>The Citizens</h3>
+      <h3>The Citizens as Autonomous Agents</h3>
 
-      <p>Each citizen is an agent with a persistent identity. They have a name, age, gender, occupation, personality traits, a family structure, and a GP assignment. Their health profile is generated from RIVM 2024 prevalence data: the probability of having type 2 diabetes, COPD, cardiovascular disease, osteoporosis, or dementia is age-stratified to match Dutch population statistics.</p>
+      <p>Each citizen in the town is an “agent” with a persistent identity and a memory of their own experiences. They have specific jobs, family structures, and personalities that influence their behavior. Their health profiles are built using RIVM data, which means the likelihood of a citizen having a condition like type 2 diabetes or dementia is based on their age to match current Dutch population trends.</p>
 
-      <p>A citizen is not a row in a spreadsheet. They are a state machine with memory. They remember their GP visits, their referrals, their wait times. They experience disease progression through a Markov chain: healthy → mild → moderate → severe → critical. Each transition has a probability calibrated to RIVM data. Some citizens have comorbidities—COPD and cardiovascular disease together, for instance—which affect progression rates through documented relative risk multipliers.</p>
+      <p>These citizens are more than just data points in a spreadsheet; they are state machines that remember every GP visit and every week spent on a waiting list. Disease progression is managed through a Markov chain, which is a mathematical model that determines how a patient moves from being “healthy” to “mildly ill” and eventually “critical.”</p>
+
+      <p>To give an example of how this works, consider a citizen who has both COPD and heart disease. The simulation uses “relative risk multipliers” from medical research to show how these two conditions interact. Having both illnesses makes each one progress faster, which means that a long wait for a specialist is more dangerous for this person than for a citizen with only one health issue.</p>
 
       <div class="stats-table-wrap">
         <table class="stats-table">
@@ -684,14 +681,12 @@ pre code {
           </tbody>
         </table>
       </div>
-
-      <p>Click any citizen in the live simulation to open their dossier: full health history, current HP (hit points), active conditions, care pathway, family ties, and personality. Every citizen is inspectable. No black boxes.</p>
     </section>
 
     <section class="chapter visible" id="the-providers">
-      <h3>The Providers</h3>
+      <h3>The Healthcare Providers</h3>
 
-      <p>Cammelot has three GP practices and one hospital with three specialist departments. Each provider is also an agent—not just a queue. They have capacity limits, administrative burden, sick leave rates, and a cognitive loop that determines how they triage patients.</p>
+      <p>The simulation includes three GP practices and one hospital with departments for cardiology, endocrinology, and pulmonology. These providers are also agents with their own capacity limits and administrative burdens.</p>
 
       <div class="stats-table-wrap">
         <table class="stats-table">
@@ -714,35 +709,31 @@ pre code {
         </table>
       </div>
 
-      <p>Consultation costs follow the NZa 2025 tariff schedule exactly: €6.21 for a short consult, €12.43 for a regular one, €24.85 for a long consult. Specialist consultations cost ~€150. Hospital days cost ~€850. These numbers aren’t illustrative—they are the actual rates.</p>
+      <p>Every interaction has a financial value. A regular GP consult is priced at €12.43, while a day in the hospital costs roughly €850. These are not estimates; they are the actual rates used in the Dutch healthcare system.</p>
     </section>
 
-    <section class="chapter visible" id="how-time-works">
-      <h3>How Time Works</h3>
+    <section class="chapter visible" id="simulation-loop">
+      <h3>How Time and the Simulation Loop Work</h3>
 
-      <p>The simulation runs in discrete ticks. Each tick represents one step of the simulation clock. On the website, ticks fire every 500 milliseconds. In batch mode (for statistical runs), ticks fire every 200ms.</p>
-
-      <p>Every tick, each citizen’s state machine advances: disease may progress, HP may drain, they may decide to seek care. Every tick, each provider processes their queue: the next patient is seen, referrals are sent, capacity is recalculated.</p>
-
-      <p>A single simulation runs for approximately 200 ticks, representing roughly one year of healthcare activity. The key events that occur each tick:</p>
+      <p>The simulation moves forward in “ticks,” which are small steps of the internal clock. Every tick represents a moment where the system checks the state of every citizen and provider. During each tick, several things happen at once:</p>
 
       <div class="insight-callout">
         <strong>Per-tick simulation loop</strong>
         <ol style="margin-top:0.5rem;padding-left:1.2rem;font-size:0.9rem;line-height:1.7;">
-          <li><strong>Disease progression</strong> — Markov transitions checked for each citizen</li>
-          <li><strong>HP drain</strong> — citizens waiting beyond Treeknorm lose health points</li>
-          <li><strong>Care seeking</strong> — symptomatic citizens visit their GP</li>
-          <li><strong>Triage &amp; referral</strong> — GPs refer to specialists via structured messages</li>
-          <li><strong>Queue processing</strong> — specialists see patients in order, respecting capacity</li>
-          <li><strong>Mortality check</strong> — citizens at HP ≤ 0 become ghost sprites</li>
+          <li>The system checks if a citizen’s disease has progressed based on the Markov probabilities.</li>
+          <li>If a citizen is waiting for care longer than the Treeknorm allows, their health points begin to drain.</li>
+          <li>Citizens who feel sick decide to walk to their GP.</li>
+          <li>GPs see patients and send referrals to the hospital via digital messages.</li>
+          <li>Specialists process their queues in the order that patients arrived, provided they have the capacity.</li>
+          <li>Any citizen whose health points reach zero is removed from the active simulation and replaced with a grey “ghost” sprite.</li>
         </ol>
       </div>
     </section>
 
     <section class="chapter visible" id="what-we-measure">
-      <h3>What We Measure</h3>
+      <h3>What the Simulation Measures</h3>
 
-      <p>Every simulation run produces four categories of output. These are not arbitrary metrics—they correspond to the real indicators that the IZA (Integraal Zorgakkoord) uses to evaluate healthcare system performance.</p>
+      <p>We collect four main types of data that match the indicators used by the IZA (Integraal Zorgakkoord) to judge healthcare performance.</p>
 
       <div class="metric-callout">
         <div class="metric-card">
@@ -763,30 +754,26 @@ pre code {
         </div>
       </div>
 
-      <p><strong>Mortality:</strong> How many citizens die from preventable delays. Each death is traced to a specific cause chain: condition severity, weeks waited beyond Treeknorm, the referral that came too late. Citizens who die become ghost sprites—a visual reminder that system delays have consequences.</p>
+      <p><strong>Mortality:</strong> We track how many deaths are caused specifically by system delays. We look at how many weeks a patient waited beyond the legal limit and which specific bottleneck caused the fatal delay.</p>
 
-      <p><strong>Wait times:</strong> Measured against the Treeknorm—the Dutch legal norm (4 weeks for diagnostics, 7–12 weeks for treatment). The simulation tracks how many citizens exceed these norms and by how much.</p>
+      <p><strong>Wait Times:</strong> Every wait is measured against the Treeknorm standards, such as the four-week limit for diagnostics and the seven-to-twelve-week limit for treatments.</p>
 
-      <p><strong>Costs:</strong> Every clinical interaction generates a cost from the NZa tariff tables. The simulation totals consultation costs, hospital days, and calculates the cost of prevented (or not prevented) hospitalizations. A prevented hospitalization saves an average of €5,845.</p>
+      <p><strong>Costs:</strong> The system calculates the total cost of all consultations and hospital stays. It also calculates how much money is saved when a hospitalization is prevented, which is estimated at €5,845 per case.</p>
 
-      <p><strong>Fairness:</strong> Do older citizens get systematically worse outcomes? Do citizens with multiple conditions wait longer? The simulation tracks outcome variance across age groups and condition profiles to surface structural bias.</p>
+      <p><strong>Fairness:</strong> We look for structural bias by checking if certain groups, such as the elderly or people with multiple conditions, are getting worse results than others.</p>
     </section>
 
     <section class="chapter visible" id="methodology">
-      <h3>200 Runs</h3>
+      <h3>The Importance of 200 Simulation Runs</h3>
 
-      <p>A single simulation run tells you a story; two hundred runs reveal a pattern.</p>
+      <p>A single run of the simulation can tell a specific story, but running it two hundred times is necessary to find a reliable pattern. Because the simulation uses “stochastic” elements, which means it involves random chance, every run is slightly different. One citizen might survive in one run because they were lucky enough to be at the front of a queue, but they might die in the next run because the doctor was on sick leave.</p>
 
-      <p>Because the simulation involves stochastic elements—disease progression probabilities, queue ordering, comorbidity interactions—individual runs vary. A citizen who dies in run 47 might survive in run 48 because the queue cleared one tick earlier. To distinguish signal from noise, every scenario is run 200 times.</p>
-
-      <p>The outputs are analyzed with standard statistical methods: means, standard deviations, confidence intervals. When comparing IST (current system) to SOLL (AI-augmented system), we use effect sizes and significance testing to determine whether observed differences are meaningful or just variance.</p>
+      <p>By running the scenario 200 times, we can use standard statistics like means and confidence intervals to see the “signal” through the “noise.” This allows us to say with confidence whether a change, such as adding an AI scribe, actually improves the system or if the results were just a matter of luck. This methodology is the minimum required to make credible claims about how system-level changes affect the health of a population.</p>
 
       <div class="insight-callout">
         <strong>Why 200?</strong>
-        With 45 citizens per run, individual variation is high. At N=200 runs, the standard error of the mean is small enough to detect effect sizes of 0.3 or larger at p<0.05. This is the minimum needed to make credible claims about system-level changes.
+        With 45 citizens per run, individual variation is high. At N=200 runs, the standard error of the mean is small enough to detect effect sizes of 0.3 or larger at p&lt;0.05. This is the minimum needed to make credible claims about system-level changes.
       </div>
-
-      <p>The results are presented in Chapter 2 (the current system’s baseline) and Chapter 3 (what changes when we add AI interventions). The raw data and simulation code are open source.</p>
     </section>
 
     <nav class="chapter-nav">
