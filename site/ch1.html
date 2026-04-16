@@ -3,19 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Inside the Engine Room — Cammelot</title>
+<title>How the Simulation Works — Cammelot</title>
 
 <!-- Open Graph Meta Tags -->
-<meta property="og:title" content="Inside the Engine Room: FHIR, A2A, and the Agentic Mesh">
-<meta property="og:description" content="Cammelot isn’t a black box. It is a decentralized architecture built to test how data standards and agent protocols survive a healthcare crisis.">
+<meta property="og:title" content="How the Simulation Works — Cammelot">
+<meta property="og:description" content="Forty-five citizens, three GPs, one hospital. How a 16-bit pixel simulation models real Dutch healthcare data.">
 <meta property="og:image" content="https://cammelot.org/og-image.png">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://cammelot.org/ch1.html">
 
 <!-- Twitter Card Meta Tags -->
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Inside the Engine Room: FHIR, A2A, and the Agentic Mesh">
-<meta name="twitter:description" content="Cammelot isn’t a black box. It is a decentralized architecture built to test how data standards and agent protocols survive a healthcare crisis.">
+<meta name="twitter:title" content="How the Simulation Works — Cammelot">
+<meta name="twitter:description" content="Forty-five citizens, three GPs, one hospital. How a 16-bit pixel simulation models real Dutch healthcare data.">
 <meta name="twitter:image" content="https://cammelot.org/og-image.png">
 
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='4' y='20' width='24' height='12' fill='%23c0392b'/%3E%3Crect x='4' y='16' width='6' height='4' fill='%23c0392b'/%3E%3Crect x='13' y='16' width='6' height='4' fill='%23c0392b'/%3E%3Crect x='22' y='16' width='6' height='4' fill='%23c0392b'/%3E%3Crect x='12' y='8' width='8' height='12' fill='%23e74c3c'/%3E%3Crect x='14' y='4' width='4' height='4' fill='%23c0392b'/%3E%3Crect x='14' y='24' width='4' height='8' fill='%23922b21'/%3E%3C/svg%3E">
@@ -202,8 +202,8 @@ body.dark-theme::after {
   grid-template-columns: 220px minmax(0, 1fr) 100px;
   max-width: 1200px;
   margin: 0 auto;
-  padding-top: 2.5rem;
-  gap: 1.5rem;
+  padding-top: 4rem;
+  gap: 2rem;
 }
 
 /* ── Sidebar TOC ── */
@@ -246,7 +246,6 @@ body.dark-theme::after {
 .chapter {
   margin-bottom: 1rem;
 }
-/* Staggered animation children */
 .chapter .chapter-label,
 .chapter h2,
 .chapter .hook,
@@ -278,7 +277,6 @@ body.dark-theme::after {
 .chapter.visible > h3 { opacity: 1; transform: translateY(0); transition-delay: 200ms; }
 .chapter.visible > details { opacity: 1; transform: translateY(0); transition-delay: 300ms; }
 .chapter.visible > .insight-callout { opacity: 1; transform: translateY(0); transition-delay: 300ms; }
-/* Footnote bodies should be visible when open */
 .chapter .footnote-body { opacity: 1; transform: none; }
 
 .chapter-label {
@@ -288,15 +286,15 @@ body.dark-theme::after {
 }
 .chapter h2 {
   font-family: 'Space Grotesk', sans-serif;
-  font-size: 1.6rem; font-weight: 700; line-height: 1.2;
-  margin-bottom: 0.4rem; color: var(--text);
+  font-size: 1.8rem; font-weight: 700; line-height: 1.2;
+  margin-bottom: 0.6rem; color: var(--text);
 }
 .chapter .hook {
   font-style: italic; font-size: 1.05rem; color: var(--text-muted);
-  margin-bottom: 1rem; line-height: 1.65;
+  margin-bottom: 1.5rem; line-height: 1.65;
   border-left: 3px solid var(--red); padding-left: 1rem;
 }
-.chapter p { margin-bottom: 0.8rem; }
+.chapter p { margin-bottom: 1.1rem; }
 .chapter p + p { text-indent: 0; }
 
 /* ── H3 Section Breaks ── */
@@ -304,13 +302,13 @@ body.dark-theme::after {
   font-family: 'Space Grotesk', sans-serif;
   font-size: 1.15rem; font-weight: 600; line-height: 1.3;
   color: var(--text);
-  margin: 1.2rem 0 0.6rem;
-  padding-top: 0.8rem;
+  margin: 2.5rem 0 1rem;
+  padding-top: 1.5rem;
   border-top: 1px solid var(--border);
   letter-spacing: -0.01em;
 }
 .chapter h3:first-of-type {
-  margin-top: 1rem;
+  margin-top: 2rem;
 }
 
 /* ── Collapsible Details ── */
@@ -375,184 +373,9 @@ body.dark-theme::after {
   margin-bottom: 0.3rem;
 }
 
-/* ── Hero ── */
-.hero {
-  padding: 1.5rem 0 2rem;
-  text-align: center;
-  margin-bottom: 0.5rem;
-  border-bottom: 1px solid var(--border);
-  position: relative;
-}
-.hero-canvas-wrap {
-  position: relative;
-  width: 100%; max-width: 620px;
-  height: 200px;
-  margin: 0 auto 1.5rem;
-  border-radius: 8px;
-  overflow: hidden;
-  border: 2px solid #2d2d44;
-  background: #1a3a2a;
-}
-.hero-canvas-wrap canvas {
-  width: 100%; height: 100%; display: block;
-  image-rendering: pixelated;
-}
-/* CRT scanline overlay on hero canvas */
-.hero-canvas-wrap::after {
-  content: '';
-  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-  background: repeating-linear-gradient(
-    0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px
-  );
-  pointer-events: none;
-}
-.hero h1 {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 2.6rem; font-weight: 700; letter-spacing: -0.02em;
-  margin-bottom: 0.5rem;
-}
-.hero h1 span { color: var(--red); }
-.hero .subtitle {
-  font-family: 'Spectral', serif;
-  font-size: 1.05rem; color: var(--text-muted);
-  font-style: italic; margin-bottom: 1.5rem;
-}
-.hero .byline {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 0.72rem; color: var(--text-muted); letter-spacing: 0.04em;
-}
-
-/* ── Replay Embed ── */
-.replay-embed {
-  background: #1a1a2e;
-  border: 1px solid #2d2d44;
-  border-radius: 6px;
-  padding: 1rem 1.2rem;
-  text-align: center;
-  color: #8888aa;
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 0.82rem;
-  margin: 1rem 0;
-  position: relative;
-  overflow: hidden;
-  min-height: 0;
-}
-.replay-embed::before {
-  content: '';
-  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-  background: repeating-linear-gradient(
-    0deg, transparent, transparent 2px, rgba(255,255,255,0.02) 2px, rgba(255,255,255,0.02) 4px
-  );
-  pointer-events: none;
-}
-.replay-embed .replay-icon { font-size: 2rem; margin-bottom: 0.5rem; }
-.replay-embed a {
-  color: var(--green); text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
-/* ── Canvas Charts ── */
-.chart-container {
-  margin: 1rem 0;
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 1.5rem;
-  position: relative;
-  transition: background 0.4s, border-color 0.4s;
-}
-.chart-container .chart-title {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 0.78rem; font-weight: 600; margin-bottom: 0.3rem;
-}
-.chart-container .chart-subtitle {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 0.65rem; color: var(--text-muted); margin-bottom: 1rem;
-}
-.chart-container canvas {
-  width: 100%; height: auto; display: block;
-}
-.chart-legend {
-  display: flex; gap: 1.2rem; margin-top: 0.8rem;
-  font-family: 'Space Grotesk', sans-serif; font-size: 0.65rem;
-}
-.chart-legend span::before {
-  content: ''; display: inline-block;
-  width: 10px; height: 10px; border-radius: 2px;
-  margin-right: 0.35rem; vertical-align: middle;
-}
-.chart-legend .legend-ist::before { background: var(--red); }
-.chart-legend .legend-soll::before { background: var(--green); }
-.chart-legend .legend-hp::before { background: #e67e22; }
-
-/* Chart tooltip */
-.chart-tooltip {
-  position: absolute;
-  background: var(--text);
-  color: var(--bg);
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 0.7rem;
-  padding: 0.3rem 0.6rem;
-  border-radius: 4px;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.15s;
-  white-space: nowrap;
-  z-index: 10;
-}
-.chart-tooltip.visible { opacity: 1; }
-
-/* ── Branch Point ── */
-.branch-point {
-  margin: 2rem 0;
-  text-align: center;
-  padding: 1rem 0;
-  border-top: 2px solid var(--border);
-  border-bottom: 2px solid var(--border);
-}
-.branch-point h2 {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 1.6rem; margin-bottom: 0.5rem;
-}
-.branch-point .branch-subtitle {
-  font-style: italic; color: var(--text-muted); margin-bottom: 2rem;
-  font-size: 1rem;
-}
-.branch-tabs {
-  display: flex; justify-content: center; gap: 1rem; margin-bottom: 2rem;
-}
-.branch-tab {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 0.85rem; font-weight: 600;
-  padding: 0.7rem 2rem;
-  border: 2px solid var(--border);
-  border-radius: 4px;
-  background: var(--card-bg);
-  cursor: pointer;
-  transition: all 0.25s;
-  letter-spacing: 0.02em;
-  color: var(--text);
-}
-.branch-tab:hover { transform: translateY(-1px); }
-.branch-tab.ist { border-color: var(--red); color: var(--red); }
-.branch-tab.ist.active { background: var(--red); color: #fff; }
-.branch-tab.soll { border-color: var(--green); color: var(--green); }
-.branch-tab.soll.active { background: var(--green); color: #fff; }
-.branch-content { text-align: left; }
-.branch-pane { display: none; }
-.branch-pane.active { display: block; }
-.branch-pane.ist-pane { border-left: 3px solid var(--red); padding-left: 1.2rem; background: var(--red-light); padding: 1.5rem; border-radius: 4px; }
-.branch-pane.soll-pane { border-left: 3px solid var(--green); padding-left: 1.2rem; background: var(--green-light); padding: 1.5rem; border-radius: 4px; }
-.branch-pane h3 {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 1.1rem; margin-bottom: 0.8rem;
-}
-.branch-pane ul { padding-left: 1.2rem; margin-bottom: 1rem; }
-.branch-pane li { margin-bottom: 0.4rem; font-size: 0.95rem; }
-
 /* ── Stats Table ── */
 .stats-table-wrap {
-  overflow-x: auto; margin: 2rem 0;
+  overflow-x: auto; margin: 1.5rem 0;
 }
 .stats-table {
   width: 100%; border-collapse: collapse;
@@ -572,16 +395,6 @@ body.dark-theme::after {
 .stats-table tbody tr:nth-child(even) td { background: var(--table-alt); }
 .stats-table tbody tr:hover td { background: var(--table-hover); }
 .stats-table .sig { color: var(--red); font-weight: 600; }
-.stats-table .sig::before {
-  content: '';
-  display: inline-block;
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: var(--red);
-  margin-right: 0.4rem;
-  vertical-align: middle;
-}
-.stats-table .metric-name { font-weight: 500; }
 
 /* ── Footnotes ── */
 .fn-ref {
@@ -642,47 +455,6 @@ blockquote {
   color: var(--text-muted);
 }
 
-/* ── Pull Quote ── */
-.pull-quote {
-  padding: 0.8rem 1rem;
-  text-align: center;
-  position: relative;
-}
-.pull-quote p {
-  font-family: 'Spectral', serif;
-  font-style: italic;
-  font-size: 1.25rem;
-  line-height: 1.55;
-  color: var(--text-muted);
-  max-width: 560px;
-  margin: 0 auto;
-  border-left: 4px solid var(--red);
-  padding-left: 1.5rem;
-  text-align: left;
-}
-
-/* ── Chapter Divider ── */
-.chapter-divider {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0.2rem 0 0.5rem;
-  gap: 0.8rem;
-}
-.chapter-divider::before,
-.chapter-divider::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: var(--border);
-}
-.chapter-divider .diamond {
-  width: 8px; height: 8px;
-  background: var(--border);
-  transform: rotate(45deg);
-  flex-shrink: 0;
-}
-
 /* ── Code ── */
 code {
   font-family: 'SF Mono', 'Fira Code', monospace;
@@ -691,11 +463,26 @@ code {
   padding: 0.15em 0.4em;
   border-radius: 3px;
 }
+pre {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1rem 1.2rem;
+  overflow-x: auto;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.82rem;
+  line-height: 1.6;
+  margin: 1rem 0;
+}
+pre code {
+  background: none;
+  padding: 0;
+}
 
 /* ── Footer ── */
 .site-footer {
   border-top: 1px solid var(--border);
-  padding: 1.5rem 2rem;
+  padding: 3rem 2rem;
   text-align: center;
   font-family: 'Space Grotesk', sans-serif;
   font-size: 0.72rem;
@@ -710,27 +497,18 @@ code {
 @media (max-width: 900px) {
   .page-grid {
     grid-template-columns: 1fr;
-    padding: 2rem 1.2rem 0;
+    padding: 3.5rem 1.2rem 0;
     gap: 0;
   }
   .toc { display: none; }
   .content { max-width: 100%; }
-  .hero h1 { font-size: 1.8rem; }
-  .hero-canvas-wrap { height: 150px; }
-  .hero .subtitle { font-size: 0.9rem; margin-bottom: 1rem; }
-  .hero .byline { font-size: 0.65rem; }
   .chapter h2 { font-size: 1.3rem; }
   .chapter .hook { font-size: 0.95rem; padding: 0.8rem 1rem; }
   .metric-callout { gap: 0.6rem; }
   .metric-card { min-width: 100px; padding: 0.8rem; }
   .metric-card .metric-value { font-size: 1.3rem; }
   .metric-card .metric-label { font-size: 0.58rem; }
-  .branch-tabs { flex-direction: column; align-items: center; }
-  .pull-quote p { font-size: 1.05rem; padding: 0 0.5rem; }
-  .pull-quote { margin: 1.5rem 0; padding: 1rem 0; }
-  .replay-embed { padding: 1rem; font-size: 0.8rem; }
-  .replay-embed code { font-size: 0.65rem; white-space: pre-wrap; word-break: break-all; }
-  .chapter h3 { font-size: 1rem; margin: 1rem 0 0.5rem; padding-top: 0.6rem; }
+  .chapter h3 { font-size: 1rem; margin: 2rem 0 0.8rem; padding-top: 1.2rem; }
   .chapter details summary { font-size: 0.8rem; padding: 0.6rem 1rem; }
   .chapter details .details-content { padding: 0 1rem 0.8rem; font-size: 0.88rem; }
   .insight-callout { font-size: 0.88rem; padding: 0.8rem 1rem; }
@@ -748,16 +526,11 @@ code {
 }
 @media (max-width: 480px) {
   html { font-size: 16px; }
-  .page-grid { padding: 1.5rem 0.8rem 0; }
-  .hero { padding: 1.2rem 0 2rem; }
-  .hero h1 { font-size: 1.5rem; }
-  .hero-canvas-wrap { height: 120px; max-width: 100%; }
-  .hero .byline { font-size: 0.6rem; }
+  .page-grid { padding: 3.2rem 0.8rem 0; }
   .chapter { padding: 0.5rem 0 0.8rem; margin-bottom: 0.5rem; }
   .chapter h2 { font-size: 1.15rem; }
   .metric-callout { flex-direction: column; gap: 0.5rem; }
   .metric-card { min-width: 0; }
-  .pull-quote p { font-size: 0.95rem; }
   .site-header { padding: 0.4rem 0.8rem; }
   .back-to-top { bottom: 1rem; right: 1rem; width: 36px; height: 36px; font-size: 0.9rem; }
 }
@@ -783,147 +556,6 @@ code {
 }
 .chapter-nav a:hover { color: var(--text); }
 .chapter-nav .next { margin-left: auto; }
-
-    /* Technical spec boxes */
-    .tech-spec-box {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 1rem;
-      margin: 1rem 0;
-      font-family: 'Space Grotesk', sans-serif;
-    }
-    .code-header {
-      font-size: 0.7rem;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      border-bottom: 1px solid var(--border);
-      padding-bottom: 0.5rem;
-      margin-bottom: 1rem;
-      display: flex;
-      justify-content: space-between;
-      letter-spacing: 0.05em;
-    }
-    .fhir-resource {
-      background: #14141f;
-      color: #a9ffaf;
-      padding: 1rem;
-      border-radius: 4px;
-      font-family: 'SF Mono', 'JetBrains Mono', monospace;
-      font-size: 0.78rem;
-      overflow-x: auto;
-      line-height: 1.5;
-    }
-    body:not(.dark-theme) .fhir-resource {
-      background: #1a1a2e;
-    }
-    .agent-card-viz {
-      border-left: 4px solid var(--green);
-      padding-left: 1.5rem;
-      margin: 1rem 0;
-    }
-    .agent-card-viz h4 {
-      font-family: 'Space Grotesk', sans-serif;
-      font-size: 1rem;
-      font-weight: 600;
-      color: var(--green);
-      margin-bottom: 0.5rem;
-    }
-    .kicker {
-      font-family: 'Space Grotesk', sans-serif;
-      text-transform: uppercase;
-      letter-spacing: 0.15em;
-      font-size: 0.75rem;
-      color: var(--green);
-      margin-bottom: 0.5rem;
-    }
-    .lede {
-      font-size: 1.1rem;
-      line-height: 1.65;
-      color: var(--text);
-      font-weight: 500;
-      margin-bottom: 1rem;
-    }
-    .pillar-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 0.8rem;
-      margin: 1rem 0;
-    }
-    .pillar-card {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-top: 3px solid var(--green);
-      border-radius: 6px;
-      padding: 1.2rem;
-      text-align: center;
-    }
-    .pillar-card .pillar-num {
-      font-family: 'Space Grotesk', sans-serif;
-      font-size: 1.8rem;
-      font-weight: 700;
-      color: var(--green);
-      line-height: 1;
-    }
-    .pillar-card .pillar-name {
-      font-family: 'Space Grotesk', sans-serif;
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: var(--text);
-      margin-top: 0.3rem;
-    }
-    .pillar-card .pillar-desc {
-      font-size: 0.78rem;
-      color: var(--text-muted);
-      margin-top: 0.3rem;
-      line-height: 1.4;
-    }
-    .sequence-box {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 0.8rem 1.2rem;
-      margin: 1rem 0;
-      font-family: 'Space Grotesk', monospace;
-      font-size: 0.82rem;
-      line-height: 1.8;
-      color: var(--text);
-    }
-    .sequence-box .seq-arrow { color: var(--green); font-weight: 600; }
-    .sequence-box .seq-label { color: var(--text-muted); font-size: 0.72rem; }
-    .loop-step {
-      display: flex;
-      gap: 0.8rem;
-      align-items: flex-start;
-      margin-bottom: 0.6rem;
-      padding: 0.6rem 0.8rem;
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-    }
-    .loop-step .step-num {
-      font-family: 'Space Grotesk', sans-serif;
-      font-weight: 700;
-      font-size: 1.2rem;
-      color: var(--green);
-      min-width: 2rem;
-    }
-    .loop-step .step-name {
-      font-family: 'Space Grotesk', sans-serif;
-      font-weight: 600;
-      font-size: 0.9rem;
-      color: var(--text);
-    }
-    .loop-step .step-desc {
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      margin-top: 0.2rem;
-      line-height: 1.5;
-    }
-    @media (max-width: 700px) {
-      .pillar-grid { grid-template-columns: 1fr; }
-    }
-
 </style>
 </head>
 
@@ -938,6 +570,7 @@ code {
   <nav>
     <a href="index.html" class="nav-link">Home</a>
     <a href="index.html" class="nav-link">Story</a>
+    <a href="ch1.html" class="nav-link" style="color:var(--accent)">How It Works</a>
     <a href="ch2.html" class="nav-link">The Current System</a>
     <a href="ch3.html" class="nav-link">The AI-Native Overhaul</a>
     <a href="world.html" class="nav-link" style="color:var(--green)">&#127918; Live Sim</a>
@@ -952,11 +585,16 @@ code {
 <!-- Mobile TOC overlay -->
 <div class="mobile-toc-backdrop" id="mobile-toc-backdrop"></div>
 <nav class="mobile-toc-overlay" id="mobile-toc-overlay">
-  <div class="toc-part">The Story</div>
-  <div class="toc-part">The Build</div>
-  <a href="ch1.html" class="mobile-toc-link">1. The Architecture</a>
+  <div class="toc-part">This Chapter</div>
+  <a href="#what-is-cammelot" class="mobile-toc-link">What Cammelot Is</a>
+  <a href="#the-town" class="mobile-toc-link">The Town</a>
+  <a href="#the-citizens" class="mobile-toc-link">The Citizens</a>
+  <a href="#the-providers" class="mobile-toc-link">The Providers</a>
+  <a href="#how-time-works" class="mobile-toc-link">How Time Works</a>
+  <a href="#what-we-measure" class="mobile-toc-link">What We Measure</a>
+  <a href="#methodology" class="mobile-toc-link">200 Runs</a>
+  <div class="toc-part" style="margin-top:12px;">Chapters</div>
   <a href="ch2.html" class="mobile-toc-link">2. The Current System</a>
-  <div class="toc-part">What's Next</div>
   <a href="ch3.html" class="mobile-toc-link">3. The AI-Native Overhaul</a>
   <div class="toc-part" style="margin-top:12px;">Explore</div>
   <a href="world.html" class="mobile-toc-link" style="color:#27ae60;">&#127918; Live Simulation</a>
@@ -966,15 +604,18 @@ code {
   <!-- Sidebar TOC -->
   <aside class="toc" id="toc">
   <div class="toc-label">Contents</div>
-  <div class="toc-part">This Chapter</div>
-  <a href="#chapter-1" class="active">The Architecture</a>
-  <a href="#mesh">1. The Agentic Mesh</a>
-  <a href="#fhir">2. FHIR R4</a>
-  <a href="#loop">3. The Cognitive Loop</a>
-  <a href="#code">The Code</a>
-  <div class="toc-part">Chapters</div>
+  <div class="toc-part">The Simulation</div>
+  <a href="#what-is-cammelot" data-section="what-is-cammelot">What Cammelot Is</a>
+  <a href="#the-town" data-section="the-town">The Town</a>
+  <a href="#the-citizens" data-section="the-citizens">The Citizens</a>
+  <a href="#the-providers" data-section="the-providers">The Providers</a>
+  <div class="toc-part">How It Runs</div>
+  <a href="#how-time-works" data-section="how-time-works">How Time Works</a>
+  <a href="#what-we-measure" data-section="what-we-measure">What We Measure</a>
+  <a href="#methodology" data-section="methodology">200 Runs</a>
+  <div class="toc-part" style="margin-top:12px;">Chapters</div>
   <a href="ch2.html">2. The Current System</a>
-  <a href="ch3.html">3. What’s Coming</a>
+  <a href="ch3.html">3. The AI-Native Overhaul</a>
   <div class="toc-part" style="margin-top:12px;">Explore</div>
   <a href="world.html" style="color:#27ae60;">&#127918; Live Simulation</a>
 </aside>
@@ -982,181 +623,174 @@ code {
   <!-- Main Content -->
   <main class="content">
 
-    <section class="chapter" id="chapter-1">
+    <section class="chapter visible" id="what-is-cammelot">
       <div class="chapter-label">Chapter 1</div>
-      <div class="kicker">System Architecture</div>
-      <h2>Inside the Engine Room</h2>
-      <p class="lede">Cammelot isn’t a “black box” neural network. It is a decentralized operating system built on the premise that healthcare doesn’t have a data problem—it has a coordination problem.</p>
+      <h2>How the Simulation Works</h2>
+      <p class="hook">“The goal is not to predict the future. It is to produce numbers you can argue about instead of opinions you can’t.”</p>
 
-      <p>Traditional healthcare IT is a “Tower of Babel.” In 2024, only 11% of Dutch health data was interoperable between providers. The IZA wants that at 66% by 2030, spending €2.8 billion on transformation plans. Most of those plans build point-to-point integrations: system A talks to system B through a custom connector. Repeat for every pair.</p>
+      <p>Cammelot is a simulated Dutch town. It runs in your browser. It contains forty-five citizens with names, ages, and medical histories drawn from CBS and RIVM data. They walk around a 16-bit pixel map, get sick, visit GPs, get referred to specialists, wait in queues, and—if the system fails them—die.</p>
 
-      <p>To fix Cammelot’s healthcare, we didn’t build a better database; we built a better <strong>protocol</strong>. The architecture rests on three pillars:</p>
+      <p>Everything that happens in Cammelot is measurable. Every consultation has a cost from the NZa tariff tables. Every waiting time is checked against the Treeknorm, the Dutch legal norm for specialist care access. Every death is traceable to a specific bottleneck: how many weeks waited, which condition, which referral came too late.</p>
 
-      <div class="pillar-grid">
-        <div class="pillar-card">
-          <div class="pillar-num">01</div>
-          <div class="pillar-name">The Mesh</div>
-          <div class="pillar-desc">A2A Protocol</div>
+      <p>It is deliberately small. Forty-five citizens, not five thousand. Three GPs, not twelve thousand. One hospital, not ninety. This is a design choice: small enough to trace every individual outcome, large enough to produce statistically meaningful differences across 200 runs.</p>
+    </section>
+
+    <section class="chapter visible" id="the-town">
+      <h3>The Town</h3>
+
+      <p>The map is a 64×48 tile grid rendered on an HTML5 canvas. Buildings are placed at fixed positions: three GP practices distributed across the town, one regional hospital, and residential areas where citizens live. The aesthetic is deliberately retro—a 16-bit SNES-style RPG—because it forces attention away from visual fidelity and toward system behavior. You watch the town the way you watch an ant farm: not admiring the scenery, but tracking the patterns.</p>
+
+      <p>Citizens move between locations using simple pathfinding. When a citizen needs care, they walk to their assigned GP. If referred, they walk to the hospital. If the queue is full, they wait. You can see the queues build up visually—sprites clustering around buildings, speech bubbles expressing frustration or pain.</p>
+
+      <div class="metric-callout">
+        <div class="metric-card">
+          <div class="metric-value">64×48</div>
+          <div class="metric-label">Tile Grid</div>
         </div>
-        <div class="pillar-card">
-          <div class="pillar-num">02</div>
-          <div class="pillar-name">The Language</div>
-          <div class="pillar-desc">FHIR R4</div>
+        <div class="metric-card">
+          <div class="metric-value">16px</div>
+          <div class="metric-label">Tile Size</div>
         </div>
-        <div class="pillar-card">
-          <div class="pillar-num">03</div>
-          <div class="pillar-name">The Loop</div>
-          <div class="pillar-desc">Cognitive Agent</div>
-        </div>
-      </div>
-
-      <div class="chapter-divider"><div class="diamond"></div></div>
-
-      <h3 id="mesh">1. The Agentic Mesh (A2A Protocol)</h3>
-
-      <p>In Cammelot, there is no central server “telling people where to go.” Every GP, Specialist, and Hospital is an <strong>Autonomous Agent</strong>. They communicate via the <strong>Agent-to-Agent (A2A) protocol</strong>.</p>
-
-      <div class="agent-card-viz">
-        <h4>The Agent Card</h4>
-        <p>Every provider publishes a machine-readable “business card.” When a patient needs care, the system doesn’t search a static directory; it queries the mesh in real-time.</p>
-        <div class="tech-spec-box">
-          <div class="code-header"><span>GET /.well-known/agent-card.json</span><span>200 OK</span></div>
-          <pre class="fhir-resource">{
-  "agentId": "gp-de-jong",
-  "name": "Dr. de Jong",
-  "specialty": "General Practice",
-  "currentWait": "14 days",
-  "treeknorm_compliant": true,
-  "capacity": 0.85,
-  "nza_consult_rate_eur": 12.43
-}</pre>
+        <div class="metric-card">
+          <div class="metric-value">4</div>
+          <div class="metric-label">Buildings</div>
         </div>
       </div>
+    </section>
 
-      <p>That’s it. No API contract negotiation. No integration middleware. Just: “here’s who I am, here’s what I can do, here’s how busy I am right now.” Any other agent in the mesh can read this and decide whether to send a referral.</p>
+    <section class="chapter visible" id="the-citizens">
+      <h3>The Citizens</h3>
 
-      <p><strong>The Referral Handshake:</strong></p>
+      <p>Each citizen is an agent with a persistent identity. They have a name, age, gender, occupation, personality traits, a family structure, and a GP assignment. Their health profile is generated from RIVM 2024 prevalence data: the probability of having type 2 diabetes, COPD, cardiovascular disease, osteoporosis, or dementia is age-stratified to match Dutch population statistics.</p>
 
-      <div class="sequence-box">
-        <div><span class="seq-label">Step 1</span> &nbsp; GP reads Cardiology Agent Card</div>
-        <div>GP <span class="seq-arrow">→</span> Hospital: <code>{ type: "referral", patient: "Hendrik", condition: "I25" }</code></div>
-        <div><span class="seq-label">Step 2</span> &nbsp; Hospital checks capacity &amp; Treeknorm</div>
-        <div>Hospital <span class="seq-arrow">→</span> GP: <code>{ status: "accepted", estimatedWait: "3 weeks" }</code></div>
-        <div><span class="seq-label">Step 3</span> &nbsp; Referral lifecycle: <code>submitted → working → completed</code></div>
+      <p>A citizen is not a row in a spreadsheet. They are a state machine with memory. They remember their GP visits, their referrals, their wait times. They experience disease progression through a Markov chain: healthy → mild → moderate → severe → critical. Each transition has a probability calibrated to RIVM data. Some citizens have comorbidities—COPD and cardiovascular disease together, for instance—which affect progression rates through documented relative risk multipliers.</p>
+
+      <div class="stats-table-wrap">
+        <table class="stats-table">
+          <thead>
+            <tr>
+              <th>Attribute</th>
+              <th>Source</th>
+              <th>How It’s Used</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td class="metric-name">Age distribution</td><td>CBS 2024</td><td>20% are 65+, matching Dutch vergrijzing</td></tr>
+            <tr><td class="metric-name">Disease prevalence</td><td>RIVM 2024</td><td>96% of 75+ have ≥1 chronic condition</td></tr>
+            <tr><td class="metric-name">Comorbidity</td><td>RIVM 2024</td><td>45% of 75+ have ≥2 conditions</td></tr>
+            <tr><td class="metric-name">Mortality by age</td><td>CBS 2024</td><td>Baseline natural mortality: ~48/year per 5,000</td></tr>
+            <tr><td class="metric-name">Life expectancy</td><td>CBS 2024</td><td>M: 80.5 years, F: 83.2 years</td></tr>
+          </tbody>
+        </table>
       </div>
 
-      <p>If the cardiologist’s queue is full, the referral bounces with a machine-readable rejection and Dr. de Jong auto-routes to the next available specialist. No fax machines involved.</p>
+      <p>Click any citizen in the live simulation to open their dossier: full health history, current HP (hit points), active conditions, care pathway, family ties, and personality. Every citizen is inspectable. No black boxes.</p>
+    </section>
 
-      <p>Compare this to real Dutch integration: adding a new specialist system takes 3–18 months. In Cammelot, it takes 5 minutes—publish an Agent Card, join the mesh, start receiving referrals.</p>
+    <section class="chapter visible" id="the-providers">
+      <h3>The Providers</h3>
 
-      <div class="chapter-divider"><div class="diamond"></div></div>
+      <p>Cammelot has three GP practices and one hospital with three specialist departments. Each provider is also an agent—not just a queue. They have capacity limits, administrative burden, sick leave rates, and a cognitive loop that determines how they triage patients.</p>
 
-      <h3 id="fhir">2. FHIR R4: The Universal Language</h3>
-
-      <p>Every life in Cammelot is a stream of <strong>HL7® FHIR® R4 resources</strong>. This isn’t just for show—it is the bedrock of the simulation’s validity. Because we use the R4 standard, we can measure exactly how “data silos” lead to clinical errors.</p>
-
-      <div class="tech-spec-box">
-        <div class="code-header"><span>FHIR Observation — COPD Severity</span><span>Patient/Hendrik-Veenstra</span></div>
-        <pre class="fhir-resource">{
-  "resourceType": "Observation",
-  "status": "final",
-  "code": { "coding": [{ "system": "http://cammelot.sim", "code": "COPD-stage" }] },
-  "valueString": "Moderate",
-  "subject": { "reference": "Patient/Hendrik-Veenstra" },
-  "effectiveDateTime": "2026-04-15"
-}</pre>
+      <div class="stats-table-wrap">
+        <table class="stats-table">
+          <thead>
+            <tr>
+              <th>Provider</th>
+              <th>Type</th>
+              <th>Capacity</th>
+              <th>Source</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td class="metric-name">Dr. de Jong</td><td>GP</td><td>2,400 patients</td><td>LHV normpraktijk</td></tr>
+            <tr><td class="metric-name">Dr. Bakker</td><td>GP</td><td>2,000 patients</td><td>LHV normpraktijk</td></tr>
+            <tr><td class="metric-name">Dr. Visser</td><td>GP</td><td>1,800 patients</td><td>LHV normpraktijk</td></tr>
+            <tr><td class="metric-name">Cardiology</td><td>Specialist</td><td>12/week</td><td>NZa capacity norms</td></tr>
+            <tr><td class="metric-name">Endocrinology</td><td>Specialist</td><td>15/week</td><td>NZa capacity norms</td></tr>
+            <tr><td class="metric-name">Pulmonology</td><td>Specialist</td><td>10/week</td><td>NZa capacity norms</td></tr>
+          </tbody>
+        </table>
       </div>
 
-      <p><strong>Memory as Data:</strong> Every visit is an <code>Encounter</code>. Every diagnosis is a <code>Condition</code>. Every prescription is a <code>MedicationRequest</code>. The entire life history of a pixel citizen is a chronological FHIR query—the same “Memory Stream” from Park et al.’s Generative Agents paper, except in structured clinical data instead of plain text.</p>
+      <p>Consultation costs follow the NZa 2025 tariff schedule exactly: €6.21 for a short consult, €12.43 for a regular one, €24.85 for a long consult. Specialist consultations cost ~€150. Hospital days cost ~€850. These numbers aren’t illustrative—they are the actual rates.</p>
+    </section>
 
-      <div class="tech-spec-box">
-        <div class="code-header"><span>Memory Stream Query</span><span>queryFHIR()</span></div>
-        <pre class="fhir-resource">function queryFHIR(agentId, type) {
-  return FHIR_STORE.filter(r =>
-    r.subject?.reference === 'Patient/' + agentId &&
-    (!type || r.resourceType === type)
-  );
-}</pre>
-      </div>
+    <section class="chapter visible" id="how-time-works">
+      <h3>How Time Works</h3>
 
-      <p>The Digital Twin risk calculator reads this same store. No fancy ML model—just structured data, queried in real-time, producing actionable risk scores. When your data is standardized and queryable, even simple logic produces useful outputs.</p>
+      <p>The simulation runs in discrete ticks. Each tick represents one step of the simulation clock. On the website, ticks fire every 500 milliseconds. In batch mode (for statistical runs), ticks fire every 200ms.</p>
 
-      <div class="chapter-divider"><div class="diamond"></div></div>
+      <p>Every tick, each citizen’s state machine advances: disease may progress, HP may drain, they may decide to seek care. Every tick, each provider processes their queue: the next patient is seen, referrals are sent, capacity is recalculated.</p>
 
-      <h3 id="loop">3. The Cognitive Loop</h3>
-
-      <p>The agents don’t just react; they <strong>reflect</strong>. Using a deterministic version of the Generative Agents architecture (Park et al., Stanford 2023), each agent executes a three-phase loop every 4 simulation ticks:</p>
-
-      <div class="loop-step">
-        <div class="step-num">1</div>
-        <div>
-          <div class="step-name">Perception</div>
-          <div class="step-desc">Read the FHIR record. “Patient HP is declining. Two conditions are active. Wait time exceeds Treeknorm.”</div>
-        </div>
-      </div>
-      <div class="loop-step">
-        <div class="step-num">2</div>
-        <div>
-          <div class="step-name">Reflection</div>
-          <div class="step-desc">Assess system constraints. “I am at 110% capacity. Administrative load is 30%. I must triage by severity.”</div>
-        </div>
-      </div>
-      <div class="loop-step">
-        <div class="step-num">3</div>
-        <div>
-          <div class="step-name">Action</div>
-          <div class="step-desc">Execute a clinical intervention or a referral handshake via the A2A mesh.</div>
-        </div>
-      </div>
-
-      <p>If a GP agent reflects that administrative load exceeds 30%, they begin to make triage errors. This is how Cammelot mathematically links <strong>Admin Relief</strong> to <strong>Patient Safety</strong>—the connection that produces the simulation’s most significant findings.</p>
-
-      <div class="chapter-divider"><div class="diamond"></div></div>
-
-      <h3 id="code">The Code</h3>
-
-      <p>The full A2A + FHIR implementation is under 200 lines of JavaScript. It runs in a browser. No server, no database, no middleware. Everything is in-memory, in a single HTML file.</p>
-
-      <p>This isn’t production-ready. But it took an afternoon to build, and it produces a functioning multi-agent healthcare mesh that can run 200 simulations with full statistical analysis. If the protocol were standardized across real Dutch providers, the integration cost for the IZA transformation would look very different.</p>
+      <p>A single simulation runs for approximately 200 ticks, representing roughly one year of healthcare activity. The key events that occur each tick:</p>
 
       <div class="insight-callout">
-        <strong>The Technical Bet</strong><br>
-        We aren’t testing if AI can “think.” We are testing if <strong>Interoperable Action</strong>—agents that can discover each other and exchange structured data without friction—can offset a 301,000-worker shortage.
+        <strong>Per-tick simulation loop</strong>
+        <ol style="margin-top:0.5rem;padding-left:1.2rem;font-size:0.9rem;line-height:1.7;">
+          <li><strong>Disease progression</strong> — Markov transitions checked for each citizen</li>
+          <li><strong>HP drain</strong> — citizens waiting beyond Treeknorm lose health points</li>
+          <li><strong>Care seeking</strong> — symptomatic citizens visit their GP</li>
+          <li><strong>Triage &amp; referral</strong> — GPs refer to specialists via structured messages</li>
+          <li><strong>Queue processing</strong> — specialists see patients in order, respecting capacity</li>
+          <li><strong>Mortality check</strong> — citizens at HP ≤ 0 become ghost sprites</li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="chapter visible" id="what-we-measure">
+      <h3>What We Measure</h3>
+
+      <p>Every simulation run produces four categories of output. These are not arbitrary metrics—they correspond to the real indicators that the IZA (Integraal Zorgakkoord) uses to evaluate healthcare system performance.</p>
+
+      <div class="metric-callout">
+        <div class="metric-card">
+          <div class="metric-value ist">☠️</div>
+          <div class="metric-label">Mortality</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value ist">⏱️</div>
+          <div class="metric-label">Wait Times</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value soll">€</div>
+          <div class="metric-label">Costs</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value soll">⚖️</div>
+          <div class="metric-label">Fairness</div>
+        </div>
       </div>
 
-      <div class="insight-callout" style="margin-top:1rem;">
-        <strong>Wegiz-Ready by Design</strong><br>
-        Cammelot is aligned with the Wegiz (Wet elektronische gegevensuitwisseling in de zorg), which mandates electronic data exchange for all Dutch healthcare providers. Every agent interaction uses HL7 FHIR R4 resources aligned with Nictiz nl-core profiles.
+      <p><strong>Mortality:</strong> How many citizens die from preventable delays. Each death is traced to a specific cause chain: condition severity, weeks waited beyond Treeknorm, the referral that came too late. Citizens who die become ghost sprites—a visual reminder that system delays have consequences.</p>
+
+      <p><strong>Wait times:</strong> Measured against the Treeknorm—the Dutch legal norm (4 weeks for diagnostics, 7–12 weeks for treatment). The simulation tracks how many citizens exceed these norms and by how much.</p>
+
+      <p><strong>Costs:</strong> Every clinical interaction generates a cost from the NZa tariff tables. The simulation totals consultation costs, hospital days, and calculates the cost of prevented (or not prevented) hospitalizations. A prevented hospitalization saves an average of €5,845.</p>
+
+      <p><strong>Fairness:</strong> Do older citizens get systematically worse outcomes? Do citizens with multiple conditions wait longer? The simulation tracks outcome variance across age groups and condition profiles to surface structural bias.</p>
+    </section>
+
+    <section class="chapter visible" id="methodology">
+      <h3>200 Runs</h3>
+
+      <p>A single simulation run tells you a story. Two hundred runs tell you a pattern.</p>
+
+      <p>Because the simulation involves stochastic elements—disease progression probabilities, queue ordering, comorbidity interactions—individual runs vary. A citizen who dies in run 47 might survive in run 48 because the queue cleared one tick earlier. To distinguish signal from noise, every scenario is run 200 times.</p>
+
+      <p>The outputs are analyzed with standard statistical methods: means, standard deviations, confidence intervals. When comparing IST (current system) to SOLL (AI-augmented system), we use effect sizes and significance testing to determine whether observed differences are meaningful or just variance.</p>
+
+      <div class="insight-callout">
+        <strong>Why 200?</strong>
+        With 45 citizens per run, individual variation is high. At N=200 runs, the standard error of the mean is small enough to detect effect sizes of 0.3 or larger at p<0.05. This is the minimum needed to make credible claims about system-level changes.
       </div>
 
-      <div class="footnote-body" style="display:block;margin-top:2rem;"><em>Technical details: FHIR_STORE is a capped array (2,000 resources) with FIFO eviction. A2A_MESSAGES caps at 200. Agent cards are static in current implementation; dynamic publishing with real-time wait time updates is planned. FHIR resources follow R4 structure but don’t validate against full FHIR schemas—a known shortcut.</em></div>
-
-<details style="margin-top:2rem;">
-  <summary>Sources &amp; References</summary>
-  <div class="details-content">
-    <ol style="font-size:0.82rem;line-height:1.7;color:var(--text-muted);">
-      <li>Park et al. "Generative Agents: Interactive Simulacra of Human Behavior" (Stanford, 2023)</li>
-      <li>HL7 FHIR R4 Specification — hl7.org/fhir/R4</li>
-      <li>Google A2A Protocol — Agent-to-Agent Communication Specification</li>
-      <li>Nictiz — HL7 FHIR R4 nl-core implementatiegids</li>
-      <li>IZA — Integraal Zorgakkoord 2023–2026</li>
-      <li>NZa Beleidsregel huisartsenzorg en multidisciplinaire zorg 2025</li>
-      <li>Wegiz — Wet elektronische gegevensuitwisseling in de zorg (2023)</li>
-      <li>CBS StatLine — Bevolking; kerncijfers 2024</li>
-      <li>RIVM Volksgezondheid Toekomst Verkenning 2024</li>
-      <li>NZa Monitor Toegankelijkheid Zorg — Wachttijden 2024</li>
-      <li>Health-RI / IKNL — Personal Health Train &amp; vantage6</li>
-      <li>ABF Research — Arbeidsmarktprognose zorg en welzijn 2023–2033</li>
-    </ol>
-  </div>
-</details>
-
-</section>
-
+      <p>The results are presented in Chapter 2 (the current system’s baseline) and Chapter 3 (what changes when we add AI interventions). The raw data and simulation code are open source.</p>
+    </section>
 
     <nav class="chapter-nav">
-    <a href="ch2.html" class="next">Next: The Current System →</a>
-  </nav>
+      <a href="ch2.html" class="next">Next: The Current System →</a>
+    </nav>
   </main>
 
   <!-- Right margin (empty) -->
@@ -1168,16 +802,15 @@ code {
 
 <!-- Footer -->
 <footer class="site-footer">
-  <p>CAMMELOT: 45 pixel citizens. 100 simulations. Real Dutch data.</p>
-  <p style="margin-top:0.4rem;">Built by <a href="https://www.linkedin.com/in/simonecammel/" target="_blank">Simone Cammel</a> &middot; <a href="https://github.com/cammeleon66/Cammelot" target="_blank">View on GitHub</a></p>
+  <p>CAMMELOT: 45 pixel citizens. 200 simulation runs. Real Dutch data.</p>
+  <p style="margin-top:0.4rem;">Built by <a href="https://www.linkedin.com/in/simonecammel/" target="_blank">Simone Cammel</a></p>
   <div class="footer-sources">
     Data sources: CBS (Centraal Bureau voor de Statistiek) &middot; RIVM (Rijksinstituut voor Volksgezondheid en Milieu) &middot; NZa (Nederlandse Zorgautoriteit) &middot; LHV &middot; IZA 2023-2026
   </div>
 </footer>
 
-
 <script>
-// ── Reading Progress Bar ──
+// Reading Progress Bar
 const progressBar = document.getElementById('progress-bar');
 function updateProgress() {
   const scrollTop = window.scrollY;
@@ -1186,19 +819,16 @@ function updateProgress() {
   progressBar.style.width = pct + '%';
 }
 
-// ── Back to Top ──
+// Back to Top
 const backToTop = document.getElementById('back-to-top');
 function updateBackToTop() {
-  if (window.scrollY > 600) {
-    backToTop.classList.add('visible');
-  } else {
-    backToTop.classList.remove('visible');
-  }
+  backToTop.classList.toggle('visible', window.scrollY > 600);
 }
 backToTop.addEventListener('click', () => {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 });
 
+// Theme toggle
 const themeToggle = document.getElementById('theme-toggle');
 const savedTheme = localStorage.getItem('cammelot-theme');
 if (savedTheme === 'dark') {
@@ -1212,11 +842,10 @@ themeToggle.addEventListener('click', () => {
   localStorage.setItem('cammelot-theme', isDark ? 'dark' : 'light');
 });
 
-// ── Mobile Hamburger ──
+// Mobile Hamburger
 const hamburger = document.getElementById('hamburger');
 const mobileOverlay = document.getElementById('mobile-toc-overlay');
 const mobileBackdrop = document.getElementById('mobile-toc-backdrop');
-
 hamburger.addEventListener('click', () => {
   hamburger.classList.toggle('open');
   mobileOverlay.classList.toggle('open');
@@ -1235,31 +864,20 @@ document.querySelectorAll('.mobile-toc-link').forEach(a => {
   });
 });
 
-// Intersection observer for chapter elements
-const observer = new IntersectionObserver((entries) => {
+// Sidebar TOC active state
+const tocLinks = document.querySelectorAll('.toc a[data-section]');
+const sections = document.querySelectorAll('section[id], h3[id]');
+const sectionObserver = new IntersectionObserver((entries) => {
   entries.forEach(entry => {
     if (entry.isIntersecting) {
-      entry.target.classList.add('visible');
+      tocLinks.forEach(l => l.classList.remove('active'));
+      const id = entry.target.id;
+      const active = document.querySelector('.toc a[data-section="' + id + '"]');
+      if (active) active.classList.add('active');
     }
   });
-}, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
-document.querySelectorAll('.chapter').forEach(ch => observer.observe(ch));
-
-// ── Footnotes ──
-document.querySelectorAll('.fn-ref').forEach(ref => {
-  ref.addEventListener('click', (e) => {
-    e.preventDefault();
-    const fnId = ref.dataset.fn;
-    let target = ref.parentElement;
-    while (target && target.nextElementSibling) {
-      target = target.nextElementSibling;
-      if (target.classList.contains('footnote-body') && target.dataset.fn === fnId) {
-        target.classList.toggle('open');
-        break;
-      }
-    }
-  });
-});
+}, { threshold: 0.2, rootMargin: '-80px 0px -60% 0px' });
+sections.forEach(s => sectionObserver.observe(s));
 
 // Combined scroll handler
 function onScroll() {
@@ -1268,9 +886,6 @@ function onScroll() {
 }
 window.addEventListener('scroll', onScroll, { passive: true });
 onScroll();
-
-// Ensure chapter content is visible
-document.querySelectorAll('.chapter').forEach(el => el.classList.add('visible'));
 </script>
 </body>
 </html>
