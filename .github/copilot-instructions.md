@@ -2,12 +2,12 @@
 
 ## Project Overview
 
-Cammelot is a browser-based healthcare simulation of a Dutch town (45 citizens, 3 GPs, 1 hospital). It models the Dutch "zorginfarct" (care crisis) using real CBS/RIVM/NZa data. The simulation runs in two modes: **IST** (current broken system) and **SOLL** (AI-augmented target). The public website is at [cammelot.org](https://cammelot.org).
+Cammelot is a browser-based healthcare simulation of a Dutch town (45 citizens, 3 GPs, 1 hospital). It models the Dutch "care gridlock" using real CBS/RIVM/NZa data. The simulation runs in two modes: **IST** (current broken system) and **SOLL** (AI-augmented target). The public website is at [cammelot.org](https://cammelot.org).
 
 ## Build & Test
 
 ```bash
-# Run all tests (Node.js built-in test runner, no dependencies needed)
+# Run all tests (Node.js built-in test runner, zero npm dependencies)
 npm test
 
 # Run a single test file
@@ -17,35 +17,29 @@ node --test tests/disease_engine.test.js
 npm start
 ```
 
-There are no build steps, linters, or bundlers. The site is static HTML served from `/site`.
+No build steps, linters, or bundlers exist. The site is static HTML served from `site/`. The project uses `"type": "module"` (ES modules) — any ad-hoc scripts that use `require()` must use the `.cjs` extension.
 
 ## Architecture
 
 ### Two Disconnected Systems
 
-The **frontend** (`site/world.html`, ~10,700 lines, ~510KB) is a self-contained simulation engine — it has its own disease engine, Markov chains, HP drain, population spawner, and rendering loop. It does NOT call the backend.
+The **frontend** (`site/world.html`, ~10,700 lines, ~510KB) is a fully self-contained simulation engine with its own disease engine, Markov chains, HP drain, population spawner, and rendering loop. It does **not** call the backend.
 
 The **backend** (`src/`) is a Node.js ES module system with FHIR store, A2A protocol, cognitive loop, and disease engine. It shares the same *design* as the frontend but they are **architecturally disconnected** (see `docs/ADR.md`).
 
 All site pages (`site/index.html`, `site/ch0-ch3.html`, `site/world.html`) have **inline CSS and JS** — no external stylesheets or bundled scripts.
 
-### world.html Internal Structure
+### world.html Simulation Loop
 
-This is the core product — a single HTML file containing the entire simulation:
+`world.html` is the core product. Key runtime flow:
 
-| Line Range | Component |
-|------------|-----------|
-| ~920–960 | Canvas setup, map image loading |
-| ~1100–3200 | Disease DB, population spawner, agent definitions |
-| ~3200–3400 | Disease progression (Markov), HP drain, Treeknorm |
-| ~4020–4200 | `drawAgent()` — sprite rendering with emotion states |
-| ~4738–4900 | `render()` — main canvas render loop |
-| ~6175–7250 | `tick()` — simulation step (disease, queues, referrals, mortality) |
-| ~8030–8050 | `sayA2A()` — A2A protocol chat messages |
-| ~9207 | `loop()` — requestAnimationFrame render loop |
-| ~9217 | `startNewGame()` — initialization entry point |
-| ~9543–9558 | Auto-start (non-embed) or embed mode init |
-| ~10460–10700 | Guided tour system |
+1. **`startNewGame()`** — initializes population, sprites, waypoints, behaviors (each step in its own try/catch)
+2. **Walkthrough** — 6-step guided tour with element highlighting; dismisses into `launchSimulation()`
+3. **`launchSimulation()`** — idempotent entry point; pre-ticks 10 cycles for initial Town Feed content, starts `autoTimer`
+4. **`loop()`** → `requestAnimationFrame` → **`render()`** — canvas drawing, agent movement interpolation (frame-rate independent `dt`)
+5. **`tick()`** — game logic every 500ms: disease progression, HP drain, queue management, referrals, mortality
+
+**Critical**: Agent movement happens in `render()`, not `tick()`. If `render()` throws, agents freeze but tick logic keeps running — this looks like "nobody is walking" but the simulation is actually advancing.
 
 ### Key Simulation Parameters
 
@@ -54,13 +48,14 @@ This is the core product — a single HTML file containing the entire simulation
 - Admin burden: IST=30%, SOLL=5%
 - Treeknorm threshold: 12 weeks
 - Ghost (death) at HP ≤ 0
+- Death types: `died` = system-failure (preventable, 💀), `natural_death` = old age (CBS life tables, 🕊)
 - Comorbidity multipliers: COPD→CVD (RR=2.5), T2D→CVD (RR=2.0), HTN→CVD (RR=1.8)
 
 ## Critical Conventions
 
 ### Unicode in site/*.html — Use Python Scripts for Edits
 
-The site HTML files contain raw Unicode (em-dashes, arrows, euro signs, smart quotes). The `edit` tool's pattern matching fails silently on these characters. **Always use Python scripts** with UTF-8 encoding for file modifications:
+The site HTML files contain raw Unicode (em-dashes, arrows, euro signs, smart quotes). The `edit` tool's pattern matching **fails silently** on these characters. **Always use Python scripts** with UTF-8 encoding for file modifications:
 
 ```python
 with open('site/world.html', 'r', encoding='utf-8') as f:
@@ -69,6 +64,17 @@ with open('site/world.html', 'r', encoding='utf-8') as f:
 with open('site/world.html', 'w', encoding='utf-8') as f:
     f.write(content)
 ```
+
+### Debugging world.html — Use Puppeteer
+
+`world.html` errors are often invisible in code analysis because the render loop silently dies inside `requestAnimationFrame`. **Use Puppeteer headless Chrome** to catch runtime errors:
+
+```bash
+# Scripts must use .cjs extension (project is ES modules)
+# Serve site/ on a local HTTP server, then test with puppeteer
+```
+
+A single missing variable declaration (e.g., `screenshotMode`) can kill `render()` via `ReferenceError` and freeze all agents with zero visible errors in the code.
 
 ### Dual Remote Workflow
 
@@ -82,27 +88,21 @@ with open('site/world.html', 'w', encoding='utf-8') as f:
 
 Strict **16-bit SNES RPG aesthetic**. No corporate dashboards, flat grey UIs, or modern chart-heavy layouts. Use saturated pixel-art colors, speech bubbles, retro-game menus. Font: "Press Start 2P" for pixel elements, "Space Grotesk" for modern UI text.
 
-### Data Sources
-
-All simulation parameters must trace to real Dutch data:
-- **CBS** — demographics, mortality rates, life expectancy
-- **RIVM** — chronic disease prevalence, comorbidity
-- **NZa** — GP tariffs, Treeknorm waiting norms
-- **IZA** — transformation budget, staffing projections
-
-Config files in `config/` store reference data (NZa tariffs, admin scenarios, prevalence tables).
-
 ### Content Tone
 
-The website uses an **academic, grounded research tone** — not marketing language. The author (Simone Cammel) works at Microsoft and explicitly acknowledges potential bias. All claims must reference the 200 simulation runs and specific data sources.
+The website uses an **academic, grounded research tone** — not marketing language. The author (Simone Cammel) works at Microsoft and explicitly acknowledges potential bias. All claims must reference simulation runs and specific data sources (CBS, RIVM, NZa, IZA).
 
-## File Roles
+### Mobile Breakpoints
+
+- **1024px** — tablet: column layout, compact chatlog
+- **768px** — phone: chatlog hidden, 40vh game / 60vh panel, compact top bar
+- **480px** — small phone: 35vh/65vh split, minimal stats and buttons
+
+## Key Reference Files
 
 | Path | Purpose |
 |------|---------|
-| `CLAUDE.md` | Master context document — read first for all architecture/data decisions |
-| `docs/CODEBASE_MAP.md` | Detailed file inventory and architectural analysis |
+| `CLAUDE.md` | Master context — read first for all architecture/data decisions |
+| `docs/ADR.md` | Architecture Decision Records (frontend-first rationale) |
 | `docs/AGENT_SPEC.md` | Agent type definitions and behaviors |
-| `00_Project_Strategy/BACKLOG.md` | Prioritized backlog (P0–P3) |
-| `config/` | Epidemiological and economic data configs |
-| `scripts/output/` | Simulation run results (100-run batches, scenarios) |
+| `config/` | Epidemiological data (NZa tariffs, prevalence tables, comorbidity rules) |
