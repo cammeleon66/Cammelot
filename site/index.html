@@ -1039,7 +1039,7 @@ code {
     /* ── Screenshot Slider ── */
     .sim-slider {
       margin: 2.5rem auto;
-      max-width: 100%;
+      max-width: 75%;
       border-radius: 6px;
       overflow: hidden;
       border: 1px solid var(--border);
@@ -1065,8 +1065,8 @@ code {
       align-items: stretch;
     }
     .sim-slide-img-wrap {
-      flex: 1 1 55%;
-      min-width: 0;
+      flex: 0 0 auto;
+      aspect-ratio: 4 / 5;
       overflow: hidden;
       display: flex;
       align-items: center;
@@ -1163,6 +1163,7 @@ code {
       .sim-slide-img-wrap {
         flex: none;
         width: 100%;
+        aspect-ratio: 4 / 5;
       }
       .sim-slide-caption {
         flex: none;
