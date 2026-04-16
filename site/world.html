@@ -135,9 +135,9 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a1a2e;font-family:
 .tour-btn.primary{background:linear-gradient(135deg,#FFB300,#FF6F00);color:#1a1a2e;border:none}
 .tour-btn.close{background:rgba(229,57,53,.1);color:#E53935;border-color:rgba(229,57,53,.3)}
 .tour-btn.close:hover{background:rgba(229,57,53,.2)}
-.walkthrough-overlay{position:fixed;inset:0;z-index:9600;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .4s}
-.walkthrough-overlay.visible{opacity:1;pointer-events:auto}
-.walkthrough-modal{background:#1a1510;border:3px solid #FFB300;border-radius:14px;padding:32px 36px 24px;max-width:560px;width:calc(100% - 48px);box-shadow:0 12px 48px rgba(0,0,0,.7);position:relative}
+.walkthrough-overlay{position:fixed;inset:0;z-index:9600;background:rgba(0,0,0,.35);display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .4s;padding-bottom:24px}
+.walkthrough-overlay.visible{opacity:1}
+.walkthrough-modal{background:#1a1510;border:3px solid #FFB300;border-radius:14px;padding:20px 24px 16px;max-width:520px;width:calc(100% - 48px);box-shadow:0 12px 48px rgba(0,0,0,.7);position:relative;pointer-events:auto}
 .walkthrough-modal h2{font-family:'Press Start 2P',monospace;font-size:13px;color:#FFB300;margin:0 0 8px;text-align:center}
 .walkthrough-modal .wt-subtitle{font:12px/1.4 'Space Grotesk',sans-serif;color:#b0a080;text-align:center;margin-bottom:20px}
 .walkthrough-step{color:#F5E6C8;font:14px/1.7 'Inter','Space Grotesk',sans-serif;margin-bottom:18px;min-height:80px}
@@ -5368,6 +5368,11 @@ function showMemorial(grave) {
 }
 
 function selectAgent(a){
+  // Walkthrough: auto-advance when user clicks a citizen during "Meet a Citizen" step
+  if (window._wtAwaitClick) {
+    window._wtAwaitClick = false;
+    if (window._wtAdvance) { setTimeout(window._wtAdvance, 800); }
+  }
   // Sprint 15: Track if agent changed for panel fade
   const agentChanged = selectedAgent !== a.id;
   selectedAgent=a.id;
@@ -9586,6 +9591,9 @@ try {
   startNewGame();
   console.log('Cammelot: startNewGame complete, rendering...');
   render();
+  // Pre-tick 10 times so the right panel has events on first load
+  for(var i=0;i<10;i++) tick();
+  showTownFeed();
   // Do NOT start autoTimer yet — wait for tour to end or be skipped
   var playBtnInSim = document.getElementById('btn-play');
   if (playBtnInSim) playBtnInSim.textContent = '▶ Play';
@@ -10731,54 +10739,55 @@ document.getElementById('btn-tours').addEventListener('click', function() {
   showTourSelection();
 });
 
-// ═══ FIRST VISIT: Centered walkthrough modal ═══
+// === FIRST VISIT: Interactive walkthrough (click-through overlay) ===
 (function() {
   var WALKTHROUGH_STEPS = [
     {
-      icon: '\ud83c\udff0',
-      title: 'Welcome to Cammelot',
-      text: 'You\'re looking at a simulated Dutch town of <span class="wt-highlight">45 AI citizens</span>, 3 GP practices, and 1 hospital. Every citizen has a name, age, health profile, and daily routine.',
-      detail: 'The simulation is built on real data from CBS, RIVM, and NZa \u2014 Dutch national statistics on demographics, disease prevalence, and healthcare capacity. Nothing is made up.'
+      icon: "\ud83c\udff0",
+      title: "Welcome to Cammelot",
+      text: 'This is a simulated Dutch town with <span class="wt-highlight">45 AI citizens</span>, 3 GP practices, and 1 hospital. Each citizen has real medical conditions based on Dutch health data.',
+      detail: 'Built on CBS, RIVM, and NZa data \u2014 Dutch national statistics on demographics, disease prevalence, and healthcare capacity. The simulation is already running \u2014 look at the citizens walking around.'
     },
     {
-      icon: '\ud83d\udc64',
-      title: 'Meet the Citizens',
-      text: 'Each pixel character walking through town is an autonomous agent. <span class="wt-highlight">Click any citizen</span> on the map to open their dossier.',
-      detail: 'You\'ll see their HP (health points), medical conditions, GP visit history, personality, memories, and a short biography. Every citizen is unique \u2014 generated from Dutch demographic distributions.'
+      icon: "\ud83d\udcf0",
+      title: "The Town Feed",
+      text: 'The panel on the right shows the <span class="wt-highlight">Town Feed</span> \u2014 a live stream of GP visits, hospital admissions, referrals, and health events.',
+      detail: 'As the simulation runs, new events appear here. Filter by Deaths, Hospital, GP, or Social to focus on what interests you.'
     },
     {
-      icon: '\ud83c\udfe5',
-      title: 'Inspect a GP Practice',
-      text: '<span class="wt-highlight">Click a GP practice</span> (the building icons) to see behind the scenes: patient queue, burnout level, admin burden, and daily consultation capacity.',
-      detail: 'In the real Netherlands, GPs lose ~30% of their time to administration. The simulation models this friction and its downstream effects on wait times and patient outcomes.'
+      icon: "\ud83d\udc46",
+      title: "Meet a Citizen",
+      text: '<span class="wt-highlight">Click any person</span> walking in the town to open their medical dossier \u2014 age, conditions, HP, biography, and their journey through the healthcare system.',
+      detail: 'Go ahead \u2014 click someone on the map now. The walkthrough continues when you do.',
+      awaitClick: true
     },
     {
-      icon: '\ud83d\udcf0',
-      title: 'The Village Dashboard',
-      text: 'Click the empty map or use the <span class="wt-highlight">\ud83d\udcf0 Gazette</span> button to see the Town Feed \u2014 a live dashboard of everything happening in Cammelot.',
-      detail: 'The feed shows GP visits, hospital admissions, social chats, and health events. The Gazette compiles weekly reports with trends, mood indicators, and a mayor\'s column.'
+      icon: "\u26a1",
+      title: "IST vs SOLL",
+      text: 'Use the <span class="wt-highlight">IST / SOLL toggle</span> at the top. IST shows today\u2019s Dutch healthcare crisis. SOLL shows what an AI-native overhaul could look like.',
+      detail: '30% admin burden drops to <5%. 12-week waits drop to <4 weeks. Toggle between them and watch outcomes change in real time.'
     },
     {
-      icon: '\u25b6\ufe0f',
-      title: 'Ready to Run',
-      text: 'Press <span class="wt-highlight">\u25b6 Play</span> to start the simulation. Watch citizens get sick, visit GPs, get referred, wait, and either recover \u2014 or fall through the cracks.',
-      detail: 'Use the IST/SOLL toggle to compare today\'s Dutch healthcare (IST) with an AI-augmented future (SOLL). The difference in outcomes is the core research question.'
+      icon: "\u25b6\ufe0f",
+      title: "Ready to Explore",
+      text: 'Press <span class="wt-highlight">\u25b6 Play</span> to keep the simulation running. Use \u23e9 \u00d7100 for fast-forward, or \u21ba Reset to start over.',
+      detail: 'Explore the Gazette (\ud83d\udcf0), Stats (\ud83d\udcca), Timeline (\ud83d\udcc8), and more. Every data point traces back to real Dutch healthcare sources.'
     }
   ];
 
   var currentStep = 0;
 
   function buildWalkthrough() {
-    var overlay = document.createElement('div');
-    overlay.className = 'walkthrough-overlay';
-    overlay.id = 'walkthrough-overlay';
+    var overlay = document.createElement("div");
+    overlay.className = "walkthrough-overlay";
+    overlay.id = "walkthrough-overlay";
 
-    var modal = document.createElement('div');
-    modal.className = 'walkthrough-modal';
+    var modal = document.createElement("div");
+    modal.className = "walkthrough-modal";
 
     modal.innerHTML =
       '<h2>\ud83c\udff0 CAMMELOT</h2>' +
-      '<div class="wt-subtitle">A 60-second introduction to the simulation</div>' +
+      '<div class="wt-subtitle">A 60-second interactive introduction</div>' +
       '<div class="walkthrough-step" id="wt-step-content"></div>' +
       '<div class="walkthrough-dots" id="wt-dots"></div>' +
       '<div class="walkthrough-footer">' +
@@ -10790,81 +10799,117 @@ document.getElementById('btn-tours').addEventListener('click', function() {
     document.body.appendChild(overlay);
 
     // Build dots
-    var dotsEl = document.getElementById('wt-dots');
+    var dotsEl = document.getElementById("wt-dots");
     for (var i = 0; i < WALKTHROUGH_STEPS.length; i++) {
-      var dot = document.createElement('div');
-      dot.className = 'dot';
+      var dot = document.createElement("div");
+      dot.className = "dot";
       dotsEl.appendChild(dot);
     }
 
     renderStep();
 
     requestAnimationFrame(function() {
-      requestAnimationFrame(function() { overlay.classList.add('visible'); });
+      requestAnimationFrame(function() { overlay.classList.add("visible"); });
     });
   }
 
   function renderStep() {
     var step = WALKTHROUGH_STEPS[currentStep];
-    var stepDiv = document.getElementById('wt-step-content');
+    var stepDiv = document.getElementById("wt-step-content");
+    if (!stepDiv) return;
+
     stepDiv.innerHTML =
       '<div class="wt-icon">' + step.icon + '</div>' +
       '<div>' + step.text + '</div>' +
-      (step.detail ? '<div class="wt-detail">' + step.detail + '</div>' : '');
+      (step.detail ? '<div class="wt-detail">' + step.detail + '</div>' : "");
 
     // Update dots
-    var dots = document.getElementById('wt-dots').children;
+    var dots = document.getElementById("wt-dots").children;
     for (var i = 0; i < dots.length; i++) {
-      dots[i].className = 'dot' + (i === currentStep ? ' active' : (i < currentStep ? ' done' : ''));
+      dots[i].className = "dot" + (i === currentStep ? " active" : (i < currentStep ? " done" : ""));
     }
 
-    // Update step label
-    document.getElementById('wt-step-label').textContent = (currentStep + 1) + ' / ' + WALKTHROUGH_STEPS.length;
+    // Step label
+    document.getElementById("wt-step-label").textContent = (currentStep + 1) + " / " + WALKTHROUGH_STEPS.length;
 
-    // Update buttons
-    var btnsDiv = document.getElementById('wt-btns');
-    btnsDiv.innerHTML = '';
+    // Buttons
+    var btnsDiv = document.getElementById("wt-btns");
+    btnsDiv.innerHTML = "";
 
+    // Skip/Back button
     if (currentStep > 0) {
-      var backBtn = document.createElement('button');
-      backBtn.className = 'wt-btn secondary';
-      backBtn.textContent = '\u2190 Back';
-      backBtn.addEventListener('click', function() { currentStep--; renderStep(); });
+      var backBtn = document.createElement("button");
+      backBtn.className = "wt-btn secondary";
+      backBtn.textContent = "\u2190 Back";
+      backBtn.addEventListener("click", function() {
+        window._wtAwaitClick = false;
+        currentStep--;
+        renderStep();
+      });
       btnsDiv.appendChild(backBtn);
     } else {
-      var skipBtn = document.createElement('button');
-      skipBtn.className = 'wt-btn secondary';
-      skipBtn.textContent = 'Skip';
-      skipBtn.addEventListener('click', closeWalkthrough);
+      var skipBtn = document.createElement("button");
+      skipBtn.className = "wt-btn secondary";
+      skipBtn.textContent = "Skip";
+      skipBtn.addEventListener("click", closeWalkthrough);
       btnsDiv.appendChild(skipBtn);
     }
 
-    if (currentStep < WALKTHROUGH_STEPS.length - 1) {
-      var nextBtn = document.createElement('button');
-      nextBtn.className = 'wt-btn primary';
-      nextBtn.textContent = 'Next \u2192';
-      nextBtn.addEventListener('click', function() { currentStep++; renderStep(); });
+    // Handle awaitClick step
+    if (step.awaitClick) {
+      window._wtAwaitClick = true;
+      window._wtAdvance = function() {
+        window._wtAwaitClick = false;
+        window._wtAdvance = null;
+        currentStep++;
+        renderStep();
+      };
+      var waitLabel = document.createElement("span");
+      waitLabel.style.cssText = 'font:12px/1 "Space Grotesk",sans-serif;color:#FFB300;padding:8px 14px;opacity:.8';
+      waitLabel.textContent = "\u2190 click a citizen on the map";
+      btnsDiv.appendChild(waitLabel);
+      // Also add a small skip-ahead link
+      var skipAhead = document.createElement("button");
+      skipAhead.className = "wt-btn secondary";
+      skipAhead.style.fontSize = "11px";
+      skipAhead.textContent = "Skip \u2192";
+      skipAhead.addEventListener("click", function() {
+        window._wtAwaitClick = false;
+        window._wtAdvance = null;
+        currentStep++;
+        renderStep();
+      });
+      btnsDiv.appendChild(skipAhead);
+    } else if (currentStep < WALKTHROUGH_STEPS.length - 1) {
+      var nextBtn = document.createElement("button");
+      nextBtn.className = "wt-btn primary";
+      nextBtn.textContent = "Next \u2192";
+      nextBtn.addEventListener("click", function() { currentStep++; renderStep(); });
       btnsDiv.appendChild(nextBtn);
     } else {
-      var startBtn = document.createElement('button');
-      startBtn.className = 'wt-btn primary';
-      startBtn.textContent = '\u25b6 Start Simulation';
-      startBtn.addEventListener('click', closeWalkthrough);
+      var startBtn = document.createElement("button");
+      startBtn.className = "wt-btn primary";
+      startBtn.textContent = "\u25b6 Start Simulation";
+      startBtn.addEventListener("click", closeWalkthrough);
       btnsDiv.appendChild(startBtn);
     }
   }
 
   function closeWalkthrough() {
-    var overlay = document.getElementById('walkthrough-overlay');
+    window._wtAwaitClick = false;
+    window._wtAdvance = null;
+    var overlay = document.getElementById("walkthrough-overlay");
     if (overlay) {
-      overlay.classList.remove('visible');
+      overlay.classList.remove("visible");
+      overlay.style.pointerEvents = "none";
       setTimeout(function() { overlay.remove(); }, 400);
     }
+    // Ensure simulation actually starts
     resumeSimulation();
   }
 
-  // Show walkthrough immediately after initial render
-  setTimeout(buildWalkthrough, 300);
+  // Show walkthrough after initial render + pre-ticks
+  setTimeout(buildWalkthrough, 400);
 })();
 
 // Sprint S2: Taxi meter toggle button
