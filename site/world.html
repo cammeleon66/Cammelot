@@ -9621,42 +9621,56 @@ if(EMBED_MODE){
   var embedCycle=parseInt(embedParams.get('cycle'),10);
   if(embedCycle>0){for(var i=0;i<embedCycle&&i<10000;i++)tick();}
 } else {
-// Website version: auto-start paused, show tour first
-console.log('Cammelot: auto-starting (paused)...');
+// Website version: walkthrough first, then simulation
+console.log('Cammelot: website mode starting...');
 stopLoadingAnimation();
 document.getElementById('load').classList.add('go');
 document.getElementById('play-overlay').style.display = 'none';
-// Initialize simulation (each step isolated so one failure doesn't kill everything)
-try { startNewGame(); console.log('Cammelot: startNewGame complete'); } catch(e) { console.error('Init error:', e); }
-try { render(); } catch(e) { console.error('Render error:', e); }
-try { for(var i=0;i<10;i++) tick(); } catch(e) { console.error('Pre-tick error:', e); }
-try { showTownFeed(); } catch(e) { console.error('TownFeed error:', e); }
-// ALWAYS start render loop + autoTimer — citizens must move AND be visible
-try { if (typeof loop === "function") loop(); } catch(e) { console.error("Loop error:", e); }
-autoTimer = setInterval(tick, 500);
+
+// Initialize the world but do NOT start tick loop yet
+try { startNewGame(); } catch(e) { console.error('startNewGame error:', e); }
+// render() and loop() are started inside startNewGame. Agents are placed but tick doesn't run.
+// Show the town feed while walkthrough is active
+try { showTownFeed(); } catch(e) {}
+
+// Do NOT start autoTimer here — wait for walkthrough to finish.
+// The walkthrough's 'Start' button calls launchSimulation() below.
 var playBtnInSim = document.getElementById('btn-play');
-if (playBtnInSim) playBtnInSim.textContent = '⏸ Pause';
+if (playBtnInSim) playBtnInSim.textContent = '▶ Play';
 } // end non-embed block
-// Safety: force-start sim + remove any blocking overlays after 1 second
+// Safety: if simulation not started within 45 seconds, force-start
 setTimeout(function() {
   if (!autoTimer) {
-    autoTimer = setInterval(tick, 500);
-    var pb = document.getElementById('btn-play');
-    if (pb) pb.textContent = '⏸ Pause';
+    console.warn('Cammelot: walkthrough timeout, force-starting simulation');
+    launchSimulation();
   }
-  // Nuclear cleanup: remove ALL overlays that could block canvas clicks
-  ['walkthrough-overlay','play-overlay','intro-overlay','attract-overlay'].forEach(function(id) {
-    var el = document.getElementById(id);
-    if (el) { el.remove(); console.log('Removed overlay: ' + id); }
-  });
-  var wiz = document.getElementById('wizard-overlay');
-  if (wiz) wiz.style.display = 'none';
-}, 1000);
+}, 45000);
 // Sprint 17.3: Start attract mode timer
 // Sprint 29: Attract mode disabled for cleaner UX
 // resetAttractTimer();
 window.addEventListener('resize',()=>{userZoomed=false;zoom=1;render();});
 // beforeunload save removed for website version
+
+// === Launch simulation (called when walkthrough finishes) ===
+function launchSimulation() {
+  if (autoTimer) return; // already running
+  console.log('Cammelot: launching simulation!');
+  // Pre-tick to populate the world
+  try { for(var i=0;i<10;i++) tick(); } catch(e) {}
+  try { showTownFeed(); } catch(e) {}
+  // Start the tick loop
+  autoTimer = setInterval(tick, 500);
+  var pb = document.getElementById('btn-play');
+  if (pb) pb.textContent = '⏸ Pause';
+  // Remove walkthrough card if still present
+  var wc = document.getElementById('welcome-card');
+  if (wc) wc.remove();
+  // Remove any leftover overlays
+  ['walkthrough-overlay','play-overlay','wizard-overlay'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.remove();
+  });
+}
 
 // ═══ EVENT BINDING (CSP-safe — no inline handlers) ═══
 document.getElementById('bi').addEventListener('click', () => setMode('IST'));
@@ -9668,8 +9682,7 @@ document.getElementById('btn-play').addEventListener('click', () => {
     clearInterval(autoTimer); autoTimer = null;
     document.getElementById('btn-play').textContent = '▶ Play';
   } else {
-    autoTimer = setInterval(tick, 500);
-    document.getElementById('btn-play').textContent = '⏸ Pause';
+    launchSimulation(); // handles pre-ticks, cleanup, and autoTimer
   }
 });
 document.getElementById('btn-batch100').addEventListener('click', () => { playUIClick(); batch(100); });
@@ -10790,63 +10803,110 @@ document.getElementById('btn-tours').addEventListener('click', function() {
   showTourSelection();
 });
 
-// === Simple walkthrough card (non-blocking, no overlay) ===
+// === Walkthrough with element highlighting ===
 (function() {
   var steps = [
-    { icon: "\ud83c\udff0", text: "Welcome to Cammelot! 45 AI citizens with real Dutch health data. Watch them walk, get sick, visit GPs, and wait for specialists." },
-    { icon: "\ud83d\udc46", text: "Click any citizen on the map to open their medical dossier. Click GP practices or the hospital to see their queues." },
-    { icon: "\u26a1", text: "Use the IST/SOLL toggle at the top. IST = today's crisis. SOLL = AI-native future. Watch how outcomes change." },
-    { icon: "\u25b6\ufe0f", text: "The simulation is running. Use \u23f8 Pause, \u23e9 \u00d7100, or \u21ba Reset. Explore the Gazette, Stats, and Timeline." }
+    { 
+      icon: "\ud83c\udff0", 
+      text: "Welcome to Cammelot! A simulated Dutch town with 45 AI citizens, 3 GP practices, and 1 hospital. All health data is real (CBS/RIVM/NZa).",
+      highlight: null
+    },
+    { 
+      icon: "\ud83d\udc46", 
+      text: "Click any citizen on the map to see their medical dossier. Click GP practices or the hospital to inspect their queues and capacity.",
+      highlight: "#game-wrap"
+    },
+    { 
+      icon: "\ud83d\udcf0", 
+      text: "The right panel shows the Town Feed — live events from the simulation. Click any event to jump to that citizen.",
+      highlight: "#panel"
+    },
+    { 
+      icon: "\u26a1", 
+      text: "Use IST/SOLL at the top to switch between today's healthcare crisis and an AI-augmented future. Watch outcomes change in real time.",
+      highlight: ".mode-tog"
+    }
   ];
   var step = 0;
+  var highlightEl = null;
+
+  function clearHighlight() {
+    if (highlightEl) {
+      highlightEl.style.outline = "";
+      highlightEl.style.outlineOffset = "";
+      highlightEl.style.transition = "";
+      highlightEl = null;
+    }
+  }
+
+  function applyHighlight(selector) {
+    clearHighlight();
+    if (!selector) return;
+    var el = document.querySelector(selector);
+    if (!el) return;
+    highlightEl = el;
+    el.style.transition = "outline 0.3s ease";
+    el.style.outline = "3px solid #FFB300";
+    el.style.outlineOffset = "4px";
+  }
 
   function buildCard() {
     var card = document.createElement("div");
     card.id = "welcome-card";
-    card.style.cssText = "position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:100;background:#1a1510;border:2px solid #FFB300;border-radius:10px;padding:14px 20px 12px;max-width:480px;width:calc(100% - 40px);box-shadow:0 8px 32px rgba(0,0,0,.5);font-family:Inter,sans-serif;display:flex;align-items:center;gap:12px;";
+    card.style.cssText = "position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:100;background:#1a1510;border:2px solid #FFB300;border-radius:10px;padding:14px 20px 12px;max-width:500px;width:calc(100% - 40px);box-shadow:0 8px 32px rgba(0,0,0,.5);font-family:Inter,sans-serif;display:flex;align-items:center;gap:12px;";
 
-    var icon = document.createElement("span");
-    icon.style.cssText = "font-size:24px;flex-shrink:0;";
-    icon.textContent = steps[0].icon;
-    icon.id = "wc-icon";
+    var iconEl = document.createElement("span");
+    iconEl.style.cssText = "font-size:24px;flex-shrink:0;";
+    iconEl.textContent = steps[0].icon;
 
-    var text = document.createElement("span");
-    text.style.cssText = "color:#F5E6C8;font-size:13px;line-height:1.5;flex:1;";
-    text.textContent = steps[0].text;
-    text.id = "wc-text";
+    var textEl = document.createElement("span");
+    textEl.style.cssText = "color:#F5E6C8;font-size:13px;line-height:1.5;flex:1;";
+    textEl.textContent = steps[0].text;
 
     var btns = document.createElement("div");
     btns.style.cssText = "display:flex;gap:6px;flex-shrink:0;";
 
     var nextBtn = document.createElement("button");
     nextBtn.textContent = "Next \u2192";
-    nextBtn.id = "wc-next";
     nextBtn.style.cssText = "background:#FFB300;color:#1a1510;border:none;border-radius:5px;padding:6px 14px;font:600 12px Inter,sans-serif;cursor:pointer;";
-    nextBtn.addEventListener("click", function() {
+    
+    function advance() {
       step++;
-      if (step >= steps.length) { card.remove(); return; }
-      icon.textContent = steps[step].icon;
-      text.textContent = steps[step].text;
-      if (step === steps.length - 1) nextBtn.textContent = "Got it \u2714";
+      if (step >= steps.length) {
+        clearHighlight();
+        card.remove();
+        launchSimulation();
+        return;
+      }
+      iconEl.textContent = steps[step].icon;
+      textEl.textContent = steps[step].text;
+      applyHighlight(steps[step].highlight);
+      if (step === steps.length - 1) nextBtn.textContent = "\u25b6 Start Simulation";
+    }
+
+    nextBtn.addEventListener("click", advance);
+
+    var skipBtn = document.createElement("button");
+    skipBtn.textContent = "Skip";
+    skipBtn.style.cssText = "background:none;border:none;color:rgba(255,255,255,.3);font-size:11px;cursor:pointer;padding:4px;";
+    skipBtn.addEventListener("click", function() { 
+      clearHighlight(); 
+      card.remove(); 
+      launchSimulation(); 
     });
 
-    var closeBtn = document.createElement("button");
-    closeBtn.textContent = "\u00d7";
-    closeBtn.style.cssText = "background:none;border:none;color:rgba(255,255,255,.4);font-size:18px;cursor:pointer;padding:0 4px;";
-    closeBtn.addEventListener("click", function() { card.remove(); });
-
     btns.appendChild(nextBtn);
-    btns.appendChild(closeBtn);
-    card.appendChild(icon);
-    card.appendChild(text);
+    btns.appendChild(skipBtn);
+    card.appendChild(iconEl);
+    card.appendChild(textEl);
     card.appendChild(btns);
     document.body.appendChild(card);
 
-    // Auto-dismiss after 60 seconds
-    setTimeout(function() { if (card.parentNode) card.remove(); }, 60000);
+    // Apply first step highlight
+    applyHighlight(steps[0].highlight);
   }
 
-  setTimeout(buildCard, 800);
+  setTimeout(buildCard, 600);
 })();
 
 // Sprint S2: Taxi meter toggle button
