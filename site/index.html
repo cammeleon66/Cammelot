@@ -1278,11 +1278,11 @@ code {
 
       <p>I work at Microsoft. You should assume I’m biased toward AI. That’s exactly why I built something that could prove me wrong. In several important ways, it did.</p>
 
-      <p>Both online and offline, I still see the AI conversation stuck in a strange place. Proponents treat it as a productivity tool — a faster way to write emails. Critics dismiss it as hype. Neither side shows their math. “AI will solve the zorginfarct.” <em>How? Which interventions? In what order? With what side effects?</em> “AI is overhyped.” <em>Compared to what? The system that’s already producing a 301,000-worker shortage by 2035?</em></p>
+      <p>Both online and offline, I still see the AI conversation stuck in a strange place. Proponents treat it as a productivity tool; a faster way to write emails. Critics dismiss it as hype. Neither side shows their math. “AI will solve the zorginfarct.” <em>How? Which interventions? In what order? With what side effects?</em> “AI is overhyped.” <em>Compared to what? The system that’s already producing a 301,000-worker shortage by 2035?</em></p>
 
-      <p>I wanted a machine that produces numbers. Not predictions — outputs you can measure. Run it, measure it, break it, run it again. Two hundred times. With statistics.</p>
+      <p>I wanted a simulation machine that produces numbers on this, where we can simulate what happens when AI completely overhauls the health industry and not just as a point solution in a digital world where most data is not interoperable. Not predictions but outputs you can measure. Run it, measure it, break it, run it again. Two hundred times. With statistics.</p>
 
-      <p>So I built <strong>Cammelot</strong>: a simulated Dutch town. Forty-five citizens with names, ages, pre-existing conditions, and GP assignments. Three general practitioners. One hospital. The citizens walk around a 16-bit pixel map that looks like it belongs on a 1994 Super Nintendo — but their diseases are drawn from 2025 RIVM prevalence data, their healthcare costs from NZa tariffs, and their waiting times from the Treeknorm, the Dutch legal norm for specialist care access.</p>
+      <p>So I built <strong>Cammelot</strong>: a simulated Dutch town. Forty-five citizens with names, ages, pre-existing conditions, and GP assignments. Three general practitioners. One hospital. The citizens walk around a 16-bit pixel map that looks like it belongs on a 1994 Super Nintendo, but their diseases are drawn from 2025 RIVM prevalence data, their healthcare costs from NZa tariffs, and their waiting times from the Treeknorm, the Dutch legal norm for specialist care access.</p>
 
       <!-- Simulation screenshot slider -->
       <div class="sim-slider" id="simSlider">
@@ -1372,7 +1372,7 @@ code {
 
       <div class="thesis-callout">
         <p>Variables, Not Vibes</p>
-        <p class="subtitle">Every claim in this project is backed by simulation data, statistical tests, and published source parameters. The code is open. Tell me where I’m wrong.</p>
+        <p class="subtitle">I am trying to back every claim in this project by simulation data, statistical tests, and published source parameters. The code is open. Please peer review and tell me where its wrong or right.</p>
       </div>
     </section>
 
@@ -1404,7 +1404,7 @@ code {
 
 
 
-      <p>r GP is operating at sixty-two percent capacity before they see their first patient. The effective capacity formula: <code>C_eff = C_total × (1 − 0.30 − 0.08) × 1.0 = 62%</code>. Thirty percent lost to paperwork. Eight percent to sick leave. No AI assistance. The efficiency multiplier is 1.0.</p>
+      <p>a GP is operating at sixty-two percent capacity before they see their first patient. The effective capacity formula: <code>C_eff = C_total × (1 − 0.30 − 0.08) × 1.0 = 62%</code>. Thirty percent lost to paperwork. Eight percent to sick leave. No AI assistance. The efficiency multiplier is 1.0.</p>
 
       <p>When citizens get sick in IST, they follow the same path real Dutch patients do: visit a GP, get triaged, get referred to a specialist, and wait. If the wait exceeds the Treeknorm threshold, their health deteriorates. The sicker you already are, the faster you decline. At some point, the sprite turns grey. A ghost. A preventable death caused not by the disease itself, but by the system’s inability to process the patient in time.</p>
 
@@ -1518,20 +1518,20 @@ code {
     <section id="experiment" class="research-section">
       <h2>The Experiment</h2>
 
-      <p>Every claim in this project will be tested using the same protocol: <strong>100 independent simulation runs per mode</strong> — 200 total. Each run simulates roughly 10 years (3,000 cycles). We use Welch’s t-test for significance, Cohen’s d for effect size, and 95% confidence intervals on every metric. Null results will be published alongside positive ones.</p>
+      <p>Every claim in this project will be tested using the same protocol: <strong>100 independent simulation runs per mode</strong> — 200 total. Each run simulates roughly 10 years (3,000 cycles). We are using statistics for significance, effect size and confidence intervals on every metric. Null results will be published alongside positive ones.</p>
 
       <div class="transparency-grid">
         <div class="transparency-item">
           <h3>Statistical Rigor</h3>
-          <p>We do not rely on single demos. <strong>200 independent simulation runs</strong>, Welch’s t-tests for significance (<em>p</em> &lt; 0.05), Cohen’s d for effect size. If the data doesn’t clear the bar, we say so.</p>
+          <p>We do not rely on single demos. <strong>200 independent simulation runs</strong>, measuring significance (<em>p</em> &lt; 0.05) and effect size.</p>
         </div>
         <div class="transparency-item">
           <h3>The N=45 Constraint</h3>
-          <p>A population of 45 is small. Stochastic variance is high — a single death in the 80+ group swings mortality by 33 percentage points. We flag this limitation every time it matters and show the raw data, not just averages.</p>
+          <p>A population of 45 is small. Stochastic variance is high: a single death in the 80+ group can swing mortality by 33 percentage points. We flag this limitation every time it matters and will provide the data of all trial runs.</p>
         </div>
         <div class="transparency-item">
           <h3>Bias Acknowledgment</h3>
-          <p>I work at Microsoft. I chose the parameters, the architecture, and the disease models. A different builder would make different choices. The code is open — you can change anything and re-run. If the data contradicts the optimist position, I will report it.</p>
+          <p>I have worked in AI roles in Big Tech for the last 6 years, so assume i am a protagonist. I chose the parameters, the architecture, and the disease models. A different builder would make different choices. The code is open so you can change anything and re-run. If the data contradicts the optimist position, I will report it.</p>
         </div>
       </div>
     </section>
@@ -1545,7 +1545,7 @@ code {
     <section id="questions" class="research-section">
       <h2>The Questions We’re Asking</h2>
 
-      <p>Cammelot isn’t designed to prove that AI saves healthcare. It’s designed to test <em>specific, measurable claims</em> — and to see which ones survive contact with a stochastic population. These are the questions driving the research:</p>
+      <p>Cammelot isn’t designed to prove that AI saves healthcare. It’s designed to test <em>specific, measurable claims</em> and to see which ones survive contact with a stochastic population. These are some of the questions driving the research:</p>
 
       <div class="component-grid">
         <div class="component-card">
@@ -1575,7 +1575,7 @@ code {
       </div>
 
       <div class="hypothesis-box">
-        <strong>The research protocol:</strong> 100 independent simulation runs per mode — 200 total. Each run simulates roughly 10 years (3,000 cycles). Welch’s t-test for significance, Cohen’s d for effect size. Every null result will be published alongside every positive one. The answers are coming in the chapter series below.
+        <strong>The research protocol:</strong> 100 independent simulation runs per mode — 200 total. Each run simulates roughly 10 years (3,000 cycles), measuring significance and effect size. Every null result will be published alongside every positive one. The answers are coming in the chapter series below.
       </div>
     </section>
 
@@ -1604,7 +1604,7 @@ code {
             <td><strong>01: The Admin Tax</strong></td>
             <td>Does a 25% reduction in paperwork directly save lives?</td>
             <td>GP Capacity &amp; ROI</td>
-            <td><a href="ch1.html" class="read-link">→</a></td>
+            <td><span class="coming-soon-badge">Soon</span></td>
           </tr>
           <tr>
             <td><strong>02: The Waiting List</strong></td>
@@ -1629,20 +1629,20 @@ code {
 
       <p>Beyond the health series, we’ll cover the architecture (FHIR memory, A2A protocol, security red-teaming), the applied research methodology (how to run your own simulation batch), and how the same structural model generalizes to education, retail, and government services.</p>
 
-      <p>The code is open source. The statistics are published. I am genuinely looking for people who think I’m wrong — especially if they can explain why.</p>
+      <p>The code is open source. The statistics are published. I am genuinely looking for people who think I’m wrong, especially if they can explain why or reach out if you have a great idea.</p>
     </section>
 
     <div class="chapter-divider"><div class="diamond"></div></div>
 
     <!-- Live Sim CTA -->
     <div style="text-align:center;margin:2rem 0;">
-      <a href="world.html" class="cta-button cta-sim">&#127918; Try the Live Simulation</a>
+      <a href="world.html" class="cta-button cta-sim">&#127918; Try the Simulation</a>
     </div>
 
     <!-- Footer line -->
     <div class="footer-line">
       <p><strong>Cammelot:</strong> 45 citizens. 200 simulations. Real Dutch data.</p>
-      <p class="sources">Data sources: CBS &middot; RIVM &middot; NZa &middot; IZA 2023–2026.<br>Built by Simone Cammel. <a href="https://github.com/cammeleon66/Cammelot">View on GitHub</a></p>
+      <p class="sources">Data sources: CBS &middot; RIVM &middot; NZa &middot; IZA 2023–2026.<br>Built by Simone Cammel. </p>
     </div>
 
 
