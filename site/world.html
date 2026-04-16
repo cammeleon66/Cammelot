@@ -9289,7 +9289,13 @@ function showSavePrompt(){ startNewGame(); }
 
 function startNewGame(){
   cycle=30; // Start at day phase so citizens are visible immediately
-  updateUI();initCharSprites();buildWaypointGraph();initAgentBehaviors();seedInitialCrisis(agents);loop();
+  // Each step isolated so one failure does not kill everything
+  try { updateUI(); } catch(e) { console.error('updateUI error:', e); }
+  try { initCharSprites(); } catch(e) { console.error('initCharSprites error:', e); }
+  try { buildWaypointGraph(); } catch(e) { console.error('buildWaypointGraph error:', e); }
+  try { initAgentBehaviors(); } catch(e) { console.error('initAgentBehaviors error:', e); }
+  try { seedInitialCrisis(agents); } catch(e) { console.error('seedInitialCrisis error:', e); }
+  try { loop(); } catch(e) { console.error('loop start error:', e); }
 }
 
 function continueGame(){
