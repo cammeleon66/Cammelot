@@ -10813,40 +10813,65 @@ document.getElementById('btn-tours').addEventListener('click', function() {
   showTourSelection();
 });
 
-// === Walkthrough with element highlighting ===
+// === Walkthrough: highlight each UI area for new users ===
 (function() {
   var steps = [
-    { 
-      icon: "\ud83c\udff0", 
-      text: "Welcome to Cammelot! A simulated Dutch town with 45 AI citizens, 3 GP practices, and 1 hospital. All health data is real (CBS/RIVM/NZa).",
+    {
+      icon: "\ud83c\udff0",
+      title: "Welcome to Cammelot",
+      text: "A simulated Dutch town with 45 AI citizens, 3 GP practices, and 1 hospital. Everything runs on real CBS/RIVM/NZa data.",
       highlight: null
     },
-    { 
-      icon: "\ud83d\udc46", 
-      text: "Click any citizen on the map to see their medical dossier. Click GP practices or the hospital to inspect their queues and capacity.",
+    {
+      icon: "\ud83d\uddfa\ufe0f",
+      title: "The Map",
+      text: "This is the town. Citizens walk between buildings. Click any citizen to see their medical dossier. Click a GP practice or the hospital to inspect queues and capacity.",
       highlight: "#game-wrap"
     },
-    { 
-      icon: "\ud83d\udcf0", 
-      text: "The right panel shows the Town Feed — live events from the simulation. Click any event to jump to that citizen.",
+    {
+      icon: "\ud83d\udcca",
+      title: "Live Statistics",
+      text: "Population, deaths, average wait time, GP capacity, burnout, admin load, and Treeknorm violations \u2014 all updating in real time. Use IST/SOLL to toggle between today\u2019s crisis and an AI-native future.",
+      highlight: "#top"
+    },
+    {
+      icon: "\ud83d\udcf0",
+      title: "Town Feed",
+      text: "Every GP visit, hospital admission, referral, and death appears here. Click any event to jump to that citizen\u2019s dossier. Filter by type to focus on what matters.",
       highlight: "#panel"
     },
-    { 
-      icon: "\u26a1", 
-      text: "Use IST/SOLL at the top to switch between today's healthcare crisis and an AI-augmented future. Watch outcomes change in real time.",
-      highlight: ".mode-tog"
+    {
+      icon: "\ud83d\udcac",
+      title: "Real-Time Log",
+      text: "Citizens and providers announce what\u2019s happening: referrals, diagnoses, wait times, deaths. This is the live narrative of the simulation.",
+      highlight: "#chatlog"
+    },
+    {
+      icon: "\ud83c\udfae",
+      title: "Controls",
+      text: "\u25b6 Play / \u23f8 Pause the simulation. \u23e9 \u00d7100 fast-forwards 100 ticks. \u21ba Reset starts over. The Gazette (\ud83d\udcf0) compiles weekly reports. Stats (\ud83d\udcca) shows detailed breakdowns.",
+      highlight: "#cbar"
     }
   ];
+
   var step = 0;
   var highlightEl = null;
+  var pulseStyle = null;
 
   function clearHighlight() {
     if (highlightEl) {
       highlightEl.style.outline = "";
       highlightEl.style.outlineOffset = "";
+      highlightEl.style.boxShadow = highlightEl._oldBoxShadow || "";
       highlightEl.style.transition = "";
+      highlightEl.style.position = highlightEl._oldPosition || "";
+      highlightEl.style.zIndex = highlightEl._oldZIndex || "";
+      delete highlightEl._oldBoxShadow;
+      delete highlightEl._oldPosition;
+      delete highlightEl._oldZIndex;
       highlightEl = null;
     }
+    if (pulseStyle && pulseStyle.parentNode) pulseStyle.remove();
   }
 
   function applyHighlight(selector) {
@@ -10855,32 +10880,101 @@ document.getElementById('btn-tours').addEventListener('click', function() {
     var el = document.querySelector(selector);
     if (!el) return;
     highlightEl = el;
-    el.style.transition = "outline 0.3s ease";
+    
+    // Save original styles
+    var cs = window.getComputedStyle(el);
+    el._oldBoxShadow = el.style.boxShadow;
+    el._oldPosition = el.style.position;
+    el._oldZIndex = el.style.zIndex;
+    
+    // Apply highlight
+    el.style.transition = "outline 0.3s ease, box-shadow 0.3s ease";
     el.style.outline = "3px solid #FFB300";
-    el.style.outlineOffset = "4px";
+    el.style.outlineOffset = "3px";
+    el.style.boxShadow = "0 0 20px rgba(255,179,0,0.3)";
+    
+    // Ensure element is visible (for #chatlog which might be hidden on mobile)
+    if (el.style.display === 'none' || cs.display === 'none') {
+      el.style.display = '';
+    }
+    
+    // Scroll element into view if needed
+    el.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }
 
   function buildCard() {
     var card = document.createElement("div");
     card.id = "welcome-card";
-    card.style.cssText = "position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:100;background:#1a1510;border:2px solid #FFB300;border-radius:10px;padding:14px 20px 12px;max-width:500px;width:calc(100% - 40px);box-shadow:0 8px 32px rgba(0,0,0,.5);font-family:Inter,sans-serif;display:flex;align-items:center;gap:12px;";
+    card.style.cssText = "position:fixed;bottom:16px;left:50%;transform:translateX(-50%);z-index:200;background:linear-gradient(180deg,#1a1510 0%,#12100a 100%);border:2px solid #FFB300;border-radius:12px;padding:16px 20px 14px;max-width:520px;width:calc(100% - 32px);box-shadow:0 8px 40px rgba(0,0,0,.6);font-family:Inter,sans-serif;";
 
-    var iconEl = document.createElement("span");
-    iconEl.style.cssText = "font-size:24px;flex-shrink:0;";
-    iconEl.textContent = steps[0].icon;
-
-    var textEl = document.createElement("span");
-    textEl.style.cssText = "color:#F5E6C8;font-size:13px;line-height:1.5;flex:1;";
+    // Top row: step indicator
+    var stepRow = document.createElement("div");
+    stepRow.style.cssText = "display:flex;align-items:center;gap:8px;margin-bottom:10px;";
+    
+    var stepLabel = document.createElement("span");
+    stepLabel.id = "wc-step-label";
+    stepLabel.style.cssText = "font:500 10px 'JetBrains Mono',monospace;color:#7a6a40;";
+    stepLabel.textContent = "1 / " + steps.length;
+    
+    // Dots
+    var dots = document.createElement("div");
+    dots.id = "wc-dots";
+    dots.style.cssText = "display:flex;gap:5px;flex:1;";
+    for (var i = 0; i < steps.length; i++) {
+      var dot = document.createElement("div");
+      dot.style.cssText = "width:8px;height:8px;border-radius:50%;background:" + (i === 0 ? "#FFB300" : "#3a3020") + ";transition:background .3s;";
+      dots.appendChild(dot);
+    }
+    
+    stepRow.appendChild(stepLabel);
+    stepRow.appendChild(dots);
+    
+    // Title
+    var titleEl = document.createElement("div");
+    titleEl.id = "wc-title";
+    titleEl.style.cssText = "font:700 15px Inter,sans-serif;color:#FFB300;margin-bottom:6px;display:flex;align-items:center;gap:8px;";
+    titleEl.textContent = steps[0].icon + " " + steps[0].title;
+    
+    // Text
+    var textEl = document.createElement("div");
+    textEl.id = "wc-text";
+    textEl.style.cssText = "color:#d4c4a0;font-size:13px;line-height:1.6;margin-bottom:14px;";
     textEl.textContent = steps[0].text;
 
+    // Buttons
     var btns = document.createElement("div");
-    btns.style.cssText = "display:flex;gap:6px;flex-shrink:0;";
+    btns.style.cssText = "display:flex;justify-content:space-between;align-items:center;";
+
+    var skipBtn = document.createElement("button");
+    skipBtn.textContent = "Skip";
+    skipBtn.style.cssText = "background:none;border:none;color:rgba(255,255,255,.3);font:12px Inter,sans-serif;cursor:pointer;padding:6px 0;";
+    skipBtn.addEventListener("click", function() { clearHighlight(); card.remove(); launchSimulation(); });
 
     var nextBtn = document.createElement("button");
+    nextBtn.id = "wc-next";
     nextBtn.textContent = "Next \u2192";
-    nextBtn.style.cssText = "background:#FFB300;color:#1a1510;border:none;border-radius:5px;padding:6px 14px;font:600 12px Inter,sans-serif;cursor:pointer;";
+    nextBtn.style.cssText = "background:linear-gradient(135deg,#FFB300,#FF8F00);color:#1a0e05;border:none;border-radius:6px;padding:8px 20px;font:600 13px Inter,sans-serif;cursor:pointer;box-shadow:0 2px 8px rgba(255,179,0,0.3);";
     
-    function advance() {
+    function updateStep() {
+      titleEl.textContent = steps[step].icon + " " + steps[step].title;
+      textEl.textContent = steps[step].text;
+      stepLabel.textContent = (step + 1) + " / " + steps.length;
+      
+      // Update dots
+      var dotEls = dots.children;
+      for (var i = 0; i < dotEls.length; i++) {
+        dotEls[i].style.background = i === step ? "#FFB300" : i < step ? "#7a6a40" : "#3a3020";
+      }
+      
+      // Update button
+      if (step === steps.length - 1) {
+        nextBtn.textContent = "\u25b6 Start Simulation";
+      }
+      
+      applyHighlight(steps[step].highlight);
+    }
+
+    nextBtn.addEventListener("click", function() {
       step++;
       if (step >= steps.length) {
         clearHighlight();
@@ -10888,31 +10982,19 @@ document.getElementById('btn-tours').addEventListener('click', function() {
         launchSimulation();
         return;
       }
-      iconEl.textContent = steps[step].icon;
-      textEl.textContent = steps[step].text;
-      applyHighlight(steps[step].highlight);
-      if (step === steps.length - 1) nextBtn.textContent = "\u25b6 Start Simulation";
-    }
-
-    nextBtn.addEventListener("click", advance);
-
-    var skipBtn = document.createElement("button");
-    skipBtn.textContent = "Skip";
-    skipBtn.style.cssText = "background:none;border:none;color:rgba(255,255,255,.3);font-size:11px;cursor:pointer;padding:4px;";
-    skipBtn.addEventListener("click", function() { 
-      clearHighlight(); 
-      card.remove(); 
-      launchSimulation(); 
+      updateStep();
     });
 
-    btns.appendChild(nextBtn);
     btns.appendChild(skipBtn);
-    card.appendChild(iconEl);
+    btns.appendChild(nextBtn);
+    
+    card.appendChild(stepRow);
+    card.appendChild(titleEl);
     card.appendChild(textEl);
     card.appendChild(btns);
     document.body.appendChild(card);
 
-    // Apply first step highlight
+    // Apply first highlight
     applyHighlight(steps[0].highlight);
   }
 
