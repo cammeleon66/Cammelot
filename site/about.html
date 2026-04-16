@@ -219,32 +219,65 @@ body.dark-theme .site-header { background: rgba(10, 10, 18, 0.92); }
 
 <main class="page-container">
   <h1 class="page-title">About <span>Cammelot</span></h1>
-  <p class="page-subtitle">A hobby project gone very rogue.</p>
+  <p class="page-subtitle">Independent research into the systemic boundaries of AI in public infrastructure.</p>
 
   <section class="about-section">
-    <h2>The Project</h2>
-    <p>Cammelot is a simulated Dutch town with 45 pixel citizens, three GPs, and one hospital. Their diseases come from real RIVM prevalence data. The healthcare system is modeled on CBS demographics, IZA program targets, and NZa tariffs. Citizens walk around a 16-bit pixel map, get sick, queue for care, and sometimes die. Not from disease alone, but from a system that can't keep up.</p>
-    <p>The architecture is inspired by Park et al.'s "Generative Agents" paper (Stanford/Google, 2023), which simulated 25 AI agents in a virtual town called Smallville. Cammelot adapts their cognitive loop (perceive, reflect, plan) to Dutch healthcare, with real epidemiological data driving the outcomes instead of open-ended social behavior.</p>
-    <p>I ran 100 simulations of the current Dutch healthcare system (IST) and 100 simulations of an AI-augmented version (SOLL). Then I compared every metric I could think of: mortality, burnout, wait times, costs, fairness, security. The results are published openly, including the ones that surprised me.</p>
+    <p>The Cammelot project began as an independent research initiative to explore the systemic boundaries of artificial intelligence within public infrastructure; it has since evolved into a comprehensive simulation framework that uses real-world data to test how different technological architectures affect the delivery of healthcare in the Netherlands.</p>
   </section>
 
   <hr class="divider">
 
   <section class="about-section">
-    <h2>About Me</h2>
-    <p>I'm Simone Cammel. I work at Microsoft, which means you should assume I'm biased toward AI. That's exactly why I built a system that could prove me wrong.</p>
-    <p>I built Cammelot because I believe the debate around AI in healthcare is stuck in the wrong frame. Most people see AI as a productivity tool. I think it has the potential to restructure entire systems, but only if we're honest about what it actually does and doesn't improve. This simulation is my attempt at that honesty.</p>
+    <h2>The Scope of the Project</h2>
+    <p>Cammelot is a digital representation of a Dutch town consisting of forty-five citizens, three general practitioners, and one hospital. The health outcomes within the simulation are determined by actual disease prevalence data from the RIVM, while the demographics and financial costs are based on CBS mortality tables and NZa tariff schedules. The 16-bit visual style is a deliberate choice intended to focus the user’s attention on the underlying patterns of the system rather than the aesthetic details. In this environment, citizens move through their daily lives and interact with healthcare providers; when the system cannot process patients efficiently, the simulation records the resulting health decline and mortality events.</p>
   </section>
 
   <hr class="divider">
 
   <section class="about-section">
-    <h2>Get in Touch</h2>
-    <p>I'd genuinely love to hear from you—whether you think the model is wrong, have a research question, want to collaborate, or just want to say hi.</p>
+    <h2>Technical Architecture and Lineage</h2>
+    <p>The design of Cammelot is informed by the “Generative Agents” research published by Park et al. (Stanford/Google, 2023), which demonstrated how AI agents could simulate complex social behaviors in a virtual town. Cammelot adapts this “cognitive loop” of perceiving, reflecting, and planning for a specific healthcare context. Instead of open-ended social interactions, these agents are driven by epidemiological data and regulatory constraints.</p>
+    <p>The project involved running 100 simulations of the current healthcare status quo and 100 simulations of a system overhaul where AI acts as the primary connective tissue. By comparing these two regimes, we can observe the impact of technology on variables such as specialist wait times, doctor burnout, and the equitable distribution of care across different age groups.</p>
+  </section>
+
+  <hr class="divider">
+
+  <section class="about-section">
+    <h2>About the Author</h2>
+    <p>I am Simone Cammel, and I currently hold a position at Microsoft. Because of my professional background in the technology sector, it should be assumed that I have a bias toward the potential of artificial intelligence. This is the reason I built Cammelot as a “falsification machine” to see if a data-driven model could prove those biases wrong.</p>
+    <p>I believe that the current discussion regarding AI in healthcare is often focused on the wrong objectives. Many see AI as a way to increase the speed of existing tasks, such as writing emails or taking notes; however, I believe the real potential lies in restructuring how entire systems operate. This simulation is an attempt to be honest about which problems AI can solve and which ones it might worsen.</p>
+  </section>
+
+  <hr class="divider">
+
+  <section class="about-section">
+    <h2>Open Source Commitment</h2>
+    <p>Transparency is a core requirement for this project, and therefore all code and simulation data are available for public review. If you find a flaw in the logic or a mistake in the statistical analysis, I encourage you to share your findings. The project is designed to be a collaborative effort where the parameters can be adjusted by anyone who wishes to test a different hypothesis.</p>
+  </section>
+
+  <hr class="divider">
+
+  <section class="about-section">
+    <h2>Primary Data Sources</h2>
+    <p>The simulation parameters are drawn from the following public Dutch healthcare datasets to ensure the results are grounded in reality:</p>
+    <ul class="links-list">
+      <li><strong>CBS</strong>, Centraal Bureau voor de Statistiek — population demographics and baseline mortality tables</li>
+      <li><strong>RIVM</strong>, Rijksinstituut voor Volksgezondheid en Milieu — age-stratified disease prevalence and comorbidity risk factors</li>
+      <li><strong>NZa</strong>, Nederlandse Zorgautoriteit — healthcare tariffs and legal waiting time standards (Treeknorm)</li>
+      <li><strong>LHV</strong>, Landelijke Huisartsen Vereniging — administrative workload and capacity of general practitioners</li>
+      <li><strong>IZA</strong>, Integraal Zorgakkoord — transformation targets for system interoperability and staffing</li>
+    </ul>
+  </section>
+
+  <hr class="divider">
+
+  <section class="about-section">
+    <h2>Contact and Collaboration</h2>
+    <p>If you have a research question, a critique of the model, or an interest in collaboration, you can reach out via the following channels:</p>
 
     <div class="contact-card">
       <div class="contact-row">
-        <span class="contact-icon">📧</span>
+        <span class="contact-icon">✉️</span>
         <span>Email: <a href="mailto:contact@cammelot.org">contact@cammelot.org</a></span>
       </div>
       <div class="contact-row">
@@ -252,31 +285,6 @@ body.dark-theme .site-header { background: rgba(10, 10, 18, 0.92); }
         <span>LinkedIn: <a href="https://www.linkedin.com/in/simonecammel/" target="_blank">linkedin.com/in/simonecammel</a></span>
       </div>
     </div>
-  </section>
-
-  <hr class="divider">
-
-  <section class="about-section">
-    <h2>Open Source & Data</h2>
-    <p>Everything is open. The code, the simulation data, the statistics. If you find something wrong, please tell me.</p>
-    <ul class="links-list">
-      <li><a href="world.html">Try the live simulation</a></li>
-      <li><a href="index.html">Read the full research narrative</a></li>
-    </ul>
-  </section>
-
-  <hr class="divider">
-
-  <section class="about-section">
-    <h2>Data Sources</h2>
-    <p>All simulation parameters are drawn from publicly available Dutch healthcare data:</p>
-    <ul class="links-list">
-      <li><strong>CBS</strong>, Centraal Bureau voor de Statistiek (demographics, mortality tables)</li>
-      <li><strong>RIVM</strong>, Rijksinstituut voor Volksgezondheid en Milieu (disease prevalence)</li>
-      <li><strong>NZa</strong>, Nederlandse Zorgautoriteit (tariffs, waiting times)</li>
-      <li><strong>LHV</strong>, Landelijke Huisartsen Vereniging (GP workload surveys)</li>
-      <li><strong>IZA</strong>, Integraal Zorgakkoord 2023-2026 (transformation targets)</li>
-    </ul>
   </section>
 </main>
 
