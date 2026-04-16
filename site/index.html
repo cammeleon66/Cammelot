@@ -1228,18 +1228,18 @@ code {
   <aside class="toc" id="toc">
     <div class="toc-label">Navigate</div>
     <div class="toc-part">The Story</div>
-    <a href="#hero" class="active">Cammelot</a>
-    <a href="#why">Why I Built This</a>
-    <a href="#environment">The Simulated Environment</a>
+    <a href="#hero" data-section="hero" class="active">Cammelot</a>
+    <a href="#why" data-section="why">Why I Built This</a>
+    <a href="#environment" data-section="environment">The Simulated Environment</a>
     <div class="toc-part">The System</div>
-    <a href="#ist">The Crisis (IST)</a>
-    <a href="#disease-engine">Disease Engine</a>
-    <a href="#soll">The Fix (SOLL)</a>
+    <a href="#ist" data-section="ist">The Crisis (IST)</a>
+    <a href="#disease-engine" data-section="disease-engine">Disease Engine</a>
+    <a href="#soll" data-section="soll">The Fix (SOLL)</a>
     <div class="toc-part">The Research</div>
-    <a href="#experiment">Does It Work?</a>
-    <a href="#questions">Research Questions</a>
-    <a href="#roadmap">Chapters</a>
-    <a href="#forward">Path Forward</a>
+    <a href="#experiment" data-section="experiment">Does It Work?</a>
+    <a href="#questions" data-section="questions">Research Questions</a>
+    <a href="#roadmap" data-section="roadmap">Chapters</a>
+    <a href="#forward" data-section="forward">Path Forward</a>
     <div class="toc-part" style="margin-top:12px;">Read</div>
     <a href="ch1.html">1. The Mechanics</a>
     <a href="ch2.html">2. The Current System</a>
@@ -1647,6 +1647,27 @@ function onScroll() {
 }
 window.addEventListener('scroll', onScroll, { passive: true });
 onScroll();
+
+// ── Sidebar TOC scroll tracking ──
+const tocLinks = document.querySelectorAll('.toc a[data-section]');
+if (tocLinks.length > 0) {
+  const sectionObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const id = entry.target.id;
+        tocLinks.forEach(l => l.classList.remove('active'));
+        const active = document.querySelector('.toc a[data-section="' + id + '"]');
+        if (active) active.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+
+  tocLinks.forEach(link => {
+    const sectionId = link.getAttribute('data-section');
+    const section = document.getElementById(sectionId);
+    if (section) sectionObserver.observe(section);
+  });
+}
 </script>
 </body>
 </html>
