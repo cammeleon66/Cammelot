@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>The Current System — Cammelot</title>
+<title>Chapter 2: Analysis of the Current System — Cammelot</title>
 
 <!-- Open Graph Meta Tags -->
-<meta property="og:title" content="The Current System — Cammelot">
+<meta property="og:title" content="Chapter 2: Analysis of the Current System — Cammelot">
 <meta property="og:description" content="Why Dutch healthcare is breaking, and how Cammelot models it. 301,000 worker shortage. 30% admin burden. 12-week waits.">
 <meta property="og:image" content="https://cammelot.org/og-image.png">
 <meta property="og:type" content="website">
@@ -14,7 +14,7 @@
 
 <!-- Twitter Card Meta Tags -->
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="The Current System — Cammelot">
+<meta name="twitter:title" content="Chapter 2: Analysis of the Current System — Cammelot">
 <meta name="twitter:description" content="Why Dutch healthcare is breaking, and how Cammelot models it. 301,000 worker shortage. 30% admin burden. 12-week waits.">
 <meta name="twitter:image" content="https://cammelot.org/og-image.png">
 
@@ -587,17 +587,17 @@ pre code {
 <div class="mobile-toc-backdrop" id="mobile-toc-backdrop"></div>
 <nav class="mobile-toc-overlay" id="mobile-toc-overlay">
   <div class="toc-part">The Crisis</div>
-  <a href="#the-paradox" class="mobile-toc-link">The Paradox</a>
+  <a href="#current-system" class="mobile-toc-link">The Current System</a>
   <a href="#admin-burden" class="mobile-toc-link">Administrative Burden</a>
-  <a href="#waiting-lists" class="mobile-toc-link">Waiting Lists</a>
+  <a href="#waiting-lists" class="mobile-toc-link">Treeknorm Breaches</a>
   <a href="#data-fragmentation" class="mobile-toc-link">Data Fragmentation</a>
   <div class="toc-part">The Model</div>
   <a href="#capacity-formula" class="mobile-toc-link">The Capacity Formula</a>
-  <a href="#hp-drain" class="mobile-toc-link">HP Drain &amp; Mortality</a>
+  <a href="#hp-drain" class="mobile-toc-link">Health Deterioration</a>
   <a href="#disease-engine" class="mobile-toc-link">Disease Engine</a>
   <div class="toc-part">The Evidence</div>
-  <a href="#baseline-results" class="mobile-toc-link">Baseline Results</a>
-  <a href="#assumptions" class="mobile-toc-link">Caveats</a>
+  <a href="#baseline-results" class="mobile-toc-link">200 Run Results</a>
+  <a href="#limitations" class="mobile-toc-link">Disclosure &amp; Limitations</a>
   <div class="toc-part" style="margin-top:12px;">Explore</div>
   <a href="world.html" class="mobile-toc-link" style="color:#27ae60;">&#127918; Live Simulation</a>
 </nav>
@@ -607,19 +607,19 @@ pre code {
   <aside class="toc" id="toc">
   <div class="toc-label">Contents</div>
   <div class="toc-part">The Crisis</div>
-  <a href="#the-paradox" data-section="the-paradox">The Paradox</a>
+  <a href="#current-system" data-section="current-system">The Current System</a>
   <a href="#admin-burden" data-section="admin-burden">Administrative Burden</a>
-  <a href="#waiting-lists" data-section="waiting-lists">Waiting Lists</a>
+  <a href="#waiting-lists" data-section="waiting-lists">Treeknorm Breaches</a>
   <a href="#data-fragmentation" data-section="data-fragmentation">Data Fragmentation</a>
   <div class="toc-part">The Model</div>
   <a href="#capacity-formula" data-section="capacity-formula">The Capacity Formula</a>
-  <a href="#hp-drain" data-section="hp-drain">HP Drain &amp; Mortality</a>
+  <a href="#hp-drain" data-section="hp-drain">Health Deterioration</a>
   <a href="#disease-engine" data-section="disease-engine">Disease Engine</a>
   <div class="toc-part">The Evidence</div>
-  <a href="#baseline-results" data-section="baseline-results">Baseline Results</a>
-  <a href="#assumptions" data-section="assumptions">Caveats</a>
+  <a href="#baseline-results" data-section="baseline-results">200 Run Results</a>
+  <a href="#limitations" data-section="limitations">Disclosure &amp; Limitations</a>
   <div class="toc-part" style="margin-top:12px;">Chapters</div>
-  <a href="ch1.html">1. How It Works</a>
+  <a href="ch1.html">1. The Mechanics</a>
   <a href="ch3.html">3. The AI-Native Overhaul</a>
   <div class="toc-part" style="margin-top:12px;">Explore</div>
   <a href="world.html" style="color:#27ae60;">&#127918; Live Simulation</a>
@@ -628,14 +628,11 @@ pre code {
   <!-- Main Content -->
   <main class="content">
 
-    <section class="chapter visible" id="the-paradox">
+    <section class="chapter visible" id="current-system">
       <div class="chapter-label">Chapter 2</div>
-      <h2>The Current System</h2>
-      <p class="hook">&ldquo;Before you can fix something, you have to prove it&rsquo;s broken. With numbers.&rdquo;</p>
+      <h2>Analysis of the Current System</h2>
 
-      <p>The Netherlands ranks among Europe&rsquo;s best healthcare systems&mdash;universal coverage, high patient satisfaction, excellent acute care outcomes, top five globally by WHO and Commonwealth Fund rankings.</p>
-
-      <p>It is breaking anyway—the Dutch call it <em>zorginfarct</em>, care gridlock—and this is not a projection or scenario analysis. It is happening now: 38% of specialist referrals exceed legal wait norms. GP practices close to new patients. The IZA projects a shortfall of 301,000 healthcare workers by 2035 (ABF Research, 2023). That number is not a gap in a staffing plan. It is a structural impossibility: the system cannot be operated with the workforce that will exist.</p>
+      <p>To address systemic issues in healthcare, we must first demonstrate the specific areas where the current model is failing by using verifiable data. While the Netherlands is frequently ranked as having one of the best healthcare systems in Europe, it is currently experiencing a “care gridlock” known as a zorginfarct. This is not a future projection but a present reality where 38% of specialist referrals exceed legal waiting standards and many general practitioner (GP) practices are closed to new patients. Research from 2023 indicates a projected shortfall of 301,000 healthcare workers by 2035; this number represents a structural impossibility because the system cannot function with the workforce that will be available.</p>
 
       <div class="metric-callout">
         <div class="metric-card">
@@ -656,19 +653,15 @@ pre code {
         </div>
       </div>
 
-      <p>The demographics are unforgiving. Twenty percent of the population is over 65. Among those 75 and older, 96% have at least one chronic condition; 45% have two or more (RIVM, 2024). The system was designed for acute care in a younger population, and the population aged while the system did not.</p>
+      <p>The pressure on the system is driven largely by an aging population. Currently, 20% of Dutch citizens are over the age of 65. Within the group aged 75 and older, 96% have at least one chronic condition and nearly half have two or more. The healthcare system was originally designed to provide acute care for a younger population, and the architecture of the system has not evolved to meet these new demographic needs.</p>
 
-      <p>Three mechanisms drive the failure, and each makes the others worse.</p>
+      <p>There are three primary factors driving the current failure of the system, and each factor serves to worsen the others.</p>
     </section>
 
     <section class="chapter visible" id="admin-burden">
-      <h3>1. Administrative Burden</h3>
+      <h3>1. The Administrative Burden</h3>
 
-      <p>A Dutch GP spends 30% of working time on administration: EHR documentation, referral letters, insurance coding, prescription management, quality reporting (LHV, 2024). This is not a technology complaint. It is an architectural fact.</p>
-
-      <p>The burden is additive. Every regulation, every quality metric, every reporting requirement adds minutes per patient. Nothing is removed. A GP who could theoretically see 200 patients per week sees about 124. The remaining 76 consultations are consumed by the system itself.</p>
-
-      <p>Sick leave (ziekteverzuim) removes another 8% (CBS). Combined with administrative loss, a GP operates at 62% of theoretical capacity before the first patient arrives.</p>
+      <p>A Dutch GP spends 30% of their working time on administrative tasks such as documentation, insurance coding, and quality reporting. This is an architectural fact of the system where every new regulation or reporting requirement adds minutes to a patient’s visit without removing any existing tasks. For example, a GP who could theoretically see 200 patients per week is limited to approximately 124 consultations because the remaining 76 slots are consumed by the system’s own reporting requirements. When combined with an 8% sick leave rate, a GP operates at only 62% of their theoretical capacity.</p>
 
       <div class="insight-callout warning">
         <strong>The compounding effect</strong>
@@ -677,11 +670,9 @@ pre code {
     </section>
 
     <section class="chapter visible" id="waiting-lists">
-      <h3>2. Waiting Lists</h3>
+      <h3>2. Breaches of the Treeknorm</h3>
 
-      <p>The Treeknorm is the Dutch legal maximum for specialist wait times. Diagnostics: 4 weeks. Treatment: 7&ndash;12 weeks. These are not targets. They are regulatory requirements.</p>
-
-      <p>Current reality:</p>
+      <p>The Treeknorm represents the legal maximum time a patient should wait for specialist care, which is generally four weeks for diagnostics and seven to twelve weeks for treatment. In practice, these norms are frequently ignored.</p>
 
       <div class="stats-table-wrap">
         <table class="stats-table">
@@ -695,31 +686,27 @@ pre code {
         </table>
       </div>
 
-      <p>The mechanism is self-reinforcing. When patients wait beyond the Treeknorm, conditions deteriorate. What could have been treated in primary care becomes an emergency visit. What could have been outpatient becomes inpatient. The system generates the complexity it cannot handle.</p>
+      <p>When patients wait too long, their conditions deteriorate; this often turns a simple primary care issue into a more complex and expensive emergency room visit. The system generates the complexity it cannot handle.</p>
     </section>
 
     <section class="chapter visible" id="data-fragmentation">
       <h3>3. Data Fragmentation</h3>
 
-      <p>The Netherlands has approximately 12,000 GP practices, 90 hospital organisations, and 8 academic medical centres. Most data exchange uses EDIFACT&thinsp;&mdash;&thinsp;a 1980s messaging standard originally designed for shipping container logistics.</p>
-
-      <p>Only 11% of Dutch health data is interoperable between providers (IZA, 2023). The national EHR is a virtual pointer system: it does not store data, it points to it. Five providers treating the same patient maintain five independent records.</p>
-
-      <p>The IZA allocated &euro;2.8 billion in transformation funding to reach 66% interoperability by 2030. Over 270 plans were submitted before the postbus closed in July 2025. The Wegiz (Wet elektronische gegevensuitwisseling in de zorg) mandates electronic exchange but does not prescribe how.</p>
+      <p>The Dutch healthcare network consists of roughly 12,000 GP practices and 90 hospital organisations, yet only 11% of health data is shared effectively between them. Most providers still use EDIFACT, which is a messaging standard from the 1980s originally created for shipping logistics. This lack of communication means that five different providers treating the same patient may maintain five independent and disconnected records.</p>
 
       <div class="insight-callout">
         <strong>The coordination cost</strong>
-        Adding a new specialist system to the Dutch healthcare network takes 3&ndash;18 months of integration work. In Cammelot&rsquo;s A2A mesh, it takes five minutes: publish an agent card, join the mesh. The gap between these two numbers is the cost of the current architecture.
+        Adding a new specialist system to the Dutch healthcare network takes 3–18 months of integration work. In Cammelot’s A2A mesh, it takes five minutes: publish an agent card, join the mesh. The gap between these two numbers is the cost of the current architecture.
       </div>
     </section>
 
     <section class="chapter visible" id="capacity-formula">
       <h3>The Capacity Formula</h3>
 
-      <p>Cammelot models GP effectiveness with a single equation:</p>
+      <p>Cammelot calculates the effectiveness of a GP practice using a specific equation to show how much time is actually available for patients:</p>
 
       <div class="insight-callout" style="text-align:center;font-family:'Space Grotesk',sans-serif;font-size:1.1rem;font-weight:600;letter-spacing:0.02em;background:var(--code-bg);border-left-color:var(--red);">
-        C<sub>eff</sub> = C<sub>total</sub> &times; (1 &minus; L<sub>admin</sub> &minus; V<sub>ziekte</sub>) &times; E<sub>ai</sub>
+        C<sub>eff</sub> = C<sub>total</sub> × (1 − L<sub>admin</sub> − V<sub>ziekte</sub>) × E<sub>ai</sub>
       </div>
 
       <div class="stats-table-wrap">
@@ -734,16 +721,16 @@ pre code {
         </table>
       </div>
 
-      <p>Concretely: a GP practice with a norm of 2,400 patients has an effective capacity of 1,488 patient-equivalent slots. The remaining 912 are consumed by paperwork, sick leave, and structural overhead. Every patient beyond 1,488 adds pressure that manifests as shorter consultations, delayed referrals, and burnout.</p>
+      <p>In this formula, L<sub>admin</sub> represents the 30% administrative loss and V<sub>ziekte</sub> represents the 8% loss due to sick leave. In the current system, there is no AI assistance, so E<sub>ai</sub> is set to 1.0. This means a practice meant for 2,400 patients can only effectively manage 1,488 people before the quality of care begins to decline and burnout occurs.</p>
     </section>
 
     <section class="chapter visible" id="hp-drain">
-      <h3>HP Drain and Mortality</h3>
+      <h3>Health Deterioration and Mortality</h3>
 
-      <p>Mortality in Cammelot is a consequence of system delay, not random chance. When specialist wait time exceeds the Treeknorm threshold, health points drain:</p>
+      <p>Mortality in this simulation is a direct result of delays in the system. When a citizen waits longer than the Treeknorm allows, their health points (HP) begin to drain according to this formula:</p>
 
       <div class="insight-callout" style="text-align:center;font-family:'Space Grotesk',sans-serif;font-size:1rem;font-weight:600;letter-spacing:0.02em;background:var(--code-bg);border-left-color:var(--red);">
-        HP<sub>drain</sub> = drainRate &times; (t<sub>wait</sub> &minus; T<sub>treeknorm</sub>) &times; severityMultiplier &times; (1 + adminBurden)
+        HP<sub>drain</sub> = drainRate × (t<sub>wait</sub> − T<sub>treeknorm</sub>) × severityMultiplier × (1 + adminBurden)
       </div>
 
       <div class="stats-table-wrap">
@@ -751,27 +738,26 @@ pre code {
           <thead><tr><th>Parameter</th><th>Value</th><th>Effect</th></tr></thead>
           <tbody>
             <tr><td class="metric-name">drainRate</td><td>3</td><td>HP lost per week overdue</td></tr>
-            <tr><td class="metric-name">severity: mild</td><td>&times;0.5</td><td>Half drain rate</td></tr>
-            <tr><td class="metric-name">severity: moderate</td><td>&times;1.0</td><td>Full drain rate</td></tr>
-            <tr><td class="metric-name">severity: severe</td><td>&times;2.0</td><td>Double drain rate</td></tr>
-            <tr><td class="metric-name">severity: critical</td><td>&times;4.0</td><td>Quadruple drain rate</td></tr>
+            <tr><td class="metric-name">severity: mild</td><td>×0.5</td><td>Half drain rate</td></tr>
+            <tr><td class="metric-name">severity: moderate</td><td>×1.0</td><td>Full drain rate</td></tr>
+            <tr><td class="metric-name">severity: severe</td><td>×2.0</td><td>Double drain rate</td></tr>
+            <tr><td class="metric-name">severity: critical</td><td>×4.0</td><td>Quadruple drain rate</td></tr>
             <tr><td class="metric-name">adminBurden</td><td>+30%</td><td>Administrative delays compound clinical delays</td></tr>
           </tbody>
         </table>
       </div>
 
-      <p><strong>HP &le; 20:</strong> citizen enters distressed state, receives urgent referral priority. <strong>HP &le; 0:</strong> death&thinsp;&mdash;&thinsp;the sprite turns grey. The <code>(1 + adminBurden)</code> term models a specific claim: administrative overhead does not just reduce capacity, it accelerates patient deterioration by delaying every step of the care chain.</p>
-
-      <p>Natural mortality (from CBS life tables) is tracked separately. The simulation distinguishes &ldquo;died at age 92&rdquo; from &ldquo;died after waiting 18 weeks for a cardiologist.&rdquo;</p>
+      <p>The “drain rate” increases based on how serious the illness is. For a patient in a critical state, health points drop four times faster than for someone with a mild condition. The simulation also accounts for the fact that administrative overhead slows down every step of the care chain, which further accelerates how quickly a patient’s health declines. The model distinguishes between “natural mortality,” such as a person dying of old age at 92, and “system-failure mortality,” where a person dies specifically because they waited 18 weeks for a cardiologist.</p>
     </section>
 
     <section class="chapter visible" id="disease-engine">
-      <h3>Disease Engine</h3>
+      <h3>The Disease Engine and Comorbidities</h3>
+
+      <p>The simulation tracks 10 chronic conditions using official ICD-10 codes. Each condition progresses through a five-state Markov chain where the system checks every simulation tick to see if a patient moves from “healthy” to “mild” or from “severe” to “critical.”</p>
 
       <details>
         <summary>ICD-10 conditions and Markov transitions</summary>
         <div class="details-content">
-          <p>Cammelot models 10 chronic conditions with ICD-10 codes. Prevalence rates are from RIVM 2024:</p>
           <div class="stats-table-wrap">
             <table class="stats-table">
               <thead><tr><th>Condition</th><th>ICD-10</th><th>NL Prevalence</th></tr></thead>
@@ -790,27 +776,27 @@ pre code {
             </table>
           </div>
 
-          <p>Each condition progresses through a five-state Markov chain: healthy &rarr; mild &rarr; moderate &rarr; severe &rarr; critical. Transition probabilities are evaluated per tick. When specialist wait time exceeds Treeknorm, probability mass shifts toward worse states. Waiting does not just delay treatment&thinsp;&mdash;&thinsp;it accelerates disease progression.</p>
-
           <p><strong>Comorbidity multipliers</strong> model documented clinical interactions:</p>
           <div class="stats-table-wrap">
             <table class="stats-table">
               <thead><tr><th>Interaction</th><th>Relative Risk</th><th>Source</th></tr></thead>
               <tbody>
-                <tr><td>COPD &rarr; Cardiovascular Disease</td><td class="sig">2.5</td><td>PMC meta-analysis</td></tr>
-                <tr><td>Type 2 Diabetes &rarr; CVD</td><td class="sig">2.0</td><td>ESC Guidelines 2021</td></tr>
-                <tr><td>Hypertension &rarr; CVD</td><td class="sig">1.8</td><td>ESC Guidelines 2021</td></tr>
+                <tr><td>COPD → Cardiovascular Disease</td><td class="sig">2.5</td><td>PMC meta-analysis</td></tr>
+                <tr><td>Type 2 Diabetes → CVD</td><td class="sig">2.0</td><td>ESC Guidelines 2021</td></tr>
+                <tr><td>Hypertension → CVD</td><td class="sig">1.8</td><td>ESC Guidelines 2021</td></tr>
               </tbody>
             </table>
           </div>
         </div>
       </details>
+
+      <p>Waiting for treatment does not just delay help; it actively moves patients toward worse health states. We also model how different diseases interact. For example, clinical research shows that having COPD increases the risk of cardiovascular disease by 2.5 times. These “relative risk multipliers” ensure that the simulation reflects the actual danger that multimorbid patients face when the system is backed up.</p>
     </section>
 
     <section class="chapter visible" id="baseline-results">
-      <h3>What 200 Runs Show</h3>
+      <h3>Observations from 200 Simulation Runs</h3>
 
-      <p>The IST baseline, averaged across 200 independent runs (3,000 ticks each):</p>
+      <p>When we average the results of 200 independent runs for the current system, the following patterns emerge:</p>
 
       <div class="stats-table-wrap">
         <table class="stats-table">
@@ -820,61 +806,59 @@ pre code {
             <tr><td class="metric-name">Treeknorm violations</td><td class="sig">38%</td><td>Referrals exceeding legal wait norm</td></tr>
             <tr><td class="metric-name">Avg specialist wait</td><td>9.4 weeks</td><td>Across all departments</td></tr>
             <tr><td class="metric-name">GP burnout events</td><td>1.8 / run</td><td>GP at capacity ceiling</td></tr>
-            <tr><td class="metric-name">Cost per citizen / year</td><td>&euro;2,847</td><td>NZa tariff-based (GP + specialist + hospital)</td></tr>
+            <tr><td class="metric-name">Cost per citizen / year</td><td>€2,847</td><td>NZa tariff-based (GP + specialist + hospital)</td></tr>
           </tbody>
         </table>
       </div>
 
-      <p>The critical number is the 38% Treeknorm violation rate. More than one in three specialist referrals exceeds the legal maximum wait time. Each violation feeds back into the system: conditions worsen, emergency visits increase, specialist queues grow longer.</p>
-
       <div class="insight-callout warning">
         <strong>The structural argument</strong>
-        The current system does not fail because people are not trying. It fails because the architecture&thinsp;&mdash;&thinsp;administrative, clinical, and digital&thinsp;&mdash;&thinsp;was designed for a younger, healthier population with fewer chronic conditions. The demographics changed. The architecture did not. Chapter 3 examines what happens when you change the architecture instead.
+        The core argument of this research is that the system is not failing because of a lack of effort from healthcare workers; instead, it is failing because the architecture was built for a different era. The demographics of the Netherlands have changed, but the digital and administrative structures have not.
       </div>
     </section>
 
-    <section class="chapter visible" id="assumptions">
-      <h3>Caveats</h3>
+    <section class="chapter visible" id="limitations">
+      <h3>Researcher Disclosure and Limitations</h3>
+
+      <p>It is important to note that I work for Microsoft, a company that develops AI products. I built Cammelot as a personal research project to test these systems independently. The code is open source and the opinions expressed here are my own.</p>
 
       <details>
         <summary>Modeling decisions and limitations</summary>
         <div class="details-content">
           <ul>
-            <li><strong>N=45 is small.</strong> Stochastic variance is high. We report means across 200 runs, not individual results.</li>
+            <li><strong>N=45 is small.</strong> With only 45 citizens, the results can vary significantly between runs, which is why we focus on the average results across 200 iterations rather than any single outcome.</li>
             <li><strong>Disease progression is simplified.</strong> The five-state Markov chain omits remission, acute exacerbations, and treatment response variation.</li>
             <li><strong>Uniform patient complexity.</strong> A 5-minute prescription renewal and a 45-minute multimorbidity assessment are treated equivalently.</li>
             <li><strong>Mortality from delay is modeled, not observed.</strong> The direction is evidence-supported (delayed treatment worsens outcomes). The specific drain rates are calibrated parameters, not measured values.</li>
-            <li><strong>Parameters derive from published sources</strong> (CBS, RIVM, NZa, IZA, LHV) but the model is a simplification. We claim qualitative pattern reproduction, not predictive accuracy.</li>
+            <li><strong>Parameters derive from published sources</strong> (CBS, RIVM, NZa, IZA, LHV) but the model is a simplification. The goal is to identify qualitative patterns in how the healthcare system responds to stress.</li>
           </ul>
         </div>
       </details>
-
-      <div class="footnote-body" style="display:block;margin-top:1.5rem;"><em>Disclosure: I work at Microsoft. My employer builds and sells AI products. I built Cammelot as a personal applied research project, not a Microsoft product. The code is open source. All opinions are my own.</em></div>
 
       <details style="margin-top:1rem;">
         <summary>Sources &amp; References</summary>
         <div class="details-content">
           <ol style="font-size:0.82rem;line-height:1.7;color:var(--text-muted);">
-            <li>CBS StatLine &mdash; Bevolking; kerncijfers 2024</li>
+            <li>CBS StatLine — Bevolking; kerncijfers 2024</li>
             <li>RIVM Volksgezondheid Toekomst Verkenning 2024</li>
             <li>NZa Beleidsregel huisartsenzorg en multidisciplinaire zorg 2025</li>
-            <li>NZa Monitor Toegankelijkheid Zorg &mdash; Wachttijden 2024</li>
-            <li>IZA &mdash; Integraal Zorgakkoord 2023&ndash;2026</li>
-            <li>ABF Research &mdash; Arbeidsmarktprognose zorg en welzijn 2023&ndash;2033</li>
-            <li>LHV Enqu&ecirc;te Werkdruk Huisartsen 2024</li>
-            <li>RIVM Chronic Disease Model &mdash; Prevalence by age cohort</li>
-            <li>Nivel Zorgregistraties &mdash; Zorggebruik huisartsenzorg 2024</li>
-            <li>ESC Guidelines &mdash; Cardiovascular Disease Prevention 2021</li>
-            <li>PMC &mdash; COPD as Independent Risk Factor for CVD (RR=2.5)</li>
-            <li>Wegiz &mdash; Wet elektronische gegevensuitwisseling in de zorg (2023)</li>
+            <li>NZa Monitor Toegankelijkheid Zorg — Wachttijden 2024</li>
+            <li>IZA — Integraal Zorgakkoord 2023–2026</li>
+            <li>ABF Research — Arbeidsmarktprognose zorg en welzijn 2023–2033</li>
+            <li>LHV Enquête Werkdruk Huisartsen 2024</li>
+            <li>RIVM Chronic Disease Model — Prevalence by age cohort</li>
+            <li>Nivel Zorgregistraties — Zorggebruik huisartsenzorg 2024</li>
+            <li>ESC Guidelines — Cardiovascular Disease Prevention 2021</li>
+            <li>PMC — COPD as Independent Risk Factor for CVD (RR=2.5)</li>
+            <li>Wegiz — Wet elektronische gegevensuitwisseling in de zorg (2023)</li>
           </ol>
         </div>
       </details>
     </section>
 
     <nav class="chapter-nav">
-      <a href="ch1.html" class="prev">&larr; How It Works</a>
-      <a href="ch3.html" class="next">The AI-Native Overhaul &rarr;</a>
+      <a href="ch1.html" class="prev">← The Mechanics</a>
+      <a href="ch3.html" class="next">The AI-Native Overhaul →</a>
     </nav>
   </main>
 
