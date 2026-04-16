@@ -9734,7 +9734,7 @@ document.getElementById('agent-detail').addEventListener('change', function(e) {
 // ═══ SPRINT 20: SCREENSHOT & SHARE ENGINE ═══
 
 // 20.0 — Toast notification system (reusable)
-function showToast(message, duration, extraClass, copyText) {
+function showToast(message, duration, extraClass, copyText) { return; // disabled — toast popups removed
   duration = duration || 3000;
   var container = document.getElementById('toast-container-s20');
   if (!container) {
