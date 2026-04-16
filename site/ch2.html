@@ -556,6 +556,55 @@ pre code {
 }
 .chapter-nav a:hover { color: var(--text); }
 .chapter-nav .next { margin-left: auto; }
+
+/* Abbreviation tooltips */
+abbr[title] {
+  text-decoration: underline dotted rgba(0,0,0,0.3);
+  text-underline-offset: 3px;
+  cursor: help;
+  position: relative;
+}
+abbr[title]:hover {
+  text-decoration-color: var(--red);
+}
+/* Custom tooltip for better styling */
+abbr[title]:hover::after {
+  content: attr(title);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--text, #1a1a1a);
+  color: var(--bg, #faf9f7);
+  font: normal 0.72rem/1.4 'Space Grotesk', sans-serif;
+  padding: 0.4rem 0.7rem;
+  border-radius: 4px;
+  white-space: nowrap;
+  max-width: 320px;
+  white-space: normal;
+  z-index: 1000;
+  pointer-events: none;
+  box-shadow: 0 3px 12px rgba(0,0,0,0.2);
+  text-decoration: none;
+  font-style: normal;
+  letter-spacing: 0;
+  text-transform: none;
+}
+abbr[title]:hover::before {
+  content: '';
+  position: absolute;
+  bottom: calc(100% + 2px);
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: var(--text, #1a1a1a);
+  z-index: 1001;
+  pointer-events: none;
+}
+@media (max-width: 700px) {
+  abbr[title]:hover::after { max-width: 220px; font-size: 0.65rem; left: 0; transform: none; }
+  abbr[title]:hover::before { left: 20px; transform: none; }
+}
 </style>
 <script defer data-domain="cammelot.org" src="https://plausible.io/js/script.js"></script>
 </head>
@@ -635,7 +684,7 @@ pre code {
       <div class="chapter-label">Chapter 2</div>
       <h2>Analysis of the Current System</h2>
 
-      <p>To address systemic issues in healthcare, we must first demonstrate the specific areas where the current model is failing by using verifiable data. While the Netherlands is frequently ranked as having one of the best healthcare systems in Europe, it is currently experiencing a “care gridlock” known as a zorginfarct. This is not a future projection but a present reality where 38% of specialist referrals exceed legal waiting standards and many general practitioner (GP) practices are closed to new patients. Research from 2023 indicates a projected shortfall of 301,000 healthcare workers by 2035; this number represents a structural impossibility because the system cannot function with the workforce that will be available.</p>
+      <p>To address systemic issues in healthcare, we must first demonstrate the specific areas where the current model is failing by using verifiable data. While the Netherlands is frequently ranked as having one of the best healthcare systems in Europe, it is currently experiencing a “care gridlock” known as a zorginfarct. This is not a future projection but a present reality where 38% of specialist referrals exceed legal waiting standards and many general practitioner (<abbr title="General Practitioner — huisarts in Dutch">GP</abbr>) practices are closed to new patients. Research from 2023 indicates a projected shortfall of 301,000 healthcare workers by 2035; this number represents a structural impossibility because the system cannot function with the workforce that will be available.</p>
 
       <div class="metric-callout">
         <div class="metric-card">
@@ -681,7 +730,7 @@ pre code {
         <table class="stats-table">
           <thead><tr><th>Department</th><th>Norm</th><th>Actual</th><th>Source</th></tr></thead>
           <tbody>
-            <tr><td class="metric-name">Ophthalmology</td><td>7 weeks</td><td class="sig">12 weeks</td><td>NZa 2024</td></tr>
+            <tr><td class="metric-name">Ophthalmology</td><td>7 weeks</td><td class="sig">12 weeks</td><td><abbr title="Nederlandse Zorgautoriteit — Dutch Healthcare Authority">NZa</abbr> 2024</td></tr>
             <tr><td class="metric-name">Neurology</td><td>7 weeks</td><td class="sig">+50% since 2022</td><td>NZa 2024</td></tr>
             <tr><td class="metric-name">Gynaecology</td><td>7 weeks</td><td class="sig">+50% since 2022</td><td>NZa 2024</td></tr>
             <tr><td class="metric-name">MRI/CT diagnostics</td><td>4 weeks</td><td class="sig">28.9% exceed norm</td><td>NZa 2024</td></tr>
@@ -699,7 +748,7 @@ pre code {
 
       <div class="insight-callout">
         <strong>The coordination cost</strong>
-        Adding a new specialist system to the Dutch healthcare network takes 3–18 months of integration work. In Cammelot’s A2A mesh, it takes five minutes: publish an agent card, join the mesh. The gap between these two numbers is the cost of the current architecture.
+        Adding a new specialist system to the Dutch healthcare network takes 3–18 months of integration work. In Cammelot’s <abbr title="Agent-to-Agent — protocol for autonomous software agents to communicate">A2A</abbr> mesh, it takes five minutes: publish an agent card, join the mesh. The gap between these two numbers is the cost of the current architecture.
       </div>
     </section>
 
@@ -714,10 +763,10 @@ pre code {
 
       <div class="stats-table-wrap">
         <table class="stats-table">
-          <thead><tr><th>Variable</th><th>IST Value</th><th>Source</th></tr></thead>
+          <thead><tr><th>Variable</th><th><abbr title="German: "Ist-Zustand" — the current state of the system">IST</abbr> Value</th><th>Source</th></tr></thead>
           <tbody>
-            <tr><td class="metric-name">L<sub>admin</sub></td><td>0.30</td><td>LHV 2024 (administrative burden)</td></tr>
-            <tr><td class="metric-name">V<sub>ziekte</sub></td><td>0.08</td><td>CBS (sick leave / ziekteverzuim)</td></tr>
+            <tr><td class="metric-name">L<sub>admin</sub></td><td>0.30</td><td><abbr title="Landelijke Huisartsen Vereniging — Dutch National Association of GPs">LHV</abbr> 2024 (administrative burden)</td></tr>
+            <tr><td class="metric-name">V<sub>ziekte</sub></td><td>0.08</td><td><abbr title="Centraal Bureau voor de Statistiek — Statistics Netherlands">CBS</abbr> (sick leave / ziekteverzuim)</td></tr>
             <tr><td class="metric-name">E<sub>ai</sub></td><td>1.0</td><td>No AI assistance in IST mode</td></tr>
             <tr><td class="metric-name"><strong>C<sub>eff</sub></strong></td><td class="sig"><strong>0.62</strong></td><td>62% of theoretical capacity</td></tr>
           </tbody>
@@ -730,7 +779,7 @@ pre code {
     <section class="chapter visible" id="hp-drain">
       <h3>Health Deterioration and Mortality</h3>
 
-      <p>Mortality in this simulation is a direct result of delays in the system. When a citizen waits longer than the Treeknorm allows, their health points (HP) begin to drain according to this formula:</p>
+      <p>Mortality in this simulation is a direct result of delays in the system. When a citizen waits longer than the Treeknorm allows, their health points (<abbr title="Health Points — a citizen’s remaining health value in the simulation">HP</abbr>) begin to drain according to this formula:</p>
 
       <div class="insight-callout" style="text-align:center;font-family:'Space Grotesk',sans-serif;font-size:1rem;font-weight:600;letter-spacing:0.02em;background:var(--code-bg);border-left-color:var(--red);">
         HP<sub>drain</sub> = drainRate × (t<sub>wait</sub> − T<sub>treeknorm</sub>) × severityMultiplier × (1 + adminBurden)
@@ -756,7 +805,7 @@ pre code {
     <section class="chapter visible" id="disease-engine">
       <h3>The Disease Engine and Comorbidities</h3>
 
-      <p>The simulation tracks 10 chronic conditions using official ICD-10 codes. Each condition progresses through a five-state Markov chain where the system checks every simulation tick to see if a patient moves from “healthy” to “mild” or from “severe” to “critical.”</p>
+      <p>The simulation tracks 10 chronic conditions using official <abbr title="International Classification of Diseases, 10th revision">ICD-10</abbr> codes. Each condition progresses through a five-state Markov chain where the system checks every simulation tick to see if a patient moves from “healthy” to “mild” or from “severe” to “critical.”</p>
 
       <details>
         <summary>ICD-10 conditions and Markov transitions</summary>
@@ -767,7 +816,7 @@ pre code {
               <tbody>
                 <tr><td>Hypertension</td><td>I10</td><td>Age-dependent</td></tr>
                 <tr><td>Type 2 Diabetes</td><td>E11</td><td>1.2 million</td></tr>
-                <tr><td>COPD</td><td>J44</td><td>600,000+</td></tr>
+                <tr><td><abbr title="Chronic Obstructive Pulmonary Disease">COPD</abbr></td><td>J44</td><td>600,000+</td></tr>
                 <tr><td>Cardiovascular Disease</td><td>I25</td><td>12% (65+)</td></tr>
                 <tr><td>Arthrosis</td><td>M17</td><td>1.6 million</td></tr>
                 <tr><td>Osteoporosis</td><td>M81</td><td>15% (65+)</td></tr>
@@ -785,7 +834,7 @@ pre code {
               <thead><tr><th>Interaction</th><th>Relative Risk</th><th>Source</th></tr></thead>
               <tbody>
                 <tr><td>COPD → Cardiovascular Disease</td><td class="sig">2.5</td><td>PMC meta-analysis</td></tr>
-                <tr><td>Type 2 Diabetes → CVD</td><td class="sig">2.0</td><td>ESC Guidelines 2021</td></tr>
+                <tr><td>Type 2 Diabetes → <abbr title="Cardiovascular Disease">CVD</abbr></td><td class="sig">2.0</td><td>ESC Guidelines 2021</td></tr>
                 <tr><td>Hypertension → CVD</td><td class="sig">1.8</td><td>ESC Guidelines 2021</td></tr>
               </tbody>
             </table>
@@ -833,7 +882,7 @@ pre code {
             <li><strong>Disease progression is simplified.</strong> The five-state Markov chain omits remission, acute exacerbations, and treatment response variation.</li>
             <li><strong>Uniform patient complexity.</strong> A 5-minute prescription renewal and a 45-minute multimorbidity assessment are treated equivalently.</li>
             <li><strong>Mortality from delay is modeled, not observed.</strong> The direction is evidence-supported (delayed treatment worsens outcomes). The specific drain rates are calibrated parameters, not measured values.</li>
-            <li><strong>Parameters derive from published sources</strong> (CBS, RIVM, NZa, IZA, LHV) but the model is a simplification. The goal is to identify qualitative patterns in how the healthcare system responds to stress.</li>
+            <li><strong>Parameters derive from published sources</strong> (CBS, <abbr title="Rijksinstituut voor Volksgezondheid en Milieu — Dutch National Institute for Public Health">RIVM</abbr>, NZa, <abbr title="Integraal Zorgakkoord — Dutch National Healthcare Agreement 2023–2026">IZA</abbr>, LHV) but the model is a simplification. The goal is to identify qualitative patterns in how the healthcare system responds to stress.</li>
           </ul>
         </div>
       </details>

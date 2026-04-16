@@ -1177,7 +1177,56 @@ code {
       .sim-slide-caption h4 { font-size: 0.78rem; }
       .sim-slide-caption p { font-size: 0.72rem; }
     }
-    </style>
+    
+/* Abbreviation tooltips */
+abbr[title] {
+  text-decoration: underline dotted rgba(0,0,0,0.3);
+  text-underline-offset: 3px;
+  cursor: help;
+  position: relative;
+}
+abbr[title]:hover {
+  text-decoration-color: var(--red);
+}
+/* Custom tooltip for better styling */
+abbr[title]:hover::after {
+  content: attr(title);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--text, #1a1a1a);
+  color: var(--bg, #faf9f7);
+  font: normal 0.72rem/1.4 'Space Grotesk', sans-serif;
+  padding: 0.4rem 0.7rem;
+  border-radius: 4px;
+  white-space: nowrap;
+  max-width: 320px;
+  white-space: normal;
+  z-index: 1000;
+  pointer-events: none;
+  box-shadow: 0 3px 12px rgba(0,0,0,0.2);
+  text-decoration: none;
+  font-style: normal;
+  letter-spacing: 0;
+  text-transform: none;
+}
+abbr[title]:hover::before {
+  content: '';
+  position: absolute;
+  bottom: calc(100% + 2px);
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: var(--text, #1a1a1a);
+  z-index: 1001;
+  pointer-events: none;
+}
+@media (max-width: 700px) {
+  abbr[title]:hover::after { max-width: 220px; font-size: 0.65rem; left: 0; transform: none; }
+  abbr[title]:hover::before { left: 20px; transform: none; }
+}
+</style>
 <script defer data-domain="cammelot.org" src="https://plausible.io/js/script.js"></script>
 </head>
 
@@ -1284,7 +1333,7 @@ code {
     <section id="environment" class="research-section">
       <h2>The Simulated Environment</h2>
 
-      <p>Cammelot is populated by 45 citizens with names, ages, and medical histories drawn from CBS and RIVM data. It looks like a 1994 Super Nintendo game, but the logic is strictly factual, based on 2025 health data and NZa tariffs.</p>
+      <p>Cammelot is populated by 45 citizens with names, ages, and medical histories drawn from <abbr title="Centraal Bureau voor de Statistiek — Statistics Netherlands">CBS</abbr> and RIVM data. It looks like a 1994 Super Nintendo game, but the logic is strictly factual, based on 2025 health data and <abbr title="Nederlandse Zorgautoriteit — Dutch Healthcare Authority">NZa</abbr> tariffs.</p>
 
       <div class="sim-slider" id="simSlider">
         <div class="sim-slider-viewport">
@@ -1303,7 +1352,7 @@ code {
             </div>
             <div class="sim-slide">
               <div class="sim-slide-img-wrap"><img src="img/slide-4.png" alt="Mortality events from system delays" loading="lazy"></div>
-              <div class="sim-slide-caption"><h4>Mortality Events</h4><p>Citizens have HP that drains when they wait too long for a specialist. If HP reaches zero, the sprite turns into a ghost. The log tells you exactly which bottleneck caused that preventable death.</p></div>
+              <div class="sim-slide-caption"><h4>Mortality Events</h4><p>Citizens have <abbr title="Health Points — a citizen’s remaining health value in the simulation">HP</abbr> that drains when they wait too long for a specialist. If HP reaches zero, the sprite turns into a ghost. The log tells you exactly which bottleneck caused that preventable death.</p></div>
             </div>
           </div>
         </div>
@@ -1361,9 +1410,9 @@ code {
     <div class="chapter-divider"><div class="diamond"></div></div>
 
     <section id="ist" class="research-section">
-      <h2>The Crisis: The IST State (Today)</h2>
+      <h2>The Crisis: The <abbr title="German: "Ist-Zustand" — the current state of the system">IST</abbr> State (Today)</h2>
 
-      <p>The IST state is our control group: the current Dutch healthcare system. We use real data from sources like the LHV to set the rules. In this mode, a GP operates at only 62% of their theoretical capacity.</p>
+      <p>The IST state is our control group: the current Dutch healthcare system. We use real data from sources like the <abbr title="Landelijke Huisartsen Vereniging — Dutch National Association of GPs">LHV</abbr> to set the rules. In this mode, a <abbr title="General Practitioner — huisarts in Dutch">GP</abbr> operates at only 62% of their theoretical capacity.</p>
 
       <p style="text-align:center;font-family:'Space Grotesk',sans-serif;font-size:0.95rem;margin:1.2rem 0;"><code>C<sub>eff</sub> = C<sub>total</sub> × (1 − 0.30 − 0.08) × 1.0 = 0.62</code></p>
 
@@ -1377,13 +1426,13 @@ code {
 
       <h3 id="disease-engine">The Disease Engine</h3>
 
-      <p>We use Markov models to track how a disease moves from “mild” to “critical.” For example, a 72 year old with diabetes and COPD is on a much steeper health decline than a younger person. We also model comorbidities: diabetes can double the risk of heart disease, and COPD makes heart failure 2.5 times more likely. A 12 week wait for a specialist hits these high-risk patients fundamentally differently than it does a healthy 35 year old.</p>
+      <p>We use Markov models to track how a disease moves from “mild” to “critical.” For example, a 72 year old with diabetes and <abbr title="Chronic Obstructive Pulmonary Disease">COPD</abbr> is on a much steeper health decline than a younger person. We also model comorbidities: diabetes can double the risk of heart disease, and COPD makes heart failure 2.5 times more likely. A 12 week wait for a specialist hits these high-risk patients fundamentally differently than it does a healthy 35 year old.</p>
     </section>
 
     <div class="chapter-divider"><div class="diamond"></div></div>
 
     <section id="soll" class="research-section">
-      <h2>The Fix: The SOLL State (The AI-Native Overhaul)</h2>
+      <h2>The Fix: The <abbr title="German: "Soll-Zustand" — the target/desired state of the system">SOLL</abbr> State (The AI-Native Overhaul)</h2>
 
       <p>The SOLL state is a redesigned system where AI acts as the “connective tissue” between providers. This is about changing the plumbing, not just the interface.</p>
 
@@ -1452,7 +1501,7 @@ code {
     <section id="forward" class="research-section">
       <h2>The Path Forward</h2>
 
-      <p>Beyond the current health series, we will cover the technical architecture of the town, including FHIR memory storage, the A2A protocol, and the security red-teaming of the agents. The code for Cammelot is entirely open source and all simulation statistics are published for transparency.</p>
+      <p>Beyond the current health series, we will cover the technical architecture of the town, including <abbr title="Fast Healthcare Interoperability Resources — international health data standard">FHIR</abbr> memory storage, the <abbr title="Agent-to-Agent — protocol for autonomous software agents to communicate">A2A</abbr> protocol, and the security red-teaming of the agents. The code for Cammelot is entirely open source and all simulation statistics are published for transparency.</p>
 
       <p>I am looking for your great ideas and new research questions to dive into for future runs. If there is a specific policy, or technological intervention you would like to see stress-tested, please get in touch. I would love to see which hypotheses actually survive contact with a stochastic population.</p>
     </section>
@@ -1481,8 +1530,8 @@ code {
   <li><strong>NZa</strong> — <a href="https://www.nza.nl/zorgsectoren/huisartsenzorg/nieuwe-maximumtarieven-huisartsenzorg-2025" target="_blank" rel="noopener" style="color:var(--red);text-decoration:underline;text-underline-offset:2px;">Maximumtarieven huisartsenzorg 2025</a> (€12.43 regulier consult, BR/REG-25136)</li>
   <li><strong>NZa / Staat van VenZ</strong> — <a href="https://www.staatvenz.nl/kerncijfers/wachttijd-behandeling-medisch-specialistische-zorg-overschrijding-treeknorm-en-gemiddelde-wachttijd" target="_blank" rel="noopener" style="color:var(--red);text-decoration:underline;text-underline-offset:2px;">Overschrijding Treeknorm wachttijden</a> (specialist wait time violations)</li>
   <li><strong>LHV</strong> — <a href="https://www.lhv.nl/wp-content/uploads/2023/09/Infographic-Uitkomsten-Peiling-administratieve-verplichtingen-augustus-2023.pdf" target="_blank" rel="noopener" style="color:var(--red);text-decoration:underline;text-underline-offset:2px;">Peiling Administratieve lasten huisartsen 2023</a> (GP admin burden survey)</li>
-  <li><strong>IZA / Rijksoverheid</strong> — <a href="https://www.rijksoverheid.nl/documenten/rapporten/2022/09/16/integraal-zorgakkoord-samen-werken-aan-gezonde-zorg" target="_blank" rel="noopener" style="color:var(--red);text-decoration:underline;text-underline-offset:2px;">Integraal Zorgakkoord 2023–2026</a> (€2.8B transformation budget)</li>
-  <li><strong>Chen et al.</strong> — <a href="https://pubmed.ncbi.nlm.nih.gov/26208998/" target="_blank" rel="noopener" style="color:var(--red);text-decoration:underline;text-underline-offset:2px;">Risk of cardiovascular comorbidity in COPD: systematic review</a>. <em>Lancet Respir Med</em> 2015; OR 2.46 for CVD.</li>
+  <li><strong><abbr title="Integraal Zorgakkoord — Dutch National Healthcare Agreement 2023–2026">IZA</abbr> / Rijksoverheid</strong> — <a href="https://www.rijksoverheid.nl/documenten/rapporten/2022/09/16/integraal-zorgakkoord-samen-werken-aan-gezonde-zorg" target="_blank" rel="noopener" style="color:var(--red);text-decoration:underline;text-underline-offset:2px;">Integraal Zorgakkoord 2023–2026</a> (€2.8B transformation budget)</li>
+  <li><strong>Chen et al.</strong> — <a href="https://pubmed.ncbi.nlm.nih.gov/26208998/" target="_blank" rel="noopener" style="color:var(--red);text-decoration:underline;text-underline-offset:2px;">Risk of cardiovascular comorbidity in COPD: systematic review</a>. <em>Lancet Respir Med</em> 2015; OR 2.46 for <abbr title="Cardiovascular Disease">CVD</abbr>.</li>
   <li><strong>ESC</strong> — <a href="https://pubmed.ncbi.nlm.nih.gov/34458905/" target="_blank" rel="noopener" style="color:var(--red);text-decoration:underline;text-underline-offset:2px;">2021 ESC Guidelines on CVD Prevention in Clinical Practice</a>. <em>Eur Heart J</em> 2021;42(34):3227–3337. Diabetes RR≈2.0, Hypertension RR≈1.8.</li>
   <li><strong>Park et al.</strong> — <a href="https://arxiv.org/abs/2304.03442" target="_blank" rel="noopener" style="color:var(--red);text-decoration:underline;text-underline-offset:2px;">Generative Agents: Interactive Simulacra of Human Behavior</a>. Stanford/Google, 2023.</li>
 </ol>

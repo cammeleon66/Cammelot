@@ -556,6 +556,55 @@ pre code {
 }
 .chapter-nav a:hover { color: var(--text); }
 .chapter-nav .next { margin-left: auto; }
+
+/* Abbreviation tooltips */
+abbr[title] {
+  text-decoration: underline dotted rgba(0,0,0,0.3);
+  text-underline-offset: 3px;
+  cursor: help;
+  position: relative;
+}
+abbr[title]:hover {
+  text-decoration-color: var(--red);
+}
+/* Custom tooltip for better styling */
+abbr[title]:hover::after {
+  content: attr(title);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--text, #1a1a1a);
+  color: var(--bg, #faf9f7);
+  font: normal 0.72rem/1.4 'Space Grotesk', sans-serif;
+  padding: 0.4rem 0.7rem;
+  border-radius: 4px;
+  white-space: nowrap;
+  max-width: 320px;
+  white-space: normal;
+  z-index: 1000;
+  pointer-events: none;
+  box-shadow: 0 3px 12px rgba(0,0,0,0.2);
+  text-decoration: none;
+  font-style: normal;
+  letter-spacing: 0;
+  text-transform: none;
+}
+abbr[title]:hover::before {
+  content: '';
+  position: absolute;
+  bottom: calc(100% + 2px);
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: var(--text, #1a1a1a);
+  z-index: 1001;
+  pointer-events: none;
+}
+@media (max-width: 700px) {
+  abbr[title]:hover::after { max-width: 220px; font-size: 0.65rem; left: 0; transform: none; }
+  abbr[title]:hover::before { left: 20px; transform: none; }
+}
 </style>
 <script defer data-domain="cammelot.org" src="https://plausible.io/js/script.js"></script>
 </head>
@@ -630,15 +679,15 @@ pre code {
       <div class="chapter-label">Chapter 1</div>
       <h2>The Mechanics of the Simulation</h2>
 
-      <p>The primary objective of this project is to generate quantifiable data for discussion rather than relying on subjective opinions. Cammelot is a digital representation of a Dutch town that operates directly within a web browser; it follows the lives of forty-five citizens with names, ages, and medical histories drawn from CBS and RIVM datasets. As these digital citizens move through the town, they develop illnesses, visit general practitioners, and wait for specialist referrals. When the healthcare system fails to process them in time, these agents experience health declines that are recorded and measured.</p>
+      <p>The primary objective of this project is to generate quantifiable data for discussion rather than relying on subjective opinions. Cammelot is a digital representation of a Dutch town that operates directly within a web browser; it follows the lives of forty-five citizens with names, ages, and medical histories drawn from <abbr title="Centraal Bureau voor de Statistiek — Statistics Netherlands">CBS</abbr> and RIVM datasets. As these digital citizens move through the town, they develop illnesses, visit general practitioners, and wait for specialist referrals. When the healthcare system fails to process them in time, these agents experience health declines that are recorded and measured.</p>
 
-      <p>Every event within Cammelot is traceable and backed by real-world figures. Consultation costs are taken from the NZa tariff tables, and waiting times are checked against the Treeknorm, which is the legal standard for care access in the Netherlands. By keeping the population small at forty-five citizens and three GPs, the simulation allows us to track every individual outcome while still producing enough data to see clear patterns across 200 separate runs.</p>
+      <p>Every event within Cammelot is traceable and backed by real-world figures. Consultation costs are taken from the <abbr title="Nederlandse Zorgautoriteit — Dutch Healthcare Authority">NZa</abbr> tariff tables, and waiting times are checked against the Treeknorm, which is the legal standard for care access in the Netherlands. By keeping the population small at forty-five citizens and three GPs, the simulation allows us to track every individual outcome while still producing enough data to see clear patterns across 200 separate runs.</p>
     </section>
 
     <section class="chapter visible" id="the-town">
       <h3>The Town Environment</h3>
 
-      <p>The simulation map is a grid of 64 by 48 tiles where buildings are placed in fixed positions. There are three GP practices spread across the town and one regional hospital where specialists work. I chose a 16-bit “retro” visual style similar to a Super Nintendo game because it prevents the user from being distracted by high-end graphics; instead, the focus remains entirely on how the system behaves. You can watch the town much like an ant farm, where the goal is to observe patterns such as clusters of citizens forming queues around a building when the system becomes overloaded.</p>
+      <p>The simulation map is a grid of 64 by 48 tiles where buildings are placed in fixed positions. There are three <abbr title="General Practitioner — huisarts in Dutch">GP</abbr> practices spread across the town and one regional hospital where specialists work. I chose a 16-bit “retro” visual style similar to a Super Nintendo game because it prevents the user from being distracted by high-end graphics; instead, the focus remains entirely on how the system behaves. You can watch the town much like an ant farm, where the goal is to observe patterns such as clusters of citizens forming queues around a building when the system becomes overloaded.</p>
 
       <div class="metric-callout">
         <div class="metric-card">
@@ -663,7 +712,7 @@ pre code {
 
       <p>These citizens are more than just data points in a spreadsheet; they are state machines that remember every GP visit and every week spent on a waiting list. Disease progression is managed through a Markov chain, which is a mathematical model that determines how a patient moves from being “healthy” to “mildly ill” and eventually “critical.”</p>
 
-      <p>To give an example of how this works, consider a citizen who has both COPD and heart disease. The simulation uses “relative risk multipliers” from medical research to show how these two conditions interact. Having both illnesses makes each one progress faster, which means that a long wait for a specialist is more dangerous for this person than for a citizen with only one health issue.</p>
+      <p>To give an example of how this works, consider a citizen who has both <abbr title="Chronic Obstructive Pulmonary Disease">COPD</abbr> and heart disease. The simulation uses “relative risk multipliers” from medical research to show how these two conditions interact. Having both illnesses makes each one progress faster, which means that a long wait for a specialist is more dangerous for this person than for a citizen with only one health issue.</p>
 
       <div class="stats-table-wrap">
         <table class="stats-table">
@@ -701,7 +750,7 @@ pre code {
             </tr>
           </thead>
           <tbody>
-            <tr><td class="metric-name">Dr. de Jong</td><td>GP</td><td>2,400 patients</td><td>LHV normpraktijk</td></tr>
+            <tr><td class="metric-name">Dr. de Jong</td><td>GP</td><td>2,400 patients</td><td><abbr title="Landelijke Huisartsen Vereniging — Dutch National Association of GPs">LHV</abbr> normpraktijk</td></tr>
             <tr><td class="metric-name">Dr. Bakker</td><td>GP</td><td>2,000 patients</td><td>LHV normpraktijk</td></tr>
             <tr><td class="metric-name">Dr. Visser</td><td>GP</td><td>1,800 patients</td><td>LHV normpraktijk</td></tr>
             <tr><td class="metric-name">Cardiology</td><td>Specialist</td><td>12/week</td><td>NZa capacity norms</td></tr>
@@ -735,7 +784,7 @@ pre code {
     <section class="chapter visible" id="what-we-measure">
       <h3>What the Simulation Measures</h3>
 
-      <p>We collect four main types of data that match the indicators used by the IZA (Integraal Zorgakkoord) to judge healthcare performance.</p>
+      <p>We collect four main types of data that match the indicators used by the <abbr title="Integraal Zorgakkoord — Dutch National Healthcare Agreement 2023–2026">IZA</abbr> (Integraal Zorgakkoord) to judge healthcare performance.</p>
 
       <div class="metric-callout">
         <div class="metric-card">
@@ -794,7 +843,7 @@ pre code {
   <li><strong>NZa / Staat van VenZ</strong> — <a href="https://www.staatvenz.nl/kerncijfers/wachttijd-behandeling-medisch-specialistische-zorg-overschrijding-treeknorm-en-gemiddelde-wachttijd" target="_blank" rel="noopener" style="color:var(--red);text-decoration:underline;text-underline-offset:2px;">Overschrijding Treeknorm wachttijden</a> (specialist wait time violations)</li>
   <li><strong>LHV</strong> — <a href="https://www.lhv.nl/wp-content/uploads/2023/09/Infographic-Uitkomsten-Peiling-administratieve-verplichtingen-augustus-2023.pdf" target="_blank" rel="noopener" style="color:var(--red);text-decoration:underline;text-underline-offset:2px;">Peiling Administratieve lasten huisartsen 2023</a> (GP admin burden survey)</li>
   <li><strong>IZA / Rijksoverheid</strong> — <a href="https://www.rijksoverheid.nl/documenten/rapporten/2022/09/16/integraal-zorgakkoord-samen-werken-aan-gezonde-zorg" target="_blank" rel="noopener" style="color:var(--red);text-decoration:underline;text-underline-offset:2px;">Integraal Zorgakkoord 2023–2026</a> (€2.8B transformation budget)</li>
-  <li><strong>Chen et al.</strong> — <a href="https://pubmed.ncbi.nlm.nih.gov/26208998/" target="_blank" rel="noopener" style="color:var(--red);text-decoration:underline;text-underline-offset:2px;">Risk of cardiovascular comorbidity in COPD: systematic review</a>. <em>Lancet Respir Med</em> 2015; OR 2.46 for CVD.</li>
+  <li><strong>Chen et al.</strong> — <a href="https://pubmed.ncbi.nlm.nih.gov/26208998/" target="_blank" rel="noopener" style="color:var(--red);text-decoration:underline;text-underline-offset:2px;">Risk of cardiovascular comorbidity in COPD: systematic review</a>. <em>Lancet Respir Med</em> 2015; OR 2.46 for <abbr title="Cardiovascular Disease">CVD</abbr>.</li>
   <li><strong>ESC</strong> — <a href="https://pubmed.ncbi.nlm.nih.gov/34458905/" target="_blank" rel="noopener" style="color:var(--red);text-decoration:underline;text-underline-offset:2px;">2021 ESC Guidelines on CVD Prevention in Clinical Practice</a>. <em>Eur Heart J</em> 2021;42(34):3227–3337. Diabetes RR≈2.0, Hypertension RR≈1.8.</li>
   <li><strong>Park et al.</strong> — <a href="https://arxiv.org/abs/2304.03442" target="_blank" rel="noopener" style="color:var(--red);text-decoration:underline;text-underline-offset:2px;">Generative Agents: Interactive Simulacra of Human Behavior</a>. Stanford/Google, 2023.</li>
 </ol>

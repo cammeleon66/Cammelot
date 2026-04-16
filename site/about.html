@@ -202,6 +202,55 @@ body.dark-theme .site-header { background: rgba(10, 10, 18, 0.92); }
   .about-section p { font-size: 0.9rem; }
   html, body { overflow-x: hidden; }
 }
+
+/* Abbreviation tooltips */
+abbr[title] {
+  text-decoration: underline dotted rgba(0,0,0,0.3);
+  text-underline-offset: 3px;
+  cursor: help;
+  position: relative;
+}
+abbr[title]:hover {
+  text-decoration-color: var(--red);
+}
+/* Custom tooltip for better styling */
+abbr[title]:hover::after {
+  content: attr(title);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--text, #1a1a1a);
+  color: var(--bg, #faf9f7);
+  font: normal 0.72rem/1.4 'Space Grotesk', sans-serif;
+  padding: 0.4rem 0.7rem;
+  border-radius: 4px;
+  white-space: nowrap;
+  max-width: 320px;
+  white-space: normal;
+  z-index: 1000;
+  pointer-events: none;
+  box-shadow: 0 3px 12px rgba(0,0,0,0.2);
+  text-decoration: none;
+  font-style: normal;
+  letter-spacing: 0;
+  text-transform: none;
+}
+abbr[title]:hover::before {
+  content: '';
+  position: absolute;
+  bottom: calc(100% + 2px);
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: var(--text, #1a1a1a);
+  z-index: 1001;
+  pointer-events: none;
+}
+@media (max-width: 700px) {
+  abbr[title]:hover::after { max-width: 220px; font-size: 0.65rem; left: 0; transform: none; }
+  abbr[title]:hover::before { left: 20px; transform: none; }
+}
 </style>
 <script defer data-domain="cammelot.org" src="https://plausible.io/js/script.js"></script>
 </head>
@@ -229,7 +278,7 @@ body.dark-theme .site-header { background: rgba(10, 10, 18, 0.92); }
 
   <section class="about-section">
     <h2>The Scope of the Project</h2>
-    <p>Cammelot is a digital representation of a Dutch town consisting of forty-five citizens, three general practitioners, and one hospital. The health outcomes within the simulation are determined by actual disease prevalence data from the RIVM, while the demographics and financial costs are based on CBS mortality tables and NZa tariff schedules. The 16-bit visual style is a deliberate choice intended to focus the user’s attention on the underlying patterns of the system rather than the aesthetic details. In this environment, citizens move through their daily lives and interact with healthcare providers; when the system cannot process patients efficiently, the simulation records the resulting health decline and mortality events.</p>
+    <p>Cammelot is a digital representation of a Dutch town consisting of forty-five citizens, three general practitioners, and one hospital. The health outcomes within the simulation are determined by actual disease prevalence data from the <abbr title="Rijksinstituut voor Volksgezondheid en Milieu — Dutch National Institute for Public Health">RIVM</abbr>, while the demographics and financial costs are based on <abbr title="Centraal Bureau voor de Statistiek — Statistics Netherlands">CBS</abbr> mortality tables and <abbr title="Nederlandse Zorgautoriteit — Dutch Healthcare Authority">NZa</abbr> tariff schedules. The 16-bit visual style is a deliberate choice intended to focus the user’s attention on the underlying patterns of the system rather than the aesthetic details. In this environment, citizens move through their daily lives and interact with healthcare providers; when the system cannot process patients efficiently, the simulation records the resulting health decline and mortality events.</p>
   </section>
 
   <hr class="divider">
@@ -264,8 +313,8 @@ body.dark-theme .site-header { background: rgba(10, 10, 18, 0.92); }
       <li><strong>CBS</strong>, Centraal Bureau voor de Statistiek — population demographics and baseline mortality tables</li>
       <li><strong>RIVM</strong>, Rijksinstituut voor Volksgezondheid en Milieu — age-stratified disease prevalence and comorbidity risk factors</li>
       <li><strong>NZa</strong>, Nederlandse Zorgautoriteit — healthcare tariffs and legal waiting time standards (Treeknorm)</li>
-      <li><strong>LHV</strong>, Landelijke Huisartsen Vereniging — administrative workload and capacity of general practitioners</li>
-      <li><strong>IZA</strong>, Integraal Zorgakkoord — transformation targets for system interoperability and staffing</li>
+      <li><strong><abbr title="Landelijke Huisartsen Vereniging — Dutch National Association of GPs">LHV</abbr></strong>, Landelijke Huisartsen Vereniging — administrative workload and capacity of general practitioners</li>
+      <li><strong><abbr title="Integraal Zorgakkoord — Dutch National Healthcare Agreement 2023–2026">IZA</abbr></strong>, Integraal Zorgakkoord — transformation targets for system interoperability and staffing</li>
     </ul>
   </section>
 

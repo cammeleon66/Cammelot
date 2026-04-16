@@ -561,6 +561,55 @@ pre code {
 }
 .chapter-nav a:hover { color: var(--text); }
 .chapter-nav .next { margin-left: auto; }
+
+/* Abbreviation tooltips */
+abbr[title] {
+  text-decoration: underline dotted rgba(0,0,0,0.3);
+  text-underline-offset: 3px;
+  cursor: help;
+  position: relative;
+}
+abbr[title]:hover {
+  text-decoration-color: var(--red);
+}
+/* Custom tooltip for better styling */
+abbr[title]:hover::after {
+  content: attr(title);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--text, #1a1a1a);
+  color: var(--bg, #faf9f7);
+  font: normal 0.72rem/1.4 'Space Grotesk', sans-serif;
+  padding: 0.4rem 0.7rem;
+  border-radius: 4px;
+  white-space: nowrap;
+  max-width: 320px;
+  white-space: normal;
+  z-index: 1000;
+  pointer-events: none;
+  box-shadow: 0 3px 12px rgba(0,0,0,0.2);
+  text-decoration: none;
+  font-style: normal;
+  letter-spacing: 0;
+  text-transform: none;
+}
+abbr[title]:hover::before {
+  content: '';
+  position: absolute;
+  bottom: calc(100% + 2px);
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: var(--text, #1a1a1a);
+  z-index: 1001;
+  pointer-events: none;
+}
+@media (max-width: 700px) {
+  abbr[title]:hover::after { max-width: 220px; font-size: 0.65rem; left: 0; transform: none; }
+  abbr[title]:hover::before { left: 20px; transform: none; }
+}
 </style>
 <script defer data-domain="cammelot.org" src="https://plausible.io/js/script.js"></script>
 </head>
@@ -636,7 +685,7 @@ pre code {
       <div class="chapter-label" style="color:var(--green);">Chapter 3</div>
       <h2>The AI-Native Overhaul</h2>
 
-      <p>While Chapter 2 established the current baseline of the Dutch healthcare system—characterized by a 62% effective capacity and a 38% violation rate of legal wait times—this chapter examines a proposed “target state” known as the SOLL model. In this version of the simulation, we keep the same 45 citizens, three general practitioners, and single hospital, but we adjust five specific parameters to measure the systemic impact of an AI-native architecture.</p>
+      <p>While Chapter 2 established the current baseline of the Dutch healthcare system—characterized by a 62% effective capacity and a 38% violation rate of legal wait times—this chapter examines a proposed “target state” known as the <abbr title="German: "Soll-Zustand" — the target/desired state of the system">SOLL</abbr> model. In this version of the simulation, we keep the same 45 citizens, three general practitioners, and single hospital, but we adjust five specific parameters to measure the systemic impact of an AI-native architecture.</p>
     </section>
 
     <section class="chapter visible" id="capacity">
@@ -647,7 +696,7 @@ pre code {
       <div class="metric-callout">
         <div class="metric-card">
           <div class="metric-value ist">0.62</div>
-          <div class="metric-label">IST Effective Capacity</div>
+          <div class="metric-label"><abbr title="German: "Ist-Zustand" — the current state of the system">IST</abbr> Effective Capacity</div>
         </div>
         <div class="metric-card">
           <div class="metric-value soll">0.83</div>
@@ -674,7 +723,7 @@ pre code {
             <tr><td class="metric-name">Ambient AI Scribes</td><td>Admin 30% → &lt;5%</td><td>Systems record consultations and automatically generate medical records.</td></tr>
             <tr><td class="metric-name">AI-Driven Triage</td><td>Wait 12wk → &lt;4wk</td><td>AI matching routes patients to specialists based on urgency and availability.</td></tr>
             <tr><td class="metric-name">Digital Twins</td><td>Reactive → Proactive</td><td>Risk scores trigger a doctor’s visit before physical symptoms appear.</td></tr>
-            <tr><td class="metric-name">A2A Scheduling</td><td>Isolated → Coordinated</td><td>Software agents share real-time schedules to book referrals in hours.</td></tr>
+            <tr><td class="metric-name"><abbr title="Agent-to-Agent — protocol for autonomous software agents to communicate">A2A</abbr> Scheduling</td><td>Isolated → Coordinated</td><td>Software agents share real-time schedules to book referrals in hours.</td></tr>
             <tr><td class="metric-name">Data Sharing</td><td>Interop 11% → 66%</td><td>Shared standards allow specialists to see a patient’s full history instantly.</td></tr>
           </tbody>
         </table>
@@ -686,7 +735,7 @@ pre code {
     <section class="chapter visible" id="digital-twin">
       <h3>Illustrative Example: The Digital Twin</h3>
 
-      <p>A “Digital Twin” in this simulation is not a creative AI; it is a risk calculator that reads a patient’s medical history. For example, if a citizen named Hendrik has a history of heart disease and COPD, his Digital Twin might calculate a 32% probability of heart failure. Because the system flags this early, Hendrik visits his GP while his condition is still “mild.” Treating a mild condition is generally cheaper and more effective than waiting for a patient to arrive at the hospital in a “critical” state.</p>
+      <p>A “Digital Twin” in this simulation is not a creative AI; it is a risk calculator that reads a patient’s medical history. For example, if a citizen named Hendrik has a history of heart disease and <abbr title="Chronic Obstructive Pulmonary Disease">COPD</abbr>, his Digital Twin might calculate a 32% probability of heart failure. Because the system flags this early, Hendrik visits his <abbr title="General Practitioner — huisarts in Dutch">GP</abbr> while his condition is still “mild.” Treating a mild condition is generally cheaper and more effective than waiting for a patient to arrive at the hospital in a “critical” state.</p>
 
       <div class="insight-callout">
         <strong>Proactive vs. Reactive</strong>
@@ -705,7 +754,7 @@ pre code {
           <p>Every doctor and hospital department publishes a machine-readable “Agent Card.” This card describes what they do, how long their waiting list is, and their current capacity. Instead of a GP sending a fax and waiting weeks for a reply, the GP’s digital agent checks the specialist’s Agent Card and negotiates a referral almost instantly.</p>
         </div>
         <div class="component-card">
-          <h3>FHIR Memory Store</h3>
+          <h3><abbr title="Fast Healthcare Interoperability Resources — international health data standard">FHIR</abbr> Memory Store</h3>
           <p>Every action in the simulation—a diagnosis, a prescription, or a wait time—is stored as a standardized “resource.” This ensures that every agent has access to the same history, preventing the data fragmentation seen in the current system.</p>
         </div>
         <div class="component-card">
@@ -749,7 +798,7 @@ pre code {
             <li><strong>Adoption Barriers:</strong> The model does not account for the time it takes for doctors to trust new tools or for laws to change.</li>
             <li><strong>Human Behavior:</strong> If a doctor saves 25% of their time, they might choose to spend more time with each patient rather than seeing more patients. The model assumes they see more patients to fix the backlog, but reality is often more complex.</li>
             <li><strong>Infrastructure Cost:</strong> The model does not price the implementation cost of building an Agentic Mesh across 12,000 practices.</li>
-            <li><strong>Parameters derive from published sources</strong> (CBS, RIVM, NZa, IZA, LHV) but the SOLL targets are projections, not observations.</li>
+            <li><strong>Parameters derive from published sources</strong> (<abbr title="Centraal Bureau voor de Statistiek — Statistics Netherlands">CBS</abbr>, <abbr title="Rijksinstituut voor Volksgezondheid en Milieu — Dutch National Institute for Public Health">RIVM</abbr>, <abbr title="Nederlandse Zorgautoriteit — Dutch Healthcare Authority">NZa</abbr>, <abbr title="Integraal Zorgakkoord — Dutch National Healthcare Agreement 2023–2026">IZA</abbr>, <abbr title="Landelijke Huisartsen Vereniging — Dutch National Association of GPs">LHV</abbr>) but the SOLL targets are projections, not observations.</li>
           </ul>
         </div>
       </details>
@@ -800,7 +849,7 @@ pre code {
   <li><strong>NZa / Staat van VenZ</strong> — <a href="https://www.staatvenz.nl/kerncijfers/wachttijd-behandeling-medisch-specialistische-zorg-overschrijding-treeknorm-en-gemiddelde-wachttijd" target="_blank" rel="noopener" style="color:var(--red);text-decoration:underline;text-underline-offset:2px;">Overschrijding Treeknorm wachttijden</a> (specialist wait time violations)</li>
   <li><strong>LHV</strong> — <a href="https://www.lhv.nl/wp-content/uploads/2023/09/Infographic-Uitkomsten-Peiling-administratieve-verplichtingen-augustus-2023.pdf" target="_blank" rel="noopener" style="color:var(--red);text-decoration:underline;text-underline-offset:2px;">Peiling Administratieve lasten huisartsen 2023</a> (GP admin burden survey)</li>
   <li><strong>IZA / Rijksoverheid</strong> — <a href="https://www.rijksoverheid.nl/documenten/rapporten/2022/09/16/integraal-zorgakkoord-samen-werken-aan-gezonde-zorg" target="_blank" rel="noopener" style="color:var(--red);text-decoration:underline;text-underline-offset:2px;">Integraal Zorgakkoord 2023–2026</a> (€2.8B transformation budget)</li>
-  <li><strong>Chen et al.</strong> — <a href="https://pubmed.ncbi.nlm.nih.gov/26208998/" target="_blank" rel="noopener" style="color:var(--red);text-decoration:underline;text-underline-offset:2px;">Risk of cardiovascular comorbidity in COPD: systematic review</a>. <em>Lancet Respir Med</em> 2015; OR 2.46 for CVD.</li>
+  <li><strong>Chen et al.</strong> — <a href="https://pubmed.ncbi.nlm.nih.gov/26208998/" target="_blank" rel="noopener" style="color:var(--red);text-decoration:underline;text-underline-offset:2px;">Risk of cardiovascular comorbidity in COPD: systematic review</a>. <em>Lancet Respir Med</em> 2015; OR 2.46 for <abbr title="Cardiovascular Disease">CVD</abbr>.</li>
   <li><strong>ESC</strong> — <a href="https://pubmed.ncbi.nlm.nih.gov/34458905/" target="_blank" rel="noopener" style="color:var(--red);text-decoration:underline;text-underline-offset:2px;">2021 ESC Guidelines on CVD Prevention in Clinical Practice</a>. <em>Eur Heart J</em> 2021;42(34):3227–3337. Diabetes RR≈2.0, Hypertension RR≈1.8.</li>
   <li><strong>Park et al.</strong> — <a href="https://arxiv.org/abs/2304.03442" target="_blank" rel="noopener" style="color:var(--red);text-decoration:underline;text-underline-offset:2px;">Generative Agents: Interactive Simulacra of Human Behavior</a>. Stanford/Google, 2023.</li>
 </ol>
