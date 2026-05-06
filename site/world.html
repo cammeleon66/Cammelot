@@ -1207,6 +1207,9 @@ const GRAVE_MARKERS = []; // {x, y, name, age, cause, waitWeeks, cycle, conditio
 // Sprint 26.3: Embed mode detection from URL parameters (?embed=true)
 const EMBED_MODE = new URLSearchParams(window.location.search).get('embed') === 'true';
 let cycle=0,mode='IST',autoTimer=null;
+// ═══ Sprint 30: Citizen Agent PoC — LLM Integration ═══
+let llmProxyAvailable = false;
+let llmProxyUrl = 'http://localhost:3001';
 const M={IST:{admin:.3,sick:.08,tree:12,ai:1,drain:1},SOLL:{admin:.05,sick:.05,tree:4,ai:1.34,drain:.3}};
 const M_ORIG={IST:{admin:.3,sick:.08,tree:12,ai:1,drain:1},SOLL:{admin:.05,sick:.05,tree:4,ai:1.34,drain:.3}};
 // NZa 2025 tariffs and simulation cost estimates
@@ -3090,6 +3093,8 @@ function spawnAgent(index, age, gender, surname) {
     digitalLiteracy: age < 45 ? 0.7 + Math.random() * 0.3 : age < 65 ? 0.4 + Math.random() * 0.4 : age < 80 ? 0.15 + Math.random() * 0.35 : 0.05 + Math.random() * 0.15,
     // Sprint 28.1: Personality & Memory
     personality: getPersonalityTrait(id),
+    bigFive: null, // Set for PoC agents in spawnPopulation
+    llmEnabled: false, // Set to true for PoC agents in SOLL mode
     memory: [],
     // Sprint 28.2: Emergent social dynamics
     grievingFor: null,
@@ -3121,6 +3126,46 @@ function assignFriendships(allAgents) {
       a.friendIds.push(friend.id);
       if (!friend.friendIds) friend.friendIds = [];
       friend.friendIds.push(a.id); // bidirectional
+    }
+  });
+}
+
+// ═══ Sprint 30: Assign PoC LLM agent profiles ═══
+function assignPoCAgentProfiles(allAgents) {
+  // Find suitable agents for the 3 PoC profiles
+  const pocProfiles = [
+    {
+      label: 'Maria Bakker — Responsible Retiree',
+      filter: a => a.age >= 60 && a.age <= 75 && a.conditions.length > 0 && a.gender === 'F',
+      bigFive: { O: 0.5, C: 0.8, E: 0.4, A: 0.6, N: 0.5 },
+      llmPersona: 'You are Maria, a 68-year-old retired teacher with COPD. You are responsible, conscientious, and follow medical advice carefully. You believe in the system but worry quietly about long waits.'
+    },
+    {
+      label: 'Pieter de Vries — Stoic Worker',
+      filter: a => a.age >= 35 && a.age <= 50 && a.gender === 'M',
+      bigFive: { O: 0.3, C: 0.6, E: 0.5, A: 0.9, N: 0.2 },
+      llmPersona: 'You are Pieter, a 42-year-old factory worker with mild hypertension. You are stoic, agreeable, and tend to minimize health concerns. "De dokter weet het best" — you trust the system and wait patiently.'
+    },
+    {
+      label: 'Fatima El-Amrani — Anxious Parent',
+      filter: a => a.age >= 28 && a.age <= 42 && a.gender === 'F',
+      bigFive: { O: 0.7, C: 0.5, E: 0.6, A: 0.3, N: 0.8 },
+      llmPersona: 'You are Fatima, a 35-year-old mother with early-stage type 2 diabetes. You are anxious about your health because you have young children who depend on you. You question doctors and seek second opinions.'
+    }
+  ];
+
+  pocProfiles.forEach(profile => {
+    const candidate = allAgents.find(a =>
+      a.type !== 'gp' && a.type !== 'specialist' &&
+      !a.llmEnabled &&
+      profile.filter(a)
+    );
+    if (candidate) {
+      candidate.bigFive = profile.bigFive;
+      candidate.llmEnabled = true;
+      candidate.llmPersona = profile.llmPersona;
+      candidate.pocLabel = profile.label;
+      console.log('[PoC] Assigned LLM profile: ' + profile.label + ' → ' + candidate.name + ' (age ' + candidate.age + ')');
     }
   });
 }
@@ -3233,6 +3278,8 @@ function spawnPopulation(count) {
   });
   // Sprint 27: Assign friendships after all agents are spawned
   assignFriendships(spawned);
+  // Sprint 30: Assign LLM PoC profiles after friendships
+  assignPoCAgentProfiles(spawned);
   return spawned;
 }
 // ═══ END POPULATION SPAWNER ════════════════════════════════════════════════
@@ -6315,6 +6362,9 @@ function tick(){
   if (cycle % 50 === 0) captureSnapshot();
   agents.forEach(a=>{
     if(a.type!=='patient'&&a.type!=='citizen') return;
+    // Sprint 30: Capture pre-tick state for LLM trigger detection
+    const _prevHp = a.hp;
+    const _prevState = a.state;
 
     // Track HP history for sparkline (Sprint 3)
     a.hpHistory = a.hpHistory || [];
@@ -7005,6 +7055,8 @@ function tick(){
     else if(a.hp<=50) a.state='waiting';
     else if(a.hp<=75) a.state='concerned';
     else a.state='managed';
+    // Sprint 30: Detect trigger events for LLM agents
+    detectTriggerEvents(a, _prevHp, _prevState);
   });
 
   // ═══ Sprint 5: QUEUE PROCESSING ═══
@@ -7460,6 +7512,11 @@ function setMode(m){
     });
   }
   // Update playground sliders if panel is open
+  // Sprint 30: Enable/disable LLM cognitive manager on mode switch
+  if (cognitiveManager) {
+    if (mode === 'SOLL' && llmProxyAvailable) cognitiveManager.enable();
+    else cognitiveManager.disable();
+  }
   updatePlaygroundSliders();
   var ci=document.querySelector('.pg-custom-indicator');
   if(ci)ci.classList.remove('active');
@@ -11095,6 +11152,308 @@ document.getElementById('btn-taximeter').addEventListener('click', function() {
 
 
 // ═══ WEBSITE: Play overlay handlers moved to non-embed init block (above) ═══
+
+
+// ═══ Sprint 30: Citizen Agent PoC — LLM Integration Classes ═══
+
+// --- AgentLLMClient: Communicates with the proxy server ---
+class AgentLLMClient {
+  constructor(baseUrl) {
+    this.baseUrl = baseUrl || 'http://localhost:3001';
+    this.available = false;
+    this.totalTokens = { input: 0, output: 0 };
+    this.totalCalls = 0;
+    this.totalFallbacks = 0;
+  }
+
+  async checkHealth() {
+    try {
+      const res = await fetch(this.baseUrl + '/api/health', { signal: AbortSignal.timeout(3000) });
+      const data = await res.json();
+      this.available = data.status === 'ok' && data.ollamaAvailable;
+      return this.available;
+    } catch (e) {
+      this.available = false;
+      return false;
+    }
+  }
+
+  async think(agent, prompt) {
+    if (!this.available) return this.fallbackResponse(agent);
+    try {
+      const res = await fetch(this.baseUrl + '/api/think', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          agentId: agent.id,
+          prompt: prompt,
+          personality: agent.bigFive,
+          model: 'llama3'
+        }),
+        signal: AbortSignal.timeout(10000)
+      });
+      if (!res.ok) {
+        if (res.status === 429) console.warn('[LLM] Rate limited for ' + agent.id);
+        return this.fallbackResponse(agent);
+      }
+      const data = await res.json();
+      this.totalCalls++;
+      if (data.tokens) {
+        this.totalTokens.input += data.tokens.input || 0;
+        this.totalTokens.output += data.tokens.output || 0;
+      }
+      if (data.error) return this.fallbackResponse(agent);
+      return data;
+    } catch (e) {
+      console.warn('[LLM] Request failed for ' + agent.id + ':', e.message);
+      return this.fallbackResponse(agent);
+    }
+  }
+
+  fallbackResponse(agent) {
+    this.totalFallbacks++;
+    // Fall back to deterministic behavior
+    return {
+      action: 'fallback',
+      reflection: null,
+      confidence: 0,
+      error: true
+    };
+  }
+
+  getStats() {
+    return {
+      calls: this.totalCalls,
+      fallbacks: this.totalFallbacks,
+      tokens: { ...this.totalTokens },
+      available: this.available
+    };
+  }
+}
+
+// --- CognitiveManager: Queues and processes LLM cognitive cycles ---
+class CognitiveManager {
+  constructor(llmClient) {
+    this.llmClient = llmClient;
+    this.queue = [];
+    this.inFlight = 0;
+    this.maxConcurrent = 3;
+    this.cooldowns = new Map(); // agentId → lastProcessedTime
+    this.cooldownMs = 30000; // 30 seconds per agent
+    this.enabled = false;
+  }
+
+  enable() { this.enabled = true; }
+  disable() { this.enabled = false; }
+
+  enqueue(agent, trigger) {
+    if (!this.enabled || !agent.llmEnabled) return;
+
+    // Check agent cooldown
+    const lastTime = this.cooldowns.get(agent.id) || 0;
+    if (Date.now() - lastTime < this.cooldownMs) return;
+
+    // Don't double-queue
+    if (this.queue.some(item => item.agent.id === agent.id)) return;
+
+    const priority = TRIGGER_PRIORITY[trigger.type] || 10;
+    this.queue.push({ agent, trigger, priority, enqueueTime: Date.now() });
+    this.queue.sort((a, b) => b.priority - a.priority);
+    this.processQueue();
+  }
+
+  async processQueue() {
+    while (this.queue.length > 0 && this.inFlight < this.maxConcurrent) {
+      const item = this.queue.shift();
+      this.inFlight++;
+      this.cooldowns.set(item.agent.id, Date.now());
+
+      try {
+        const prompt = buildCognitivePrompt(item.agent, item.trigger);
+        const response = await this.llmClient.think(item.agent, prompt);
+        executeLLMAction(item.agent, response, item.trigger);
+      } catch (err) {
+        console.error('[Cognitive] Error for ' + item.agent.id + ':', err);
+        // Fallback to automaton
+        agentReflect(item.agent);
+        agentPlan(item.agent);
+      } finally {
+        this.inFlight--;
+      }
+    }
+  }
+}
+
+// Trigger priority constants
+const TRIGGER_PRIORITY = {
+  'hp_threshold_crossed': 100,
+  'health_state_change': 80,
+  'treeknorm_violation': 70,
+  'digital_twin_alert': 60,
+  'queue_entered': 40,
+  'treatment_received': 30,
+  'queue_milestone': 20,
+  'social_observation': 10
+};
+
+// --- Prompt Builder ---
+function buildCognitivePrompt(agent, trigger) {
+  const memories = (agent.memory || []).slice(-5).map(m => '- ' + m.text).join('\n');
+  const conditions = (agent.conditions || []).map(c => c.name + ' (' + c.severity + ')').join(', ');
+
+  return `You are a citizen in Cammelot, a small Dutch town.
+
+IDENTITY: ${agent.llmPersona || 'A citizen of Cammelot.'}
+
+CURRENT STATE:
+- Health Points: ${Math.round(agent.hp)}/100
+- Conditions: ${conditions || 'None'}
+- Wait time: ${Math.round(agent.waitWeeks || 0)} weeks
+- Current state: ${agent.state}
+- Age: ${agent.age}
+
+RECENT MEMORIES:
+${memories || '- No significant memories yet.'}
+
+TRIGGER EVENT: ${trigger.type} — ${trigger.detail || 'Something changed.'}
+
+Based on your personality and situation, decide what to do. Respond in JSON:
+{
+  "action": "seek_care|wait|comply|refuse|seek_second_opinion|self_medicate|complain",
+  "reflection": "A short first-person thought about your situation (max 100 chars)",
+  "confidence": 0.0 to 1.0
+}
+
+Choose ONE action. Your reflection will appear as a speech bubble in the simulation.`;
+}
+
+// --- Action Executor ---
+function executeLLMAction(agent, response, trigger) {
+  if (!response || response.error) {
+    // Fallback to automaton
+    agentReflect(agent);
+    agentPlan(agent);
+    return;
+  }
+
+  // Show reflection as speech bubble
+  if (response.reflection) {
+    agent.chatBubbleText = response.reflection;
+    agent.chatTimer = 180; // 3 seconds at 60fps
+    addMemory(agent, 'llm_reflection', response.reflection, 7);
+  }
+
+  // Log the cognitive cycle
+  console.log('[LLM] ' + agent.name + ' (' + (agent.pocLabel || agent.id) + '): ' +
+    response.action + ' — "' + (response.reflection || '') + '" [confidence: ' + (response.confidence || '?') + ']');
+
+  logEvent('llm_action', agent, response.action + ': ' + (response.reflection || ''));
+
+  // Execute the chosen action
+  switch (response.action) {
+    case 'seek_care':
+      // Add a plan to seek GP
+      agent.plans = [{ action: 'seek_gp', urgency: 'high', reason: 'LLM decision: ' + (response.reflection || '') }];
+      break;
+    case 'wait':
+      // Do nothing — patient continues current behavior
+      break;
+    case 'comply':
+      // Follow current treatment plan
+      break;
+    case 'refuse':
+      // Refuse treatment — could leave queue
+      if (agent.behaviorState === 'in_queue') {
+        agent.chatBubbleText = 'I cannot wait any longer!';
+        agent.chatTimer = 180;
+      }
+      break;
+    case 'seek_second_opinion':
+      // Try a different GP
+      agent.plans = [{ action: 'seek_gp', urgency: 'medium', reason: 'Seeking second opinion' }];
+      break;
+    case 'complain':
+      agent.isProtesting = true;
+      break;
+    case 'self_medicate':
+      // Minor HP recovery, risky
+      agent.hp = Math.min(100, agent.hp + 2);
+      break;
+    default:
+      // Unknown action — fallback to automaton
+      agentReflect(agent);
+      agentPlan(agent);
+  }
+}
+
+// --- Event Detection (called from tick()) ---
+function detectTriggerEvents(agent, prevHp, prevState) {
+  if (!agent.llmEnabled || mode !== 'SOLL' || !cognitiveManager) return;
+
+  const triggers = [];
+
+  // HP threshold crossed
+  if (prevHp > 50 && agent.hp <= 50) {
+    triggers.push({ type: 'hp_threshold_crossed', detail: 'HP dropped below 50 (now ' + Math.round(agent.hp) + ')' });
+  } else if (prevHp > 20 && agent.hp <= 20) {
+    triggers.push({ type: 'hp_threshold_crossed', detail: 'HP critical — below 20 (now ' + Math.round(agent.hp) + ')' });
+  }
+
+  // Health state change
+  if (prevState !== agent.state && agent.state !== prevState) {
+    triggers.push({ type: 'health_state_change', detail: 'State changed from ' + prevState + ' to ' + agent.state });
+  }
+
+  // Treeknorm violation
+  if (agent.waitWeeks > M[mode].tree && (agent.waitWeeks - 0.5) <= M[mode].tree) {
+    triggers.push({ type: 'treeknorm_violation', detail: 'Wait time (' + Math.round(agent.waitWeeks) + 'w) exceeded Treeknorm (' + M[mode].tree + 'w)' });
+  }
+
+  // Queue milestone (every 4 weeks)
+  if (agent.waitWeeks > 0 && Math.floor(agent.waitWeeks) % 4 === 0 && Math.floor(agent.waitWeeks - 0.5) % 4 !== 0) {
+    triggers.push({ type: 'queue_milestone', detail: Math.round(agent.waitWeeks) + ' weeks in queue' });
+  }
+
+  // Enqueue highest-priority trigger
+  if (triggers.length > 0) {
+    triggers.sort((a, b) => (TRIGGER_PRIORITY[b.type] || 0) - (TRIGGER_PRIORITY[a.type] || 0));
+    cognitiveManager.enqueue(agent, triggers[0]);
+  }
+}
+
+// --- Initialize LLM subsystem ---
+let llmClient = null;
+let cognitiveManager = null;
+
+async function initLLMSubsystem() {
+  llmClient = new AgentLLMClient(llmProxyUrl);
+  cognitiveManager = new CognitiveManager(llmClient);
+
+  const available = await llmClient.checkHealth();
+  llmProxyAvailable = available;
+  if (available) {
+    console.log('[LLM] Proxy server available at ' + llmProxyUrl);
+    cognitiveManager.enable();
+  } else {
+    console.log('[LLM] Proxy server not available — running in automaton-only mode');
+  }
+
+  // Re-check periodically (every 30 seconds)
+  setInterval(async () => {
+    const wasAvailable = llmProxyAvailable;
+    llmProxyAvailable = await llmClient.checkHealth();
+    if (llmProxyAvailable && !wasAvailable) {
+      console.log('[LLM] Proxy server reconnected!');
+      cognitiveManager.enable();
+    } else if (!llmProxyAvailable && wasAvailable) {
+      console.log('[LLM] Proxy server lost — falling back to automaton mode');
+      cognitiveManager.disable();
+    }
+  }, 30000);
+}
+
+// Start LLM subsystem (non-blocking)
+initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
 
 </script>
 </body>
