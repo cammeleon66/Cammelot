@@ -11188,9 +11188,9 @@ class AgentLLMClient {
           agentId: agent.id,
           prompt: prompt,
           personality: agent.bigFive,
-          model: 'llama3'
+          model: 'llama3.2:1b'
         }),
-        signal: AbortSignal.timeout(10000)
+        signal: AbortSignal.timeout(60000)
       });
       if (!res.ok) {
         if (res.status === 429) console.warn('[LLM] Rate limited for ' + agent.id);
@@ -11317,14 +11317,17 @@ ${memories || '- No significant memories yet.'}
 
 TRIGGER EVENT: ${trigger.type} — ${trigger.detail || 'Something changed.'}
 
-Based on your personality and situation, decide what to do. Respond in JSON:
-{
-  "action": "seek_care|wait|comply|refuse|seek_second_opinion|self_medicate|complain",
-  "reflection": "A short first-person thought about your situation (max 100 chars)",
-  "confidence": 0.0 to 1.0
-}
+Based on your personality and situation, choose exactly ONE action from this list:
+- seek_care (go to the doctor)
+- wait (stay patient, do nothing)
+- comply (follow treatment)
+- refuse (refuse to wait longer)
+- complain (express frustration)
 
-Choose ONE action. Your reflection will appear as a speech bubble in the simulation.`;
+Respond ONLY with this exact JSON format, no other text:
+{"action": "wait", "reflection": "I should be patient.", "confidence": 0.7}
+
+Replace the values with your chosen action, a short first-person thought (max 80 chars), and your confidence (0.0-1.0).`;
 }
 
 // --- Action Executor ---
