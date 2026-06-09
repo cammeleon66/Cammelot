@@ -8,7 +8,7 @@ const nCycles = parseInt(process.argv[3] || '1000', 10);
 process.stderr.write(`Running ${runMode} mode for ${nCycles} cycles...\n`);
 
 // Read the HTML and extract the main script
-const html = fs.readFileSync('src/frontend/v4.html', 'utf8');
+const html = fs.readFileSync('site/world.html', 'utf8');
 const scriptBlocks = html.match(/<script[^>]*>([\s\S]*?)<\/script>/g) || [];
 let mainJS = '';
 for (const block of scriptBlocks) {
@@ -54,6 +54,17 @@ function createCanvasStub() {
     addEventListener: noop, removeEventListener: noop,
     getBoundingClientRect: () => ({ top:0, left:0, width:1024, height:768, right:1024, bottom:768 }),
     offsetWidth: 1024, offsetHeight: 768,
+    // DOM container methods — many world.html UI helpers (sayA2A, mayorSay, gazette,
+    // chatlog appenders) call getElementById(...).appendChild/removeChild. Without these
+    // they throw and silently abort the rest of tick() in headless, starving downstream
+    // logic (burnout, cascade, social dynamics). Provide safe no-op container API.
+    appendChild: noop, removeChild: noop, insertBefore: noop, replaceChild: noop,
+    setAttribute: noop, removeAttribute: noop, append: noop, prepend: noop,
+    querySelector: () => null, querySelectorAll: () => [],
+    children: [], childNodes: [], firstChild: null, lastChild: null,
+    innerHTML: '', textContent: '', innerText: '',
+    scrollTop: 0, scrollHeight: 0, scrollLeft: 0, scrollWidth: 0,
+    insertAdjacentHTML: noop, focus: noop, blur: noop, click: noop,
   };
 }
 
@@ -174,6 +185,16 @@ global.Reflect = Reflect;
 // Strategy: Set _headlessMode flag, then patch startNewGame and loop to skip DOM
 let patchedJS = mainJS;
 
+// Persona A/B toggle: PERSONA=off prepends `var PERSONA_ENABLED=false;` so all
+// numeric persona behavior effects in world.html are gated off (assignment/thoughts stay).
+const PERSONA_OFF = String(process.env.PERSONA || '').toLowerCase() === 'off';
+if (PERSONA_OFF) {
+  patchedJS = 'var PERSONA_ENABLED=false;\n' + patchedJS;
+  process.stderr.write('PERSONA=off — persona numeric effects DISABLED\n');
+} else {
+  process.stderr.write('PERSONA=on — persona numeric effects ENABLED\n');
+}
+
 // Patch startNewGame to skip DOM-dependent calls in headless mode
 patchedJS = patchedJS.replace(
   'function startNewGame(){',
@@ -192,6 +213,14 @@ patchedJS += '\nglobal._agents = agents;\nglobal._EVENT_LOG = EVENT_LOG;\nglobal
 patchedJS += 'global._tick = function() { tick(); global._erAdmissionCount = erAdmissionCount; global._proactiveAlertCount = proactiveAlertCount; global._ketenzorgInterventions = ketenzorgInterventions; global._ketenzorgCostEur = ketenzorgCostEur; global._fairnessGuardrailActive = fairnessGuardrailActive; global._researchQueriesCompleted = researchQueriesCompleted; global._researchOptOutRefusals = researchOptOutRefusals; global._researchCohortTooSmall = researchCohortTooSmall; global._benchmarkReportsGenerated = benchmarkReportsGenerated; global._cycle = cycle; global._BIAS_DATA = BIAS_DATA; global._WEEKLY_REPORTS = WEEKLY_REPORTS; };\n';
 patchedJS += 'global._setMode = function(m) { mode = m; };\n';
 patchedJS += 'global._erAdmissionCount = 0; global._proactiveAlertCount = 0; global._ketenzorgInterventions = 0; global._ketenzorgCostEur = 0; global._fairnessGuardrailActive = false; global._researchQueriesCompleted = 0; global._researchOptOutRefusals = 0; global._researchCohortTooSmall = 0; global._benchmarkReportsGenerated = 0; global._cycle = 0;\n';
+
+// Keep stdout clean: the engine is chatty during eval/ticks, but research_run stdout must be JSON-only.
+const realConsoleLog = console.log;
+const realConsoleInfo = console.info;
+const realConsoleWarn = console.warn;
+console.log = noop;
+console.info = noop;
+console.warn = noop;
 
 // Set headless flag before eval
 global._headlessMode = true;
@@ -213,6 +242,7 @@ try { selectAgent = noop; } catch(e) {}
 try { saveGame = noop; } catch(e) {}
 try { setPanelContent = noop; } catch(e) {}
 try { say = noop; } catch(e) {}
+try { sayA2A = noop; } catch(e) {}
 try { playAdmitSound = noop; } catch(e) {}
 try { playDeathBell = noop; } catch(e) {}
 try { playGhostSound = noop; } catch(e) {}
@@ -248,10 +278,29 @@ for (const a of trackAgents) {
 
 for (let i = 0; i < nCycles; i++) {
   try { global._tick(); } catch(e) {
+    if (process.env.DEBUG && !global.__firstErr) {
+      global.__firstErr = true;
+      process.stderr.write('TICK ERROR at cycle ' + i + ': ' + e.message + '\n' + (e.stack||'').split('\n').slice(0,4).join('\n') + '\n');
+    }
     if (i === 0) {
       process.stderr.write('Tick error at cycle ' + i + ': ' + e.message + '\n');
       process.stderr.write(e.stack?.split('\n').slice(0,3).join('\n') + '\n');
       process.exit(1);
+    }
+  }
+
+  // Headless movement driver: agent locomotion lives in render() (never runs headless),
+  // so in-transit patients would never reach GP/hospital queues — starving the clinical
+  // pipeline (burnout, referrals, ER, treeknorm). Complete pending paths so tick()'s
+  // arrival logic fires. Only transit states are advanced; queue/clinical timing is
+  // unaffected (waitWeeks accrues in queue/hospital states, not travel).
+  const _agentsLive = global._agents || [];
+  for (let k = 0; k < _agentsLive.length; k++) {
+    const a = _agentsLive[k];
+    if (a && a.pathComplete === false &&
+        (a.behaviorState === 'going_to_gp' || a.behaviorState === 'going_to_hospital' ||
+         a.behaviorState === 'queuing' || a.behaviorState === 'protesting')) {
+      a.pathComplete = true;
     }
   }
 
@@ -360,6 +409,11 @@ const results = {
   gini_history_samples: (BIAS_DATA.giniHistory||[]).filter((_,i) => i % 10 === 0).map(v => Math.round(v*1000)/1000),
   age_analysis: {},
   gp_burnout: agents.filter(a => a.type === 'gp').map(gp => ({ name: gp.name, burnout: Math.round(gp.burnoutLevel || 0) })),
+  persona_enabled: !PERSONA_OFF,
+  gp_peak_burnout: agents.filter(a => a.type === 'gp').map(gp => ({ name: gp.name, peak: Math.round(gp.peakBurnout || 0) })),
+  gp_avg_burnout: agents.filter(a => a.type === 'gp').map(gp => ({ name: gp.name, avg: gp.burnoutSamples ? Math.round((gp.burnoutSum / gp.burnoutSamples) * 10) / 10 : 0 })),
+  gp_sick_leave: agents.filter(a => a.type === 'gp').map(gp => ({ name: gp.name, count: gp.sickLeaveCount || 0 })),
+  sick_leave_events: EVENT_LOG.filter(e => e.type === 'sick_leave').length,
   weekly_reports_count: WEEKLY_REPORTS.length,
   preventable_death_cost_eur: systemDead.length * 5845,
   total_admin_waste_annual_per_gp: Math.round(365 * 12.43 * ((M[runMode]||{}).admin||0.3) * 30 / nCycles * nCycles / 3),
@@ -422,5 +476,17 @@ for (const [bin, data] of Object.entries(ageBins)) {
 }
 
 // Output results
+console.log = realConsoleLog;
+console.info = realConsoleInfo;
+console.warn = realConsoleWarn;
+if (process.env.DEBUG) {
+  const evHist = {};
+  for (const e of EVENT_LOG) { evHist[e.type] = (evHist[e.type]||0)+1; }
+  const bsHist = {};
+  for (const a of pop) { bsHist[a.behaviorState] = (bsHist[a.behaviorState]||0)+1; }
+  process.stderr.write('EVENT_LOG hist: ' + JSON.stringify(evHist) + '\n');
+  process.stderr.write('behaviorState hist: ' + JSON.stringify(bsHist) + '\n');
+  process.stderr.write('GP burnout: ' + JSON.stringify(agents.filter(a=>a.type==='gp').map(g=>({id:g.id,peak:Math.round(g.peakBurnout||0),avg:g.burnoutSamples?Math.round(g.burnoutSum/g.burnoutSamples*10)/10:0,sick:g.sickLeaveCount||0}))) + '\n');
+}
 console.log(JSON.stringify(results, null, 2));
 process.exit(0);

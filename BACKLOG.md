@@ -3,8 +3,103 @@
 > **Status**: ✅ ALL 12 SPRINTS COMPLETE — Last updated 2026-04-02
 > **Vision**: A public-facing simulation of the Dutch healthcare crisis that anyone can visit, understand, and share. People watch tiny citizens live, get sick, queue, wait, and sometimes die — not from disease alone, but from a system that can't keep up.
 > **URL target**: `cammelot.health` — static Docker container, zero backend
-> **Runtime**: Self-contained `v4.html` (~4300 lines) — no bundler, no framework
+> **Runtime**: Self-contained `world.html` (~4300 lines) — no bundler, no framework
 > **Next phase**: MAKE IT PRETTY — visual polish, animations, micro-interactions
+
+---
+
+
+## Sprint: Living Patient Agent — Blog Go-Live Runbook
+
+> **Scope**: publish the next two Series 2 LinkedIn posts only after the persona-active engine rerun is complete and the cited numbers have been reconciled.
+> **Posts**: `00_Project_Strategy/social/series2_tech_post5_living_patient_agent.md` (T5) and `00_Project_Strategy/social/series2_tech_post6_chipsoft_dependency.md` (T6).
+> **Owner/voice**: Simone Cammel — grounded applied-research tone, explicit Microsoft affiliation/bias acknowledgement, no marketing claims.
+
+### Phase 0 — Engine prerequisites (publish blockers)
+
+- [ ] Confirm the separate **unify-engine** todo is done: the Node research runner and `site/world.html` use the same relevant persona/disease assumptions, or the posts explicitly state which runtime produced the numbers.
+- [ ] Confirm the separate **integrate-personas** todo is done: `config/persona_archetypes.json` (16 archetypes) is wired through `src/sim/persona.js`, covered by `tests/persona.test.js`, and visible in the browser town via varied speech bubbles/personalities.
+- [ ] Confirm the separate **rerun-100-sims** todo is done: rerun the calibrated 100-run IST/SOLL study with personas active and save the new study JSON under `scripts/output/`.
+- [ ] Confirm the separate **update-post-numbers** todo is done: every number in T5/T6 and any referenced chart/table matches the persona-active rerun.
+- [ ] **Hard gate**: do not publish either post while statistics still cite pre-persona outputs (`scripts/output/deep_research_100runs.json`, `mortality_fix_100runs.json`, or Series 1 values) unless the text explicitly labels them as historical baseline.
+
+### Phase 1 — Figures and assets
+
+- [ ] Generate the **persona demo table** with `node scripts/demo_town.cjs`; use it as the ready-made figure for T5.
+  - **Post**: T5, "The Living Patient Agent — Giving 45 Pixel Citizens a Personality".
+  - **Caption**: "A deterministic 45-citizen Cammelot town: each row is assigned one of 16 authored persona archetypes, with seeded behavioural jitter and a reproducible sample thought."
+  - **Alt text**: "Table listing Cammelot citizens with age, gender, persona archetype, care-seeking bias, compliance, trust, and a sample thought."
+- [ ] Capture a **`site/world.html` screenshot** showing varied speech bubbles/personalities in the 16-bit town (anxious caregiver, stubborn skeptic, stoic old hand, etc.).
+  - **Post**: T5 primary visual; optional teaser image for T6 if discussing dependency failure in the live town.
+  - **Caption**: "The same waiting-list pressure now produces different patient voices: personality changes behaviour around care, not the Markov biology."
+  - **Alt text**: "Pixel-art Cammelot town with multiple citizens displaying different speech bubbles about waiting, care, and trust."
+- [ ] Prepare the **IST-vs-SOLL comparison chart** from the persona-active 100-run study JSON.
+  - **Post**: T5 methodology/supporting figure; T6 if referencing SOLL efficiency versus fragility.
+  - **Caption**: "Persona-active 100-run study: compare IST and SOLL on deaths, GP burnout, admin waste, proactive alerts, ketenzorg, and bias score."
+  - **Alt text**: "Bar chart comparing IST and SOLL simulation metrics from the persona-active Cammelot rerun."
+- [ ] Prepare the **before/after numbers table** replacing the current Series 1 calibrated values where needed.
+  - **Post**: T5 final proof point and T6 caveat box.
+  - **Caption**: "Before/after reconciliation: pre-persona baseline versus persona-active rerun, with only statistically defensible changes called out."
+  - **Alt text**: "Table comparing pre-persona and persona-active study results, including deaths, burnout, alerts, ketenzorg, and bias."
+- [ ] Store hosted figures in a stable repo/site path if they need public URLs, and verify they render on `cammelot.org` before posting.
+
+### Phase 2 — Accuracy and fact-check
+
+- [ ] Reconcile every statistic in T5 (`27 million agent-decision points`, `100-run study`, `45 agents`, `3,000 cycles`, `16 archetypes`, `13 unit tests`, any SOLL metric) against the new study JSON and current code.
+- [ ] Reconcile every statistic in T6 (`70–80% Dutch hospital HiX share`, `at least eleven hospitals`, SOLL admin/burnout claims, `100-run study`) against cited sources or label as simulation output.
+- [ ] Keep Chipsoft claims hedged: use "reportedly", "as reported by Z-CERT / security reporting", "under investigation", and "I have seen no reports of patient deaths" unless primary sources prove more.
+- [ ] Verify T6 does not imply Chipsoft caused clinical harm beyond reported outage/degradation; frame it as concentration risk, not proven patient harm.
+- [ ] Verify cross-references are correct: T5 points back to T3 cognitive loop; T6 points back to T2 Mordred forged agent card and, where useful, T3 FHIR/cognitive-loop dependency.
+- [ ] Check `series1_health_post5.md` mortality numbers before reusing them; if persona-active rerun changes them, update wording or add an explicit "previous calibrated run" label.
+- [ ] Remove all placeholders (`TODO`, `[📸 Screenshot...]`, draft-only brackets, missing URLs) before publication.
+
+### Phase 3 — Cross-linking and series placement
+
+- [ ] Slot T5 after T4 in **Series 2 — Architecture** as the bridge from the T3 cognitive-loop limitation to the new deterministic persona system.
+  - **Teaser**: "I wanted 45 pixel citizens to feel like 45 people — without putting an LLM in the hot loop or breaking reproducibility."
+  - **Links**: T3 cognitive loop post; repo paths `config/persona_archetypes.json`, `src/sim/persona.js`, `tests/persona.test.js`, `scripts/demo_town.cjs`.
+- [ ] Slot T6 after T5 as the resilience/concentration-risk post: from richer agents to what happens when the shared substrate goes dark.
+  - **Teaser**: "The forged agent and the dark EHR vendor are the same architecture failure with the polarity flipped."
+  - **Links**: T2 Mordred forged-card post; T3 FHIR memory/cognitive-loop post; `cammelot.org`; `github.com/msft-common-demos/Cammelot`.
+- [ ] Add a short series note to each post: "Series 2 is about architecture: agent identity, memory, cognition, persona, and resilience."
+- [ ] Verify LinkedIn links point to canonical public URLs once posts are live; use relative repo paths only in drafts.
+
+### Phase 4 — Disclosure, ethics, and citations
+
+- [ ] Add/retain author disclosure: Simone Cammel works at Microsoft; Cammelot is an applied-research simulation and the author may be biased toward AI-enabled architectures.
+- [ ] Add/retain disclaimer: Cammelot uses simulated citizens, not real patients; no clinical recommendation should be inferred from toy-town outcomes.
+- [ ] Cite data sources in the closing notes: CBS demographics/mortality, RIVM chronic-disease prevalence and ketenzorg assumptions, NZa tariffs, IZA where admin/staffing claims appear.
+- [ ] For T6, cite Z-CERT for the Chipsoft incident and clearly separate primary/official reporting from secondary media summaries.
+- [ ] Avoid overclaiming: use "suggests", "in this simulation", "persona-active rerun", and significance language; do not say "AI saves lives" unless the rerun supports it.
+
+### Phase 5 — Accessibility and visual QA
+
+- [ ] Write alt text for every image before upload; include the core takeaway, not just "chart" or "screenshot".
+- [ ] Check figure contrast in LinkedIn preview and on `cammelot.org`: dark text on light table cells or high-contrast SNES palette; no low-contrast grey-on-blue.
+- [ ] Ensure chart/table labels remain readable on mobile LinkedIn; avoid tiny axis labels and rely on direct labels where possible.
+- [ ] Preserve the Cammelot visual identity: saturated 16-bit/SNES town, speech bubbles, retro menus; no generic corporate dashboard styling.
+
+### Phase 6 — Publishing logistics
+
+- [ ] Publish order: T5 first (persona architecture), then T6 (Chipsoft/concentration risk) so T6 can rely on the richer-agent context.
+- [ ] Cadence: leave at least 48–72 hours between posts; prefer Tue/Wed/Thu morning Europe time for professional LinkedIn reach unless Simone's analytics show a better slot.
+- [ ] Verify `https://cammelot.org` loads and the public repo link `https://github.com/msft-common-demos/Cammelot` resolves before posting.
+- [ ] If figures/assets are hosted via the public site, deploy through the dual-remote workflow:
+  - [ ] Commit changes on the working branch after review.
+  - [ ] Push internal work to `origin` as appropriate.
+  - [ ] Merge the site/asset changes to `master` on the `personal` remote because GitHub Pages deploys from `personal/master`.
+  - [ ] Push `personal master` with `--force-with-lease` only if the public Pages history requires it.
+  - [ ] Re-open `cammelot.org` and each hosted image URL after deploy; do not publish LinkedIn until links work unauthenticated.
+- [ ] Keep a final local/public copy of the exact published text for later corrections and metrics comparison.
+
+### Phase 7 — Post-publish monitoring
+
+- [ ] Monitor comments for the first 24 hours, then again at 48 and 72 hours; capture substantive objections for the backlog.
+- [ ] Prepare response to "this is just a toy model": agree on scope, then point to reproducibility, fixed seeds, 100-run protocol, CBS/RIVM/NZa calibration, and the open repo so assumptions can be challenged.
+- [ ] Prepare response to "you're a Microsoft employee selling AI": acknowledge the affiliation and possible bias; emphasize that the posts name failure modes, non-significant mortality, monoculture risk, and the need for redundancy rather than selling a product.
+- [ ] Prepare response to "Chipsoft facts are unproven": clarify which details are reported/under investigation, point to Z-CERT/primary sources, and keep the argument on concentration risk.
+- [ ] Track metrics in the project notes: post date/time, impressions, reactions, comments, reposts, profile visits, repo clicks/stars, `cammelot.org` visits, and which objections/themes recur.
+- [ ] Feed corrections back into the markdown drafts and any public site copy; if a published number changes, add a visible correction rather than silently rewriting the claim.
 
 ---
 
@@ -46,7 +141,7 @@
 ### 🛡️ Mordred Security Audit — OWASP Top 10 Baseline (17 findings)
 
 > Mordred (Security Sentinel) completed a full static analysis scan on 2026-04-02.
-> 5 findings are **veto-worthy** (block deployment). All are in `src/frontend/v4.html`.
+> 5 findings are **veto-worthy** (block deployment). All are in `site/world.html`.
 
 #### Veto-Worthy (Must Fix Before Deployment)
 
@@ -87,14 +182,14 @@
 ### 🧪 Galahad QA Findings — Pre-Existing Bugs (2)
 
 > Galahad (QA Sentinel) found 2 bugs in the backend reference implementation during Sprint 1.
-> Neither affects v4.html (frontend-first architecture), but they should be fixed for backend parity.
+> Neither affects world.html (frontend-first architecture), but they should be fixed for backend parity.
 
 | ID | File | Description | Impact |
 |----|------|-------------|--------|
 | BUG-001 | `src/clinical_logic/disease_engine.js` | `getAdjustedTransitions("deceased", >12w)` — probability sum < 1.0 | Dead agents could theoretically transition states |
 | BUG-002 | `src/clinical_logic/disease_engine.js` | `severityMultiplier["healthy"] = 0` is JS-falsy, hits `\|\| 1.0` fallback | Healthy agents drain HP faster than intended |
 
-**Galahad's Verdict**: These are backend-only. The v4.html inline disease engine uses different code paths. Fix when we port FHIR store (Sprint 10).
+**Galahad's Verdict**: These are backend-only. The world.html inline disease engine uses different code paths. Fix when we port FHIR store (Sprint 10).
 
 ---
 
@@ -301,15 +396,15 @@ Replace or augment the top stats bar with human-readable metrics:
 ### Epic 12: Deployment & Infrastructure
 
 #### 12.1 — Docker Container
-- `Dockerfile`: nginx serving static files (v4.html + assets/)
+- `Dockerfile`: nginx serving static files (world.html + assets/)
 - `docker-compose.yml` for local dev
 - Multi-stage build: copy only production files
 - Health check endpoint
-- Gzip compression for v4.html (~100KB → ~20KB)
+- Gzip compression for world.html (~100KB → ~20KB)
 
 ```dockerfile
 FROM nginx:alpine
-COPY src/frontend/v4.html /usr/share/nginx/html/index.html
+COPY site/world.html /usr/share/nginx/html/index.html
 COPY assets/ /usr/share/nginx/html/assets/
 EXPOSE 80
 ```
@@ -353,7 +448,7 @@ Before entering the simulation, show a brief context page:
 ### Epic 13: Cognitive Architecture
 
 #### 13.1 — Inline FHIR Memory Store
-Port lightweight FHIR store into v4.html:
+Port lightweight FHIR store into world.html:
 - Every agent action creates a FHIR-like resource (Patient, Condition, Encounter, Observation)
 - Resources queryable by patient ID for history panel
 - Memory stream = chronological log per agent
@@ -447,8 +542,8 @@ Track systematic inequities across 1000+ cycles:
 **Acceptance**: After 1000 cycles, bias report shows whether the system discriminates. Feeds LinkedIn Applied Research posts.
 
 #### 14.5 — Frontend Test Suite
-Add browser-testable assertions for v4.html:
-- Playwright or Puppeteer tests that load v4.html and verify:
+Add browser-testable assertions for world.html:
+- Playwright or Puppeteer tests that load world.html and verify:
   - Agents spawn correctly
   - Click detection works (agents + buildings)
   - IST/SOLL toggle changes parameters
@@ -564,7 +659,7 @@ Side-by-side view:
 
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
-| Runtime | **Frontend-only (v4.html)** | Zero backend = free hosting, no server costs, instant load |
+| Runtime | **Frontend-only (world.html)** | Zero backend = free hosting, no server costs, instant load |
 | Persistence | **localStorage (done) → IndexedDB (future)** | Supports larger datasets than localStorage's 5MB limit |
 | Hosting | **Docker + nginx** | Static files, CDN-friendly, scales infinitely |
 | Memory system | **EVENT_LOG (done) → FHIR store (Phase 4)** | EVENT_LOG is simple and fast; FHIR adds semantic structure for research |
@@ -801,7 +896,7 @@ A feature is "done" when:
 
 #### 21.4 — PWA Support
 - manifest.json: installable as desktop/mobile app
-- Service worker: offline support (cache v4.html + assets)
+- Service worker: offline support (cache world.html + assets)
 - App icon: 192px and 512px Cammelot castle
 - Splash screen matching loading screen design
 
