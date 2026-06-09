@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="data:,">
+<title>Cammelot — Run Replay (private)</title>
+<style>
+:root{ --bg:#0f1220; --panel:#171b2e; --ink:#e8ebf6; --muted:#9aa3c4; --line:#2a3052;
+       --accent:#5b8cff; --good:#37d39a; --amber:#ffcf5c; --bad:#ff6b6b; }
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:15px/1.55 "Space Grotesk",-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+header{position:sticky;top:0;z-index:10;background:rgba(15,18,32,.94);backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--line);padding:12px 20px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+header b{font-size:17px}
+.priv{font-size:12px;color:var(--amber);border:1px solid var(--amber);border-radius:999px;padding:2px 10px}
+a{color:var(--accent)}
+main{max-width:1040px;margin:0 auto;padding:22px 20px 90px}
+.controls{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 20px;
+  position:sticky;top:58px;z-index:9}
+.row{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+button{background:#0b0e1c;color:var(--ink);border:1px solid var(--line);border-radius:9px;
+  padding:8px 14px;cursor:pointer;font:inherit}
+button.active{border-color:var(--accent);color:#fff}
+button.play{background:var(--accent);color:#06122e;font-weight:700;border-color:var(--accent)}
+input[type=range]{flex:1;min-width:220px;accent-color:var(--accent)}
+.clock{font-variant-numeric:tabular-nums;font-weight:700;font-size:16px}
+.kpis{display:flex;gap:12px;flex-wrap:wrap;margin-top:14px}
+.kpi{flex:1;min-width:120px;background:#0b0e1c;border:1px solid var(--line);border-radius:11px;padding:12px 14px}
+.kpi .v{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
+.kpi .l{color:var(--muted);font-size:12px;margin-top:2px}
+.kpi.dead .v{color:var(--bad)} .kpi.alert .v{color:var(--accent)} .kpi.keten .v{color:var(--good)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin-top:20px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;transition:opacity .2s}
+.card.ghost{opacity:.42;filter:grayscale(.7)}
+.card .nm{font-weight:700;display:flex;justify-content:space-between;align-items:center;gap:6px}
+.card .age{color:var(--muted);font-size:12px;font-weight:400}
+.card .cond{color:var(--muted);font-size:11.5px;margin:3px 0 8px;min-height:28px}
+.bar{height:14px;background:#0b0e1c;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.bar > i{display:block;height:100%;width:100%;transition:width .15s linear,background .3s}
+.hpnum{font-size:11px;color:var(--muted);margin-top:3px;font-variant-numeric:tabular-nums}
+.tag{font-size:14px}
+.ticker{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin-top:20px;
+  max-height:200px;overflow:auto}
+.ticker h3{margin:0 0 8px}
+.ev{font-size:13px;padding:4px 0;border-bottom:1px dashed var(--line);color:var(--muted)}
+.ev b{color:var(--ink)} .ev.sys b{color:var(--bad)} .ev.nat b{color:var(--amber)}
+.legend{color:var(--muted);font-size:12px;margin-top:6px}
+</style></head>
+<body>
+<header>
+  <b>Cammelot — Run Replay</b>
+  <span class="priv">PRIVATE · recorded run · not live</span>
+  <a href="index.html">← back to review</a>
+</header>
+<main>
+  <div class="controls">
+    <div class="row">
+      <button id="mode-IST" class="active">IST · broken system</button>
+      <button id="mode-SOLL">SOLL · AI-augmented</button>
+      <span style="flex:1"></span>
+      <span class="clock" id="clock">cycle 0</span>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <button id="play" class="play">▶ Play</button>
+      <button id="speed">1×</button>
+      <input id="scrub" type="range" min="0" max="99" value="0">
+    </div>
+    <div class="kpis">
+      <div class="kpi dead"><div class="v" id="k-deaths">0</div><div class="l">deaths so far</div></div>
+      <div class="kpi"><div class="v" id="k-distress">0</div><div class="l">tracked agents in distress (HP&lt;50)</div></div>
+      <div class="kpi alert"><div class="v" id="k-alerts">0</div><div class="l">proactive AI alerts (run total)</div></div>
+      <div class="kpi keten"><div class="v" id="k-keten">0</div><div class="l">chronic-care interventions (run total)</div></div>
+    </div>
+    <div class="legend">HP bars animate from this recorded run; deaths appear on the ticker at the cycle they occurred.
+      Proactive-alert and chronic-care totals are end-of-run counts (shown for context).</div>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="ticker">
+    <h3>Event ticker</h3>
+    <div id="events"><div class="ev">Press Play to begin…</div></div>
+  </div>
+</main>
+
+<script>
+let DATA=null, mode='IST', frame=0, playing=false, speed=1, timer=null;
+const CPF=30; // cycles per frame
+const el=id=>document.getElementById(id);
+
+function hpColor(hp){ if(hp<=0) return '#444a6e'; if(hp<25) return 'var(--bad)'; if(hp<50) return 'var(--amber)'; return 'var(--good)'; }
+
+function buildGrid(){
+  const d=DATA[mode];
+  el('scrub').max = Math.max(0, d.frames-1);
+  const g=el('grid'); g.innerHTML='';
+  d.agents.forEach((a,i)=>{
+    const c=document.createElement('div'); c.className='card'; c.id='ag'+i;
+    c.innerHTML='<div class="nm">'+a.name+' <span class="age">'+a.age+'y</span></div>'+
+      '<div class="cond">'+(a.conditions.join(' · ')||'—')+'</div>'+
+      '<div class="bar"><i id="bar'+i+'"></i></div>'+
+      '<div class="hpnum" id="hp'+i+'"></div>';
+    g.appendChild(c);
+  });
+}
+
+function render(){
+  const d=DATA[mode];
+  el('scrub').value=frame;
+  const cycle=frame*CPF;
+  el('clock').textContent='cycle '+cycle+' / '+((d.frames-1)*CPF);
+  let distress=0;
+  d.agents.forEach((a,i)=>{
+    const hp=a.hp[Math.min(frame,a.hp.length-1)];
+    const bar=el('bar'+i); bar.style.width=Math.max(0,hp)+'%'; bar.style.background=hpColor(hp);
+    el('hp'+i).textContent='HP '+hp;
+    const card=el('ag'+i);
+    const dead=hp<=0;
+    card.classList.toggle('ghost',dead);
+    const nm=card.querySelector('.nm');
+    if(dead && !nm.querySelector('.tag')) nm.insertAdjacentHTML('beforeend','<span class="tag">💀</span>');
+    if(!dead){ const t=nm.querySelector('.tag'); if(t) t.remove(); }
+    if(hp>0 && hp<50) distress++;
+  });
+  // deaths so far (precise, from cycle-stamped death reports)
+  const deathsSoFar=d.deaths.filter(x=>x.cycle!=null && x.cycle<=cycle).length;
+  el('k-deaths').textContent=deathsSoFar;
+  el('k-distress').textContent=distress;
+  // run-total context counters scale with progress for a sense of accumulation
+  const prog=(d.frames<=1)?1:frame/(d.frames-1);
+  el('k-alerts').textContent=Math.round(d.proactive_alerts*prog);
+  el('k-keten').textContent=Math.round(d.ketenzorg*prog);
+  // event ticker up to current cycle
+  const evs=d.deaths.filter(x=>x.cycle!=null && x.cycle<=cycle)
+    .sort((a,b)=>b.cycle-a.cycle).slice(0,12).map(x=>{
+      const sys=/system/.test(x.cause); const ic=sys?'💀':'🕊';
+      return '<div class="ev '+(sys?'sys':'nat')+'">cycle '+x.cycle+' — '+ic+' <b>'+x.name+'</b> ('+x.age+'y) · '+
+        (sys?'preventable / system failure':'natural causes')+'</div>';
+    }).join('');
+  el('events').innerHTML=evs||'<div class="ev">No deaths yet…</div>';
+}
+
+function setMode(m){ mode=m; frame=0; playing=false; clearInterval(timer);
+  el('play').textContent='▶ Play';
+  el('mode-IST').classList.toggle('active',m==='IST');
+  el('mode-SOLL').classList.toggle('active',m==='SOLL');
+  buildGrid(); render();
+}
+function tick(){ const d=DATA[mode]; frame++; if(frame>=d.frames){ frame=d.frames-1; stop(); } render(); }
+function play(){ if(playing) return stop(); playing=true; el('play').textContent='⏸ Pause';
+  timer=setInterval(tick, 240/speed); }
+function stop(){ playing=false; el('play').textContent='▶ Play'; clearInterval(timer); }
+
+el('mode-IST').onclick=()=>setMode('IST');
+el('mode-SOLL').onclick=()=>setMode('SOLL');
+el('play').onclick=play;
+el('speed').onclick=()=>{ speed = speed===1?2 : speed===2?4 : 1; el('speed').textContent=speed+'×';
+  if(playing){ stop(); play(); } };
+el('scrub').oninput=e=>{ frame=+e.target.value; stop(); render(); };
+
+fetch('assets/replay_data.json').then(r=>r.json()).then(d=>{ DATA=d; setMode('IST'); })
+  .catch(e=>{ document.getElementById('grid').innerHTML='<p>Could not load replay_data.json — rebuild via scripts/build_local_review.py</p>'; });
+</script>
+</body></html>

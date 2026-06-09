@@ -1,3 +1,7 @@
 node_modules/
 *.log
 .DS_Store
+
+# Local-only review site (never deploy publicly)
+local_review/
+.local_review_server.pid
