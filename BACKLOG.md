@@ -17,10 +17,10 @@
 
 ### Phase 0 — Engine prerequisites (publish blockers)
 
-- [ ] Confirm the separate **unify-engine** todo is done: the Node research runner and `site/world.html` use the same relevant persona/disease assumptions, or the posts explicitly state which runtime produced the numbers.
-- [ ] Confirm the separate **integrate-personas** todo is done: `config/persona_archetypes.json` (16 archetypes) is wired through `src/sim/persona.js`, covered by `tests/persona.test.js`, and visible in the browser town via varied speech bubbles/personalities.
-- [ ] Confirm the separate **rerun-100-sims** todo is done: rerun the calibrated 100-run IST/SOLL study with personas active and save the new study JSON under `scripts/output/`.
-- [ ] Confirm the separate **update-post-numbers** todo is done: every number in T5/T6 and any referenced chart/table matches the persona-active rerun.
+- [x] Confirm the separate **unify-engine** todo is done: `site/world.html` is now the single canonical engine, `src/frontend/v4.html` deleted, runner/tests/replay/scenario scripts repointed, zero remaining v4.html refs. (commits 35f1852, 4321d45)
+- [x] Confirm the separate **integrate-personas** todo is done: `config/persona_archetypes.json` (16 archetypes) wired through `src/sim/persona.js`, covered by `tests/persona.test.js` (13 tests), inlined into world.html behind `PERSONA_ENABLED`, visible via varied speech bubbles.
+- [x] Confirm the separate **rerun-100-sims** todo is done: clean A/B (100 runs × 3000 cycles, personas OFF vs ON, same engine) saved under `scripts/output/persona_ab_*.json`; pre-persona baseline preserved as `deep_research_100runs_baseline_prePersona.json`.
+- [x] Confirm the separate **update-post-numbers** todo is done: T5/T6 and `series1_health_post5.md` reconciled to persona-active validated numbers.
 - [ ] **Hard gate**: do not publish either post while statistics still cite pre-persona outputs (`scripts/output/deep_research_100runs.json`, `mortality_fix_100runs.json`, or Series 1 values) unless the text explicitly labels them as historical baseline.
 
 ### Phase 1 — Figures and assets
