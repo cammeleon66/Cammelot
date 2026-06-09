@@ -190,7 +190,9 @@ function setMode(m){
   renderKpis(); setFrame(frame);
 }
 
-function play(){ playing=true; $('play').textContent='❚❚ Pause';
+function play(){
+  if(frame>=nFrames-1) setFrame(0);   // restart from the beginning if at the end
+  playing=true; $('play').textContent='❚❚ Pause';
   clearInterval(timer); timer=setInterval(()=>{
     if(frame>=nFrames-1){ pause(); return; }
     setFrame(frame+1);
@@ -204,17 +206,22 @@ scrub.oninput=()=>{ pause(); setFrame(+scrub.value); };
 $('speed').onchange=e=>{ speed=+e.target.value; if(playing) play(); };
 document.querySelectorAll('.modebar button').forEach(b=> b.onclick=()=>setMode(b.dataset.m));
 
-Promise.all([
-  fetch('assets/replay_data.json').then(r=>r.json()),
-  fetch('assets/frames/manifest.json').then(r=>r.json()).catch(()=>null),
-]).then(([data,man])=>{
+function init(data, man){
   DATA=data; MAN=man;
   if(man){ nFrames=man.frames||100; cpf=man.cpf||30; }
   scrub.max=nFrames-1;
   $('loading').style.display='none';
   preload('IST'); preload('SOLL');
-  renderSummary();
+  if(DATA) renderSummary();
   setMode('IST');
-});
+}
+
+Promise.all([
+  fetch('assets/replay_data.json').then(r=>r.json()).catch(()=>null),
+  fetch('assets/frames/manifest.json').then(r=>r.json()).catch(()=>null),
+]).then(([data,man])=>{
+  if(!data){ $('summary').innerHTML='Open this page through the local review server (not file://) to load the run metrics. The frames below still play.'; }
+  init(data, man);
+}).catch(()=>init(null,null));
 </script>
 </body></html>
