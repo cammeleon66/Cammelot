@@ -10013,41 +10013,43 @@ function launchSimulation() {
 }
 
 // ═══ EVENT BINDING (CSP-safe — no inline handlers) ═══
-document.getElementById('bi').addEventListener('click', () => setMode('IST'));
-document.getElementById('bs').addEventListener('click', () => setMode('SOLL'));
+// Null-safe binder: a single missing control can never cascade and kill every other button.
+function _bind(id, evt, fn){
+  var el = document.getElementById(id);
+  if (el) { el.addEventListener(evt, fn); }
+  else { try { console.warn('Cammelot: control #' + id + ' not found, skipping'); } catch(e){} }
+}
+_bind('bi','click', () => setMode('IST'));
+_bind('bs','click', () => setMode('SOLL'));
 // Sprint 29: Play/Pause toggle replaces tick/batch10/auto
-document.getElementById('btn-play').addEventListener('click', () => {
+_bind('btn-play','click', () => {
   playUIClick();
   if (autoTimer) {
     clearInterval(autoTimer); autoTimer = null;
-    document.getElementById('btn-play').textContent = '▶ Play';
+    var pb = document.getElementById('btn-play'); if (pb) pb.textContent = '▶ Play';
   } else {
-    launchSimulation(); // handles pre-ticks, cleanup, and autoTimer
+    launchSimulation();
   }
 });
-document.getElementById('btn-batch100').addEventListener('click', () => { playUIClick(); batch(100); });
-document.getElementById('btn-reset').addEventListener('click', () => {
+_bind('btn-batch100','click', () => { playUIClick(); batch(100); });
+_bind('btn-reset','click', () => {
   playUIClick();
   if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
-  document.getElementById('btn-play').textContent = '▶ Play';
+  var pb = document.getElementById('btn-play'); if (pb) pb.textContent = '▶ Play';
   resetSim();
 });
-document.getElementById('btn-stats').addEventListener('click', () => { playUIClick(); toggleStats(); });
-document.getElementById('btn-qa').addEventListener('click', () => { playUIClick(); showQAPanel(); });
-document.getElementById('btn-treeknorm-log').addEventListener('click', () => { playUIClick(); showTreeknormLog(); });
-document.getElementById('btn-methodology').addEventListener('click', () => { playUIClick(); showMethodology(); });
-document.getElementById('btn-heatmap').addEventListener('click', () => { playUIClick(); toggleHeatmap(); });
-document.getElementById('btn-timeline').addEventListener('click', () => { playUIClick(); toggleTimeline(); });
-document.getElementById('btn-gazette').addEventListener('click', () => { playUIClick(); showGazette(); });
-// Screenshot button removed for website version
-document.getElementById('btn-moments').addEventListener('click', () => { playUIClick(); showMomentsGallery(); });
-// LinkedIn button removed for website version
-// Playground button removed for website version
-// More menu removed for website version
-document.getElementById('theme-toggle').addEventListener('click', () => toggleDarkMode());
-document.getElementById('sound-toggle').addEventListener('click', () => toggleSound());
-document.getElementById('wizard-skip').addEventListener('click', () => closeWizard());
-document.getElementById('wizard-next').addEventListener('click', () => nextWizardStep());
+_bind('btn-stats','click', () => { playUIClick(); toggleStats(); });
+_bind('btn-qa','click', () => { playUIClick(); showQAPanel(); });
+_bind('btn-treeknorm-log','click', () => { playUIClick(); showTreeknormLog(); });
+_bind('btn-methodology','click', () => { playUIClick(); showMethodology(); });
+_bind('btn-heatmap','click', () => { playUIClick(); toggleHeatmap(); });
+_bind('btn-timeline','click', () => { playUIClick(); toggleTimeline(); });
+_bind('btn-gazette','click', () => { playUIClick(); showGazette(); });
+_bind('btn-moments','click', () => { playUIClick(); showMomentsGallery(); });
+_bind('theme-toggle','click', () => toggleDarkMode());
+_bind('sound-toggle','click', () => toggleSound());
+_bind('wizard-skip','click', () => closeWizard());
+_bind('wizard-next','click', () => nextWizardStep());
 
 // Sprint 16: Timeline hover interaction
 (function() {
