@@ -33,7 +33,7 @@ def md2html(text):
 
 
 # ── copy referenced figures ──
-for src in ['world_town_screenshot.png']:
+for src in ['world_town_screenshot.png', 'living_patient_stages.svg']:
     s = os.path.join(ROOT, 'scripts', 'output', src)
     if os.path.exists(s):
         shutil.copy2(s, os.path.join(ASSETS, src))
