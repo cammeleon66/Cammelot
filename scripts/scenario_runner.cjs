@@ -25,7 +25,7 @@ if (!SCENARIO) {
 }
 
 // Read the simulation HTML once
-const html = fs.readFileSync(path.join(__dirname, '..', 'src', 'frontend', 'v4.html'), 'utf8');
+const html = fs.readFileSync(path.join(__dirname, '..', 'site', 'world.html'), 'utf8');
 
 function stats(arr) {
   const n = arr.length;
@@ -62,7 +62,7 @@ function runPatched(mode, cycles, patches) {
   const tmpRunner = path.join(__dirname, `_tmp_scenario_run_${process.pid}_${Date.now()}.cjs`);
   let runnerSrc = fs.readFileSync(RUNNER, 'utf8');
   
-  // The runner reads v4.html and evals the JS. We inject patches into the eval'd JS.
+  // The runner reads site/world.html and evals the JS. We inject patches into the eval'd JS.
   // Find where it says: patchedJS += '\nglobal._agents...
   // and add our patches before that line.
   

@@ -10,7 +10,7 @@ const SNAPSHOT_INTERVAL = 4; // every 4 ticks
 process.stderr.write(`Recording ${runMode} mode for ${nCycles} cycles...\n`);
 
 // Read the HTML and extract the main script
-const html = fs.readFileSync('src/frontend/v4.html', 'utf8');
+const html = fs.readFileSync('site/world.html', 'utf8');
 const scriptBlocks = html.match(/<script[^>]*>([\s\S]*?)<\/script>/g) || [];
 let mainJS = '';
 for (const block of scriptBlocks) {
@@ -196,6 +196,14 @@ patchedJS += 'global._tick = function() { tick(); global._cycle = cycle; };\n';
 patchedJS += 'global._setMode = function(m) { mode = m; };\n';
 patchedJS += 'global._cycle = 0;\n';
 
+// Keep stdout clean: the engine is chatty during eval/ticks, but replay stdout must be JSON-only.
+const realConsoleLog = console.log;
+const realConsoleInfo = console.info;
+const realConsoleWarn = console.warn;
+console.log = noop;
+console.info = noop;
+console.warn = noop;
+
 // Set headless flag before eval
 global._headlessMode = true;
 
@@ -380,5 +388,8 @@ const output = {
   events: allEvents,
 };
 
+console.log = realConsoleLog;
+console.info = realConsoleInfo;
+console.warn = realConsoleWarn;
 process.stdout.write(JSON.stringify(output));
 process.exit(0);
