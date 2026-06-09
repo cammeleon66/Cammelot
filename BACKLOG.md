@@ -112,7 +112,7 @@ A hard adversarial pass (AI / researcher / clinician / security / policy) before
 
 **Follow-up (future, not blocking publish):**
 - [x] **Wire Big Five (O/C/E/A/N) into the behavioural model** in `persona.js` — DONE as opt-in `assignPersona({ useBigFive: true })` with health-psychology-grounded mappings; **off by default** so the published A/B numbers are unchanged. 4 new unit tests (134/134 pass). Remaining: enable the flag and re-run the 100-sim A/B if we want to publish *emergent* trait effects (would update T5 numbers).
-- [ ] **#8 (optional)** Add a one-line "HP is a didactic proxy, harm model is uniform" note for clinical readers if T5/T6 get a clinician-facing edit.
+- [x] **#8** Added a "HP is a didactic proxy; harm rate is uniform, not per-organ" clinician note to T5 (no re-run needed).
 
 ## What We've Built (Sprints 1–3 ✅)
 

@@ -108,6 +108,8 @@ Here's what I deliberately did *not* do: I did not let personality touch the dis
 
 Cammelot's biology is Markov chains whose prevalence is anchored to RIVM data — though the per-state transition probabilities themselves are plausible, illustrative values, not individually published rates. Whether your heart condition progresses from "moderate" to "severe" is a probability, not a mood. A cheerful optimist and a bitter fatalist with the same comorbidities face the *same* transition matrix. That's not a limitation — it's the point. Cancer doesn't care if you're brave.
 
+*(For clinical readers: the "HP" bar is a didactic proxy for accumulated, time-sensitive harm from delayed care — not a physiological measure, and the harm rate per overdue week is applied uniformly rather than modelled per organ system. It's built to make the cost of waiting legible on screen, not to predict any individual's prognosis.)*
+
 What personality changes is **behaviour around the biology**:
 
 - **Care-seeking** — the stoic waits too long; the anxious shows up early and often.
