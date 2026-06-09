@@ -1,40 +1,46 @@
 Cammelot persona-active A/B study — figure data
-100 runs x 3000 cycles | source: scripts/output/persona_ab_comparison.json | 2026-06-09T09:38:49.0749381+02:00
+100 runs x 3000 cycles | Big Five behaviour ENABLED | source: scripts/output/persona_ab_comparison.json | 2026-06-09T08:29:10.096Z
 
-TABLE A — Personas ON vs OFF (same engine, IST mode): does personality distort outcomes?
+TABLE A — Personas ON vs OFF (same engine, IST mode): does personality change outcomes?
 metric                 OFF      ON       Cohen_d   verdict
-total_deaths           6.16     6.28     -0.045    not significant
-system_deaths          4.71     4.63      0.034    not significant
-bias_score             0.338    0.354    -0.120    not significant
-=> Personality is texture, not statistical distortion. (Vindicates Post 5 thesis.)
+total_deaths           5.72     5.31     0.159     not significant
+system_deaths (prevent.) 4.49     3.79     0.322     SIGNIFICANT (p<0.05)
+avg_burnout            18.17    18.095   0.02      not significant
+bias_score             0.333    0.324    0.088     not significant
+=> With Big Five wired in, personality SIGNIFICANTLY reduces preventable deaths in IST
+   (4.49 -> 3.79, d=0.32). Calibrated aggregates (burnout) otherwise preserved.
 
 TABLE B — IST vs SOLL (personas ON): does the AI-native overhaul help?
 metric                 IST      SOLL     %vsIST    Cohen_d   significant
-total_deaths           6.28     6.01     -4.3%      0.097     NO (N=45 stochastic)
-system_deaths          4.63     4.33     -6.5%      0.119     NO
-avg_burnout            18.57    4.48     -75.9%     5.295     YES
-peak_burnout           39.13    17.89    -54.3%     8.161     YES
-proactive_alerts       0        316.3    new        -4.695    YES
-ketenzorg_interv.      68.33    186.03   +172.3%   -1.668     YES
-admin_waste_eur        33,561   5,594    -83.3%     n/a       modeled (deterministic)
-er_admissions          64.63    69.40    +7.4%     -0.234     NO
-bias_score             0.354    0.402    +13.6%    -0.273     NO
+total_deaths           5.31     5.5      +3.6%     -0.075    NO
+system_deaths (prevent.) 3.79     3.86     +1.8%     -0.033    NO
+avg_burnout            18.095   4.375    -75.8%    4.657     YES
+peak_burnout           38.68    17.87    -53.8%    8.087     YES
+proactive_alerts       0        305.22   new       -5.385    YES
+ketenzorg_interv.      61.81    171.4    +177.3%   -1.658    YES
+admin_waste_eur        33561    5594     -83.3%    0         NO (deterministic)
+er_admissions          62.57    68.43    +9.4%     -0.295    YES
+bias_score             0.324    0.397    +22.5%    -0.539    YES
 
 NOTES
 - admin_waste is a deterministic model output (admin 30%->5%); no variance, so no significance test.
-- Mortality differences are NOT statistically significant at N=45; do not claim "AI saves lives".
-- sick_leave_events = 0 in all cells (burnout peaks ~39, below sick-leave threshold). Do NOT cite sick leave.
+- In SOLL, personas ON vs OFF is NOT significant on any outcome — the proactive system absorbs
+  personality. The persona effect on preventable deaths is an IST-only (broken-system) phenomenon.
+- Total-mortality differences remain underpowered at N=45; the IST preventable-death effect (d=0.32)
+  is modest. Do not over-claim "AI saves lives".
+- sick_leave_events = 0 in all cells. Do NOT cite sick leave.
 
-CLASSIFICATION — assumed input vs emergent finding (added by pre-publish review)
+CLASSIFICATION — assumed input vs emergent finding
 metric                 type            note
 admin_waste_eur        ASSUMED         pure transform of admin input (30%->5%); zero variance across runs (d=0)
 avg_burnout            MOSTLY ASSUMED  dominated by admin input term (admin*100); small emergent queue component
 peak_burnout           MOSTLY ASSUMED  same basis as avg_burnout
-proactive_alerts       EMERGENT        absent in IST by design; arises from SOLL agent behaviour (0 -> 316)
+proactive_alerts       EMERGENT        absent in IST by design; arises from SOLL agent behaviour (0 -> ~305)
 ketenzorg_interv.      EMERGENT        chronic-care pathway uptake; high run-to-run variance
-er_admissions          EMERGENT        downstream of care-seeking + capacity; not significant ON vs OFF
-total/system_deaths    EMERGENT (underpowered)  N=45, ~6 deaths/run; not significant; report as mechanism, not effect
+system_deaths (IST)    EMERGENT        Big Five-driven care-seeking/adherence; SIGNIFICANT in IST (d=0.32)
+er_admissions          EMERGENT        downstream of care-seeking + capacity
 bias_score             EMERGENT        fairness guardrail metric
 
 READING GUIDANCE: lead with EMERGENT results. Present admin/burnout reductions as
 mechanism-by-construction (a consequence of the modelled intervention), NOT as discovered effects.
+The headline persona finding is emergent: personality matters most where the system is worst (IST).

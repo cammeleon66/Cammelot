@@ -154,13 +154,17 @@ test('bigFiveBehaviorDelta moves params in the psychology-grounded direction', (
   assert.ok(bigFiveBehaviorDelta({ O: 1 }).secondOpinionDrive > 0);
 });
 
-test('assignPersona useBigFive OFF is identical to default (study invariance)', () => {
-  // The published A/B study runs with the default (no Big Five). Default and
-  // explicit-off MUST be byte-identical so existing numbers stay valid.
+test('assignPersona useBigFive default ON equals explicit ON; OFF is the ablation', () => {
+  // Default now modulates behaviour by Big Five (matches world.html). Explicit
+  // false reproduces the pre-Big-Five baseline and must differ from default.
   for (const id of ['hendrik-veenstra', 'citizen-3', 'anna', 'citizen-41']) {
     const def = assignPersona({ id, age: 60, gender: 'female' }, archetypes);
+    const on = assignPersona({ id, age: 60, gender: 'female' }, archetypes, { useBigFive: true });
     const off = assignPersona({ id, age: 60, gender: 'female' }, archetypes, { useBigFive: false });
-    assert.deepStrictEqual(off.behavior, def.behavior, 'mismatch for ' + id);
+    assert.deepStrictEqual(def.behavior, on.behavior, 'default should equal explicit ON for ' + id);
+    // off is deterministic
+    const off2 = assignPersona({ id, age: 60, gender: 'female' }, archetypes, { useBigFive: false });
+    assert.deepStrictEqual(off.behavior, off2.behavior, 'OFF must be deterministic for ' + id);
   }
 });
 

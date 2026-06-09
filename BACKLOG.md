@@ -111,7 +111,7 @@ A hard adversarial pass (AI / researcher / clinician / security / policy) before
 - [x] **#2 Persona payload ("so what?").** T5 now positions personas honestly as (1) a narrative/UX layer and (2) a methodological no-distortion result, with effects at the *individual* (timing) level, not population averages.
 
 **Follow-up (future, not blocking publish):**
-- [x] **Wire Big Five (O/C/E/A/N) into the behavioural model** in `persona.js` — DONE as opt-in `assignPersona({ useBigFive: true })` with health-psychology-grounded mappings; **off by default** so the published A/B numbers are unchanged. 4 new unit tests (134/134 pass). Remaining: enable the flag and re-run the 100-sim A/B if we want to publish *emergent* trait effects (would update T5 numbers).
+- [x] **Wire Big Five (O/C/E/A/N) into the behavioural model** — DONE in BOTH `src/sim/persona.js` and the inlined `site/world.html` engine (flag `PERSONA_USE_BIGFIVE`, default ON). **Re-ran the 100×3000×4-cell A/B with Big Five enabled.** New headline finding: with personalities driving behaviour, **preventable (system) deaths in IST fall 4.49 → 3.79 (d=0.32, p<0.05, significant)** — personality is no longer inert. In SOLL the same persona switch is non-significant on every outcome (the proactive system absorbs it): *personality matters most where the system is worst.* SOLL main effects intact (burnout −76%, peak −54%, ketenzorg +177%, proactive 0→305, admin −83.3%). T5/T6 + `persona_ab_figure_data.txt` updated; 134/134 tests pass.
 - [x] **#8** Added a "HP is a didactic proxy; harm rate is uniform, not per-organ" clinician note to T5 (no re-run needed).
 
 ## What We've Built (Sprints 1–3 ✅)

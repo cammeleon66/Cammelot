@@ -113,13 +113,14 @@ function jitterBehavior(behavior, rng, amount) {
 //   archetypes   — array from loadArchetypes()
 //   opts.seed    — extra seed salt (default 0); use to vary across runs if desired
 //   opts.jitter  — per-param jitter magnitude (default 0.06)
-//   opts.useBigFive — when true, modulate behaviour by the archetype's O/C/E/A/N
-//                     scores (default FALSE; off = identical to published A/B study)
+//   opts.useBigFive — modulate behaviour by the archetype's O/C/E/A/N scores.
+//                     Default TRUE (matches world.html PERSONA_USE_BIGFIVE);
+//                     pass false for an ablation that reproduces the pre-Big-Five baseline.
 // Returns a persona object (also safe to attach as agent.persona).
 export function assignPersona(agent, archetypes, opts = {}) {
   const seedSalt = opts.seed || 0;
   const jitter = typeof opts.jitter === 'number' ? opts.jitter : 0.06;
-  const useBigFive = opts.useBigFive === true;
+  const useBigFive = opts.useBigFive !== false;
   const candidates = matchArchetypes(agent, archetypes);
 
   const rng = seededRandom(hashCode(String(agent.id || 'anon')) + 13 + seedSalt);

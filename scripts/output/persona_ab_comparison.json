@@ -2,7 +2,7 @@
   "config": {
     "runs": 100,
     "cycles": 3000,
-    "date": "2026-06-09T07:01:56.639Z",
+    "date": "2026-06-09T08:29:10.096Z",
     "note": "PERSONA=off prepends `var PERSONA_ENABLED=false` so persona numeric behavior effects are gated off; persona assignment/thoughts remain."
   },
   "cells": {
@@ -10,148 +10,30 @@
       "n": 100,
       "total_deaths": {
         "n": 100,
-        "mean": 6.28,
-        "sd": 2.896,
-        "ci95_lo": 5.705,
-        "ci95_hi": 6.855,
-        "min": 1,
-        "max": 14,
-        "median": 6
-      },
-      "system_deaths": {
-        "n": 100,
-        "mean": 4.63,
-        "sd": 2.557,
-        "ci95_lo": 4.123,
-        "ci95_hi": 5.137,
-        "min": 0,
-        "max": 11,
-        "median": 5
-      },
-      "natural_deaths": {
-        "n": 100,
-        "mean": 1.65,
-        "sd": 1.313,
-        "ci95_lo": 1.389,
-        "ci95_hi": 1.911,
-        "min": 0,
-        "max": 6,
-        "median": 1
-      },
-      "admin_waste_eur": {
-        "n": 100,
-        "mean": 33561,
-        "sd": 0,
-        "ci95_lo": 33561,
-        "ci95_hi": 33561,
-        "min": 33561,
-        "max": 33561,
-        "median": 33561
-      },
-      "proactive_alerts": {
-        "n": 100,
-        "mean": 0,
-        "sd": 0,
-        "ci95_lo": 0,
-        "ci95_hi": 0,
-        "min": 0,
-        "max": 0,
-        "median": 0
-      },
-      "ketenzorg_interventions": {
-        "n": 100,
-        "mean": 68.33,
-        "sd": 40.43,
-        "ci95_lo": 60.307,
-        "ci95_hi": 76.353,
-        "min": 3,
-        "max": 183,
-        "median": 60.5
-      },
-      "er_admissions": {
-        "n": 100,
-        "mean": 64.63,
-        "sd": 20.884,
-        "ci95_lo": 60.486,
-        "ci95_hi": 68.774,
-        "min": 22,
-        "max": 137,
-        "median": 60
-      },
-      "peak_burnout": {
-        "n": 100,
-        "mean": 39.13,
-        "sd": 2.39,
-        "ci95_lo": 38.656,
-        "ci95_hi": 39.604,
-        "min": 35,
-        "max": 45,
-        "median": 38
-      },
-      "avg_burnout": {
-        "n": 100,
-        "mean": 18.568,
-        "sd": 3.595,
-        "ci95_lo": 17.855,
-        "ci95_hi": 19.282,
-        "min": 9.7,
-        "max": 27.25,
-        "median": 18.875
-      },
-      "sick_leave_events": {
-        "n": 100,
-        "mean": 0,
-        "sd": 0,
-        "ci95_lo": 0,
-        "ci95_hi": 0,
-        "min": 0,
-        "max": 0,
-        "median": 0
-      },
-      "bias_score": {
-        "n": 100,
-        "mean": 0.354,
-        "sd": 0.148,
-        "ci95_lo": 0.324,
-        "ci95_hi": 0.383,
-        "min": 0,
-        "max": 1,
-        "median": 0.3
-      },
-      "fairness_guardrail": {
-        "activated_runs": 0,
-        "total_runs": 100,
-        "rate_pct": 0
-      }
-    },
-    "IST_off": {
-      "n": 100,
-      "total_deaths": {
-        "n": 100,
-        "mean": 6.16,
-        "sd": 2.448,
-        "ci95_lo": 5.674,
-        "ci95_hi": 6.646,
+        "mean": 5.31,
+        "sd": 2.565,
+        "ci95_lo": 4.801,
+        "ci95_hi": 5.819,
         "min": 1,
         "max": 12,
-        "median": 6
+        "median": 5
       },
       "system_deaths": {
         "n": 100,
-        "mean": 4.71,
-        "sd": 2.162,
-        "ci95_lo": 4.281,
-        "ci95_hi": 5.139,
-        "min": 1,
-        "max": 10,
-        "median": 4.5
+        "mean": 3.79,
+        "sd": 2.095,
+        "ci95_lo": 3.374,
+        "ci95_hi": 4.206,
+        "min": 0,
+        "max": 11,
+        "median": 4
       },
       "natural_deaths": {
         "n": 100,
-        "mean": 1.45,
-        "sd": 1.086,
-        "ci95_lo": 1.235,
-        "ci95_hi": 1.665,
+        "mean": 1.52,
+        "sd": 1.235,
+        "ci95_lo": 1.275,
+        "ci95_hi": 1.765,
         "min": 0,
         "max": 5,
         "median": 1
@@ -178,43 +60,43 @@
       },
       "ketenzorg_interventions": {
         "n": 100,
-        "mean": 70.84,
-        "sd": 36.334,
-        "ci95_lo": 63.63,
-        "ci95_hi": 78.05,
-        "min": 9,
-        "max": 187,
-        "median": 66.5
+        "mean": 61.81,
+        "sd": 45.248,
+        "ci95_lo": 52.831,
+        "ci95_hi": 70.789,
+        "min": 5,
+        "max": 316,
+        "median": 54.5
       },
       "er_admissions": {
         "n": 100,
-        "mean": 68.51,
-        "sd": 17.342,
-        "ci95_lo": 65.069,
-        "ci95_hi": 71.951,
-        "min": 34,
-        "max": 131,
-        "median": 67.5
+        "mean": 62.57,
+        "sd": 22.07,
+        "ci95_lo": 58.191,
+        "ci95_hi": 66.949,
+        "min": 23,
+        "max": 122,
+        "median": 60.5
       },
       "peak_burnout": {
         "n": 100,
-        "mean": 39.14,
-        "sd": 1.875,
-        "ci95_lo": 38.768,
-        "ci95_hi": 39.512,
-        "min": 36,
-        "max": 44,
-        "median": 39
+        "mean": 38.68,
+        "sd": 2.269,
+        "ci95_lo": 38.23,
+        "ci95_hi": 39.13,
+        "min": 34,
+        "max": 45,
+        "median": 38.5
       },
       "avg_burnout": {
         "n": 100,
-        "mean": 19.228,
-        "sd": 3,
-        "ci95_lo": 18.632,
-        "ci95_hi": 19.823,
-        "min": 10.4,
-        "max": 25.5,
-        "median": 19.4
+        "mean": 18.095,
+        "sd": 4.049,
+        "ci95_lo": 17.291,
+        "ci95_hi": 18.898,
+        "min": 8.4,
+        "max": 26.85,
+        "median": 18.225
       },
       "sick_leave_events": {
         "n": 100,
@@ -228,11 +110,129 @@
       },
       "bias_score": {
         "n": 100,
-        "mean": 0.338,
-        "sd": 0.119,
-        "ci95_lo": 0.314,
-        "ci95_hi": 0.361,
-        "min": 0.26,
+        "mean": 0.324,
+        "sd": 0.083,
+        "ci95_lo": 0.308,
+        "ci95_hi": 0.341,
+        "min": 0.3,
+        "max": 0.7,
+        "median": 0.3
+      },
+      "fairness_guardrail": {
+        "activated_runs": 0,
+        "total_runs": 100,
+        "rate_pct": 0
+      }
+    },
+    "IST_off": {
+      "n": 100,
+      "total_deaths": {
+        "n": 100,
+        "mean": 5.72,
+        "sd": 2.606,
+        "ci95_lo": 5.203,
+        "ci95_hi": 6.237,
+        "min": 0,
+        "max": 13,
+        "median": 5
+      },
+      "system_deaths": {
+        "n": 100,
+        "mean": 4.49,
+        "sd": 2.245,
+        "ci95_lo": 4.045,
+        "ci95_hi": 4.935,
+        "min": 0,
+        "max": 10,
+        "median": 4
+      },
+      "natural_deaths": {
+        "n": 100,
+        "mean": 1.23,
+        "sd": 1.221,
+        "ci95_lo": 0.988,
+        "ci95_hi": 1.472,
+        "min": 0,
+        "max": 5,
+        "median": 1
+      },
+      "admin_waste_eur": {
+        "n": 100,
+        "mean": 33561,
+        "sd": 0,
+        "ci95_lo": 33561,
+        "ci95_hi": 33561,
+        "min": 33561,
+        "max": 33561,
+        "median": 33561
+      },
+      "proactive_alerts": {
+        "n": 100,
+        "mean": 0,
+        "sd": 0,
+        "ci95_lo": 0,
+        "ci95_hi": 0,
+        "min": 0,
+        "max": 0,
+        "median": 0
+      },
+      "ketenzorg_interventions": {
+        "n": 100,
+        "mean": 66.78,
+        "sd": 40.458,
+        "ci95_lo": 58.752,
+        "ci95_hi": 74.808,
+        "min": 1,
+        "max": 257,
+        "median": 59.5
+      },
+      "er_admissions": {
+        "n": 100,
+        "mean": 61.14,
+        "sd": 19.031,
+        "ci95_lo": 57.364,
+        "ci95_hi": 64.916,
+        "min": 23,
+        "max": 112,
+        "median": 59.5
+      },
+      "peak_burnout": {
+        "n": 100,
+        "mean": 38.84,
+        "sd": 2.15,
+        "ci95_lo": 38.413,
+        "ci95_hi": 39.267,
+        "min": 35,
+        "max": 45,
+        "median": 39
+      },
+      "avg_burnout": {
+        "n": 100,
+        "mean": 18.17,
+        "sd": 3.593,
+        "ci95_lo": 17.458,
+        "ci95_hi": 18.883,
+        "min": 8.5,
+        "max": 26.6,
+        "median": 18.55
+      },
+      "sick_leave_events": {
+        "n": 100,
+        "mean": 0,
+        "sd": 0,
+        "ci95_lo": 0,
+        "ci95_hi": 0,
+        "min": 0,
+        "max": 0,
+        "median": 0
+      },
+      "bias_score": {
+        "n": 100,
+        "mean": 0.333,
+        "sd": 0.112,
+        "ci95_lo": 0.311,
+        "ci95_hi": 0.355,
+        "min": 0,
         "max": 1,
         "median": 0.3
       },
@@ -246,32 +246,32 @@
       "n": 100,
       "total_deaths": {
         "n": 100,
-        "mean": 6.01,
-        "sd": 2.65,
-        "ci95_lo": 5.484,
-        "ci95_hi": 6.536,
-        "min": 1,
-        "max": 13,
-        "median": 6
+        "mean": 5.5,
+        "sd": 2.517,
+        "ci95_lo": 5.001,
+        "ci95_hi": 5.999,
+        "min": 0,
+        "max": 12,
+        "median": 5
       },
       "system_deaths": {
         "n": 100,
-        "mean": 4.33,
-        "sd": 2.478,
-        "ci95_lo": 3.838,
-        "ci95_hi": 4.822,
+        "mean": 3.86,
+        "sd": 2.099,
+        "ci95_lo": 3.444,
+        "ci95_hi": 4.276,
         "min": 0,
         "max": 10,
-        "median": 4
+        "median": 3
       },
       "natural_deaths": {
         "n": 100,
-        "mean": 1.51,
-        "sd": 1.068,
-        "ci95_lo": 1.298,
-        "ci95_hi": 1.722,
+        "mean": 1.5,
+        "sd": 1.374,
+        "ci95_lo": 1.227,
+        "ci95_hi": 1.773,
         "min": 0,
-        "max": 4,
+        "max": 6,
         "median": 1
       },
       "admin_waste_eur": {
@@ -286,52 +286,170 @@
       },
       "proactive_alerts": {
         "n": 100,
-        "mean": 316.3,
-        "sd": 95.28,
-        "ci95_lo": 297.394,
-        "ci95_hi": 335.206,
-        "min": 121,
-        "max": 618,
-        "median": 307
+        "mean": 305.22,
+        "sd": 80.164,
+        "ci95_lo": 289.313,
+        "ci95_hi": 321.127,
+        "min": 84,
+        "max": 509,
+        "median": 302
       },
       "ketenzorg_interventions": {
         "n": 100,
-        "mean": 186.03,
-        "sd": 91.248,
-        "ci95_lo": 167.924,
-        "ci95_hi": 204.136,
-        "min": 19,
-        "max": 517,
-        "median": 170
+        "mean": 171.4,
+        "sd": 81.801,
+        "ci95_lo": 155.168,
+        "ci95_hi": 187.632,
+        "min": 10,
+        "max": 437,
+        "median": 164.5
       },
       "er_admissions": {
         "n": 100,
-        "mean": 69.4,
-        "sd": 19.859,
-        "ci95_lo": 65.459,
-        "ci95_hi": 73.341,
-        "min": 22,
-        "max": 127,
-        "median": 69
+        "mean": 68.43,
+        "sd": 17.368,
+        "ci95_lo": 64.984,
+        "ci95_hi": 71.876,
+        "min": 17,
+        "max": 110,
+        "median": 65.5
       },
       "peak_burnout": {
         "n": 100,
-        "mean": 17.89,
-        "sd": 2.799,
-        "ci95_lo": 17.335,
-        "ci95_hi": 18.445,
-        "min": 12,
-        "max": 27,
+        "mean": 17.87,
+        "sd": 2.845,
+        "ci95_lo": 17.305,
+        "ci95_hi": 18.435,
+        "min": 11,
+        "max": 24,
         "median": 18
       },
       "avg_burnout": {
         "n": 100,
-        "mean": 4.476,
-        "sd": 1.115,
-        "ci95_lo": 4.255,
-        "ci95_hi": 4.697,
-        "min": 2.05,
-        "max": 7.75,
+        "mean": 4.375,
+        "sd": 0.981,
+        "ci95_lo": 4.181,
+        "ci95_hi": 4.57,
+        "min": 1.45,
+        "max": 6.7,
+        "median": 4.45
+      },
+      "sick_leave_events": {
+        "n": 100,
+        "mean": 0,
+        "sd": 0,
+        "ci95_lo": 0,
+        "ci95_hi": 0,
+        "min": 0,
+        "max": 0,
+        "median": 0
+      },
+      "bias_score": {
+        "n": 100,
+        "mean": 0.397,
+        "sd": 0.171,
+        "ci95_lo": 0.363,
+        "ci95_hi": 0.431,
+        "min": 0,
+        "max": 0.872,
+        "median": 0.3
+      },
+      "fairness_guardrail": {
+        "activated_runs": 24,
+        "total_runs": 100,
+        "rate_pct": 24
+      }
+    },
+    "SOLL_off": {
+      "n": 100,
+      "total_deaths": {
+        "n": 100,
+        "mean": 5.91,
+        "sd": 2.261,
+        "ci95_lo": 5.461,
+        "ci95_hi": 6.359,
+        "min": 1,
+        "max": 12,
+        "median": 6
+      },
+      "system_deaths": {
+        "n": 100,
+        "mean": 4.13,
+        "sd": 2.097,
+        "ci95_lo": 3.714,
+        "ci95_hi": 4.546,
+        "min": 0,
+        "max": 10,
+        "median": 4
+      },
+      "natural_deaths": {
+        "n": 100,
+        "mean": 1.59,
+        "sd": 1.181,
+        "ci95_lo": 1.356,
+        "ci95_hi": 1.824,
+        "min": 0,
+        "max": 5,
+        "median": 1.5
+      },
+      "admin_waste_eur": {
+        "n": 100,
+        "mean": 5594,
+        "sd": 0,
+        "ci95_lo": 5594,
+        "ci95_hi": 5594,
+        "min": 5594,
+        "max": 5594,
+        "median": 5594
+      },
+      "proactive_alerts": {
+        "n": 100,
+        "mean": 310.07,
+        "sd": 97.62,
+        "ci95_lo": 290.699,
+        "ci95_hi": 329.441,
+        "min": 121,
+        "max": 597,
+        "median": 300
+      },
+      "ketenzorg_interventions": {
+        "n": 100,
+        "mean": 179.58,
+        "sd": 93.242,
+        "ci95_lo": 161.078,
+        "ci95_hi": 198.082,
+        "min": 10,
+        "max": 503,
+        "median": 162
+      },
+      "er_admissions": {
+        "n": 100,
+        "mean": 68.75,
+        "sd": 21.104,
+        "ci95_lo": 64.562,
+        "ci95_hi": 72.938,
+        "min": 31,
+        "max": 132,
+        "median": 66.5
+      },
+      "peak_burnout": {
+        "n": 100,
+        "mean": 17.58,
+        "sd": 2.958,
+        "ci95_lo": 16.993,
+        "ci95_hi": 18.167,
+        "min": 12,
+        "max": 26,
+        "median": 17
+      },
+      "avg_burnout": {
+        "n": 100,
+        "mean": 4.403,
+        "sd": 1.165,
+        "ci95_lo": 4.172,
+        "ci95_hi": 4.634,
+        "min": 1.95,
+        "max": 7.45,
         "median": 4.325
       },
       "sick_leave_events": {
@@ -346,11 +464,11 @@
       },
       "bias_score": {
         "n": 100,
-        "mean": 0.402,
-        "sd": 0.204,
-        "ci95_lo": 0.362,
-        "ci95_hi": 0.443,
-        "min": 0,
+        "mean": 0.426,
+        "sd": 0.197,
+        "ci95_lo": 0.387,
+        "ci95_hi": 0.465,
+        "min": 0.187,
         "max": 1,
         "median": 0.3
       },
@@ -359,124 +477,6 @@
         "total_runs": 100,
         "rate_pct": 35
       }
-    },
-    "SOLL_off": {
-      "n": 100,
-      "total_deaths": {
-        "n": 100,
-        "mean": 5.61,
-        "sd": 2.81,
-        "ci95_lo": 5.052,
-        "ci95_hi": 6.168,
-        "min": 1,
-        "max": 13,
-        "median": 5
-      },
-      "system_deaths": {
-        "n": 100,
-        "mean": 4.1,
-        "sd": 2.488,
-        "ci95_lo": 3.606,
-        "ci95_hi": 4.594,
-        "min": 0,
-        "max": 12,
-        "median": 4
-      },
-      "natural_deaths": {
-        "n": 100,
-        "mean": 1.34,
-        "sd": 1.139,
-        "ci95_lo": 1.114,
-        "ci95_hi": 1.566,
-        "min": 0,
-        "max": 5,
-        "median": 1
-      },
-      "admin_waste_eur": {
-        "n": 100,
-        "mean": 5594,
-        "sd": 0,
-        "ci95_lo": 5594,
-        "ci95_hi": 5594,
-        "min": 5594,
-        "max": 5594,
-        "median": 5594
-      },
-      "proactive_alerts": {
-        "n": 100,
-        "mean": 322.14,
-        "sd": 97.656,
-        "ci95_lo": 302.762,
-        "ci95_hi": 341.518,
-        "min": 119,
-        "max": 573,
-        "median": 323
-      },
-      "ketenzorg_interventions": {
-        "n": 100,
-        "mean": 204.86,
-        "sd": 107.916,
-        "ci95_lo": 183.446,
-        "ci95_hi": 226.274,
-        "min": 11,
-        "max": 506,
-        "median": 183
-      },
-      "er_admissions": {
-        "n": 100,
-        "mean": 69.65,
-        "sd": 20.189,
-        "ci95_lo": 65.644,
-        "ci95_hi": 73.656,
-        "min": 27,
-        "max": 127,
-        "median": 67.5
-      },
-      "peak_burnout": {
-        "n": 100,
-        "mean": 18.09,
-        "sd": 3.062,
-        "ci95_lo": 17.482,
-        "ci95_hi": 18.698,
-        "min": 12,
-        "max": 27,
-        "median": 18
-      },
-      "avg_burnout": {
-        "n": 100,
-        "mean": 4.525,
-        "sd": 1.118,
-        "ci95_lo": 4.304,
-        "ci95_hi": 4.747,
-        "min": 1.95,
-        "max": 7.1,
-        "median": 4.575
-      },
-      "sick_leave_events": {
-        "n": 100,
-        "mean": 0,
-        "sd": 0,
-        "ci95_lo": 0,
-        "ci95_hi": 0,
-        "min": 0,
-        "max": 0,
-        "median": 0
-      },
-      "bias_score": {
-        "n": 100,
-        "mean": 0.419,
-        "sd": 0.199,
-        "ci95_lo": 0.379,
-        "ci95_hi": 0.458,
-        "min": 0,
-        "max": 1,
-        "median": 0.3
-      },
-      "fairness_guardrail": {
-        "activated_runs": 28,
-        "total_runs": 100,
-        "rate_pct": 28
-      }
     }
   },
   "contrasts": {
@@ -484,38 +484,38 @@
       "framing": "A=OFF, B=ON",
       "data": {
         "total_deaths": {
-          "mean_A": 6.16,
-          "mean_B": 6.28,
-          "delta": -0.12,
-          "pct_change": -1.9,
-          "cohen_d": -0.045,
+          "mean_A": 5.72,
+          "mean_B": 5.31,
+          "delta": 0.41,
+          "pct_change": 7.7,
+          "cohen_d": 0.159,
           "welch": {
-            "t": -0.316,
-            "df": 192.7,
+            "t": 1.121,
+            "df": 198,
             "significant": false
           }
         },
         "system_deaths": {
-          "mean_A": 4.71,
-          "mean_B": 4.63,
-          "delta": 0.08,
-          "pct_change": 1.7,
-          "cohen_d": 0.034,
+          "mean_A": 4.49,
+          "mean_B": 3.79,
+          "delta": 0.7,
+          "pct_change": 18.5,
+          "cohen_d": 0.322,
           "welch": {
-            "t": 0.239,
-            "df": 192.7,
-            "significant": false
+            "t": 2.28,
+            "df": 197.1,
+            "significant": true
           }
         },
         "natural_deaths": {
-          "mean_A": 1.45,
-          "mean_B": 1.65,
-          "delta": -0.2,
-          "pct_change": -12.1,
-          "cohen_d": -0.166,
+          "mean_A": 1.23,
+          "mean_B": 1.52,
+          "delta": -0.29,
+          "pct_change": -19.1,
+          "cohen_d": -0.236,
           "welch": {
-            "t": -1.174,
-            "df": 191.3,
+            "t": -1.67,
+            "df": 198,
             "significant": false
           }
         },
@@ -544,50 +544,50 @@
           }
         },
         "ketenzorg_interventions": {
-          "mean_A": 70.84,
-          "mean_B": 68.33,
-          "delta": 2.51,
-          "pct_change": 3.7,
-          "cohen_d": 0.065,
+          "mean_A": 66.78,
+          "mean_B": 61.81,
+          "delta": 4.97,
+          "pct_change": 8,
+          "cohen_d": 0.116,
           "welch": {
-            "t": 0.462,
-            "df": 195.8,
+            "t": 0.819,
+            "df": 195.6,
             "significant": false
           }
         },
         "er_admissions": {
-          "mean_A": 68.51,
-          "mean_B": 64.63,
-          "delta": 3.88,
-          "pct_change": 6,
-          "cohen_d": 0.202,
+          "mean_A": 61.14,
+          "mean_B": 62.57,
+          "delta": -1.43,
+          "pct_change": -2.3,
+          "cohen_d": -0.069,
           "welch": {
-            "t": 1.429,
-            "df": 191.5,
+            "t": -0.491,
+            "df": 193.8,
             "significant": false
           }
         },
         "peak_burnout": {
-          "mean_A": 39.14,
-          "mean_B": 39.13,
-          "delta": 0.01,
-          "pct_change": 0,
-          "cohen_d": 0.005,
+          "mean_A": 38.84,
+          "mean_B": 38.68,
+          "delta": 0.16,
+          "pct_change": 0.4,
+          "cohen_d": 0.072,
           "welch": {
-            "t": 0.033,
-            "df": 187.4,
+            "t": 0.512,
+            "df": 197.4,
             "significant": false
           }
         },
         "avg_burnout": {
-          "mean_A": 19.228,
-          "mean_B": 18.568,
-          "delta": 0.659,
-          "pct_change": 3.5,
-          "cohen_d": 0.199,
+          "mean_A": 18.17,
+          "mean_B": 18.095,
+          "delta": 0.076,
+          "pct_change": 0.4,
+          "cohen_d": 0.02,
           "welch": {
-            "t": 1.407,
-            "df": 191.8,
+            "t": 0.14,
+            "df": 195.2,
             "significant": false
           }
         },
@@ -604,14 +604,14 @@
           }
         },
         "bias_score": {
-          "mean_A": 0.338,
-          "mean_B": 0.354,
-          "delta": -0.016,
-          "pct_change": -4.5,
-          "cohen_d": -0.12,
+          "mean_A": 0.333,
+          "mean_B": 0.324,
+          "delta": 0.009,
+          "pct_change": 2.7,
+          "cohen_d": 0.088,
           "welch": {
-            "t": -0.848,
-            "df": 188.9,
+            "t": 0.624,
+            "df": 182.4,
             "significant": false
           }
         }
@@ -621,38 +621,38 @@
       "framing": "A=OFF, B=ON",
       "data": {
         "total_deaths": {
-          "mean_A": 5.61,
-          "mean_B": 6.01,
-          "delta": -0.4,
-          "pct_change": -6.7,
-          "cohen_d": -0.146,
+          "mean_A": 5.91,
+          "mean_B": 5.5,
+          "delta": 0.41,
+          "pct_change": 7.5,
+          "cohen_d": 0.171,
           "welch": {
-            "t": -1.036,
-            "df": 197.3,
+            "t": 1.212,
+            "df": 195.8,
             "significant": false
           }
         },
         "system_deaths": {
-          "mean_A": 4.1,
-          "mean_B": 4.33,
-          "delta": -0.23,
-          "pct_change": -5.3,
-          "cohen_d": -0.093,
+          "mean_A": 4.13,
+          "mean_B": 3.86,
+          "delta": 0.27,
+          "pct_change": 7,
+          "cohen_d": 0.129,
           "welch": {
-            "t": -0.655,
+            "t": 0.91,
             "df": 198,
             "significant": false
           }
         },
         "natural_deaths": {
-          "mean_A": 1.34,
-          "mean_B": 1.51,
-          "delta": -0.17,
-          "pct_change": -11.3,
-          "cohen_d": -0.154,
+          "mean_A": 1.59,
+          "mean_B": 1.5,
+          "delta": 0.09,
+          "pct_change": 6,
+          "cohen_d": 0.07,
           "welch": {
-            "t": -1.089,
-            "df": 197.2,
+            "t": 0.497,
+            "df": 193.6,
             "significant": false
           }
         },
@@ -669,62 +669,62 @@
           }
         },
         "proactive_alerts": {
-          "mean_A": 322.14,
-          "mean_B": 316.3,
-          "delta": 5.84,
-          "pct_change": 1.8,
-          "cohen_d": 0.061,
+          "mean_A": 310.07,
+          "mean_B": 305.22,
+          "delta": 4.85,
+          "pct_change": 1.6,
+          "cohen_d": 0.054,
           "welch": {
-            "t": 0.428,
-            "df": 197.9,
+            "t": 0.384,
+            "df": 190.8,
             "significant": false
           }
         },
         "ketenzorg_interventions": {
-          "mean_A": 204.86,
-          "mean_B": 186.03,
-          "delta": 18.83,
-          "pct_change": 10.1,
-          "cohen_d": 0.188,
+          "mean_A": 179.58,
+          "mean_B": 171.4,
+          "delta": 8.18,
+          "pct_change": 4.8,
+          "cohen_d": 0.093,
           "welch": {
-            "t": 1.332,
-            "df": 192.7,
+            "t": 0.659,
+            "df": 194.7,
             "significant": false
           }
         },
         "er_admissions": {
-          "mean_A": 69.65,
-          "mean_B": 69.4,
-          "delta": 0.25,
-          "pct_change": 0.4,
-          "cohen_d": 0.012,
+          "mean_A": 68.75,
+          "mean_B": 68.43,
+          "delta": 0.32,
+          "pct_change": 0.5,
+          "cohen_d": 0.017,
           "welch": {
-            "t": 0.088,
-            "df": 197.9,
+            "t": 0.117,
+            "df": 190.9,
             "significant": false
           }
         },
         "peak_burnout": {
-          "mean_A": 18.09,
-          "mean_B": 17.89,
-          "delta": 0.2,
-          "pct_change": 1.1,
-          "cohen_d": 0.068,
+          "mean_A": 17.58,
+          "mean_B": 17.87,
+          "delta": -0.29,
+          "pct_change": -1.6,
+          "cohen_d": -0.1,
           "welch": {
-            "t": 0.482,
-            "df": 196.4,
+            "t": -0.707,
+            "df": 197.7,
             "significant": false
           }
         },
         "avg_burnout": {
-          "mean_A": 4.525,
-          "mean_B": 4.476,
-          "delta": 0.049,
-          "pct_change": 1.1,
-          "cohen_d": 0.044,
+          "mean_A": 4.403,
+          "mean_B": 4.375,
+          "delta": 0.028,
+          "pct_change": 0.6,
+          "cohen_d": 0.026,
           "welch": {
-            "t": 0.314,
-            "df": 198,
+            "t": 0.181,
+            "df": 192.4,
             "significant": false
           }
         },
@@ -741,14 +741,14 @@
           }
         },
         "bias_score": {
-          "mean_A": 0.419,
-          "mean_B": 0.402,
-          "delta": 0.016,
-          "pct_change": 4,
-          "cohen_d": 0.08,
+          "mean_A": 0.426,
+          "mean_B": 0.397,
+          "delta": 0.03,
+          "pct_change": 7.4,
+          "cohen_d": 0.16,
           "welch": {
-            "t": 0.564,
-            "df": 197.9,
+            "t": 1.131,
+            "df": 194,
             "significant": false
           }
         }
@@ -758,38 +758,38 @@
       "framing": "A=IST, B=SOLL",
       "data": {
         "total_deaths": {
-          "mean_A": 6.28,
-          "mean_B": 6.01,
-          "delta": 0.27,
-          "pct_change": 4.5,
-          "cohen_d": 0.097,
+          "mean_A": 5.31,
+          "mean_B": 5.5,
+          "delta": -0.19,
+          "pct_change": -3.5,
+          "cohen_d": -0.075,
           "welch": {
-            "t": 0.688,
-            "df": 196.5,
+            "t": -0.529,
+            "df": 197.9,
             "significant": false
           }
         },
         "system_deaths": {
-          "mean_A": 4.63,
-          "mean_B": 4.33,
-          "delta": 0.3,
-          "pct_change": 6.9,
-          "cohen_d": 0.119,
+          "mean_A": 3.79,
+          "mean_B": 3.86,
+          "delta": -0.07,
+          "pct_change": -1.8,
+          "cohen_d": -0.033,
           "welch": {
-            "t": 0.842,
-            "df": 197.8,
+            "t": -0.236,
+            "df": 198,
             "significant": false
           }
         },
         "natural_deaths": {
-          "mean_A": 1.65,
-          "mean_B": 1.51,
-          "delta": 0.14,
-          "pct_change": 9.3,
-          "cohen_d": 0.117,
+          "mean_A": 1.52,
+          "mean_B": 1.5,
+          "delta": 0.02,
+          "pct_change": 1.3,
+          "cohen_d": 0.015,
           "welch": {
-            "t": 0.827,
-            "df": 190.1,
+            "t": 0.108,
+            "df": 195.8,
             "significant": false
           }
         },
@@ -807,61 +807,61 @@
         },
         "proactive_alerts": {
           "mean_A": 0,
-          "mean_B": 316.3,
-          "delta": -316.3,
+          "mean_B": 305.22,
+          "delta": -305.22,
           "pct_change": -100,
-          "cohen_d": -4.695,
+          "cohen_d": -5.385,
           "welch": {
-            "t": -33.197,
+            "t": -38.074,
             "df": 99,
             "significant": true
           }
         },
         "ketenzorg_interventions": {
-          "mean_A": 68.33,
-          "mean_B": 186.03,
-          "delta": -117.7,
-          "pct_change": -63.3,
-          "cohen_d": -1.668,
+          "mean_A": 61.81,
+          "mean_B": 171.4,
+          "delta": -109.59,
+          "pct_change": -63.9,
+          "cohen_d": -1.658,
           "welch": {
-            "t": -11.793,
-            "df": 136.4,
+            "t": -11.723,
+            "df": 154.4,
             "significant": true
           }
         },
         "er_admissions": {
-          "mean_A": 64.63,
-          "mean_B": 69.4,
-          "delta": -4.77,
-          "pct_change": -6.9,
-          "cohen_d": -0.234,
+          "mean_A": 62.57,
+          "mean_B": 68.43,
+          "delta": -5.86,
+          "pct_change": -8.6,
+          "cohen_d": -0.295,
           "welch": {
-            "t": -1.655,
-            "df": 197.5,
-            "significant": false
+            "t": -2.087,
+            "df": 187.6,
+            "significant": true
           }
         },
         "peak_burnout": {
-          "mean_A": 39.13,
-          "mean_B": 17.89,
-          "delta": 21.24,
-          "pct_change": 118.7,
-          "cohen_d": 8.161,
+          "mean_A": 38.68,
+          "mean_B": 17.87,
+          "delta": 20.81,
+          "pct_change": 116.5,
+          "cohen_d": 8.087,
           "welch": {
-            "t": 57.709,
-            "df": 193.2,
+            "t": 57.184,
+            "df": 188.7,
             "significant": true
           }
         },
         "avg_burnout": {
-          "mean_A": 18.568,
-          "mean_B": 4.476,
-          "delta": 14.092,
-          "pct_change": 314.8,
-          "cohen_d": 5.295,
+          "mean_A": 18.095,
+          "mean_B": 4.375,
+          "delta": 13.719,
+          "pct_change": 313.5,
+          "cohen_d": 4.657,
           "welch": {
-            "t": 37.439,
-            "df": 117.9,
+            "t": 32.927,
+            "df": 110.6,
             "significant": true
           }
         },
@@ -878,15 +878,15 @@
           }
         },
         "bias_score": {
-          "mean_A": 0.354,
-          "mean_B": 0.402,
-          "delta": -0.049,
-          "pct_change": -12.1,
-          "cohen_d": -0.273,
+          "mean_A": 0.324,
+          "mean_B": 0.397,
+          "delta": -0.072,
+          "pct_change": -18.2,
+          "cohen_d": -0.539,
           "welch": {
-            "t": -1.927,
-            "df": 180.7,
-            "significant": false
+            "t": -3.815,
+            "df": 142.9,
+            "significant": true
           }
         }
       }
@@ -895,39 +895,39 @@
       "framing": "A=IST, B=SOLL",
       "data": {
         "total_deaths": {
-          "mean_A": 6.16,
-          "mean_B": 5.61,
-          "delta": 0.55,
-          "pct_change": 9.8,
-          "cohen_d": 0.209,
+          "mean_A": 5.72,
+          "mean_B": 5.91,
+          "delta": -0.19,
+          "pct_change": -3.2,
+          "cohen_d": -0.078,
           "welch": {
-            "t": 1.476,
-            "df": 194.4,
+            "t": -0.551,
+            "df": 194.1,
             "significant": false
           }
         },
         "system_deaths": {
-          "mean_A": 4.71,
-          "mean_B": 4.1,
-          "delta": 0.61,
-          "pct_change": 14.9,
-          "cohen_d": 0.262,
+          "mean_A": 4.49,
+          "mean_B": 4.13,
+          "delta": 0.36,
+          "pct_change": 8.7,
+          "cohen_d": 0.166,
           "welch": {
-            "t": 1.851,
-            "df": 194.2,
+            "t": 1.172,
+            "df": 197.1,
             "significant": false
           }
         },
         "natural_deaths": {
-          "mean_A": 1.45,
-          "mean_B": 1.34,
-          "delta": 0.11,
-          "pct_change": 8.2,
-          "cohen_d": 0.099,
+          "mean_A": 1.23,
+          "mean_B": 1.59,
+          "delta": -0.36,
+          "pct_change": -22.6,
+          "cohen_d": -0.3,
           "welch": {
-            "t": 0.699,
-            "df": 197.6,
-            "significant": false
+            "t": -2.118,
+            "df": 197.8,
+            "significant": true
           }
         },
         "admin_waste_eur": {
@@ -944,61 +944,61 @@
         },
         "proactive_alerts": {
           "mean_A": 0,
-          "mean_B": 322.14,
-          "delta": -322.14,
+          "mean_B": 310.07,
+          "delta": -310.07,
           "pct_change": -100,
-          "cohen_d": -4.665,
+          "cohen_d": -4.492,
           "welch": {
-            "t": -32.987,
+            "t": -31.763,
             "df": 99,
             "significant": true
           }
         },
         "ketenzorg_interventions": {
-          "mean_A": 70.84,
-          "mean_B": 204.86,
-          "delta": -134.02,
-          "pct_change": -65.4,
-          "cohen_d": -1.664,
+          "mean_A": 66.78,
+          "mean_B": 179.58,
+          "delta": -112.8,
+          "pct_change": -62.8,
+          "cohen_d": -1.569,
           "welch": {
-            "t": -11.77,
-            "df": 121.2,
+            "t": -11.098,
+            "df": 135,
             "significant": true
           }
         },
         "er_admissions": {
-          "mean_A": 68.51,
-          "mean_B": 69.65,
-          "delta": -1.14,
-          "pct_change": -1.6,
-          "cohen_d": -0.061,
+          "mean_A": 61.14,
+          "mean_B": 68.75,
+          "delta": -7.61,
+          "pct_change": -11.1,
+          "cohen_d": -0.379,
           "welch": {
-            "t": -0.428,
-            "df": 193.6,
-            "significant": false
+            "t": -2.678,
+            "df": 195.9,
+            "significant": true
           }
         },
         "peak_burnout": {
-          "mean_A": 39.14,
-          "mean_B": 18.09,
-          "delta": 21.05,
-          "pct_change": 116.4,
-          "cohen_d": 8.291,
+          "mean_A": 38.84,
+          "mean_B": 17.58,
+          "delta": 21.26,
+          "pct_change": 120.9,
+          "cohen_d": 8.222,
           "welch": {
-            "t": 58.628,
-            "df": 164.1,
+            "t": 58.139,
+            "df": 180.8,
             "significant": true
           }
         },
         "avg_burnout": {
-          "mean_A": 19.228,
-          "mean_B": 4.525,
-          "delta": 14.702,
-          "pct_change": 324.9,
-          "cohen_d": 6.495,
+          "mean_A": 18.17,
+          "mean_B": 4.403,
+          "delta": 13.767,
+          "pct_change": 312.7,
+          "cohen_d": 5.155,
           "welch": {
-            "t": 45.923,
-            "df": 126,
+            "t": 36.453,
+            "df": 119.6,
             "significant": true
           }
         },
@@ -1015,14 +1015,14 @@
           }
         },
         "bias_score": {
-          "mean_A": 0.338,
-          "mean_B": 0.419,
-          "delta": -0.081,
-          "pct_change": -19.3,
-          "cohen_d": -0.494,
+          "mean_A": 0.333,
+          "mean_B": 0.426,
+          "delta": -0.093,
+          "pct_change": -21.9,
+          "cohen_d": -0.582,
           "welch": {
-            "t": -3.492,
-            "df": 161.6,
+            "t": -4.113,
+            "df": 156.4,
             "significant": true
           }
         }

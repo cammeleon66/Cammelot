@@ -1209,6 +1209,8 @@ const EMBED_MODE = new URLSearchParams(window.location.search).get('embed') === 
 let cycle=0,mode='IST',autoTimer=null;
 // Persona A/B toggle — runner can prepend `var PERSONA_ENABLED=false;` before eval
 var PERSONA_ENABLED = (typeof PERSONA_ENABLED !== 'undefined') ? PERSONA_ENABLED : true;
+    // Big Five -> behaviour modulation (O/C/E/A/N nudges the 7 params). Default ON; runner can prepend `var PERSONA_USE_BIGFIVE=false;`.
+    var PERSONA_USE_BIGFIVE = (typeof PERSONA_USE_BIGFIVE !== 'undefined') ? PERSONA_USE_BIGFIVE : true;
 // ═══ Sprint 30: Citizen Agent PoC — LLM Integration ═══
 let llmProxyAvailable = false;
 let llmProxyUrl = 'http://localhost:3001';
@@ -2294,6 +2296,27 @@ function matchPersonaArchetypes(agent, archetypes) {
   });
   return fits.length > 0 ? fits : list.slice();
 }
+// Big Five (O/C/E/A/N, each 0..1, 0.5=neutral) -> additive nudges for the 7
+// behavioural params. Health-psychology-grounded coefficients. Mirrors
+// src/sim/persona.js bigFiveBehaviorDelta(). Bounded so a citizen stays
+// recognizably their archetype.
+function _bigFiveBehaviorDelta(bf) {
+  bf = bf || {};
+  const O = (typeof bf.O === 'number' ? bf.O : 0.5) - 0.5;
+  const C = (typeof bf.C === 'number' ? bf.C : 0.5) - 0.5;
+  const E = (typeof bf.E === 'number' ? bf.E : 0.5) - 0.5;
+  const A = (typeof bf.A === 'number' ? bf.A : 0.5) - 0.5;
+  const N = (typeof bf.N === 'number' ? bf.N : 0.5) - 0.5;
+  return {
+    careSeekingBias:    0.30 * N + 0.10 * E,
+    compliance:         0.30 * C - 0.10 * N,
+    trustInSystem:      0.25 * A - 0.15 * N,
+    refusalTendency:   -0.20 * A + 0.15 * O,
+    secondOpinionDrive: 0.25 * O + 0.15 * N,
+    drainModifier:      0.10 * N - 0.05 * C,
+    socialness:         0.35 * E + 0.10 * A
+  };
+}
 function assignPersona(agent, archetypes, opts) {
   opts = opts || {};
   const seedSalt = opts.seed || 0;
@@ -2304,7 +2327,21 @@ function assignPersona(agent, archetypes, opts) {
   rng(); rng(); rng(); // warm-up: decorrelate sequential ids
   const idx = Math.floor(rng() * candidates.length) % candidates.length;
   const arch = candidates[idx];
-  const behavior = _pJitter(arch.behavior || {}, rng, jitter);
+  let _baseBehavior = arch.behavior || {};
+  const _useBigFive = (opts.useBigFive === false) ? false
+    : (opts.useBigFive === true ? true
+       : (typeof PERSONA_USE_BIGFIVE !== 'undefined' ? PERSONA_USE_BIGFIVE : true));
+  if (_useBigFive) {
+    const _d = _bigFiveBehaviorDelta(arch.bigFive || {});
+    const _merged = Object.assign({}, _baseBehavior);
+    for (const _k of Object.keys(_P_BOUNDS)) {
+      const _b = typeof _merged[_k] === 'number' ? _merged[_k] : 0;
+      const _bd = _P_BOUNDS[_k];
+      _merged[_k] = _pClamp(_b + (_d[_k] || 0), _bd[0], _bd[1]);
+    }
+    _baseBehavior = _merged;
+  }
+  const behavior = _pJitter(_baseBehavior, rng, jitter);
   return {
     archetypeId: arch.id,
     label:  arch.label,
