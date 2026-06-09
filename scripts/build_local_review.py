@@ -18,6 +18,7 @@ os.makedirs(ASSETS, exist_ok=True)
 SOCIAL = os.path.join(ROOT, '00_Project_Strategy', 'social')
 T5 = os.path.join(SOCIAL, 'series2_tech_post5_living_patient_agent.md')
 T6 = os.path.join(SOCIAL, 'series2_tech_post6_chipsoft_dependency.md')
+T7 = os.path.join(SOCIAL, 'series2_tech_post7_living_agents_active_brain.md')
 CMP = os.path.join(ROOT, 'scripts', 'output', 'persona_ab_comparison.json')
 FIGDATA = os.path.join(ROOT, 'scripts', 'output', 'persona_ab_figure_data.txt')
 
@@ -86,7 +87,8 @@ figdata = read(FIGDATA)
 meta = j['config']
 
 POSTS = {
-    'post5': ('The Living Patient Agent', md2html(read(T5))),
+    'post7': ('The Living Patient — the active brain (concept)', md2html(read(T7))),
+    'post5': ('The Persona Layer', md2html(read(T5))),
     'post6': ('Chipsoft & the Dependency Problem', md2html(read(T6))),
 }
 
@@ -193,10 +195,12 @@ img{max-width:100%;border:1px solid var(--line);border-radius:10px}
 <section id="posts">
   <h2>Blog posts (draft — not published)</h2>
   <div class="tabbar">
-    <button data-tab="post5" class="active">T5 · Living Patient Agent</button>
+    <button data-tab="post7" class="active">T7 · Living Patient (concept)</button>
+    <button data-tab="post5">T5 · Persona Layer</button>
     <button data-tab="post6">T6 · Chipsoft / Dependency</button>
   </div>
-  <div id="post5" class="post active markdown">__POST5__</div>
+  <div id="post7" class="post active markdown">__POST7__</div>
+  <div id="post5" class="post markdown">__POST5__</div>
   <div id="post6" class="post markdown">__POST6__</div>
 </section>
 
@@ -227,6 +231,7 @@ repl = {
     '__PERSONA_SIG__': persona_sig,
     '__SOLL_ROWS__': soll_html,
     '__POST5__': POSTS['post5'][1], '__POST6__': POSTS['post6'][1],
+    '__POST7__': POSTS['post7'][1],
     '__FIGDATA__': _h.escape(figdata),
 }
 for k, v in repl.items():
@@ -253,6 +258,7 @@ def slim_replay(path):
                 'conditions': [cc.split(' (')[0] for cc in s.get('conditions', [])][:3],
                 'codes': [cc.split('(')[-1].split('/')[0] for cc in s.get('conditions', []) if '(' in cc][:4],
                 'outcome': s['outcome'], 'hp': s['hp_timeline'],
+                'state': s.get('state_timeline'),
             }
             for s in r.get('agent_stories', [])
         ],

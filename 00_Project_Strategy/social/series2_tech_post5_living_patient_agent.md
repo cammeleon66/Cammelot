@@ -1,4 +1,4 @@
-# Series 2 — Architecture | Post T5: The Living Patient Agent — Giving 45 Pixel Citizens a Personality
+# Series 2 — Architecture | Post T5: The Persona Layer — Giving 45 Pixel Citizens a Personality
 
 **Status:** Ready to publish (2026-06-09)
 **Target:** LinkedIn (AI/ML researchers, agent builders, healthcare-AI people, the Park et al. crowd)
@@ -12,7 +12,9 @@
 
 In Post T3 I admitted the weakest part of Cammelot: the citizens didn't really *think*. Their reflections were pattern-matched strings. Their thoughts were five hard-coded sentences per health state. Every anxious patient said the same thing. I closed that post with a promise — "if I were rebuilding it, the personality would modulate the prompt, not the template selection."
 
-This is that rebuild. I call it the **Living Patient Agent**.
+This is that rebuild — Cammelot’s **persona layer**.
+
+> **A note on names.** An earlier draft of this post called the persona layer the “Living Patient Agent.” I’ve since reserved that term for a different, bigger idea: the **SOLL product concept** of an autonomous “active brain” on top of clean data that does *proactive preventative care* — reaching out to people before they deteriorate. That concept (and how it generalises to a *Living Citizen* and a *Living Store*) is **Post T7**. This post is the narrower, purely *methodological* sibling: how I give **simulated** citizens distinct, reproducible personalities without breaking the science.
 
 The goal was simple to state and annoying to engineer: I wanted the 45 citizens of Cammelot to feel like 45 different people — their own voice, their own way of dealing with illness, their own decisions about whether to trust the system — *without* breaking the thing that makes the simulation scientifically useful: reproducibility.
 

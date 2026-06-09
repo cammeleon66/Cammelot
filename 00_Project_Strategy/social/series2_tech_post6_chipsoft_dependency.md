@@ -4,7 +4,7 @@
 **Target:** LinkedIn (healthcare IT, CISOs, platform architects, policy people)
 **Tags:** #HealthcareSecurity #ConcentrationRisk #Ransomware #AgenticAI #Resilience #Cammelot
 
-> **Series note:** Series 2 is about architecture — agent identity, memory, cognition, persona, and resilience. This is **Post T6 (resilience & concentration risk)**; it follows **T5 (the living patient agent)** and calls back to **T2 (the forged Mordred agent)** and **T3 (the FHIR memory / cognitive loop)**.
+> **Series note:** Series 2 is about architecture — agent identity, memory, cognition, persona, and resilience. This is **Post T6 (resilience & concentration risk)**; it follows **T5 (the persona layer)** and **T7 (the living-patient concept)** and calls back to **T2 (the forged Mordred agent)** and **T3 (the FHIR memory / cognitive loop)**.
 
 ---
 

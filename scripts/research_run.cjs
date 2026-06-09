@@ -267,6 +267,7 @@ const giniRaw = [];
 const LETHAL_CODES = ['I25','I50','C34','J44','F03'];
 const trackAgents = (global._agents || []).filter(a => {
   if (a.type !== 'patient' && a.type !== 'citizen') return false;
+  if (process.env.TRACK_ALL) return true; // replay capture: populate the whole town
   if (a.age >= 65) return true;
   if (a.conditions && a.conditions.length >= 2) return true;
   if (a.conditions && a.conditions.some(c => LETHAL_CODES.includes(c.code))) return true;
@@ -446,6 +447,7 @@ const results = {
         final_hp: Math.round(a.hp),
         max_wait_weeks: Math.round(Math.max(...timeline.map(t => t.waitWeeks)) * 10) / 10,
         hp_timeline: timeline.filter((_,i) => i % 3 === 0).map(t => t.hp), // every 30 cycles
+        state_timeline: timeline.filter((_,i) => i % 3 === 0).map(t => t.state), // aligned with hp_timeline
         key_moments: timeline.filter(t => 
           t.hp < 50 || t.waitWeeks > 4 || t.state === 'dead' || t.state === 'emergency'
         ).slice(0, 10),
