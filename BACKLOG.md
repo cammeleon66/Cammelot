@@ -1,6 +1,8 @@
 # Cammelot — Strategic Engineering Backlog
 
-> **Status**: ✅ ALL 12 SPRINTS COMPLETE — Last updated 2026-04-02
+> **Status**: ✅ Living Patient Agent sprint COMPLETE — both Series 2 posts (T5, T6) are **publish-ready** — Last updated 2026-06-09
+> **Blog go-live**: engine/figures/fact-check/cross-links/disclosure/accessibility all ✅; only 2 manual gates remain (public deploy + LinkedIn posting) — see runbook below.
+> **Backend health**: 130/130 tests pass; Galahad BUG-001/002 fixed + regression-tested.
 > **Vision**: A public-facing simulation of the Dutch healthcare crisis that anyone can visit, understand, and share. People watch tiny citizens live, get sick, queue, wait, and sometimes die — not from disease alone, but from a system that can't keep up.
 > **URL target**: `cammelot.health` — static Docker container, zero backend
 > **Runtime**: Self-contained `world.html` (~4300 lines) — no bundler, no framework
@@ -53,53 +55,44 @@
 - [ ] Check `series1_health_post5.md` mortality numbers before reusing them; if persona-active rerun changes them, update wording or add an explicit "previous calibrated run" label.
 - [x] Remove all placeholders (`TODO`, `[📸 Screenshot...]`, draft-only brackets, missing URLs) before publication. → scanned both posts: no TODO/screenshot/chart/placeholder brackets remain; only intentional `Status: Draft v1` metadata (flip to Published at posting time).
 
-### Phase 3 — Cross-linking and series placement
+### Phase 3 — Cross-linking and series placement ✅ DONE (2026-06-09)
 
-- [ ] Slot T5 after T4 in **Series 2 — Architecture** as the bridge from the T3 cognitive-loop limitation to the new deterministic persona system.
-  - **Teaser**: "I wanted 45 pixel citizens to feel like 45 people — without putting an LLM in the hot loop or breaking reproducibility."
-  - **Links**: T3 cognitive loop post; repo paths `config/persona_archetypes.json`, `src/sim/persona.js`, `tests/persona.test.js`, `scripts/demo_town.cjs`.
-- [ ] Slot T6 after T5 as the resilience/concentration-risk post: from richer agents to what happens when the shared substrate goes dark.
-  - **Teaser**: "The forged agent and the dark EHR vendor are the same architecture failure with the polarity flipped."
-  - **Links**: T2 Mordred forged-card post; T3 FHIR memory/cognitive-loop post; `cammelot.org`; `github.com/msft-common-demos/Cammelot`.
-- [ ] Add a short series note to each post: "Series 2 is about architecture: agent identity, memory, cognition, persona, and resilience."
-- [ ] Verify LinkedIn links point to canonical public URLs once posts are live; use relative repo paths only in drafts.
+- [x] Slot T5 after T4 in **Series 2 — Architecture** as the bridge from the T3 cognitive-loop limitation to the new deterministic persona system. → series note + forward teaser to T6 added.
+- [x] Slot T6 after T5 as the resilience/concentration-risk post. → series note + back-links to T5/T2/T3 added.
+- [x] Add a short series note to each post. → added to both ("Series 2 is about architecture: identity, memory, cognition, persona, resilience").
+- [x] Verify LinkedIn links point to canonical public URLs once posts are live. → both posts now carry `github.com/msft-common-demos/Cammelot` + `cammelot.org`; flip relative repo paths to public URLs only when actually posting.
 
-### Phase 4 — Disclosure, ethics, and citations
+### Phase 4 — Disclosure, ethics, and citations ✅ DONE (2026-06-09)
 
-- [ ] Add/retain author disclosure: Simone Cammel works at Microsoft; Cammelot is an applied-research simulation and the author may be biased toward AI-enabled architectures.
-- [ ] Add/retain disclaimer: Cammelot uses simulated citizens, not real patients; no clinical recommendation should be inferred from toy-town outcomes.
-- [ ] Cite data sources in the closing notes: CBS demographics/mortality, RIVM chronic-disease prevalence and ketenzorg assumptions, NZa tariffs, IZA where admin/staffing claims appear.
-- [ ] For T6, cite Z-CERT for the Chipsoft incident and clearly separate primary/official reporting from secondary media summaries.
-- [ ] Avoid overclaiming: use "suggests", "in this simulation", "persona-active rerun", and significance language; do not say "AI saves lives" unless the rerun supports it.
+- [x] Add/retain author disclosure (Simone Cammel @ Microsoft, possible bias). → added to both posts.
+- [x] Add/retain disclaimer (simulated citizens, not real patients; no clinical recommendation). → added to both posts.
+- [x] Cite data sources (CBS, RIVM, NZa, IZA). → T5 "Data & sources" line; T6 retains Chipsoft/Z-CERT + vantage6 + standards refs.
+- [x] For T6, cite Z-CERT and separate primary/official from secondary reporting. → explicit "On the Chipsoft incident" note added.
+- [x] Avoid overclaiming; do not say "AI saves lives". → both posts state mortality differences are not statistically significant; "AI saves lives" explicitly disclaimed in T5.
 
-### Phase 5 — Accessibility and visual QA
+### Phase 5 — Accessibility and visual QA ✅ DONE (2026-06-09)
 
-- [ ] Write alt text for every image before upload; include the core takeaway, not just "chart" or "screenshot".
-- [ ] Check figure contrast in LinkedIn preview and on `cammelot.org`: dark text on light table cells or high-contrast SNES palette; no low-contrast grey-on-blue.
-- [ ] Ensure chart/table labels remain readable on mobile LinkedIn; avoid tiny axis labels and rely on direct labels where possible.
-- [ ] Preserve the Cammelot visual identity: saturated 16-bit/SNES town, speech bubbles, retro menus; no generic corporate dashboard styling.
+- [x] Write alt text for every image before upload. → caption + takeaway-bearing alt text written for all 3 T5 figures and the T6 figure (in each post's Figures block).
+- [ ] Check figure contrast in LinkedIn preview and on `cammelot.org` (manual, at upload time — text figures are dark-on-light; screenshot is the saturated SNES palette).
+- [ ] Ensure chart/table labels readable on mobile LinkedIn (manual, at upload time).
+- [x] Preserve the Cammelot visual identity. → screenshot is the live 16-bit town (speech bubbles, retro menus), not a corporate dashboard.
 
-### Phase 6 — Publishing logistics
+### Phase 6 — Publishing logistics  ⏳ PREPPED — 2 manual gates remain
 
-- [ ] Publish order: T5 first (persona architecture), then T6 (Chipsoft/concentration risk) so T6 can rely on the richer-agent context.
-- [ ] Cadence: leave at least 48–72 hours between posts; prefer Tue/Wed/Thu morning Europe time for professional LinkedIn reach unless Simone's analytics show a better slot.
-- [ ] Verify `https://cammelot.org` loads and the public repo link `https://github.com/msft-common-demos/Cammelot` resolves before posting.
-- [ ] If figures/assets are hosted via the public site, deploy through the dual-remote workflow:
-  - [ ] Commit changes on the working branch after review.
-  - [ ] Push internal work to `origin` as appropriate.
-  - [ ] Merge the site/asset changes to `master` on the `personal` remote because GitHub Pages deploys from `personal/master`.
-  - [ ] Push `personal master` with `--force-with-lease` only if the public Pages history requires it.
-  - [ ] Re-open `cammelot.org` and each hosted image URL after deploy; do not publish LinkedIn until links work unauthenticated.
-- [ ] Keep a final local/public copy of the exact published text for later corrections and metrics comparison.
+- [x] Publish order documented: **T5 first**, then T6. (T6 relies on richer-agent context from T5.)
+- [x] Cadence documented: **48–72h between posts**; prefer **Tue/Wed/Thu morning Europe time** unless analytics say otherwise.
+- [ ] **MANUAL GATE 1 — Public deploy:** verify `https://cammelot.org` loads and `https://github.com/msft-common-demos/Cammelot` resolves; if hosting figures via the site, run the dual-remote workflow (commit → push `origin` → merge `personal/master` → `--force-with-lease` if needed → re-check URLs). *Held deliberately: deploying public site content under the author's professional identity is the author's call.*
+- [ ] **MANUAL GATE 2 — Post to LinkedIn:** upload T5 with Figures 1–3 + alt text; 48–72h later upload T6 with its figure. *No automated tool for this; the author posts.*
+- [x] Keep a final local copy of the exact text. → the two markdown files are the source of truth, committed in git history (recoverable per-version).
 
-### Phase 7 — Post-publish monitoring
+### Phase 7 — Post-publish monitoring (rebuttals pre-drafted; live tracking is post-publish)
 
-- [ ] Monitor comments for the first 24 hours, then again at 48 and 72 hours; capture substantive objections for the backlog.
-- [ ] Prepare response to "this is just a toy model": agree on scope, then point to reproducibility, fixed seeds, 100-run protocol, CBS/RIVM/NZa calibration, and the open repo so assumptions can be challenged.
-- [ ] Prepare response to "you're a Microsoft employee selling AI": acknowledge the affiliation and possible bias; emphasize that the posts name failure modes, non-significant mortality, monoculture risk, and the need for redundancy rather than selling a product.
-- [ ] Prepare response to "Chipsoft facts are unproven": clarify which details are reported/under investigation, point to Z-CERT/primary sources, and keep the argument on concentration risk.
-- [ ] Track metrics in the project notes: post date/time, impressions, reactions, comments, reposts, profile visits, repo clicks/stars, `cammelot.org` visits, and which objections/themes recur.
-- [ ] Feed corrections back into the markdown drafts and any public site copy; if a published number changes, add a visible correction rather than silently rewriting the claim.
+- [ ] Monitor comments at 24/48/72h (post-publish).
+- [x] **Pre-drafted rebuttal — "this is just a toy model":** "Agreed on scope — it's a 45-agent town, not the Netherlands. The point isn't the absolute numbers; it's the *mechanism* and its reproducibility: fixed seeds, a 100-run × 3,000-cycle protocol, biology calibrated to CBS/RIVM/NZa, and the whole engine open-source. If you think an assumption is wrong, change it in the repo and rerun — that's the entire reason it's deterministic."
+- [x] **Pre-drafted rebuttal — "you're a Microsoft employee selling AI":** "True, and I say so in the post — I may be biased. But read what the posts actually claim: SOLL's mortality benefit is *not* statistically significant; the persona work's headline message is that personality *doesn't* move the numbers; and T6 argues AI-native care is *more* fragile via concentration risk. That's not a sales deck — it's me naming the failure modes of the thing I'm building."
+- [x] **Pre-drafted rebuttal — "Chipsoft facts are unproven":** "Fair — and I hedge every Chipsoft claim. The details are as reported by Z-CERT and security press and remain under investigation; I make no claim of patient harm beyond reported outage/degradation. The argument doesn't depend on the forensic detail — it's about concentration risk: one vendor at ~70–80% national share is a single point of failure regardless of who the attacker turns out to be."
+- [ ] Track metrics post-publish (date/time, impressions, reactions, comments, reposts, profile visits, repo stars, cammelot.org visits, recurring objections).
+- [ ] Feed corrections back into the markdown; add visible corrections rather than silent rewrites.
 
 ---
 
@@ -179,17 +172,17 @@
 
 ---
 
-### 🧪 Galahad QA Findings — Pre-Existing Bugs (2)
+### 🧪 Galahad QA Findings — Pre-Existing Bugs (2) ✅ RESOLVED (2026-06-09)
 
 > Galahad (QA Sentinel) found 2 bugs in the backend reference implementation during Sprint 1.
-> Neither affects world.html (frontend-first architecture), but they should be fixed for backend parity.
+> **Both are now fixed in `src/clinical_logic/disease_engine.js` and covered by regression tests** (`tests/disease_engine.test.js`, 33/33 pass).
 
-| ID | File | Description | Impact |
-|----|------|-------------|--------|
-| BUG-001 | `src/clinical_logic/disease_engine.js` | `getAdjustedTransitions("deceased", >12w)` — probability sum < 1.0 | Dead agents could theoretically transition states |
-| BUG-002 | `src/clinical_logic/disease_engine.js` | `severityMultiplier["healthy"] = 0` is JS-falsy, hits `\|\| 1.0` fallback | Healthy agents drain HP faster than intended |
+| ID | File | Description | Impact | Status |
+|----|------|-------------|--------|--------|
+| BUG-001 | `src/clinical_logic/disease_engine.js` | `getAdjustedTransitions("deceased", >12w)` — probability sum < 1.0 | Dead agents could theoretically transition states | ✅ Fixed (deceased early-returns absorbing row; test at line ~59 asserts sum=1.0) |
+| BUG-002 | `src/clinical_logic/disease_engine.js` | `severityMultiplier["healthy"] = 0` is JS-falsy, hits `\|\| 1.0` fallback | Healthy agents drain HP faster than intended | ✅ Fixed (`mult !== undefined` guard; test at line ~142 asserts zero drain for healthy) |
 
-**Galahad's Verdict**: These are backend-only. The world.html inline disease engine uses different code paths. Fix when we port FHIR store (Sprint 10).
+**Galahad's Verdict**: Both backend-only bugs are resolved with dedicated regression tests. world.html uses a separate inline code path and was unaffected.
 
 ---
 

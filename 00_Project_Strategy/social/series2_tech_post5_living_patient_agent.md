@@ -1,8 +1,10 @@
 # Series 2 — Architecture | Post T5: The Living Patient Agent — Giving 45 Pixel Citizens a Personality
 
-**Status:** Draft v1
+**Status:** Ready to publish (2026-06-09)
 **Target:** LinkedIn (AI/ML researchers, agent builders, healthcare-AI people, the Park et al. crowd)
 **Tags:** #GenerativeAgents #LLM #AgentDesign #HealthcareAI #ReproducibleResearch #Cammelot
+
+> **Series note:** Series 2 is about architecture — agent identity, memory, cognition, persona, and resilience. This is **Post T5 (persona)**; it follows **T3 (the cognitive loop)** and sets up **T6 (resilience & concentration risk)**.
 
 ---
 
@@ -141,8 +143,30 @@ For Cammelot specifically, it means the 100-run studies can contain genuinely di
 
 The library is open. If you think Cammelot is missing an archetype — and it definitely is — the JSON is right there. Send me your Dutch citizen.
 
-[🔗 GitHub: github.com/msft-common-demos/Cammelot]
+[🔗 GitHub: github.com/msft-common-demos/Cammelot] · [🌐 Live town: cammelot.org]
+
+*Next in Series 2 → Post T6, "When Chipsoft Goes Dark": what happens when the shared substrate every agent depends on goes offline. The forged agent (T2) and the dark vendor are the same architecture failure with the polarity flipped.*
 
 ---
+
+### Figures
+
+**Figure 1 — The persona genome in one town.** `scripts/output/persona_demo_table.txt`
+- *Caption:* A deterministic 45-citizen Cammelot town: each citizen is matched to one of 16 authored persona archetypes by age and gender, with seeded behavioural jitter and a reproducible sample thought. This run produced 15 of 16 archetypes.
+- *Alt text:* Table listing 45 Cammelot citizens with age, gender, persona archetype, care-seeking bias, compliance, trust, and a sample thought; archetypes range from "The Curious Child" to "The Quiet Fatalist".
+
+**Figure 2 — Different voices, same biology.** `scripts/output/world_town_screenshot.png`
+- *Caption:* The live 16-bit town. The same waiting-list pressure now produces different patient voices — personality changes behaviour around care, not the Markov disease model underneath.
+- *Alt text:* Pixel-art Cammelot town with named citizens walking between buildings; a child shows a speech bubble reading "My teacher is really nice", a Town Feed lists persona-driven social interactions, and an IST stats bar shows a 30% administrative load.
+
+**Figure 3 — Personality is texture, not distortion.** `scripts/output/persona_ab_figure_data.txt`
+- *Caption:* Clean A/B over 100 runs × 3,000 cycles. With persona behaviour ON vs OFF on the same engine, headline outcomes do not move significantly (IST deaths 6.16 vs 6.28, Cohen's d = −0.045). The IST-vs-SOLL effects (burnout, admin waste, proactive alerts) remain intact.
+- *Alt text:* Two data tables. Table A compares personas OFF vs ON in IST mode, showing near-identical deaths and burnout with tiny effect sizes. Table B compares IST and SOLL, showing large burnout and administrative-waste reductions under SOLL.
+
+---
+
+*Disclosure: I (Simone Cammel) work at Microsoft. Cammelot is an independent applied-research project, and I may be biased toward AI-enabled architectures. Cammelot models simulated citizens, not real patients — nothing here is clinical advice or a recommendation about any real system or product.*
+
+*Data & sources: demographics and mortality calibrated to **CBS**; chronic-disease prevalence and progression to **RIVM**; care tariffs to **NZa**; administrative-burden and staffing assumptions to **IZA**. Reproducibility: fixed seeds, 100-run protocol, open code. Mortality differences between modes are reported with effect sizes and are not always statistically significant — I do not claim "AI saves lives."*
 
 *Technical specs: 16 persona archetypes in `config/persona_archetypes.json`, each with Big Five scores, 7 behavioural parameters, and 8 situational thought sets. Deterministic assignment via `src/sim/persona.js` (zero dependencies, 13 unit tests). RNG mirrors the engine's `hashCode` + LCG `seededRandom` exactly, including three warm-up draws and default behaviour jitter of 0.06. Behavioural parameters influence care-seeking, compliance, refusal, second-opinion drive, and social contagion — never the Markov disease engine. Optional `scripts/generate_personas.cjs` regenerates the library via a local Ollama model with schema validation and graceful fallback. Park et al. reference: "Generative Agents: Interactive Simulacra of Human Behavior" (Stanford, 2023).*

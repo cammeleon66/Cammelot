@@ -1,8 +1,10 @@
 # Series 2 — Architecture | Post T6: When Chipsoft Goes Dark — The Monoculture Risk Nobody Wants to Price
 
-**Status:** Draft v1
+**Status:** Ready to publish (2026-06-09)
 **Target:** LinkedIn (healthcare IT, CISOs, platform architects, policy people)
 **Tags:** #HealthcareSecurity #ConcentrationRisk #Ransomware #AgenticAI #Resilience #Cammelot
+
+> **Series note:** Series 2 is about architecture — agent identity, memory, cognition, persona, and resilience. This is **Post T6 (resilience & concentration risk)**; it follows **T5 (the living patient agent)** and calls back to **T2 (the forged Mordred agent)** and **T3 (the FHIR memory / cognitive loop)**.
 
 ---
 
@@ -80,8 +82,22 @@ If your healthcare architecture has a box that 80% of the country depends on, th
 
 The simulation is open. Fork it, switch on SOLL, then kill the FHIR store mid-run and watch what your "AI-native future" does without its single source of truth.
 
-[🔗 GitHub: github.com/msft-common-demos/Cammelot]
+[🔗 GitHub: github.com/msft-common-demos/Cammelot] · [🌐 Live town: cammelot.org]
+
+*Earlier in Series 2: Post T5, "The Living Patient Agent" (richer agents) and Post T2, "Mordred" (the forged agent card). This post is their mirror image — not one bad node, but one shared node everyone depends on.*
 
 ---
+
+### Figure
+
+**Figure 1 — Efficiency bought with dependency.** `scripts/output/persona_ab_figure_data.txt`
+- *Caption:* SOLL vs IST over 100 runs × 3,000 cycles: administrative waste −83.3% and average GP burnout −76% — gains achieved by routing more of care through shared AI dependencies. Efficiency and fragility are bought with the same coin.
+- *Alt text:* Data table comparing IST and SOLL simulation modes; SOLL shows large reductions in administrative waste and GP burnout and a rise in proactive alerts and chronic-care interventions, while mortality differences are small and not statistically significant.
+
+---
+
+*Disclosure: I (Simone Cammel) work at Microsoft. Cammelot is an independent applied-research project, and I may be biased toward AI-enabled architectures. Cammelot models simulated citizens, not real patients — nothing here is clinical advice. The SOLL figures are simulation output, not measured real-world results; mortality differences between modes are not statistically significant.*
+
+*On the Chipsoft incident: details are as reported by **Z-CERT** (the Dutch healthcare CERT) and security press and remain under investigation. I separate official/primary reporting from secondary media summaries, keep all claims hedged, and make no assertion of patient harm beyond reported outage and degradation — the argument here is about concentration risk, not proven clinical harm.*
 
 *References: Chipsoft / HiX ransomware incident, 7 April 2026 — Z-CERT (Dutch healthcare CERT); reporting via SecurityAffairs and The Cyber Express. Chipsoft HiX EHR market share in Dutch hospitals (~70–80%). Vantage6 Harbor registry supply-chain breach (April 2026). A2A Protocol Specification v1.0.0 (Linux Foundation / Google, 2025). SMART-on-FHIR v2.2.0 (HL7, 2023). NEN 7510/7512/7513 (Dutch healthcare information security standards). Cammelot SOLL metrics: 100-run × 3,000-cycle personas-ON study, see scripts/output/persona_ab_comparison.json and scripts/output/deep_research_100runs.json.*
