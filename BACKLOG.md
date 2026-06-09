@@ -82,6 +82,7 @@
 - [x] Publish order documented: **T5 first**, then T6. (T6 relies on richer-agent context from T5.)
 - [x] Cadence documented: **48–72h between posts**; prefer **Tue/Wed/Thu morning Europe time** unless analytics say otherwise.
 - [ ] **MANUAL GATE 1 — Public deploy:** verify `https://cammelot.org` loads and `https://github.com/msft-common-demos/Cammelot` resolves; if hosting figures via the site, run the dual-remote workflow (commit → push `origin` → merge `personal/master` → `--force-with-lease` if needed → re-check URLs). *Held deliberately: deploying public site content under the author's professional identity is the author's call.*
+  - ✅ **Fixed blank-card bug**: the OG/Twitter `<meta>` images referenced by `site/index.html` (`/og-image.png`) and `site/world.html` (`/assets/og-preview.png`) **did not exist** — LinkedIn would have unfurled a blank card. Both are now generated at the exact OG size (1200×630) from the live town via `scripts/capture_og_image.cjs` and committed. They take effect on the public card once Gate 1 deploy happens.
 - [ ] **MANUAL GATE 2 — Post to LinkedIn:** upload T5 with Figures 1–3 + alt text; 48–72h later upload T6 with its figure. *No automated tool for this; the author posts.*
 - [x] Keep a final local copy of the exact text. → the two markdown files are the source of truth, committed in git history (recoverable per-version).
 
