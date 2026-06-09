@@ -28,7 +28,7 @@ This is the part of the Chipsoft incident that should keep planners up at night.
 
 ### I built this attack before it was news
 
-In Post T2 I introduced Mordred — a forged agent in my Cammelot simulation who published a fake "cardiologist" card with a zero-week wait time, vacuumed up every heart-patient referral, treated no one, and collapsed the cardiology pathway in 47 cycles. That experiment was about a *malicious* agent.
+In Post T2 I introduced Mordred — a forged agent in my Cammelot simulation who published a fake "cardiologist" card with a zero-week wait time, vacuumed up every heart-patient referral, treated no one, and collapsed the cardiology pathway in well under 50 cycles. That experiment was about a *malicious* agent.
 
 Chipsoft is the other half of the same lesson: you don't need a malicious *insider*. You need a single *shared* component, and an outage — accidental or hostile — does the rest. Mordred showed how one corrupted node poisons a mesh. Chipsoft showed how one *unavailable* node starves it. Same architectural sin, two symptoms: **the system trusts that one thing will always be there, and builds no answer for the day it isn't.**
 
@@ -38,7 +38,7 @@ In Cammelot terms: imagine the FHIR memory store — the shared substrate every 
 
 ### Why agentic AI makes this *worse* before it makes it better
 
-Here's the uncomfortable part for anyone (me included) selling the "AI-native healthcare" vision. The SOLL mode of Cammelot — the optimistic future where AI removes 83.3% of the administrative waste and cuts average GP burnout by 76% — achieves those numbers precisely by **increasing dependency**. Ambient AI scribes, autonomous referral routing, digital-twin triage: every one of those is a new thing that has to be *up* for care to flow.
+Here's the uncomfortable part for anyone (me included) selling the "AI-native healthcare" vision. The SOLL mode of Cammelot — the optimistic future where AI removes 83.3% of the administrative waste and cuts average GP burnout by 76% — achieves those numbers precisely by **increasing dependency**. (Worth saying plainly: those two figures are partly *by construction*. Admin load is a model input I move from 30% to 5%, so the headline reductions are closer to a stated assumption than a discovered result. The genuinely *emergent* SOLL effects are different in kind — proactive alerts appearing where IST had exactly zero, and a 172% rise in chronic-care interventions.) Ambient AI scribes, autonomous referral routing, digital-twin triage: every one of those is a new thing that has to be *up* for care to flow.
 
 The more you automate the human out of the loop, the more catastrophic the loop's failure becomes. When a GP does referrals by hand and the system is down, the GP picks up the phone. When an autonomous agent does referrals and *its* dependency is down, there's no one in the chair. Efficiency and fragility are bought with the same coin. If your transformation story is "we removed the manual fallback," you didn't remove cost — you converted it into tail risk and stopped pricing it.
 
@@ -52,7 +52,7 @@ The A2A / agentic-mesh architecture I'm building Cammelot on has a genuine struc
 
 But — and I want to be precise, because the easy version of this post is "decentralise everything and you're safe" — a mesh doesn't delete concentration risk. It *moves* it:
 
-- **Shared protocol = shared vulnerability.** If 80% of agents speak the same A2A library and that library has a flaw, you've rebuilt the monoculture one layer down. (Cf. the vantage6 supply-chain breach from an earlier post: the weak point was the shared container registry, not any one hospital.)
+- **Shared protocol = shared vulnerability.** If 80% of agents speak the same A2A library and that library has a flaw, you've rebuilt the monoculture one layer down. (Cf. the vantage6 supply-chain breach from an earlier post — CVE-2026-4404, hardcoded admin credentials in the shared Harbor registry: the weak point was the shared container registry, not any one hospital.)
 - **Shared discovery = shared chokepoint.** If every agent finds every other agent through one registry, that registry *is* the new Chipsoft.
 - **Shared model = shared failure mode.** If every triage agent is the same fine-tuned model, they share the same blind spots and the same prompt-injection surface. A monoculture of *intelligence* is still a monoculture.
 
@@ -63,6 +63,8 @@ Decentralisation isn't a property you get for free by adding agents. It's a prop
 ### The four things I'd actually do
 
 This isn't hypothetical hand-wringing; it maps to concrete design choices, and I've started wiring them into the simulation:
+
+A fair objection first: isn't some of this already regulated? Partly. The EU's **NIS2 directive** classifies healthcare providers as essential entities and already mandates supply-chain risk management; the **European Health Data Space (EHDS)** governs interoperability and portability; and the Dutch **Wegiz** law mandates electronic data exchange between care providers. The gap isn't an absence of rules — it's that none of them price *vendor concentration itself*. Supply-chain mandates land on each individual hospital, not on the systemic fact that one vendor sits behind most of them. So the four moves below are less "invent new law" and more "close the concentration gap the existing frameworks leave open."
 
 1. **Treat the shared EHR/FHIR layer as critical infrastructure, not a vendor.** That means a mandated, *tested*, offline-capable fallback — the digital equivalent of the paper-and-phone mode hospitals fell back to on 7 April. If your continuity plan was never rehearsed, you don't have one.
 
@@ -100,4 +102,4 @@ The simulation is open. Fork it, switch on SOLL, then kill the FHIR store mid-ru
 
 *On the Chipsoft incident: details are as reported by **Z-CERT** (the Dutch healthcare CERT) and security press and remain under investigation. I separate official/primary reporting from secondary media summaries, keep all claims hedged, and make no assertion of patient harm beyond reported outage and degradation — the argument here is about concentration risk, not proven clinical harm.*
 
-*References: Chipsoft / HiX ransomware incident, 7 April 2026 — Z-CERT (Dutch healthcare CERT); reporting via SecurityAffairs and The Cyber Express. Chipsoft HiX EHR market share in Dutch hospitals (~70–80%). Vantage6 Harbor registry supply-chain breach (April 2026). A2A Protocol Specification v1.0.0 (Linux Foundation / Google, 2025). SMART-on-FHIR v2.2.0 (HL7, 2023). NEN 7510/7512/7513 (Dutch healthcare information security standards). Cammelot SOLL metrics: 100-run × 3,000-cycle personas-ON study, see scripts/output/persona_ab_comparison.json and scripts/output/deep_research_100runs.json.*
+*References: Chipsoft / HiX ransomware incident, 7 April 2026 — Z-CERT (Dutch healthcare CERT); reporting via SecurityAffairs and The Cyber Express. Chipsoft HiX EHR market share in Dutch hospitals (~70–80%). Vantage6 Harbor registry supply-chain breach — CVE-2026-4404 (GoHarbor/Harbor hardcoded-credentials vulnerability); vantage6 community disclosure, April 2026. EU NIS2 Directive (2022/2555). European Health Data Space (EHDS) Regulation. Dutch Wegiz (Wet elektronische gegevensuitwisseling in de zorg). A2A Protocol Specification v1.0.0 (Linux Foundation / Google, 2025). SMART-on-FHIR v2.2.0 (HL7, 2023). NEN 7510/7512/7513 (Dutch healthcare information security standards). Cammelot SOLL metrics: 100-run × 3,000-cycle personas-ON study, see scripts/output/persona_ab_comparison.json and scripts/output/deep_research_100runs.json.*

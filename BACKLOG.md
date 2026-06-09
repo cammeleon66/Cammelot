@@ -97,6 +97,23 @@
 
 ---
 
+### Pre-publish critical review — APPLIED 2026-06-09 (5 expert lenses)
+
+A hard adversarial pass (AI / researcher / clinician / security / policy) before any public review. Edits applied to T5/T6 (all local, reversible; numbers preserved, caveats + framing added):
+
+- [x] **#1 Assumed-vs-Emergent split.** admin_waste (−83.3%) and most of burnout (−76%) are deterministic transforms of the admin input (30%→5%), not discovered effects (admin_waste has zero variance, d=0). Both posts now say so plainly; lead with emergent results (proactive alerts 0→316, ketenzorg +172%). Classification added to `scripts/output/persona_ab_figure_data.txt`.
+- [x] **#3 Big Five honesty.** `persona.js` stores `bigFive` but never uses it for behaviour. T5 now states Big Five is descriptive metadata, not yet wired to behaviour.
+- [x] **#4 Power/scale caveat.** T5 states N=45 (~6 deaths/run) is underpowered for mortality by design; notes the 5,000-agent ambition vs 45-agent reality.
+- [x] **#5 Biology provenance.** T5 reworded: prevalence anchored to RIVM, but per-state transition probabilities are illustrative, not individually published rates.
+- [x] **#6 Security precision.** T6 softens untraceable "47 cycles"→"well under 50"; adds CVE-2026-4404 (verified real: GoHarbor hardcoded creds; vantage6 disclosure 2 Apr 2026) inline + in references.
+- [x] **#7 Policy frameworks.** T6 now engages NIS2 / EHDS / Wegiz — argues the gap is unpriced vendor *concentration*, not absence of rules.
+- [x] **#9 Framing.** T5 determinism example swapped from a definitional metric (burnout) to an emergent one (ketenzorg +172%).
+- [x] **#2 Persona payload ("so what?").** T5 now positions personas honestly as (1) a narrative/UX layer and (2) a methodological no-distortion result, with effects at the *individual* (timing) level, not population averages.
+
+**Follow-up (future, not blocking publish):**
+- [ ] **Wire Big Five (O/C/E/A/N) into the behavioural model** in `persona.js` so the trait scores actually modulate care-seeking/compliance/etc.; re-run the A/B and update T5 if it changes the no-distortion result.
+- [ ] **#8 (optional)** Add a one-line "HP is a didactic proxy, harm model is uniform" note for clinical readers if T5/T6 get a clinician-facing edit.
+
 ## What We've Built (Sprints 1–3 ✅)
 
 | Feature | Status | Sprint |

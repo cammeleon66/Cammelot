@@ -24,3 +24,17 @@ NOTES
 - admin_waste is a deterministic model output (admin 30%->5%); no variance, so no significance test.
 - Mortality differences are NOT statistically significant at N=45; do not claim "AI saves lives".
 - sick_leave_events = 0 in all cells (burnout peaks ~39, below sick-leave threshold). Do NOT cite sick leave.
+
+CLASSIFICATION — assumed input vs emergent finding (added by pre-publish review)
+metric                 type            note
+admin_waste_eur        ASSUMED         pure transform of admin input (30%->5%); zero variance across runs (d=0)
+avg_burnout            MOSTLY ASSUMED  dominated by admin input term (admin*100); small emergent queue component
+peak_burnout           MOSTLY ASSUMED  same basis as avg_burnout
+proactive_alerts       EMERGENT        absent in IST by design; arises from SOLL agent behaviour (0 -> 316)
+ketenzorg_interv.      EMERGENT        chronic-care pathway uptake; high run-to-run variance
+er_admissions          EMERGENT        downstream of care-seeking + capacity; not significant ON vs OFF
+total/system_deaths    EMERGENT (underpowered)  N=45, ~6 deaths/run; not significant; report as mechanism, not effect
+bias_score             EMERGENT        fairness guardrail metric
+
+READING GUIDANCE: lead with EMERGENT results. Present admin/burnout reductions as
+mechanism-by-construction (a consequence of the modelled intervention), NOT as discovered effects.
