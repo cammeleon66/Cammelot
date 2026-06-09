@@ -51,21 +51,26 @@ def pct(a, b):
     return round((b - a) / abs(a) * 100, 1) if a else None
 
 
-A = j['contrasts']['IST_OFF_vs_ON']['data']   # A=OFF B=ON
-sd = A['system_deaths']
-td = A['total_deaths']
+D = j['contrasts']['IST_vs_SOLL_ON']['data']   # IST vs SOLL, personalities ON = Cammelot's baseline reality
+sd_ist, sd_soll = mean('IST_on', 'system_deaths'), mean('SOLL_on', 'system_deaths')
+td_ist, td_soll = mean('IST_on', 'total_deaths'), mean('SOLL_on', 'total_deaths')
+pa_soll = mean('SOLL_on', 'proactive_alerts')
+bo_ist, bo_soll = mean('IST_on', 'avg_burnout'), mean('SOLL_on', 'avg_burnout')
+keten_pct = pct(mean('IST_on', 'ketenzorg_interventions'), mean('SOLL_on', 'ketenzorg_interventions'))
 
 soll_rows = [
+    ('Preventable (system) deaths', mean('IST_on', 'system_deaths'), mean('SOLL_on', 'system_deaths'),
+     D['system_deaths']),
     ('Avg GP burnout', mean('IST_on', 'avg_burnout'), mean('SOLL_on', 'avg_burnout'),
-     j['contrasts']['IST_vs_SOLL_ON']['data']['avg_burnout']),
+     D['avg_burnout']),
     ('Peak GP burnout', mean('IST_on', 'peak_burnout'), mean('SOLL_on', 'peak_burnout'),
-     j['contrasts']['IST_vs_SOLL_ON']['data']['peak_burnout']),
+     D['peak_burnout']),
     ('Chronic-care (ketenzorg)', mean('IST_on', 'ketenzorg_interventions'), mean('SOLL_on', 'ketenzorg_interventions'),
-     j['contrasts']['IST_vs_SOLL_ON']['data']['ketenzorg_interventions']),
+     D['ketenzorg_interventions']),
     ('Proactive alerts', mean('IST_on', 'proactive_alerts'), mean('SOLL_on', 'proactive_alerts'),
-     j['contrasts']['IST_vs_SOLL_ON']['data']['proactive_alerts']),
+     D['proactive_alerts']),
     ('Admin waste (€)', mean('IST_on', 'admin_waste_eur'), mean('SOLL_on', 'admin_waste_eur'),
-     j['contrasts']['IST_vs_SOLL_ON']['data']['admin_waste_eur']),
+     D['admin_waste_eur']),
 ]
 
 soll_html = ''
@@ -80,7 +85,8 @@ for label, ist, soll, ct in soll_rows:
         % (label, ist, soll, ('up' if (p or 0) > 0 else 'down'), pstr,
            ct['cohen_d'], sig, siglabel))
 
-persona_sig = 'significant (p&lt;0.05)' if sd['welch']['significant'] else 'not significant'
+deaths_sig = ('statistically distinguishable' if D['system_deaths']['welch']['significant']
+              else 'not statistically distinguishable at N=45 (underpowered by design)')
 
 figdata = read(FIGDATA)
 
@@ -161,19 +167,20 @@ img{max-width:100%;border:1px solid var(--line);border-radius:10px}
 
 <section id="summary">
   <h1>Results review</h1>
-  <p class="muted">A/B study: __RUNS__ runs × __CYCLES__ cycles × 4 cells · Big Five personalities ENABLED · generated __DATE__ · source <code>persona_ab_comparison.json</code></p>
+  <p class="muted">IST vs SOLL · __RUNS__ runs × __CYCLES__ cycles · Big Five personalities <b>ON</b> (Cammelot's baseline reality) · generated __DATE__ · source <code>persona_ab_comparison.json</code></p>
 
   <div class="hl">
-    <h3 style="margin-top:0">Headline finding — personality matters most where the system fails</h3>
-    With personalities ON, preventable (<em>system</em>) deaths in <b>IST</b> fall
-    <b>__SD_OFF__ → __SD_ON__</b> (Cohen's d = __SD_D__, __PERSONA_SIG__).
-    In <b>SOLL</b> the same persona switch is non-significant on every outcome — the proactive
-    system absorbs personality.
+    <h3 style="margin-top:0">Headline — the SOLL overhaul moves the system from reactive to proactive</h3>
+    With personalities on as the baseline, switching from <b>IST</b> (today's broken system) to
+    <b>SOLL</b> (the AI-native overhaul) takes proactive interventions from <b>0 to ~__PA_SOLL__ per run</b>
+    (Cohen's d = __PA_D__), lifts chronic-care (ketenzorg) by <b>+__KETEN_PCT__%</b>, and cuts average GP
+    burnout by <b>~__BO_PCT_ABS__%</b>. Mortality is __DEATHS_SIG__ — read the death counts as mechanism, not body count.
   </div>
 
   <div class="kpi">
-    <div class="card"><div class="big down">__SD_OFF__ → __SD_ON__</div><div class="lbl">IST preventable deaths (OFF→ON) · d=__SD_D__</div></div>
-    <div class="card"><div class="big">__TD_OFF__ → __TD_ON__</div><div class="lbl">IST total deaths (OFF→ON) · d=__TD_D__ · n.s.</div></div>
+    <div class="card"><div class="big">0 → __PA_SOLL__</div><div class="lbl">Proactive AI alerts per run (IST→SOLL) · d=__PA_D__</div></div>
+    <div class="card"><div class="big">__BO_IST__ → __BO_SOLL__</div><div class="lbl">Avg GP burnout (IST→SOLL) · __BO_PCT__%</div></div>
+    <div class="card"><div class="big">__SD_IST__ → __SD_SOLL__</div><div class="lbl">Preventable deaths (IST→SOLL) · n.s. at N=45</div></div>
   </div>
 
   <h3>IST → SOLL (personalities ON): does the AI-native overhaul help?</h3>
@@ -181,9 +188,10 @@ img{max-width:100%;border:1px solid var(--line);border-radius:10px}
     <thead><tr><th>Metric</th><th>IST</th><th>SOLL</th><th>Δ vs IST</th><th>Effect</th><th>Significance</th></tr></thead>
     <tbody>__SOLL_ROWS__</tbody>
   </table>
-  <p class="muted">Admin waste and most of burnout are partly <em>by construction</em> (admin input 30%→5%);
-  proactive alerts, ketenzorg, and the IST preventable-death effect are emergent. N=45 — total-mortality
-  comparisons are underpowered by design.</p>
+  <p class="muted">Personalities are ON in both arms — this is purely IST vs SOLL, not a personality comparison.
+  Admin waste and most of burnout are partly <em>by construction</em> (admin input 30%→5%); proactive alerts
+  and ketenzorg uptake are emergent. N=45 — mortality comparisons are underpowered by design and not statistically
+  distinguishable here.</p>
 
   <h3>Watch one run play back</h3>
   <img src="assets/world_town_screenshot.png" alt="Cammelot town simulation screenshot">
@@ -226,9 +234,12 @@ document.querySelectorAll('.tabbar button').forEach(function(b){
 import html as _h
 repl = {
     '__RUNS__': str(meta['runs']), '__CYCLES__': str(meta['cycles']), '__DATE__': meta['date'][:10],
-    '__SD_OFF__': str(sd['mean_A']), '__SD_ON__': str(sd['mean_B']), '__SD_D__': str(sd['cohen_d']),
-    '__TD_OFF__': str(td['mean_A']), '__TD_ON__': str(td['mean_B']), '__TD_D__': str(td['cohen_d']),
-    '__PERSONA_SIG__': persona_sig,
+    '__PA_SOLL__': str(round(pa_soll)), '__PA_D__': str(D['proactive_alerts']['cohen_d']),
+    '__KETEN_PCT__': str(round(keten_pct)),
+    '__BO_IST__': str(bo_ist), '__BO_SOLL__': str(bo_soll), '__BO_PCT__': str(pct(bo_ist, bo_soll)),
+    '__BO_PCT_ABS__': str(abs(pct(bo_ist, bo_soll))),
+    '__SD_IST__': str(sd_ist), '__SD_SOLL__': str(sd_soll),
+    '__DEATHS_SIG__': deaths_sig,
     '__SOLL_ROWS__': soll_html,
     '__POST5__': POSTS['post5'][1], '__POST6__': POSTS['post6'][1],
     '__POST7__': POSTS['post7'][1],
