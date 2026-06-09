@@ -438,6 +438,9 @@ const results = {
       if (!a) return null;
       return {
         name: a.name, age: a.age, 
+        persona_label: (a.persona && a.persona.label) || null,
+        archetype: (a.persona && a.persona.archetypeId) || null,
+        bigFive: (a.persona && a.persona.bigFive) || null,
         conditions: (a.conditions||[]).map(c => c.name + ' (' + c.code + '/' + c.severity + ')'),
         outcome: a.hp <= 0 ? (a.causeOfDeath === 'natural' ? 'died_natural' : 'died_system') : 'survived',
         final_hp: Math.round(a.hp),

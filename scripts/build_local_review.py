@@ -248,6 +248,8 @@ def slim_replay(path):
         'agents': [
             {
                 'name': s['name'], 'age': s['age'],
+                'persona': s.get('persona_label'),
+                'bigFive': s.get('bigFive'),
                 'conditions': [cc.split(' (')[0] for cc in s.get('conditions', [])][:3],
                 'codes': [cc.split('(')[-1].split('/')[0] for cc in s.get('conditions', []) if '(' in cc][:4],
                 'outcome': s['outcome'], 'hp': s['hp_timeline'],
