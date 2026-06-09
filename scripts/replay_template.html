@@ -3,398 +3,218 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<link rel="icon" href="data:,">
-<title>Cammelot — Run Replay (private)</title>
+<title>Cammelot — Run Replay</title>
 <style>
-:root{ --bg:#0f1220; --panel:#171b2e; --ink:#e8ebf6; --muted:#9aa3c4; --line:#2a3052;
-       --accent:#5b8cff; --good:#37d39a; --amber:#ffcf5c; --bad:#ff6b6b; }
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);
-  font:15px/1.55 "Space Grotesk",-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
-header{position:sticky;top:0;z-index:10;background:rgba(15,18,32,.94);backdrop-filter:blur(8px);
-  border-bottom:1px solid var(--line);padding:12px 20px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
-header b{font-size:17px}
-.priv{font-size:12px;color:var(--amber);border:1px solid var(--amber);border-radius:999px;padding:2px 10px}
-a{color:var(--accent)}
-main{max-width:1060px;margin:0 auto;padding:18px 20px 90px}
-.controls{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 18px;
-  position:sticky;top:58px;z-index:9}
-.row{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
-button{background:#0b0e1c;color:var(--ink);border:1px solid var(--line);border-radius:9px;
-  padding:8px 14px;cursor:pointer;font:inherit}
-button.active{border-color:var(--accent);color:#fff}
-button.play{background:var(--accent);color:#06122e;font-weight:700;border-color:var(--accent)}
-input[type=range]{flex:1;min-width:220px;accent-color:var(--accent)}
-.clock{font-variant-numeric:tabular-nums;font-weight:700;font-size:16px}
-.kpis{display:flex;gap:12px;flex-wrap:wrap;margin-top:14px}
-.kpi{flex:1;min-width:120px;background:#0b0e1c;border:1px solid var(--line);border-radius:11px;padding:12px 14px}
-.kpi .v{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
-.kpi .l{color:var(--muted);font-size:12px;margin-top:2px}
-.kpi.dead .v{color:var(--bad)} .kpi.alert .v{color:var(--accent)} .kpi.keten .v{color:var(--good)}
-
-/* ── Cammelot town stage ── */
-.stage{margin-top:18px;display:grid;grid-template-columns:1fr 268px;gap:14px}
-@media(max-width:880px){ .stage{grid-template-columns:1fr} }
-.town{background:#1b3a1f;border:3px solid #0b0e1c;border-radius:14px;overflow:hidden;position:relative;
-  box-shadow:0 0 0 1px var(--line), inset 0 0 60px rgba(0,0,0,.35)}
-.town canvas{display:block;width:100%;height:auto;image-rendering:pixelated}
-.townbadge{position:absolute;left:10px;top:8px;font:11px "Press Start 2P","Space Grotesk",monospace;
-  color:#fffbe0;text-shadow:1px 1px 0 #000;letter-spacing:.5px;opacity:.85;pointer-events:none}
-.side{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
-.side h3{margin:0 0 6px;font-size:14px;color:#cdd5f7}
-.side .hint{color:var(--muted);font-size:12px}
-.detail .nm{font-weight:700;font-size:15px;display:flex;justify-content:space-between;gap:8px}
-.detail .age{color:var(--muted);font-weight:400;font-size:12px}
-.detail .persona{color:var(--accent);font-weight:600;font-size:12.5px;margin:4px 0}
-.detail .cond{color:var(--muted);font-size:12px;margin:4px 0 8px}
-.detail .st{font-size:12px;color:var(--ink);margin:4px 0}
-.detail .st b{color:var(--amber)}
-.ocean{display:flex;gap:6px;margin:8px 0}
-.ocean .t{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;
-  width:24px;height:34px;background:#0b0e1c;border:1px solid var(--line);border-radius:5px;position:relative;overflow:hidden}
-.ocean .t b{font-size:9px;color:var(--muted);position:absolute;top:1px;z-index:2}
-.ocean .t i{display:block;width:100%;background:linear-gradient(#5b8cff,#37d39a);opacity:.6}
-.bar{height:14px;background:#0b0e1c;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-top:6px}
-.bar > i{display:block;height:100%;width:100%;transition:width .15s linear,background .3s}
-.hpnum{font-size:11px;color:var(--muted);margin-top:3px;font-variant-numeric:tabular-nums}
-.legend{color:var(--muted);font-size:12px;margin-top:10px;line-height:1.7}
-.legend .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:middle}
-.ticker{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin-top:16px;
-  max-height:170px;overflow:auto}
-.ticker h3{margin:0 0 8px}
-.ev{font-size:13px;padding:4px 0;border-bottom:1px dashed var(--line);color:var(--muted)}
-.ev b{color:var(--ink)} .ev.sys b{color:var(--bad)} .ev.nat b{color:var(--amber)}
-.discl{margin-top:10px}
-.discl summary{cursor:pointer;color:var(--muted);font-size:13px}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-top:12px}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
-.card.ghost{opacity:.42;filter:grayscale(.7)}
-.card .nm{font-weight:700;display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:14px}
-.card .age{color:var(--muted);font-size:12px;font-weight:400}
-.card .persona{font-size:12px;color:var(--accent);font-weight:600;margin:2px 0}
-.card .cond{color:var(--muted);font-size:11px;margin:2px 0 6px;min-height:24px}
-</style></head>
+  :root{ --bg:#0d1117; --panel:#161b22; --line:#30363d; --ink:#e6edf3; --mut:#9da7b3;
+         --ist:#e5534b; --soll:#3fb950; --accent:#58a6ff; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font-family:"Space Grotesk",system-ui,Segoe UI,Roboto,Arial,sans-serif;}
+  header{padding:16px 22px;border-bottom:1px solid var(--line);display:flex;
+         align-items:baseline;gap:14px;flex-wrap:wrap}
+  header h1{font-size:18px;margin:0;letter-spacing:.3px}
+  header .sub{color:var(--mut);font-size:13px}
+  header a{color:var(--accent);text-decoration:none;font-size:13px;margin-left:auto}
+  .wrap{max-width:1180px;margin:0 auto;padding:18px 22px 60px}
+  .modebar{display:flex;gap:8px;margin:6px 0 14px}
+  .modebar button{flex:0 0 auto;padding:8px 18px;border-radius:8px;cursor:pointer;
+       border:1px solid var(--line);background:var(--panel);color:var(--ink);
+       font:600 13px/1 inherit;letter-spacing:.4px}
+  .modebar button.active[data-m=IST]{border-color:var(--ist);background:#2a1413;color:#ffb3ae}
+  .modebar button.active[data-m=SOLL]{border-color:var(--soll);background:#10260f;color:#9ff0a3}
+  .stage{position:relative;border:1px solid var(--line);border-radius:12px;overflow:hidden;
+         background:#000;aspect-ratio:1100/599;box-shadow:0 8px 30px rgba(0,0,0,.4)}
+  .stage img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;
+             image-rendering:pixelated}
+  .badge{position:absolute;top:10px;left:10px;z-index:5;font:700 12px/1 inherit;
+         padding:6px 10px;border-radius:6px;letter-spacing:.5px}
+  .badge.IST{background:rgba(229,83,75,.92);color:#fff}
+  .badge.SOLL{background:rgba(63,185,80,.92);color:#04210a}
+  .loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+           color:var(--mut);font-size:14px;z-index:4}
+  .controls{display:flex;align-items:center;gap:12px;margin:14px 0 4px;flex-wrap:wrap}
+  .controls button{padding:8px 16px;border-radius:8px;border:1px solid var(--line);
+       background:var(--panel);color:var(--ink);cursor:pointer;font:600 13px/1 inherit}
+  .controls button.play{background:var(--accent);border-color:var(--accent);color:#06223f}
+  .scrub{flex:1 1 280px;min-width:200px}
+  input[type=range]{width:100%;accent-color:var(--accent)}
+  .tcount{color:var(--mut);font-size:12px;min-width:120px;text-align:right;
+          font-variant-numeric:tabular-nums}
+  .speed{display:flex;gap:6px;align-items:center;color:var(--mut);font-size:12px}
+  .speed select{background:var(--panel);color:var(--ink);border:1px solid var(--line);
+                border-radius:6px;padding:4px 6px}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:18px 0}
+  .kpi{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+  .kpi .v{font-size:22px;font-weight:700}
+  .kpi .l{color:var(--mut);font-size:11px;margin-top:3px;text-transform:uppercase;letter-spacing:.5px}
+  .row{display:grid;grid-template-columns:1.3fr 1fr;gap:18px;margin-top:8px}
+  @media(max-width:820px){.row{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+  .card h3{margin:0 0 10px;font-size:13px;letter-spacing:.5px;color:var(--mut);text-transform:uppercase}
+  .ticker{max-height:240px;overflow:auto;font-size:13px}
+  .ev{padding:6px 0;border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:baseline}
+  .ev:last-child{border-bottom:0}
+  .ev .c{color:var(--mut);font-variant-numeric:tabular-nums;min-width:58px;font-size:12px}
+  .ev .skull{color:var(--ist)}
+  .ev .nat{color:var(--mut)}
+  .note{color:var(--mut);font-size:12px;line-height:1.6;margin-top:10px}
+  .legend{color:var(--mut);font-size:12px;margin:10px 0 0}
+</style>
+</head>
 <body>
 <header>
-  <b>Cammelot — Run Replay</b>
-  <span class="priv">PRIVATE · recorded run · not live</span>
-  <a href="index.html">← back to review</a>
+  <h1>Cammelot — Run Replay</h1>
+  <span class="sub">One recorded run of the real 16-bit simulation · IST vs SOLL · Big Five personalities ON</span>
+  <a href="index.html">← Back to review</a>
 </header>
-<main>
-  <div class="controls">
-    <div class="row">
-      <button id="mode-IST" class="active">IST · broken system</button>
-      <button id="mode-SOLL">SOLL · AI-augmented</button>
-      <span style="flex:1"></span>
-      <span class="clock" id="clock">cycle 0</span>
-    </div>
-    <div class="row" style="margin-top:12px">
-      <button id="play" class="play">▶ Play</button>
-      <button id="speed">1×</button>
-      <input id="scrub" type="range" min="0" max="99" value="0">
-    </div>
-    <div class="kpis">
-      <div class="kpi dead"><div class="v" id="k-deaths">0</div><div class="l">deaths so far</div></div>
-      <div class="kpi"><div class="v" id="k-distress">0</div><div class="l">citizens in distress (HP&lt;50)</div></div>
-      <div class="kpi alert"><div class="v" id="k-alerts">0</div><div class="l">proactive AI alerts (run total)</div></div>
-      <div class="kpi keten"><div class="v" id="k-keten">0</div><div class="l">chronic-care interventions (run total)</div></div>
-    </div>
+
+<div class="wrap">
+  <div class="modebar">
+    <button data-m="IST" class="active">IST · current system</button>
+    <button data-m="SOLL">SOLL · AI-augmented</button>
   </div>
 
   <div class="stage">
-    <div class="town">
-      <div class="townbadge" id="townbadge">CAMMELOT · IST</div>
-      <canvas id="town" width="720" height="420"></canvas>
-    </div>
-    <div class="side">
-      <h3>Citizen inspector</h3>
-      <div class="hint" id="sideHint">Hover or tap a sprite in the town to follow that citizen.</div>
-      <div class="detail" id="detail" style="display:none"></div>
-      <div class="legend">
-        <span class="dot" style="background:#37d39a"></span>healthy &nbsp;
-        <span class="dot" style="background:#ffcf5c"></span>declining &nbsp;
-        <span class="dot" style="background:#ff6b6b"></span>critical &nbsp;
-        <span class="dot" style="background:#5a5f7e"></span>ghost (died)<br>
-        Sprites walk to a <b>GP practice</b> or the <b>hospital</b> when they seek care;
-        a stack of sprites at a door is a <b>queue</b>.
-      </div>
-    </div>
+    <span class="badge IST" id="badge">IST</span>
+    <div class="loading" id="loading">Loading frames…</div>
+    <img id="frame" alt="Cammelot simulation frame">
   </div>
 
-  <div class="ticker">
-    <h3>Event ticker</h3>
-    <div id="events"><div class="ev">Press Play to begin…</div></div>
+  <div class="controls">
+    <button class="play" id="play">▶ Play</button>
+    <button id="reset">⟲ Reset</button>
+    <div class="scrub"><input type="range" id="scrub" min="0" max="99" value="0" step="1"></div>
+    <div class="speed">Speed
+      <select id="speed">
+        <option value="280">0.5×</option>
+        <option value="140" selected>1×</option>
+        <option value="70">2×</option>
+        <option value="35">4×</option>
+      </select>
+    </div>
+    <span class="tcount" id="tcount">frame 0 / 99</span>
   </div>
+  <p class="legend">This is a frame-by-frame capture of the actual <code>world.html</code> engine
+     (the same town published on cammelot.org), not a re-drawing. Use the scrubber to move
+     through the run; the death ticker and counters below stay in sync with the frame.</p>
 
-  <details class="discl">
-    <summary>Show per-citizen detail cards (persona + Big Five + HP)</summary>
-    <div class="grid" id="grid"></div>
-  </details>
-</main>
+  <div class="kpis" id="kpis"></div>
+
+  <div class="row">
+    <div class="card">
+      <h3>What changes between IST and SOLL</h3>
+      <div id="summary" class="note"></div>
+    </div>
+    <div class="card">
+      <h3>Death ticker <span id="deathcount" style="color:var(--mut);font-weight:400"></span></h3>
+      <div class="ticker" id="ticker"></div>
+      <p class="note">💀 = preventable (system failure, queue/admin delay) ·
+         🕊 = natural (CBS age-based mortality).</p>
+    </div>
+  </div>
+</div>
 
 <script>
-let DATA=null, mode='IST', frame=0, playing=false, speed=1, timer=null, focusIdx=-1;
-const CPF=30; // cycles per frame
-const el=id=>document.getElementById(id);
-const cv=el('town'), ctx=cv.getContext('2d');
-ctx.imageSmoothingEnabled=false;
-const W=cv.width, H=cv.height;
+let DATA=null, MAN=null, mode='IST', frame=0, playing=false, timer=null, speed=140;
+let nFrames=100, cpf=30;
+const cache={IST:[],SOLL:[]};
 
-function hpColor(hp){ if(hp<=0) return '#5a5f7e'; if(hp<25) return '#ff6b6b'; if(hp<50) return '#ffcf5c'; return '#37d39a'; }
+const $=id=>document.getElementById(id);
+const img=$('frame'), scrub=$('scrub'), badge=$('badge');
 
-// ── town map (logical 0..100 space, scaled to canvas) ──
-const sx=v=>v/100*W, sy=v=>v/100*H;
-const BUILDINGS=[
-  {id:'gp0', kind:'gp', x:16, y:24, w:15, h:13, label:'GP de Jong'},
-  {id:'gp1', kind:'gp', x:46, y:16, w:15, h:13, label:'GP Bakker'},
-  {id:'gp2', kind:'gp', x:80, y:26, w:15, h:13, label:'GP Visser'},
-  {id:'hosp',kind:'hosp',x:42, y:70, w:24, h:20, label:'Ziekenhuis Cammelot'},
-];
-function bcenter(b){ return {x:b.x+b.w/2, y:b.y+b.h+3}; } // door spot just below building
+function framePath(m,i){ return 'assets/frames/'+m.toLowerCase()+'/f'+String(i).padStart(3,'0')+'.jpg'; }
 
-// deterministic per-agent home + GP assignment
-function layout(agents){
-  // home plots spread along the upper/side green, avoiding buildings
-  const plots=[];
-  for(let r=0;r<5;r++) for(let c=0;c<10;c++){
-    let px=6+c*9.2, py=44+r*4.6;
-    plots.push({x:px,y:py});
-  }
-  agents.forEach((a,i)=>{
-    a._home=plots[i%plots.length];
-    a._gp=BUILDINGS[i%3];
-    a._cx=sx(a._home.x); a._cy=sy(a._home.y); // current pixel pos
-    a._jx=((i*37)%13-6)*0.9; a._jy=((i*53)%11-5)*0.9; // queue jitter
-  });
+function preload(m){
+  if(cache[m].length) return;
+  for(let i=0;i<nFrames;i++){ const im=new Image(); im.src=framePath(m,i); cache[m][i]=im; }
 }
 
-function targetFor(a, st){
-  if(st==='dead') return null; // hold last position as ghost
-  if(st==='going_to_gp'||st==='queuing'||st==='at_gp'){
-    const d=bcenter(a._gp); return {x:d.x+a._jx, y:d.y+a._jy};
-  }
-  if(st==='going_to_hospital'||st==='at_hospital'||st==='emergency'){
-    const d=bcenter(BUILDINGS[3]); return {x:d.x+a._jx, y:d.y+a._jy};
-  }
-  if(st==='protesting'){
-    const d=bcenter(BUILDINGS[3]); return {x:d.x+a._jx, y:d.y-9+a._jy};
-  }
-  // roaming / recovering / undefined → home (with a little wander)
-  return {x:a._home.x + Math.sin((frame+a._jx)*0.4)*1.4, y:a._home.y + Math.cos((frame+a._jy)*0.4)*1.0};
-}
+function fmtNum(n){ return (n==null)?'—':(Math.round(n*10)/10).toLocaleString(); }
 
-function drawTown(){
+function renderKpis(){
   const d=DATA[mode]; if(!d) return;
-  // grass
-  ctx.fillStyle='#2f7d34'; ctx.fillRect(0,0,W,H);
-  // checker grass tiles (SNES feel)
-  ctx.fillStyle='rgba(255,255,255,0.025)';
-  const ts=24;
-  for(let y=0;y<H;y+=ts) for(let x=0;x<W;x+=ts) if(((x/ts+y/ts)&1)===0) ctx.fillRect(x,y,ts,ts);
-  // pond bottom-left
-  ctx.fillStyle='#2c6fb0'; roundRect(sx(2),sy(80),sx(28),sy(17),8); ctx.fill();
-  ctx.fillStyle='rgba(255,255,255,.12)'; roundRect(sx(5),sy(83),sx(10),sy(4),4); ctx.fill();
-  // dirt paths from each building door toward town centre
-  ctx.strokeStyle='#9b7b4a'; ctx.lineWidth=Math.max(5,sx(1.4)); ctx.lineCap='round';
-  BUILDINGS.forEach(b=>{ if(b.kind==='hosp') return; const c=bcenter(b);
-    ctx.beginPath(); ctx.moveTo(sx(c.x),sy(c.y)); ctx.lineTo(sx(50),sy(52)); ctx.stroke(); });
-  // avenue from town centre down toward the hospital (offset to clear its label)
-  ctx.beginPath(); ctx.moveTo(sx(50),sy(52)); ctx.lineTo(sx(58),sy(72)); ctx.stroke();
-  // buildings
-  BUILDINGS.forEach(b=>drawBuilding(b));
-  // sprites (draw ghosts first so live ones sit on top)
-  const order=d.agents.map((a,i)=>i).sort((i,j)=>{
-    const di=isDead(d.agents[i]), dj=isDead(d.agents[j]); return (di?0:1)-(dj?0:1);
-  });
-  order.forEach(i=>drawSprite(d.agents[i], i));
+  const cards=[
+    ['Total deaths', d.total_deaths],
+    ['Preventable (system)', d.system_deaths],
+    ['Natural deaths', d.natural_deaths],
+    ['Proactive alerts', d.proactive_alerts],
+    ['Ketenzorg (chronic care)', d.ketenzorg],
+    ['Avg GP burnout', d.avg_burnout],
+  ];
+  $('kpis').innerHTML=cards.map(([l,v])=>
+    `<div class="kpi"><div class="v">${fmtNum(v)}</div><div class="l">${l}</div></div>`).join('');
 }
 
-function isDead(a){ const hp=a.hp[Math.min(frame,a.hp.length-1)]; return hp<=0; }
-
-function drawBuilding(b){
-  const x=sx(b.x), y=sy(b.y), w=sx(b.w), h=sy(b.h);
-  const isH=b.kind==='hosp';
-  // shadow
-  ctx.fillStyle='rgba(0,0,0,.25)'; roundRect(x+3,y+5,w,h,4); ctx.fill();
-  // wall
-  ctx.fillStyle=isH?'#e9eef6':'#d9c6a3'; roundRect(x,y,w,h,4); ctx.fill();
-  ctx.strokeStyle='#0b0e1c'; ctx.lineWidth=2; roundRect(x,y,w,h,4); ctx.stroke();
-  // roof
-  ctx.fillStyle=isH?'#c0392b':'#7a4a2b';
-  ctx.beginPath(); ctx.moveTo(x-2,y+4); ctx.lineTo(x+w/2,y-sy(7)); ctx.lineTo(x+w+2,y+4); ctx.closePath(); ctx.fill();
-  ctx.strokeStyle='#0b0e1c'; ctx.stroke();
-  // door
-  ctx.fillStyle='#4a3320'; ctx.fillRect(x+w/2-sx(2), y+h-sy(5), sx(4), sy(5));
-  // cross for hospital / + for GP
-  ctx.fillStyle=isH?'#c0392b':'#2f7d34';
-  const cs=isH?sx(2.4):sx(1.6), cx2=x+w/2, cy2=y+h*0.42;
-  ctx.fillRect(cx2-cs/3, cy2-cs, cs*0.66, cs*2);
-  ctx.fillRect(cx2-cs, cy2-cs/3, cs*2, cs*0.66);
-  // label
-  ctx.fillStyle='#0b0e1c'; ctx.font='bold '+Math.max(9,sx(1.5))+'px "Space Grotesk",sans-serif';
-  ctx.textAlign='center'; ctx.fillText(b.label, x+w/2, y-sy(8));
+function renderSummary(){
+  const i=DATA.IST, s=DATA.SOLL; if(!i||!s) return;
+  const pct=(a,b)=> a? Math.round((b-a)/a*100):0;
+  $('summary').innerHTML=
+    `In this recorded run, the same town is played twice with identical citizens and
+     personalities. <b>IST</b> is today's system (30% GP admin load, referral queues).
+     <b>SOLL</b> adds an autonomous care layer (admin ~5%, proactive outreach).<br><br>
+     Proactive alerts: <b>${i.proactive_alerts} → ${s.proactive_alerts}</b>.
+     Chronic-care (ketenzorg) actions: <b>${i.ketenzorg} → ${s.ketenzorg}</b>
+     (${pct(i.ketenzorg,s.ketenzorg)>0?'+':''}${pct(i.ketenzorg,s.ketenzorg)}%).
+     Average GP burnout: <b>${fmtNum(i.avg_burnout)} → ${fmtNum(s.avg_burnout)}</b>.
+     Preventable deaths move from <b>${i.system_deaths}</b> to <b>${s.system_deaths}</b>
+     in this single run; across 100 runs the death difference is small and not statistically
+     significant, while the burnout and proactive-care effects are large and significant.`;
 }
 
-function drawSprite(a, i){
-  const px=a._cx, py=a._cy;
-  const hp=a.hp[Math.min(frame,a.hp.length-1)];
-  const dead=hp<=0;
-  const r=Math.max(5, sx(1.5));
-  if(dead){
-    ctx.globalAlpha=0.5;
-    ctx.fillStyle='#5a5f7e';
-    // ghost tail
-    ctx.beginPath(); ctx.arc(px,py-r,r,Math.PI,0); ctx.lineTo(px+r,py+r);
-    ctx.lineTo(px+r*0.5,py+r*0.4); ctx.lineTo(px,py+r); ctx.lineTo(px-r*0.5,py+r*0.4);
-    ctx.lineTo(px-r,py+r); ctx.closePath(); ctx.fill();
-    ctx.fillStyle='#0b0e1c'; ctx.fillRect(px-r*0.4,py-r*0.9,2,2); ctx.fillRect(px+r*0.2,py-r*0.9,2,2);
-    ctx.globalAlpha=1; return;
-  }
-  // shadow
-  ctx.fillStyle='rgba(0,0,0,.28)'; ctx.beginPath(); ctx.ellipse(px,py+r*1.1,r*0.9,r*0.4,0,0,7); ctx.fill();
-  // body
-  ctx.fillStyle=hpColor(hp);
-  roundRect(px-r*0.7, py-r*0.2, r*1.4, r*1.4, 2); ctx.fill();
-  // head
-  ctx.fillStyle='#f0d2a8'; ctx.beginPath(); ctx.arc(px, py-r*0.6, r*0.62, 0, 7); ctx.fill();
-  // focus ring + distress pulse
-  if(i===focusIdx){ ctx.strokeStyle='#5b8cff'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(px,py,r*1.7,0,7); ctx.stroke(); }
-  if(hp>0&&hp<25){ const pulse=1.6+Math.sin(Date.now()/180)*0.4;
-    ctx.strokeStyle='rgba(255,107,107,.8)'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.arc(px,py,r*pulse,0,7); ctx.stroke();
-    ctx.fillStyle='#ff6b6b'; ctx.font='bold '+Math.max(9,sx(1.8))+'px sans-serif'; ctx.textAlign='center';
-    ctx.fillText('!', px, py-r*1.6);
-  }
+function renderTicker(){
+  const d=DATA[mode]; if(!d){return;}
+  const cutoff=frame*cpf;
+  const shown=d.deaths.filter(x=>x.cycle!=null && x.cycle<=cutoff);
+  $('deathcount').textContent='('+shown.length+' so far / '+d.deaths.length+' total)';
+  if(!shown.length){ $('ticker').innerHTML='<div class="note">No deaths yet in this run.</div>'; return; }
+  $('ticker').innerHTML=shown.slice().reverse().map(x=>{
+    const nat=/natural|old age|age/i.test(x.cause);
+    return `<div class="ev"><span class="c">day ${Math.round((x.cycle||0))}</span>
+      <span class="${nat?'nat':'skull'}">${nat?'🕊':'💀'}</span>
+      <span>${x.name} (${x.age}) — ${x.cause}</span></div>`;
+  }).join('');
 }
 
-function roundRect(x,y,w,h,r){ ctx.beginPath();
-  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
-  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
-
-// ── animation: ease sprite pixel positions toward state target ──
-function animate(){
-  const d=DATA[mode];
-  if(d){
-    d.agents.forEach(a=>{
-      const st=(a.state&&a.state[Math.min(frame,a.state.length-1)])||'roaming';
-      if(isDead(a)){ /* hold */ }
-      else { const t=targetFor(a,st); if(t){ const tx=sx(t.x),ty=sy(t.y);
-        a._cx+=(tx-a._cx)*0.12; a._cy+=(ty-a._cy)*0.12; } }
-    });
-    drawTown();
-  }
-  requestAnimationFrame(animate);
+function setFrame(i){
+  frame=Math.max(0,Math.min(nFrames-1,i|0));
+  img.src=framePath(mode,frame);
+  scrub.value=frame;
+  $('tcount').textContent='frame '+frame+' / '+(nFrames-1);
+  renderTicker();
 }
 
-function buildGrid(){
-  const d=DATA[mode];
-  el('scrub').max = Math.max(0, d.frames-1);
-  layout(d.agents);
-  const g=el('grid'); g.innerHTML='';
-  d.agents.forEach((a,i)=>{
-    const c=document.createElement('div'); c.className='card'; c.id='ag'+i;
-    c.innerHTML='<div class="nm">'+a.name+' <span class="age">'+a.age+'y</span></div>'+
-      (a.persona?'<div class="persona">'+a.persona+'</div>':'')+
-      '<div class="cond">'+(a.conditions.join(' · ')||'—')+'</div>'+
-      '<div class="bar"><i id="bar'+i+'"></i></div>'+
-      '<div class="hpnum" id="hp'+i+'"></div>';
-    g.appendChild(c);
-  });
+function setMode(m){
+  mode=m; preload(m);
+  document.querySelectorAll('.modebar button').forEach(b=>b.classList.toggle('active',b.dataset.m===m));
+  badge.className='badge '+m; badge.textContent=m;
+  renderKpis(); setFrame(frame);
 }
 
-function showDetail(i){
-  focusIdx=i;
-  const d=DATA[mode], a=d.agents[i]; if(!a){ return; }
-  const hp=a.hp[Math.min(frame,a.hp.length-1)];
-  const st=(a.state&&a.state[Math.min(frame,a.state.length-1)])||'roaming';
-  const bf=a.bigFive||{};
-  const traits=[['O',bf.O],['C',bf.C],['E',bf.E],['A',bf.A],['N',bf.N]]
-    .map(t=>'<span class="t" title="'+({O:'Openness',C:'Conscientiousness',E:'Extraversion',A:'Agreeableness',N:'Neuroticism'})[t[0]]+'"><b>'+t[0]+'</b><i style="height:'+Math.round((t[1]||0)*100)+'%"></i></span>').join('');
-  el('sideHint').style.display='none';
-  const det=el('detail'); det.style.display='block';
-  det.innerHTML='<div class="nm">'+a.name+' <span class="age">'+a.age+'y</span></div>'+
-    (a.persona?'<div class="persona">'+a.persona+'</div>':'')+
-    '<div class="cond">'+(a.conditions.join(' · ')||'no chronic conditions')+'</div>'+
-    (bf.O!=null?'<div class="ocean">'+traits+'</div>':'')+
-    '<div class="bar"><i style="width:'+Math.max(0,hp)+'%;background:'+hpColor(hp)+'"></i></div>'+
-    '<div class="hpnum">HP '+hp+'</div>'+
-    '<div class="st">Doing now: <b>'+prettyState(st, hp)+'</b></div>';
+function play(){ playing=true; $('play').textContent='❚❚ Pause';
+  clearInterval(timer); timer=setInterval(()=>{
+    if(frame>=nFrames-1){ pause(); return; }
+    setFrame(frame+1);
+  }, speed);
 }
-function prettyState(st, hp){
-  if(hp<=0) return 'deceased (ghost)';
-  return ({going_to_gp:'walking to the GP', queuing:'waiting in the GP queue', at_gp:'with the GP',
-    going_to_hospital:'heading to hospital', at_hospital:'in hospital', emergency:'emergency',
-    protesting:'protesting outside hospital', recovering:'recovering at home', roaming:'at home / in town'})[st]||st;
-}
+function pause(){ playing=false; $('play').textContent='▶ Play'; clearInterval(timer); }
 
-function render(){
-  const d=DATA[mode];
-  el('scrub').value=frame;
-  const cycle=frame*CPF;
-  el('clock').textContent='cycle '+cycle+' / '+((d.frames-1)*CPF);
-  let distress=0;
-  d.agents.forEach((a,i)=>{
-    const hp=a.hp[Math.min(frame,a.hp.length-1)];
-    const bar=el('bar'+i); if(bar){ bar.style.width=Math.max(0,hp)+'%'; bar.style.background=hpColor(hp); }
-    const hpn=el('hp'+i); if(hpn) hpn.textContent='HP '+hp;
-    const card=el('ag'+i);
-    const dead=hp<=0;
-    if(card){ card.classList.toggle('ghost',dead);
-      const nm=card.querySelector('.nm');
-      if(dead && !nm.querySelector('.tag')) nm.insertAdjacentHTML('beforeend','<span class="tag">💀</span>');
-      if(!dead){ const t=nm.querySelector('.tag'); if(t) t.remove(); }
-    }
-    if(hp>0 && hp<50) distress++;
-  });
-  const deathsSoFar=d.deaths.filter(x=>x.cycle!=null && x.cycle<=cycle).length;
-  el('k-deaths').textContent=deathsSoFar;
-  el('k-distress').textContent=distress;
-  const prog=(d.frames<=1)?1:frame/(d.frames-1);
-  el('k-alerts').textContent=Math.round(d.proactive_alerts*prog);
-  el('k-keten').textContent=Math.round(d.ketenzorg*prog);
-  const evs=d.deaths.filter(x=>x.cycle!=null && x.cycle<=cycle)
-    .sort((a,b)=>b.cycle-a.cycle).slice(0,12).map(x=>{
-      const sys=/system/.test(x.cause); const ic=sys?'💀':'🕊';
-      return '<div class="ev '+(sys?'sys':'nat')+'">cycle '+x.cycle+' — '+ic+' <b>'+x.name+'</b> ('+x.age+'y) · '+
-        (sys?'preventable / system failure':'natural causes')+'</div>';
-    }).join('');
-  el('events').innerHTML=evs||'<div class="ev">No deaths yet…</div>';
-  if(focusIdx>=0) showDetail(focusIdx);
-}
+$('play').onclick=()=>playing?pause():play();
+$('reset').onclick=()=>{ pause(); setFrame(0); };
+scrub.oninput=()=>{ pause(); setFrame(+scrub.value); };
+$('speed').onchange=e=>{ speed=+e.target.value; if(playing) play(); };
+document.querySelectorAll('.modebar button').forEach(b=> b.onclick=()=>setMode(b.dataset.m));
 
-function setMode(m){ mode=m; frame=0; playing=false; clearInterval(timer); focusIdx=-1;
-  el('play').textContent='▶ Play';
-  el('detail').style.display='none'; el('sideHint').style.display='block';
-  el('townbadge').textContent='CAMMELOT · '+m;
-  el('mode-IST').classList.toggle('active',m==='IST');
-  el('mode-SOLL').classList.toggle('active',m==='SOLL');
-  buildGrid(); render();
-}
-function tick(){ const d=DATA[mode]; frame++; if(frame>=d.frames){ frame=d.frames-1; stop(); } render(); }
-function play(){ if(playing) return stop(); playing=true; el('play').textContent='⏸ Pause';
-  timer=setInterval(tick, 240/speed); }
-function stop(){ playing=false; el('play').textContent='▶ Play'; clearInterval(timer); }
-
-// click/hover on canvas → nearest sprite
-function pickSprite(ev){
-  const r=cv.getBoundingClientRect();
-  const mx=(ev.clientX-r.left)/r.width*W, my=(ev.clientY-r.top)/r.height*H;
-  const d=DATA[mode]; if(!d) return -1;
-  let best=-1, bd=1e9;
-  d.agents.forEach((a,i)=>{ const dx=a._cx-mx, dy=a._cy-my, dist=dx*dx+dy*dy;
-    if(dist<bd){ bd=dist; best=i; } });
-  return bd< (sx(4)*sx(4)) ? best : -1;
-}
-cv.addEventListener('mousemove', e=>{ const i=pickSprite(e); cv.style.cursor=i>=0?'pointer':'default'; if(i>=0) showDetail(i); });
-cv.addEventListener('click', e=>{ const i=pickSprite(e); if(i>=0) showDetail(i); });
-
-el('mode-IST').onclick=()=>setMode('IST');
-el('mode-SOLL').onclick=()=>setMode('SOLL');
-el('play').onclick=play;
-el('speed').onclick=()=>{ speed = speed===1?2 : speed===2?4 : 1; el('speed').textContent=speed+'×';
-  if(playing){ stop(); play(); } };
-el('scrub').oninput=e=>{ frame=+e.target.value; stop(); render(); };
-
-fetch('assets/replay_data.json').then(r=>r.json()).then(d=>{ DATA=d; setMode('IST'); animate(); })
-  .catch(e=>{ document.querySelector('.town').innerHTML='<p style="padding:20px">Could not load replay_data.json — rebuild via scripts/build_local_review.py</p>'; });
+Promise.all([
+  fetch('assets/replay_data.json').then(r=>r.json()),
+  fetch('assets/frames/manifest.json').then(r=>r.json()).catch(()=>null),
+]).then(([data,man])=>{
+  DATA=data; MAN=man;
+  if(man){ nFrames=man.frames||100; cpf=man.cpf||30; }
+  scrub.max=nFrames-1;
+  $('loading').style.display='none';
+  preload('IST'); preload('SOLL');
+  renderSummary();
+  setMode('IST');
+});
 </script>
 </body></html>
