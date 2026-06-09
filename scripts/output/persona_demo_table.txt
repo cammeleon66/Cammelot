@@ -1,0 +1,69 @@
+Cammelot Living Patient Agent persona demo — deterministic 45-citizen town
+
+name                   | age | gender | archetype label                  | trait      | careSeek | compliance |  trust | sample thought                                              
+-----------------------+-----+--------+----------------------------------+------------+----------+------------+--------+-------------------------------------------------------------
+Sanne Visser           |   6 | female | The Curious Child                | anxious    |     0.06 |       0.75 |   0.54 | Do I have to see the doctor? I don't want a needle.         
+Lars Vos               |   8 | male   | The Curious Child                | anxious    |     0.12 |       0.72 |   0.66 | Is it our turn yet? Is it now?                              
+Noor de Boer           |  10 | female | The Curious Child                | anxious    |     0.05 |       0.69 |   0.65 | The waiting room has a fish tank!                           
+Bram Jansen            |  12 | male   | The Curious Child                | anxious    |     0.11 |       0.67 |   0.65 | Is it our turn yet? Is it now?                              
+Eva Mulder             |  14 | female | The Idealistic Teen              | social     |    -0.26 |       0.49 |   0.44 | This is exactly what's wrong with everything.               
+Joris Dekker           |  16 | male   | The Idealistic Teen              | social     |    -0.20 |       0.58 |   0.44 | People my gran's age are waiting months. It's wrong.        
+Lotte Hoekstra         |  17 | female | The Idealistic Teen              | social     |    -0.14 |       0.56 |   0.43 | Okay, that doctor actually really cared. Respect.           
+Thijs de Jong          |  19 | male   | The Sunny Optimist               | optimistic |    -0.01 |       0.78 |   0.77 | Stronger every single day!                                  
+Iris van den Berg      |  22 | female | The Young Invincible             | optimistic |    -0.35 |       0.41 |   0.52 | Wait, why am I even in this queue?                          
+Jasper van Dam         |  25 | male   | The Sunny Optimist               | optimistic |    -0.01 |       0.85 |   0.76 | I'll get it checked and put my mind at ease.                
+Anouk Smit             |  28 | female | The Sunny Optimist               | optimistic |     0.03 |       0.80 |   0.72 | They'll get to me soon, I'm sure.                           
+Koen Peters            |  31 | male   | The Overwhelmed Young Parent     | anxious    |    -0.18 |       0.58 |   0.46 | I can't fall apart. They need me upright.                   
+Els Schouten           |  34 | female | The Sunny Optimist               | optimistic |     0.03 |       0.75 |   0.70 | I'll use the time to rest up properly.                      
+Willem Bakker          |  37 | male   | The Gentle Homemaker             | optimistic |    -0.09 |       0.89 |   0.60 | It's a long wait. I'll keep things ticking over.            
+Truus Bos              |  40 | female | The Sunny Optimist               | optimistic |     0.02 |       0.82 |   0.69 | A sad day. We'll look after each other.                     
+Kees van Leeuwen       |  43 | male   | The Gentle Homemaker             | optimistic |    -0.10 |       0.84 |   0.71 | I can put the kettle on with an easy mind now.              
+Femke de Vries         |  46 | female | The Busy Professional            | stubborn   |    -0.09 |       0.56 |   0.60 | Productivity returning. Good.                               
+Tom van Dijk           |  49 | male   | The Anxious Caregiver            | anxious    |     0.29 |       0.81 |   0.50 | Why haven't they called yet?                                
+Nina Kuiper            |  52 | female | The Informed Advocate            | stubborn   |     0.25 |       0.73 |   0.44 | I know which questions to ask.                              
+Sven Prins             |  55 | male   | The Stubborn Skeptic             | stubborn   |    -0.29 |       0.41 |   0.28 | So much for their wonderful system.                         
+Roos Meijer            |  58 | female | The Stoic Old Hand               | stoic      |    -0.28 |       0.73 |   0.73 | You wait your turn. That's how it is.                       
+Dirk Hendriks          |  61 | male   | The Informed Advocate            | stubborn   |     0.28 |       0.70 |   0.42 | I'll be quoting the norms if this drags on.                 
+Jolanda Kramer         |  64 | female | The Stoic Old Hand               | stoic      |    -0.29 |       0.68 |   0.72 | I'll not make a scene about it.                             
+Daan Visser            |  67 | male   | The Quiet Fatalist               | stoic      |    -0.38 |       0.40 |   0.31 | It is what it was always going to be.                       
+Emma Vos               |  70 | female | The Stubborn Skeptic             | stubborn   |    -0.40 |       0.44 |   0.26 | Fine. It worked. Doesn't change what I think.               
+Milan de Boer          |  72 | male   | The Cheerful Grandparent         | social     |     0.06 |       0.82 |   0.70 | Better every day — and the visits help!                     
+Tess Jansen            |  74 | female | The Sunny Optimist               | optimistic |    -0.05 |       0.79 |   0.75 | Down today. Up tomorrow, hopefully.                         
+Finn Mulder            |  76 | male   | The Proud Independent            | stubborn   |    -0.45 |       0.46 |   0.44 | I should have asked sooner. Pride's a poor doctor.          
+Sofie Dekker           |  78 | female | The Weary Chronic Patient        | stoic      |     0.16 |       0.91 |   0.54 | Waiting is half my life with this condition.                
+Niels Hoekstra         |  80 | male   | The Gentle Homemaker             | optimistic |    -0.05 |       0.88 |   0.63 | I'm finding it harder to keep up with things.               
+Fleur de Jong          |  82 | female | The Proud Independent            | stubborn   |    -0.42 |       0.55 |   0.43 | I don't like sitting here, hat in hand.                     
+Gijs van den Berg      |  84 | male   | The Weary Chronic Patient        | stoic      |     0.07 |       0.88 |   0.52 | Tired of waiting, but what can you do.                      
+Maud van Dam           |  29 | female | The Overwhelmed Young Parent     | anxious    |    -0.13 |       0.60 |   0.47 | I should chase it, but who has the energy.                  
+Pieter Smit            |  33 | male   | The Busy Professional            | stubborn   |    -0.14 |       0.57 |   0.51 | Good. Done. Next problem.                                   
+Marieke Peters         |  38 | female | The Gentle Homemaker             | optimistic |    -0.04 |       0.80 |   0.60 | A bit stronger each day. The house helps.                   
+Hendrik Schouten       |  45 | male   | The Busy Professional            | stubborn   |    -0.15 |       0.64 |   0.50 | Note to self: don't ignore the body's deadlines.            
+Ria Bakker             |  50 | female | The Anxious Caregiver            | anxious    |     0.36 |       0.77 |   0.39 | I should book that check-up I keep putting off.             
+Jan Bos                |  57 | male   | The Quiet Fatalist               | stoic      |    -0.46 |       0.44 |   0.36 | One less of us. Soon enough, the rest.                      
+Mieke van Leeuwen      |  63 | female | The Stubborn Skeptic             | stubborn   |    -0.35 |       0.36 |   0.30 | A number in a queue. That's all we are to them.             
+Bas de Vries           |  69 | male   | The Quiet Fatalist               | stoic      |    -0.35 |       0.51 |   0.34 | I saw this coming. I always do.                             
+Yara van Dijk          |  73 | female | The Quiet Fatalist               | stoic      |    -0.43 |       0.41 |   0.34 | Of course it's a long wait. It always is.                   
+Ruben Kuiper           |  77 | male   | The Stoic Old Hand               | stoic      |    -0.23 |       0.75 |   0.73 | Should have gone in sooner, perhaps.                        
+Lieke Prins            |  81 | female | The Cheerful Grandparent         | social     |     0.01 |       0.83 |   0.73 | The doctor was a dear. Lovely girl.                         
+Arjen Meijer           |  86 | male   | The Sunny Optimist               | optimistic |     0.01 |       0.80 |   0.77 | Soon I'll be back to my old self.                           
+Inge Hendriks          |  90 | female | The Cheerful Grandparent         | social     |     0.00 |       0.77 |   0.72 | It's harder than I let on, truth be told.                   
+
+Archetype distribution
+----------------------
+ 7  The Sunny Optimist
+ 4  The Curious Child
+ 4  The Quiet Fatalist
+ 4  The Gentle Homemaker
+ 3  The Busy Professional
+ 3  The Cheerful Grandparent
+ 3  The Idealistic Teen
+ 3  The Stoic Old Hand
+ 3  The Stubborn Skeptic
+ 2  The Anxious Caregiver
+ 2  The Informed Advocate
+ 2  The Overwhelmed Young Parent
+ 2  The Proud Independent
+ 2  The Weary Chronic Patient
+ 1  The Young Invincible
+
+Distinct archetypes: 15 of 16 (assertion: PASS, expected >= 6)

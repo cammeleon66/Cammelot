@@ -1,0 +1,26 @@
+Cammelot persona-active A/B study — figure data
+100 runs x 3000 cycles | source: scripts/output/persona_ab_comparison.json | 2026-06-09T09:38:49.0749381+02:00
+
+TABLE A — Personas ON vs OFF (same engine, IST mode): does personality distort outcomes?
+metric                 OFF      ON       Cohen_d   verdict
+total_deaths           6.16     6.28     -0.045    not significant
+system_deaths          4.71     4.63      0.034    not significant
+bias_score             0.338    0.354    -0.120    not significant
+=> Personality is texture, not statistical distortion. (Vindicates Post 5 thesis.)
+
+TABLE B — IST vs SOLL (personas ON): does the AI-native overhaul help?
+metric                 IST      SOLL     %vsIST    Cohen_d   significant
+total_deaths           6.28     6.01     -4.3%      0.097     NO (N=45 stochastic)
+system_deaths          4.63     4.33     -6.5%      0.119     NO
+avg_burnout            18.57    4.48     -75.9%     5.295     YES
+peak_burnout           39.13    17.89    -54.3%     8.161     YES
+proactive_alerts       0        316.3    new        -4.695    YES
+ketenzorg_interv.      68.33    186.03   +172.3%   -1.668     YES
+admin_waste_eur        33,561   5,594    -83.3%     n/a       modeled (deterministic)
+er_admissions          64.63    69.40    +7.4%     -0.234     NO
+bias_score             0.354    0.402    +13.6%    -0.273     NO
+
+NOTES
+- admin_waste is a deterministic model output (admin 30%->5%); no variance, so no significance test.
+- Mortality differences are NOT statistically significant at N=45; do not claim "AI saves lives".
+- sick_leave_events = 0 in all cells (burnout peaks ~39, below sick-leave threshold). Do NOT cite sick leave.

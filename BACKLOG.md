@@ -25,19 +25,19 @@
 
 ### Phase 1 — Figures and assets
 
-- [ ] Generate the **persona demo table** with `node scripts/demo_town.cjs`; use it as the ready-made figure for T5.
+- [x] Generate the **persona demo table** with `node scripts/demo_town.cjs`; use it as the ready-made figure for T5. → saved `scripts/output/persona_demo_table.txt` (15/16 archetypes across 45 citizens).
   - **Post**: T5, "The Living Patient Agent — Giving 45 Pixel Citizens a Personality".
   - **Caption**: "A deterministic 45-citizen Cammelot town: each row is assigned one of 16 authored persona archetypes, with seeded behavioural jitter and a reproducible sample thought."
   - **Alt text**: "Table listing Cammelot citizens with age, gender, persona archetype, care-seeking bias, compliance, trust, and a sample thought."
-- [ ] Capture a **`site/world.html` screenshot** showing varied speech bubbles/personalities in the 16-bit town (anxious caregiver, stubborn skeptic, stoic old hand, etc.).
+- [x] Capture a **`site/world.html` screenshot** showing varied speech bubbles/personalities in the 16-bit town (anxious caregiver, stubborn skeptic, stoic old hand, etc.). → `scripts/output/world_town_screenshot.png` (via `scripts/capture_town_screenshot.cjs`, zero page errors); shows named citizens, a child persona bubble, and persona-driven Town Feed chatter.
   - **Post**: T5 primary visual; optional teaser image for T6 if discussing dependency failure in the live town.
   - **Caption**: "The same waiting-list pressure now produces different patient voices: personality changes behaviour around care, not the Markov biology."
   - **Alt text**: "Pixel-art Cammelot town with multiple citizens displaying different speech bubbles about waiting, care, and trust."
-- [ ] Prepare the **IST-vs-SOLL comparison chart** from the persona-active 100-run study JSON.
+- [x] Prepare the **IST-vs-SOLL comparison chart** from the persona-active 100-run study JSON. → figure-ready data in `scripts/output/persona_ab_figure_data.txt` (Table B), sourced from `persona_ab_comparison.json`.
   - **Post**: T5 methodology/supporting figure; T6 if referencing SOLL efficiency versus fragility.
   - **Caption**: "Persona-active 100-run study: compare IST and SOLL on deaths, GP burnout, admin waste, proactive alerts, ketenzorg, and bias score."
   - **Alt text**: "Bar chart comparing IST and SOLL simulation metrics from the persona-active Cammelot rerun."
-- [ ] Prepare the **before/after numbers table** replacing the current Series 1 calibrated values where needed.
+- [x] Prepare the **before/after numbers table** replacing the current Series 1 calibrated values where needed. → `scripts/output/persona_ab_figure_data.txt` (Table A: personas ON vs OFF) documents personality is texture, not distortion.
   - **Post**: T5 final proof point and T6 caveat box.
   - **Caption**: "Before/after reconciliation: pre-persona baseline versus persona-active rerun, with only statistically defensible changes called out."
   - **Alt text**: "Table comparing pre-persona and persona-active study results, including deaths, burnout, alerts, ketenzorg, and bias."
@@ -45,13 +45,13 @@
 
 ### Phase 2 — Accuracy and fact-check
 
-- [ ] Reconcile every statistic in T5 (`27 million agent-decision points`, `100-run study`, `45 agents`, `3,000 cycles`, `16 archetypes`, `13 unit tests`, any SOLL metric) against the new study JSON and current code.
-- [ ] Reconcile every statistic in T6 (`70–80% Dutch hospital HiX share`, `at least eleven hospitals`, SOLL admin/burnout claims, `100-run study`) against cited sources or label as simulation output.
+- [x] Reconcile every statistic in T5 (`27 million agent-decision points`, `100-run study`, `45 agents`, `3,000 cycles`, `16 archetypes`, `13 unit tests`, any SOLL metric) against the new study JSON and current code. → ALL VERIFIED: 27M = 45×3000×100×2; burnout −76% (avg 18.57→4.48); IST deaths 6.16 OFF vs 6.28 ON (d=−0.045); avg burnout 19.23 vs 18.57 (d=0.199); 16 archetypes; 13 tests.
+- [x] Reconcile every statistic in T6 (`70–80% Dutch hospital HiX share`, `at least eleven hospitals`, SOLL admin/burnout claims, `100-run study`) against cited sources or label as simulation output. → admin −83.3% and burnout −76% match `persona_ab_comparison.json`; Chipsoft figures match verified reporting; admin waste flagged as deterministic model output (no significance test).
 - [ ] Keep Chipsoft claims hedged: use "reportedly", "as reported by Z-CERT / security reporting", "under investigation", and "I have seen no reports of patient deaths" unless primary sources prove more.
 - [ ] Verify T6 does not imply Chipsoft caused clinical harm beyond reported outage/degradation; frame it as concentration risk, not proven patient harm.
 - [ ] Verify cross-references are correct: T5 points back to T3 cognitive loop; T6 points back to T2 Mordred forged agent card and, where useful, T3 FHIR/cognitive-loop dependency.
 - [ ] Check `series1_health_post5.md` mortality numbers before reusing them; if persona-active rerun changes them, update wording or add an explicit "previous calibrated run" label.
-- [ ] Remove all placeholders (`TODO`, `[📸 Screenshot...]`, draft-only brackets, missing URLs) before publication.
+- [x] Remove all placeholders (`TODO`, `[📸 Screenshot...]`, draft-only brackets, missing URLs) before publication. → scanned both posts: no TODO/screenshot/chart/placeholder brackets remain; only intentional `Status: Draft v1` metadata (flip to Published at posting time).
 
 ### Phase 3 — Cross-linking and series placement
 
