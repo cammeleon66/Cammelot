@@ -111,7 +111,7 @@ A hard adversarial pass (AI / researcher / clinician / security / policy) before
 - [x] **#2 Persona payload ("so what?").** T5 now positions personas honestly as (1) a narrative/UX layer and (2) a methodological no-distortion result, with effects at the *individual* (timing) level, not population averages.
 
 **Follow-up (future, not blocking publish):**
-- [ ] **Wire Big Five (O/C/E/A/N) into the behavioural model** in `persona.js` so the trait scores actually modulate care-seeking/compliance/etc.; re-run the A/B and update T5 if it changes the no-distortion result.
+- [x] **Wire Big Five (O/C/E/A/N) into the behavioural model** in `persona.js` — DONE as opt-in `assignPersona({ useBigFive: true })` with health-psychology-grounded mappings; **off by default** so the published A/B numbers are unchanged. 4 new unit tests (134/134 pass). Remaining: enable the flag and re-run the 100-sim A/B if we want to publish *emergent* trait effects (would update T5 numbers).
 - [ ] **#8 (optional)** Add a one-line "HP is a didactic proxy, harm model is uniform" note for clinical readers if T5/T6 get a clinician-facing edit.
 
 ## What We've Built (Sprints 1–3 ✅)

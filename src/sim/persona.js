@@ -64,6 +64,36 @@ const PARAM_BOUNDS = {
   socialness: [0, 1],
 };
 
+// ── Big Five → behaviour modulation (opt-in) ──
+//
+// Maps the O/C/E/A/N trait scores (each in [0,1], 0.5 = population-average) onto
+// additive nudges for the 7 behavioural parameters. Coefficients are modest and
+// grounded in health-psychology findings (e.g. Conscientiousness is a robust
+// predictor of treatment adherence; Neuroticism predicts higher symptom reporting
+// and care-seeking; Agreeableness tracks institutional trust). The nudges are
+// small enough that a citizen stays recognizably "their archetype".
+//
+// IMPORTANT: this is OFF by default (assignPersona opts.useBigFive). With it off,
+// persona assignment is byte-identical to the published 100-run A/B study, so
+// existing blog numbers remain valid. Enable it for a future opt-in re-run.
+export function bigFiveBehaviorDelta(bf) {
+  const O = (typeof bf.O === 'number' ? bf.O : 0.5) - 0.5;
+  const C = (typeof bf.C === 'number' ? bf.C : 0.5) - 0.5;
+  const E = (typeof bf.E === 'number' ? bf.E : 0.5) - 0.5;
+  const A = (typeof bf.A === 'number' ? bf.A : 0.5) - 0.5;
+  const N = (typeof bf.N === 'number' ? bf.N : 0.5) - 0.5;
+  // Each trait term spans [-0.5,+0.5]; coefficients are the max single-trait nudge.
+  return {
+    careSeekingBias:    0.30 * N + 0.10 * E,                 // anxious/extraverted seek care more
+    compliance:         0.30 * C - 0.10 * N,                 // conscientious adhere; anxious less consistent
+    trustInSystem:      0.25 * A - 0.15 * N,                 // agreeable trust; anxious distrust
+    refusalTendency:   -0.20 * A + 0.15 * O,                 // agreeable refuse less; open question more
+    secondOpinionDrive: 0.25 * O + 0.15 * N,                 // open/anxious chase second opinions
+    drainModifier:      0.10 * N - 0.05 * C,                 // stress worsens; self-care helps
+    socialness:         0.35 * E + 0.10 * A,                 // extraversion drives socialness
+  };
+}
+
 // Apply small seeded jitter to each behavioral parameter.
 function jitterBehavior(behavior, rng, amount) {
   const out = {};
@@ -83,10 +113,13 @@ function jitterBehavior(behavior, rng, amount) {
 //   archetypes   — array from loadArchetypes()
 //   opts.seed    — extra seed salt (default 0); use to vary across runs if desired
 //   opts.jitter  — per-param jitter magnitude (default 0.06)
+//   opts.useBigFive — when true, modulate behaviour by the archetype's O/C/E/A/N
+//                     scores (default FALSE; off = identical to published A/B study)
 // Returns a persona object (also safe to attach as agent.persona).
 export function assignPersona(agent, archetypes, opts = {}) {
   const seedSalt = opts.seed || 0;
   const jitter = typeof opts.jitter === 'number' ? opts.jitter : 0.06;
+  const useBigFive = opts.useBigFive === true;
   const candidates = matchArchetypes(agent, archetypes);
 
   const rng = seededRandom(hashCode(String(agent.id || 'anon')) + 13 + seedSalt);
@@ -97,7 +130,20 @@ export function assignPersona(agent, archetypes, opts = {}) {
   const idx = Math.floor(rng() * candidates.length) % candidates.length;
   const arch = candidates[idx];
 
-  const behavior = jitterBehavior(arch.behavior || {}, rng, jitter);
+  // Optionally fold Big Five trait nudges into the base params before jitter.
+  let baseBehavior = arch.behavior || {};
+  if (useBigFive) {
+    const delta = bigFiveBehaviorDelta(arch.bigFive || {});
+    const merged = { ...baseBehavior };
+    for (const key of Object.keys(PARAM_BOUNDS)) {
+      const base = typeof merged[key] === 'number' ? merged[key] : 0;
+      const [lo, hi] = PARAM_BOUNDS[key];
+      merged[key] = clamp(base + (delta[key] || 0), lo, hi);
+    }
+    baseBehavior = merged;
+  }
+
+  const behavior = jitterBehavior(baseBehavior, rng, jitter);
 
   return {
     archetypeId: arch.id,

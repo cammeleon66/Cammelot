@@ -10,6 +10,7 @@ import {
   personaThoughtSet,
   loadArchetypes,
   validateArchetypes,
+  bigFiveBehaviorDelta,
 } from '../src/sim/persona.js';
 
 let archetypes;
@@ -128,4 +129,56 @@ test('validateArchetypes rejects malformed libraries', () => {
   assert.throws(() => validateArchetypes([]));
   assert.throws(() => validateArchetypes([{ id: 'x' }]));
   assert.throws(() => validateArchetypes([{ id: 'x', thoughts: {}, behavior: {} }]));
+});
+
+// ── Big Five → behaviour wiring (opt-in) ──
+
+test('bigFiveBehaviorDelta is zero at neutral (0.5) traits', () => {
+  const d = bigFiveBehaviorDelta({ O: 0.5, C: 0.5, E: 0.5, A: 0.5, N: 0.5 });
+  for (const k of Object.keys(d)) assert.ok(Math.abs(d[k]) < 1e-9, k + ' should be ~0');
+});
+
+test('bigFiveBehaviorDelta moves params in the psychology-grounded direction', () => {
+  // High conscientiousness -> higher compliance
+  assert.ok(bigFiveBehaviorDelta({ C: 1 }).compliance > 0);
+  assert.ok(bigFiveBehaviorDelta({ C: 0 }).compliance < 0);
+  // High neuroticism -> more care-seeking, less trust
+  assert.ok(bigFiveBehaviorDelta({ N: 1 }).careSeekingBias > 0);
+  assert.ok(bigFiveBehaviorDelta({ N: 1 }).trustInSystem < 0);
+  // High agreeableness -> more trust, less refusal
+  assert.ok(bigFiveBehaviorDelta({ A: 1 }).trustInSystem > 0);
+  assert.ok(bigFiveBehaviorDelta({ A: 1 }).refusalTendency < 0);
+  // High extraversion -> more social
+  assert.ok(bigFiveBehaviorDelta({ E: 1 }).socialness > 0);
+  // High openness -> more second opinions
+  assert.ok(bigFiveBehaviorDelta({ O: 1 }).secondOpinionDrive > 0);
+});
+
+test('assignPersona useBigFive OFF is identical to default (study invariance)', () => {
+  // The published A/B study runs with the default (no Big Five). Default and
+  // explicit-off MUST be byte-identical so existing numbers stay valid.
+  for (const id of ['hendrik-veenstra', 'citizen-3', 'anna', 'citizen-41']) {
+    const def = assignPersona({ id, age: 60, gender: 'female' }, archetypes);
+    const off = assignPersona({ id, age: 60, gender: 'female' }, archetypes, { useBigFive: false });
+    assert.deepStrictEqual(off.behavior, def.behavior, 'mismatch for ' + id);
+  }
+});
+
+test('assignPersona useBigFive ON keeps params within bounds and stays deterministic', () => {
+  const agent = { id: 'bf-citizen', age: 55, gender: 'male' };
+  const a = assignPersona(agent, archetypes, { useBigFive: true });
+  const b = assignPersona(agent, archetypes, { useBigFive: true });
+  assert.deepStrictEqual(a.behavior, b.behavior, 'should be deterministic');
+  const bounds = {
+    careSeekingBias: [-0.5, 0.5], compliance: [0, 1], trustInSystem: [0, 1],
+    refusalTendency: [0, 1], secondOpinionDrive: [0, 1], drainModifier: [0.85, 1.15], socialness: [0, 1],
+  };
+  for (const [k, [lo, hi]] of Object.entries(bounds)) {
+    assert.ok(a.behavior[k] >= lo && a.behavior[k] <= hi, k + ' out of bounds: ' + a.behavior[k]);
+  }
+  // Same archetype assigned, but Big Five should have shifted at least one param.
+  const offv = assignPersona(agent, archetypes, { useBigFive: false });
+  assert.strictEqual(a.archetypeId, offv.archetypeId);
+  const changed = Object.keys(bounds).some((k) => Math.abs(a.behavior[k] - offv.behavior[k]) > 1e-6);
+  assert.ok(changed, 'Big Five ON should change at least one behavioural param');
 });
