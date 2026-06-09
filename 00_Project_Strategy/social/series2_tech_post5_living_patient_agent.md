@@ -165,7 +165,7 @@ The library is open. If you think Cammelot is missing an archetype — and it de
 
 ---
 
-*Disclosure: I (Simone Cammel) work at Microsoft. Cammelot is an independent applied-research project, and I may be biased toward AI-enabled architectures. Cammelot models simulated citizens, not real patients — nothing here is clinical advice or a recommendation about any real system or product.*
+*Disclosure: I've worked in Big Tech on AI for years, so I may be biased toward AI-enabled architectures. Cammelot is an independent applied-research project. It models simulated citizens, not real patients — nothing here is clinical advice or a recommendation about any real system or product.*
 
 *Data & sources: demographics and mortality calibrated to **CBS**; chronic-disease prevalence and progression to **RIVM**; care tariffs to **NZa**; administrative-burden and staffing assumptions to **IZA**. Reproducibility: fixed seeds, 100-run protocol, open code. Mortality differences between modes are reported with effect sizes and are not always statistically significant — I do not claim "AI saves lives."*
 

@@ -96,7 +96,7 @@ The simulation is open. Fork it, switch on SOLL, then kill the FHIR store mid-ru
 
 ---
 
-*Disclosure: I (Simone Cammel) work at Microsoft. Cammelot is an independent applied-research project, and I may be biased toward AI-enabled architectures. Cammelot models simulated citizens, not real patients — nothing here is clinical advice. The SOLL figures are simulation output, not measured real-world results; mortality differences between modes are not statistically significant.*
+*Disclosure: I've worked in Big Tech on AI for years, so I may be biased toward AI-enabled architectures. Cammelot is an independent applied-research project. It models simulated citizens, not real patients — nothing here is clinical advice. The SOLL figures are simulation output, not measured real-world results; mortality differences between modes are not statistically significant.*
 
 *On the Chipsoft incident: details are as reported by **Z-CERT** (the Dutch healthcare CERT) and security press and remain under investigation. I separate official/primary reporting from secondary media summaries, keep all claims hedged, and make no assertion of patient harm beyond reported outage and degradation — the argument here is about concentration risk, not proven clinical harm.*
 
