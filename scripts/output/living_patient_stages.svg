@@ -16,7 +16,7 @@
   <g>
     <rect x="20" y="70" width="320" height="370" rx="12" fill="#ffffff" stroke="#d7dceb"/>
     <text x="44" y="100" font-size="14" font-weight="700" fill="#b33b3b">1 · Today (IST)</text>
-    <text x="44" y="120" font-size="13" font-weight="600" fill="#1b2440">Fragmented data</text>
+    <text x="44" y="120" font-size="13" font-weight="600" fill="#1b2440">Digitized, but fragmented</text>
 
     <!-- scattered silos, mismatched -->
     <g>
@@ -39,22 +39,23 @@
     </g>
     <text x="120" y="223" font-size="12" fill="#8a93ad">different systems &#183; formats &#183; quality</text>
 
-    <!-- overwhelmed clinician + paperwork + queue -->
-    <circle cx="80" cy="300" r="13" fill="#3a4668"/>
-    <rect x="68" y="315" width="24" height="30" rx="6" fill="#3a4668"/>
-    <rect x="100" y="300" width="26" height="46" fill="#cfd6e8" stroke="#9aa3c4"/>
-    <rect x="104" y="292" width="26" height="46" fill="#dfe4f1" stroke="#9aa3c4"/>
-    <text x="150" y="315" font-size="12" fill="#1b2440">paperwork backlog</text>
+    <!-- clinician switching between mismatched digital systems (admin burden, not paper) -->
+    <circle cx="78" cy="300" r="13" fill="#3a4668"/>
+    <rect x="66" y="315" width="24" height="30" rx="6" fill="#3a4668"/>
+    <rect x="104" y="295" width="30" height="22" rx="2" fill="#dfe4f1" stroke="#9aa3c4"/>
+    <rect x="116" y="306" width="30" height="22" rx="2" fill="#cfd6e8" stroke="#9aa3c4"/>
+    <text x="152" y="304" font-size="12" fill="#1b2440">30% admin: re-keying</text>
+    <text x="152" y="320" font-size="12" fill="#8a93ad">across siloed systems</text>
     <g fill="#b33b3b">
-      <circle cx="150" cy="345" r="6"/><circle cx="170" cy="345" r="6"/><circle cx="190" cy="345" r="6"/>
-      <circle cx="210" cy="345" r="6"/><circle cx="230" cy="345" r="6"/>
+      <circle cx="150" cy="349" r="6"/><circle cx="170" cy="349" r="6"/><circle cx="190" cy="349" r="6"/>
+      <circle cx="210" cy="349" r="6"/><circle cx="230" cy="349" r="6"/>
     </g>
-    <text x="248" y="349" font-size="12" fill="#8a93ad">waiting queue</text>
+    <text x="248" y="353" font-size="12" fill="#8a93ad">waiting queue</text>
 
     <line x1="44" y1="378" x2="316" y2="378" stroke="#eef0f6"/>
-    <text x="44" y="400" font-size="12" fill="#5b6480">~11% interoperable. The record is</text>
-    <text x="44" y="418" font-size="12" fill="#5b6480">scattered. Care is <tspan font-weight="700" fill="#b33b3b">reactive</tspan>: you seek</text>
-    <text x="44" y="436" font-size="12" fill="#5b6480">help, then you wait.</text>
+    <text x="44" y="400" font-size="12" fill="#5b6480">Data is digital but siloed; only</text>
+    <text x="44" y="418" font-size="12" fill="#5b6480">~11% interoperable. Care is <tspan font-weight="700" fill="#b33b3b">reactive</tspan>:</text>
+    <text x="44" y="436" font-size="12" fill="#5b6480">you seek help, then you wait.</text>
   </g>
 
   <!-- ============ STAGE 2 ============ -->

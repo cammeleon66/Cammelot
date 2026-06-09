@@ -160,6 +160,7 @@ img{max-width:100%;border:1px solid var(--line);border-radius:10px}
     <a href="#summary">Results</a>
     <a href="#posts">Blog posts</a>
     <a href="#figdata">Raw figure data</a>
+    <a href="../site/world.html" target="_blank" rel="noopener">🎮 Live demo</a>
     <a href="replay.html">▶ Run replay</a>
   </nav>
 </header>
@@ -193,11 +194,20 @@ img{max-width:100%;border:1px solid var(--line);border-radius:10px}
   and ketenzorg uptake are emergent. N=45 — mortality comparisons are underpowered by design and not statistically
   distinguishable here.</p>
 
-  <h3>Watch one run play back</h3>
+  <h3>See the simulation</h3>
   <img src="assets/world_town_screenshot.png" alt="Cammelot town simulation screenshot">
-  <p>A lightweight scrubber replay of a single recorded run (IST and SOLL) — agent health over time,
-  deaths as they happen, and the end-of-run counters. Far faster than the live engine.</p>
-  <p><a class="cta" href="replay.html">▶ Open the run replay</a></p>
+  <p>There are two ways to view it:</p>
+  <ul>
+    <li><b>Live interactive demo</b> — the real 16-bit Cammelot engine you play (toggle IST/SOLL,
+    click citizens, watch it run). This is the full simulation. It is heavier to run.</li>
+    <li><b>Run replay</b> — a lightweight scrubber playback of a single recorded run (IST and SOLL):
+    agent health over time, deaths as they happen, and the end-of-run counters. Far faster than the live engine.</li>
+  </ul>
+  <p>
+    <a class="cta" href="../site/world.html" target="_blank" rel="noopener">🎮 Open the live interactive demo</a>
+    &nbsp;&nbsp;
+    <a class="cta" href="replay.html">▶ Open the run replay</a>
+  </p>
 </section>
 
 <section id="posts">
