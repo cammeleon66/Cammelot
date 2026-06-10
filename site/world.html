@@ -1251,6 +1251,11 @@ let ketenzorgCostEur = 0;
 // ── Blog-Ready Sprint: Fairness Guardrail ──
 let fairnessGuardrailActive = false;
 
+// ── T7 Living Patient: outward action, consent, audit, outreach-fairness ──
+let outreachOptOutCount = 0;
+let gpPreBriefCount = 0;
+let outreachReach = { '0-44': 0, '45-64': 0, '65-79': 0, '80+': 0 };
+
 // ── Research & Benchmark Agents (Post-T4) ──
 let researchQueriesCompleted = 0;
 let researchOptOutRefusals = 0;
@@ -3256,7 +3261,8 @@ function spawnAgent(index, age, gender, surname) {
     isProtesting: false,
     heardExperiences: [],
     systemAnxiety: 0,
-    researchConsent: Math.random() >= 0.05
+    researchConsent: Math.random() >= 0.05,
+    outreachConsent: Math.random() >= 0.10
   };
 }
 
@@ -7422,37 +7428,82 @@ function tick(){
       if(a.hp<=0) return;
       agentReflect(a);
       agentPlan(a);
-      // Digital Twin risk assessment
+      // Digital Twin risk assessment, now with a deterioration trajectory (T7).
       a.digitalTwinRisk = calculateDigitalTwinRisk(a);
-      // Sprint S5: Lower alert threshold in SOLL mode (proactive detection)
-      const alertThreshold = mode === 'SOLL' ? 25 : 60;
-      // High risk from Digital Twin speeds up GP seeking
-      if(a.digitalTwinRisk && a.digitalTwinRisk.riskPct > alertThreshold && a.behaviorState === 'roaming' && a.conditions.length > 0){
+      if(a.digitalTwinRisk){
+        a._riskTrail = a._riskTrail || [];
+        a._riskTrail.push(a.digitalTwinRisk.riskPct);
+        if(a._riskTrail.length > 6) a._riskTrail.shift();
+        var _tr = a._riskTrail;
+        var _trend = _tr.length >= 3 ? (_tr[_tr.length - 1] - _tr[0]) : 0;
+        a.digitalTwinRisk.trend = _trend;
+        a.digitalTwinRisk.deteriorating = _trend >= 6; // rising ~6pp over the window
+      }
+      // IST: the patient only self-notices at high absolute risk (reactive, no brain).
+      // SOLL: the Living Patient brain watches the trajectory and acts earlier (proactive).
+      var _dt = a.digitalTwinRisk;
+      var _eligible = _dt && a.conditions.length > 0 && a.behaviorState === 'roaming';
+      var _fire = _eligible && (mode === 'SOLL'
+        ? (_dt.riskPct > 25 || (_dt.deteriorating && _dt.riskPct > 15))
+        : (_dt.riskPct > 60));
+      if(_fire){
         const timeSinceGP = cycle - (a.lastGPCycle || -100);
         if(timeSinceGP > 10){
-          a.behaviorState='going_to_gp'; a.pathComplete=false;
-          logEvent('feeling_sick', a, 'Digital Twin alert: ' + a.digitalTwinRisk.riskPct + '% risk');
-          addHistory(a,'feeling_sick','Digital Twin says I\'m at ' + a.digitalTwinRisk.riskPct + '% risk. Going to GP now.');
-          sendAgentTo(a, getGPDest(a.gpName).entrance);
+          var _route = true;
           if(mode === 'SOLL'){
-            proactiveAlertCount++;
-            if(proactiveAlertCount <= 5 || proactiveAlertCount % 10 === 0){
-              showToast('🔮 Digital Twin Alert: ' + a.name + ' (' + a.age + ') — ' + a.digitalTwinRisk.riskPct + '% risk detected', 3000);
-            }
-          }
-          // Ketenzorg intervention tracking
-          if(a.conditions && a.conditions.length > 0){
-            a.conditions.forEach(function(c){
-              if(KETENZORG_TARIFFS[c.code]){
-                ketenzorgInterventions++;
-                ketenzorgCostEur += KETENZORG_TARIFFS[c.code];
-                logEvent('ketenzorg', a, 'Ketenzorg intervention (' + c.code + '): €' + KETENZORG_TARIFFS[c.code].toFixed(2));
+            // Guardrail: consent gates outreach. Opted-out citizens are never contacted.
+            if(a.outreachConsent === false){
+              outreachOptOutCount++;
+              _route = false;
+            } else {
+              // ── Act outward: the brain contacts the patient (a system of action) ──
+              var _brain = { id: 'living-patient-' + a.id, name: 'Living Patient' };
+              var _reason = _dt.deteriorating
+                ? 'Risk rising (' + _dt.riskPct + '%, +' + Math.round(_dt.trend) + 'pp over 3 weeks). GP slot held.'
+                : 'Risk ' + _dt.riskPct + '%. GP slot held.';
+              a.chatBubbleText = '📲 Numbers drifting — GP slot held';
+              a.chatTimer = 120;
+              a.contactedByBrain = true;
+              // Audit: every nudge is a logged FHIR resource.
+              createFHIRResource('Communication', a.id, { code: 'CAMMELOT-ALERT', status: 'completed', riskPct: _dt.riskPct, trend: Math.round(_dt.trend || 0), reason: _reason });
+              // A2A: pre-brief the GP so the consult starts already informed.
+              var _gp = agents.find(function(g){ return g.type === 'gp' && (g.name === a.gpName || g.id === a.gpId); }) || agents.find(function(g){ return g.type === 'gp'; });
+              if(_gp){
+                sendA2AMessage(_brain, _gp, 'alert', { patient: a.id, patientName: a.name, riskPct: _dt.riskPct, reason: _reason });
+                a.gpPreBriefed = true;
+                gpPreBriefCount++;
               }
-            });
-            // Mark agent as receiving treatment — slows Markov progression (SOLL only)
-            if (mode === 'SOLL') {
-              a.receivingKetenzorg = true;
-              a.lastKetenzorgCycle = cycle;
+              // Outreach-fairness: record who the brain reaches.
+              var _ab = a.age >= 80 ? '80+' : a.age >= 65 ? '65-79' : a.age >= 45 ? '45-64' : '0-44';
+              if(outreachReach[_ab] !== undefined) outreachReach[_ab]++;
+              proactiveAlertCount++;
+              if(proactiveAlertCount <= 5 || proactiveAlertCount % 10 === 0){
+                showToast('🔮 Living Patient reached ' + a.name + ' (' + a.age + ') — ' + _dt.riskPct + '% risk, GP slot held', 3000);
+              }
+              logEvent('feeling_sick', a, 'Living Patient outreach: ' + _dt.riskPct + '% risk (' + (_dt.deteriorating ? 'rising' : 'level') + ')');
+              addHistory(a, 'feeling_sick', '📲 Living Patient: ' + _reason + ' Accepted.');
+            }
+          } else {
+            logEvent('feeling_sick', a, 'Digital Twin alert: ' + _dt.riskPct + '% risk');
+            addHistory(a, 'feeling_sick', 'I feel unwell (' + _dt.riskPct + '% risk). Going to GP.');
+          }
+          if(_route){
+            a.behaviorState='going_to_gp'; a.pathComplete=false;
+            sendAgentTo(a, getGPDest(a.gpName).entrance);
+            // Ketenzorg intervention tracking
+            if(a.conditions && a.conditions.length > 0){
+              a.conditions.forEach(function(c){
+                if(KETENZORG_TARIFFS[c.code]){
+                  ketenzorgInterventions++;
+                  ketenzorgCostEur += KETENZORG_TARIFFS[c.code];
+                  logEvent('ketenzorg', a, 'Ketenzorg intervention (' + c.code + '): €' + KETENZORG_TARIFFS[c.code].toFixed(2));
+                }
+              });
+              // Mark agent as receiving treatment — slows Markov progression (SOLL only)
+              if (mode === 'SOLL') {
+                a.receivingKetenzorg = true;
+                a.lastKetenzorgCycle = cycle;
+              }
             }
           }
         }
@@ -7635,6 +7686,7 @@ function resetSim(){
   erAdmissionCount=0; // Blog-Ready Sprint
   ketenzorgInterventions=0; ketenzorgCostEur=0; // Blog-Ready Sprint
   fairnessGuardrailActive=false; // Blog-Ready Sprint
+  outreachOptOutCount=0; gpPreBriefCount=0; outreachReach={ '0-44':0,'45-64':0,'65-79':0,'80+':0 }; // T7 Living Patient
   researchQueriesCompleted=0; researchOptOutRefusals=0; researchCohortTooSmall=0; benchmarkReportsGenerated=0;
   EVENT_LOG.length=0;
   HOSPITAL_DISCHARGED.length=0;
@@ -7666,6 +7718,7 @@ function resetSim(){
     a.referredToHospital=false; a.causeOfDeath=undefined;
     a.hpHistory=[Math.round(a.hp)];
     a.reflections=[]; a.plans=[]; a.digitalTwinRisk=null;
+    a._riskTrail=null; a.contactedByBrain=false; a.gpPreBriefed=false; // T7 Living Patient
     a.path=[]; a.pathIdx=0;
     a.idleUntil=performance.now()+Math.random()*5000;
     // Sprint 26: Reset life-stage properties

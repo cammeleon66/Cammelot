@@ -1,26 +1,26 @@
 Cammelot persona-active A/B study — figure data
-100 runs x 3000 cycles | Big Five behaviour ENABLED | source: scripts/output/persona_ab_comparison.json | 2026-06-09T08:29:10.096Z
+100 runs x 3000 cycles | Big Five behaviour ENABLED | source: scripts/output/persona_ab_comparison.json | 2026-06-10T07:31:29.695Z
 
 TABLE A — Personas ON vs OFF (same engine, IST mode): does personality change outcomes?
 metric                 OFF      ON       Cohen_d   verdict
-total_deaths           5.72     5.31     0.159     not significant
-system_deaths (prevent.) 4.49     3.79     0.322     SIGNIFICANT (p<0.05)
-avg_burnout            18.17    18.095   0.02      not significant
-bias_score             0.333    0.324    0.088     not significant
+total_deaths           5.94     5.76     0.07      not significant
+system_deaths (prevent.) 4.56     4.23     0.142     not significant
+avg_burnout            18.562   19.155   -0.167    not significant
+bias_score             0.357    0.344    0.091     not significant
 => With Big Five wired in, personality SIGNIFICANTLY reduces preventable deaths in IST
    (4.49 -> 3.79, d=0.32). Calibrated aggregates (burnout) otherwise preserved.
 
 TABLE B — IST vs SOLL (personas ON): does the AI-native overhaul help?
 metric                 IST      SOLL     %vsIST    Cohen_d   significant
-total_deaths           5.31     5.5      +3.6%     -0.075    NO
-system_deaths (prevent.) 3.79     3.86     +1.8%     -0.033    NO
-avg_burnout            18.095   4.375    -75.8%    4.657     YES
-peak_burnout           38.68    17.87    -53.8%    8.087     YES
-proactive_alerts       0        305.22   new       -5.385    YES
-ketenzorg_interv.      61.81    171.4    +177.3%   -1.658    YES
+total_deaths           5.76     5.3      -8%       0.172     NO
+system_deaths (prevent.) 4.23     3.94     -6.9%     0.124     NO
+avg_burnout            19.155   4.528    -76.4%    5.507     YES
+peak_burnout           39.18    17.65    -55%      8.836     YES
+proactive_alerts       0        321.9    new       -3.98     YES
+ketenzorg_interv.      66.3     187.03   +182.1%   -1.533    YES
 admin_waste_eur        33561    5594     -83.3%    0         NO (deterministic)
-er_admissions          62.57    68.43    +9.4%     -0.295    YES
-bias_score             0.324    0.397    +22.5%    -0.539    YES
+er_admissions          64.48    63.31    -1.8%     0.059     NO
+bias_score             0.344    0.378    +9.9%     -0.219    NO
 
 NOTES
 - admin_waste is a deterministic model output (admin 30%->5%); no variance, so no significance test.
