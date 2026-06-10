@@ -19,6 +19,8 @@ const METRICS = [
   'total_deaths', 'system_deaths', 'natural_deaths', 'admin_waste_eur',
   'proactive_alerts', 'ketenzorg_interventions', 'er_admissions',
   'peak_burnout', 'avg_burnout', 'sick_leave_events', 'bias_score',
+  'a2a_pre_briefs', 'outreach_opt_outs', 'unique_citizens_contacted',
+  'reach_0_44', 'reach_45_64', 'reach_65_79', 'reach_80plus',
 ];
 
 function runOnce(mode, persona) {
@@ -47,6 +49,13 @@ function toMetrics(r) {
     sick_leave_events: r.sick_leave_events || 0,
     bias_score: r.bias_score || 0,
     fairness_guardrail: r.fairness_guardrail ? 1 : 0,
+    a2a_pre_briefs: r.a2a_pre_briefs || 0,
+    outreach_opt_outs: r.outreach_opt_outs || 0,
+    unique_citizens_contacted: r.unique_citizens_contacted || 0,
+    reach_0_44: (r.outreach_reach && r.outreach_reach['0-44']) || 0,
+    reach_45_64: (r.outreach_reach && r.outreach_reach['45-64']) || 0,
+    reach_65_79: (r.outreach_reach && r.outreach_reach['65-79']) || 0,
+    reach_80plus: (r.outreach_reach && r.outreach_reach['80+']) || 0,
   };
 }
 

@@ -1,8 +1,8 @@
 Cammelot A/B raw data - column dictionary and provenance
 =========================================================
 
-Generated: 2026-06-10T07:54:26.039Z
-Study config: 100 runs x 3000 cycles per cell, study date 2026-06-10T07:31:29.695Z
+Generated: 2026-06-10T08:17:56.110Z
+Study config: 100 runs x 3000 cycles per cell, study date 2026-06-10T08:17:15.435Z
 Engine: site/world.html (single shared engine; the website demo and this study run the same code)
 Reproduce: node scripts/persona_ab_study.cjs 100 3000   (then node scripts/export_raw_data.cjs)
 

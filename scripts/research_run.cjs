@@ -210,9 +210,9 @@ patchedJS = patchedJS.replace(
 // Access eval'd globals — const/let in eval create local scope, need global assignment
 // Patch: expose key variables to global scope
 patchedJS += '\nglobal._agents = agents;\nglobal._EVENT_LOG = EVENT_LOG;\nglobal._BIAS_DATA = BIAS_DATA;\nglobal._M = M;\nglobal._WEEKLY_REPORTS = WEEKLY_REPORTS;\nglobal._S = S;\n';
-patchedJS += 'global._tick = function() { tick(); global._erAdmissionCount = erAdmissionCount; global._proactiveAlertCount = proactiveAlertCount; global._ketenzorgInterventions = ketenzorgInterventions; global._ketenzorgCostEur = ketenzorgCostEur; global._fairnessGuardrailActive = fairnessGuardrailActive; global._researchQueriesCompleted = researchQueriesCompleted; global._researchOptOutRefusals = researchOptOutRefusals; global._researchCohortTooSmall = researchCohortTooSmall; global._benchmarkReportsGenerated = benchmarkReportsGenerated; global._cycle = cycle; global._BIAS_DATA = BIAS_DATA; global._WEEKLY_REPORTS = WEEKLY_REPORTS; };\n';
+patchedJS += 'global._tick = function() { tick(); global._erAdmissionCount = erAdmissionCount; global._proactiveAlertCount = proactiveAlertCount; global._ketenzorgInterventions = ketenzorgInterventions; global._ketenzorgCostEur = ketenzorgCostEur; global._fairnessGuardrailActive = fairnessGuardrailActive; global._researchQueriesCompleted = researchQueriesCompleted; global._researchOptOutRefusals = researchOptOutRefusals; global._researchCohortTooSmall = researchCohortTooSmall; global._benchmarkReportsGenerated = benchmarkReportsGenerated; global._cycle = cycle; global._BIAS_DATA = BIAS_DATA; global._WEEKLY_REPORTS = WEEKLY_REPORTS; global._gpPreBriefCount = (typeof gpPreBriefCount !== "undefined" ? gpPreBriefCount : 0); global._outreachOptOutCount = (typeof outreachOptOutCount !== "undefined" ? outreachOptOutCount : 0); global._outreachReach = (typeof outreachReach !== "undefined" ? outreachReach : {}); };\n';
 patchedJS += 'global._setMode = function(m) { mode = m; };\n';
-patchedJS += 'global._erAdmissionCount = 0; global._proactiveAlertCount = 0; global._ketenzorgInterventions = 0; global._ketenzorgCostEur = 0; global._fairnessGuardrailActive = false; global._researchQueriesCompleted = 0; global._researchOptOutRefusals = 0; global._researchCohortTooSmall = 0; global._benchmarkReportsGenerated = 0; global._cycle = 0;\n';
+patchedJS += 'global._erAdmissionCount = 0; global._proactiveAlertCount = 0; global._ketenzorgInterventions = 0; global._ketenzorgCostEur = 0; global._fairnessGuardrailActive = false; global._researchQueriesCompleted = 0; global._researchOptOutRefusals = 0; global._researchCohortTooSmall = 0; global._benchmarkReportsGenerated = 0; global._cycle = 0; global._gpPreBriefCount = 0; global._outreachOptOutCount = 0; global._outreachReach = {};\n';
 
 // Keep stdout clean: the engine is chatty during eval/ticks, but research_run stdout must be JSON-only.
 const realConsoleLog = console.log;
@@ -403,6 +403,10 @@ const results = {
   gini: Math.round((BIAS_DATA.currentGini||0) * 1000)/1000,
   bias_score: Math.round((BIAS_DATA.currentBiasScore||0)*1000)/1000,
   fairness_guardrail: fairnessGuardrailActive,
+  a2a_pre_briefs: (global._gpPreBriefCount || 0),
+  outreach_opt_outs: (global._outreachOptOutCount || 0),
+  unique_citizens_contacted: agents.filter(a => a.contactedByBrain).length,
+  outreach_reach: (global._outreachReach || {}),
   research_queries_completed: researchQueriesCompleted,
   research_opt_out_refusals: researchOptOutRefusals,
   research_cohort_too_small: researchCohortTooSmall,
