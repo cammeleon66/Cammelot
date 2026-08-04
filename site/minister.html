@@ -12624,6 +12624,16 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     ov.className = 'moc-overlay'; ov.id = 'moc-council';
     let html = '<div class="moc-box"><h2>\ud83c\udfdb Quarterly Council \u2014 Q' + qq + ', Year ' + year + '</h2>';
     html += '<div class="moc-sub">Quarter ' + q + ' of ' + MoC.TOTAL_QUARTERS + ' \u00b7 ' + (newDeaths > 0 ? '\u26a0 ' + newDeaths + ' preventable death' + (newDeaths > 1 ? 's' : '') + ' last quarter' : 'No preventable deaths last quarter') + '</div>';
+    // Year report banner: the settled objective from the year that just ended
+    if (GS.pendingYearResult) {
+      const yr = GS.pendingYearResult;
+      GS.pendingYearResult = null;
+      html += '<div class="moc-dilemma" style="border-color:' + (yr.achieved ? 'var(--m-green)' : 'var(--m-red)') + '">'
+        + '<div class="ec-head" style="background:' + (yr.achieved ? 'linear-gradient(90deg,#1e5a28,#123a1a)' : 'linear-gradient(90deg,#6a1820,#40101a)') + '">'
+        + (yr.achieved ? '\u2705 YEAR ' + yr.year + ' OBJECTIVE ACHIEVED' : '\u274c YEAR ' + yr.year + ' OBJECTIVE MISSED') + '</div>'
+        + '<div class="dq">' + yr.text + (yr.achieved ? ' \u2014 <b style="color:var(--m-green)">+' + yr.bonus + ' pts awarded.</b>' : ' \u2014 no bonus. The Gazette noticed.') + '</div></div>';
+      if (!yr.achieved) MoC.adjustTrust(-1);
+    }
     html += '<div class="moc-gazette">' + gazetteReport(q, dueDelayed, evt) + '</div>';
     html += '<div class="moc-meters">'
       + meterHtml(pixIcon('people') + ' Citizens', GS.trustC, GS.trustC >= 50 ? '#58c858' : GS.trustC >= 30 ? '#ffd54f' : '#e05858')
@@ -13111,7 +13121,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
       const a = ac(); if (!a) return;
       const o = a.createOscillator(), g = a.createGain();
       o.type = type || 'square'; o.frequency.value = freq;
-      g.gain.value = gain || 0.04;
+      g.gain.value = (gain || 0.04) * 0.45; // G8 audio pass: keep SFX subtle
       g.gain.setTargetAtTime(0, a.currentTime + (when || 0) + dur * 0.7, 0.03);
       o.connect(g); g.connect(a.destination);
       o.start(a.currentTime + (when || 0)); o.stop(a.currentTime + (when || 0) + dur);
@@ -13124,7 +13134,36 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
       bell: function(){ tone(880, 0.5, 'sine', 0.05); tone(1318, 0.7, 'sine', 0.03, 0.05); },
       jingle: function(){ [523, 659, 784, 1046].forEach(function(f, i){ tone(f, 0.12, 'square', 0.05, i * 0.1); }); },
       dirge: function(){ [392, 370, 349, 330].forEach(function(f, i){ tone(f, 0.35, 'triangle', 0.06, i * 0.32); }); },
-      setMuted: function(m){ muted = m; saveJSON('moc_muted', m); },
+      // Title theme: prefers assets/minister-theme.mp3 (e.g. Sora/Suno-generated), falls back to a short chip motif
+      title: (function(){
+        let audio = null, stopped = false, chipTimer = null;
+        function chipMotif(){
+          // gentle 8-bar SNES-style motif, ~0.02 gain, loops until stop
+          const seq = [ [262,0],[330,.22],[392,.44],[523,.66], [494,1.0],[392,1.22],[330,1.44],[262,1.66],
+                        [294,2.0],[370,2.22],[440,2.44],[587,2.66], [523,3.0],[440,3.3],[392,3.6] ];
+          seq.forEach(function(n){ tone(n[0], 0.28, 'triangle', 0.045, n[1]); });
+          seq.forEach(function(n){ tone(n[0] / 2, 0.3, 'sine', 0.03, n[1]); });
+          chipTimer = setTimeout(function(){ if (!stopped && !muted) chipMotif(); }, 4200);
+        }
+        return {
+          start: function(){
+            if (MoC.IS_BASELINE || muted) return;
+            stopped = false;
+            audio = new window.Audio('assets/minister-theme.mp3');
+            audio.volume = 0.28; audio.loop = true;
+            audio.play().catch(function(){ audio = null; chipMotif(); });
+          },
+          stop: function(){
+            stopped = true;
+            if (chipTimer) { clearTimeout(chipTimer); chipTimer = null; }
+            if (audio) {
+              const a2 = audio; audio = null;
+              const fade = setInterval(function(){ a2.volume = Math.max(0, a2.volume - 0.04); if (a2.volume <= 0.01) { a2.pause(); clearInterval(fade); } }, 80);
+            }
+          }
+        };
+      })(),
+      setMuted: function(m){ muted = m; saveJSON('moc_muted', m); if (m && Audio5 && Audio5.title) Audio5.title.stop(); },
       isMuted: function(){ return muted; }
     };
   })();
@@ -13140,8 +13179,8 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     GS.liveScore = Math.max(0, GS.liveScore + delta);
     const el = document.getElementById('hScore');
     if (el) el.textContent = GS.liveScore;
-    FX.pop((delta >= 0 ? '+' : '') + delta + ' pts', delta >= 0 ? '#7bc67b' : '#e07050', window.innerWidth - 220, 70);
-    Audio5.blip(delta >= 0 ? 660 : 220);
+    FX.pop((delta >= 0 ? '+' : '') + delta + ' pts', delta >= 0 ? '#58c858' : '#e05858', window.innerWidth - 220, 70);
+    // no blip here — the council sting covers the quarter beat (audio restraint)
   }
   function updateLivesHud(){
     const el = document.getElementById('hLives');
@@ -13206,21 +13245,21 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
                  : '<span style="color:var(--m-red);font-weight:700">\u2717 FAILING</span>');
   }
   function settleYearObjective(){
-    if (!GS.objective || MoC.IS_BASELINE) return;
+    if (!GS.objective || MoC.IS_BASELINE) return null;
     const el = objectiveBar();
     el.style.borderColor = '';
-    if (GS.objective.check()) {
-      GS.liveScore += GS.objective.bonus;
+    const obj = GS.objective;
+    if (obj.check()) {
+      GS.liveScore += obj.bonus;
       const hs = document.getElementById('hScore'); if (hs) hs.textContent = GS.liveScore;
-      el.className = 'moc-objective done';
-      el.innerHTML = '\u2705 Objective achieved! +' + GS.objective.bonus + ' pts';
-      FX.pop('+' + GS.objective.bonus + ' OBJECTIVE!', '#7bc67b');
+      FX.pop('+' + obj.bonus + ' OBJECTIVE!', '#58c858');
       Audio5.jingle();
+      GS.lastYearResult = { year: obj._year, text: obj.text, bonus: obj.bonus, achieved: true };
     } else {
-      el.className = 'moc-objective failed';
-      el.innerHTML = '\u274c Objective missed.';
       Audio5.blip(180);
+      GS.lastYearResult = { year: obj._year, text: obj.text, bonus: obj.bonus, achieved: false };
     }
+    return GS.lastYearResult;
   }
 
   // ═══ G5b: FLASH DECISIONS (mid-quarter, 8s timer) ═══
@@ -13395,6 +13434,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     const spd = GS._speed === undefined ? 1 : GS._speed;
     el.innerHTML = '<div class="mhead"><h4 style="margin:0">\ud83c\udfdb THE MINISTRY</h4>'
       + '<span class="spd">'
+      + '<button id="moc-mute" title="Sound on/off" class="' + (Audio5.isMuted() ? '' : 'on') + '">' + (Audio5.isMuted() ? '\ud83d\udd07' : '\ud83d\udd0a') + '</button>'
       + '<button id="moc-spd0" class="' + (MoC.paused ? 'on' : '') + '">\u23f8</button>'
       + '<button id="moc-spd1" class="' + (!MoC.paused && spd === 1 ? 'on' : '') + '">1\u00d7</button>'
       + '<button id="moc-spd2" class="' + (!MoC.paused && spd === 2 ? 'on' : '') + '">2\u00d7</button>'
@@ -13414,6 +13454,8 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     if (b0) b0.onclick = function(){ speedSet(0); };
     if (b1) b1.onclick = function(){ speedSet(1); };
     if (b2) b2.onclick = function(){ speedSet(2); };
+    const bm = el.querySelector('#moc-mute');
+    if (bm) bm.onclick = function(){ Audio5.setMuted(!Audio5.isMuted()); renderMinistry(); };
   }
 
   // ── IST twin-run baseline ──
@@ -13516,11 +13558,12 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
       const ov = document.getElementById('play-overlay');
       if (!ov) return;
       ov.style.display = 'flex';
+      // Title theme starts on first user gesture anywhere on the briefing (browser autoplay rules)
+      ov.addEventListener('pointerdown', function once(){ ov.removeEventListener('pointerdown', once); Audio5.title.start(); }, { once: true });
       const b = sc.brief || { situation: sc.desc, threats: [], win: 'Serve your term.' };
       const years = Math.ceil(sc.quarters / 4);
       ov.innerHTML = '<div class="moc-box" style="max-width:560px;cursor:default">'
-        + '<h2 style="text-align:center">' + sc.icon + ' ' + sc.name.toUpperCase() + '</h2>'
-        + '<div class="moc-sub" style="text-align:center">Term #' + MoC.seed + (GS.isDaily && sc.daily ? ' \u00b7 today\u2019s shared scenario' : '') + (GS.challengeScore !== null ? ' \u00b7 \ud83c\udfaf score to beat: ' + GS.challengeScore : '') + '</div>'
+        + '<h2 style="text-align:center">' + sc.icon + ' ' + sc.name.toUpperCase() + '</h2>'        + '<div class="moc-sub" style="text-align:center">Term #' + MoC.seed + (GS.isDaily && sc.daily ? ' \u00b7 today\u2019s shared scenario' : '') + (GS.challengeScore !== null ? ' \u00b7 \ud83c\udfaf score to beat: ' + GS.challengeScore : '') + '</div>'
         + '<h3>\ud83d\udccb Situation report</h3><div class="moc-sub" style="line-height:1.6">' + b.situation + '</div>'
         + '<div class="moc-sys" style="grid-template-columns:repeat(3,1fr)">'
         + '<div class="cell">\ud83d\udcb0 Budget<b class="y">' + fmtK(sc.budget) + '</b></div>'
@@ -13533,6 +13576,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
       document.getElementById('moc-takeoffice').addEventListener('click', function(){
         ov.remove();
         window._mocBriefed = true;
+        Audio5.title.stop();
         Audio5.sting();
         function proceed(){
           MoC.paused = false;
@@ -13562,8 +13606,8 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     // Wire hooks (G5: wrapped with live scoring, objectives, flash decisions)
     MoC.onQuarter = function(q){
       liveScoreTick();
-      if ((q - 1) % 4 === 0) {           // new year starts
-        settleYearObjective();
+      if ((q - 1) % 4 === 0 && q > 1) {  // year boundary: settle before the new year's objective
+        GS.pendingYearResult = settleYearObjective();
         newYearObjective(Math.ceil(q / 4));
       }
       openCouncil(q);
