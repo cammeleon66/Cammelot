@@ -12125,8 +12125,8 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
       fx:{admin:-0.07, ai:0.10, dep:1}, max:1,
       desc:'Hospital-wide ambient documentation. Admin \u2192 5%, AI efficiency +0.10. +1 dependence.' },
     { id:'hire', name:'\ud83e\ude7a Recruit specialists', cost:80000, costStep:20000,
-      fx:{tree:-2}, max:3,
-      desc:'National shortage makes each hire pricier. Referral wait -2 weeks per hire.' },
+      fx:{tree:-2, trustD:3}, max:3,
+      desc:'National shortage makes each hire pricier. Wait -2 weeks per hire. Doctors +3 (reinforcements!).' },
     { id:'a2a', name:'\ud83d\udd17 Referral mesh', cost:60000,
       fx:{tree:-3, dep:3}, max:1,
       desc:'Agent-to-agent scheduling: referrals in days, not weeks. Wait -3 weeks. +3 dependence.' },
@@ -12134,8 +12134,8 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
       fx:{drainMult:0.75, dep:2}, max:1,
       desc:'Predictive risk profiles catch decline early. HP drain -25%. +2 dependence.' },
     { id:'mtvp', name:'\u23f3 More Time for the Patient', cost:40000,
-      fx:{drainMult:0.9, trust:3}, max:1,
-      desc:'Longer consultations, better outcomes. Drain -10%, Trust +3.' },
+      fx:{drainMult:0.9, trustC:2, trustD:3}, max:1,
+      desc:'Longer consultations, better outcomes. Drain -10%, Citizens +2, Doctors +3.' },
     { id:'audit', name:'\u2696 Fairness audit', cost:20000,
       fx:{trust:4}, max:5,
       desc:'Independent review of triage decisions. Trust +4. Repeatable.' },
@@ -12550,9 +12550,11 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     GS._sdLastQ = sdNow;
     if (newDeaths > 0) adjustStakeholders(-4 * newDeaths, -1 * newDeaths, -2 * newDeaths);
     else adjustStakeholders(1, 1, 1);
-    // Doctors: workload pressure — high admin or sick leave erodes their trust
-    if (M.IST.admin > 0.25 || M.IST.sick > 0.09) adjustStakeholders(0, -2, 0);
-    else if (M.IST.admin < 0.10) adjustStakeholders(0, 1, 0);
+    // Doctors: workload pressure — but relief is felt too
+    if (M.IST.admin > 0.25 && M.IST.sick > 0.09) adjustStakeholders(0, -2, 0);      // both grievances: bleeding
+    else if (M.IST.admin > 0.25 || M.IST.sick > 0.09) adjustStakeholders(0, -1, 0); // one grievance: slow erosion
+    else if (M.IST.admin < 0.12) adjustStakeholders(0, 2, 0);                        // real relief: morale climbs
+    else adjustStakeholders(0, 1, 0);
     // Lose checks per stakeholder
     if (GS.trustP <= 10) { councilOpen = false; return endTerm('noconfidence'); }
     if (GS.trustD <= 10) { councilOpen = false; return endTerm('strike'); }
@@ -12756,7 +12758,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     const score = Math.max(0, Math.round(
       livesSaved * 100 + GS.trust * 3 + Math.round(GS.budget / 10000)
       + adminGain * 3 + waitGain * 15 - fragility()
-      + (GS.liveScore || 0)
+      + Math.round((GS.liveScore || 0) * 0.25)
     ));
     return { score: score, livesSaved: livesSaved, baseSd: baseSd, sd: sd, adminGain: adminGain, waitGain: waitGain };
   }
@@ -12985,7 +12987,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     html += '<div class="moc-score-row"><span>Referral wait reduced</span><b>' + r.waitGain + ' weeks (now ' + M.IST.tree + 'w)</b></div>';
     html += '<div class="moc-score-row"><span>Final trust / fragility</span><b>' + GS.trust + ' / ' + fragility() + '</b></div>';
     html += '<div class="moc-score-row"><span>Budget unspent</span><b>' + fmtK(GS.budget) + '</b></div>';
-    html += '<div class="moc-score-row"><span>Term points (live play + objectives)</span><b>' + (GS.liveScore || 0) + '</b></div>';
+    html += '<div class="moc-score-row"><span>Term points (25% of live play + objectives)</span><b>' + Math.round((GS.liveScore || 0) * 0.25) + '</b></div>';
     html += '<div class="moc-score-row" style="font-size:15px"><span><b>FINAL SCORE</b></span><b id="moc-scoreval" style="color:#FFB300">' + r.score + '</b></div>';
     if (GS.challengeScore !== null) {
       const beat = r.score > GS.challengeScore;
@@ -13188,13 +13190,25 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     const obj = OBJECTIVES[(MoC.seed + year * 3) % OBJECTIVES.length];
     GS.objective = Object.create(obj);
     GS.objective.start();
+    GS.objective._year = year;
+    updateObjectiveBar();
+  }
+  function updateObjectiveBar(){
+    if (!GS.objective || MoC.IS_BASELINE || GS.over) return;
     const el = objectiveBar();
+    const onTrack = GS.objective.check();
+    const qInYear = ((GS.quarter - 1) % 4) + 1;
     el.className = 'moc-objective';
-    el.innerHTML = '\ud83c\udfaf Year ' + year + ' objective: ' + obj.text + ' <span style="color:#7bc67b">(+' + obj.bonus + ' pts)</span>';
+    el.style.borderColor = onTrack ? 'var(--m-green)' : 'var(--m-red)';
+    el.innerHTML = '\ud83c\udfaf Year ' + GS.objective._year + ' (Q' + qInYear + '/4): ' + GS.objective.text
+      + ' <span style="color:#8a94d8">+' + GS.objective.bonus + '</span> \u00b7 '
+      + (onTrack ? '<span style="color:var(--m-green);font-weight:700">\u2713 ON TRACK</span>'
+                 : '<span style="color:var(--m-red);font-weight:700">\u2717 FAILING</span>');
   }
   function settleYearObjective(){
     if (!GS.objective || MoC.IS_BASELINE) return;
     const el = objectiveBar();
+    el.style.borderColor = '';
     if (GS.objective.check()) {
       GS.liveScore += GS.objective.bonus;
       const hs = document.getElementById('hScore'); if (hs) hs.textContent = GS.liveScore;
@@ -13212,7 +13226,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
   // ═══ G5b: FLASH DECISIONS (mid-quarter, 8s timer) ═══
   const FLASH_POOL = [
     { t:'\ud83d\udeaa A citizen at your door', d:function(f){ return f.name + ' (' + f.age + ') can\u2019t get through to the GP line. "Two hours of hold music, Minister."'; },
-      a:{ l:'Send a case manager (\u2212\u20ac5K)', run:function(f){ GS.budget -= 5000; f.hp = Math.min(100, (f.hp || 60) + 8); FX.pop('+8 HP for ' + f.name.split(' ')[0], '#7bc67b'); } },
+      a:{ l:'Send a case manager (\u2212\u20ac5K)', run:function(f){ if (GS.budget < 5000) { FX.pop('Cannot afford', '#e05858'); return; } GS.budget -= 5000; f.hp = Math.min(100, (f.hp || 60) + 8); FX.pop('+8 HP for ' + f.name.split(' ')[0], '#7bc67b'); } },
       b:{ l:'Point to the waiting list', run:function(f){ MoC.adjustTrust(-1); } } },
     { t:'\ud83d\udcfa Regional TV wants a quote', d:function(){ return 'Camera crew outside about the waiting lists. Live in ten seconds.'; },
       a:{ l:'Take the interview', run:function(){ MoC.adjustTrust(systemDeaths() <= 2 ? 2 : -2); } },
@@ -13221,10 +13235,10 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
       a:{ l:'Switch to paper (safe, slow)', run:function(){ GS.liveScore = Math.max(0, GS.liveScore - 5); FX.pop('\u22125 pts (slow day)', '#FFD54F'); } },
       b:{ l:'Ride it out', run:function(){ if (Math.random() < 0.3) { MoC.adjustTrust(-2); FX.shake(); } } } },
     { t:'\ud83d\udc65 Volunteers offer help', d:function(){ return 'The church group offers weekly transport for elderly patients. They just need insurance cover.'; },
-      a:{ l:'Cover it (\u2212\u20ac3K)', run:function(){ GS.budget -= 3000; MoC.adjustTrust(2); } },
+      a:{ l:'Cover it (\u2212\u20ac3K)', run:function(){ if (GS.budget < 3000) { FX.pop('Cannot afford', '#e05858'); return; } GS.budget -= 3000; MoC.adjustTrust(2); } },
       b:{ l:'Too much liability', run:function(){ MoC.adjustTrust(-1); } } },
     { t:'\ud83d\udcc4 Consultant pitch', d:function(){ return '"For only \u20ac15K we\u2019ll write a vision document on AI-ready care pathways."'; },
-      a:{ l:'Buy the report', run:function(){ GS.budget -= 15000; GS.liveScore = Math.max(0, GS.liveScore - 10); FX.pop('\u221210 pts (it\u2019s a PDF)', '#e07050'); } },
+      a:{ l:'Buy the report', run:function(){ if (GS.budget < 15000) { FX.pop('Cannot afford', '#e05858'); return; } GS.budget -= 15000; GS.liveScore = Math.max(0, GS.liveScore - 10); FX.pop('\u221210 pts (it\u2019s a PDF)', '#e07050'); } },
       b:{ l:'Politely decline', run:function(){ GS.liveScore += 5; FX.pop('+5 pts', '#7bc67b'); } } }
   ];
   let flashActive = false;
@@ -13561,6 +13575,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
       maybeFlash();
       if (c % 20 === 0) updateLivesHud();
       if (c % 5 === 0) renderMinistry();
+      if (c % 10 === 0) updateObjectiveBar();
     };
     MoC.onTermEnd = function(){ endTerm('served'); };
 
