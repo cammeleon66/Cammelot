@@ -845,6 +845,7 @@ body.embed-mode #app{display:block!important}
 }
 .mode-tog{display:none!important}
 #btn-taximeter,#btn-heatmap,#btn-timeline,#btn-moments,#btn-qa,#btn-treeknorm-log,#btn-methodology{display:none!important}
+#btn-play{display:none!important} /* time control lives in THE MINISTRY panel only */
 #cbar .cinfo{display:none!important}
 #event-ticker{display:none!important}
 #chatlog{display:none!important}
@@ -859,7 +860,7 @@ body.embed-mode #app{display:block!important}
 .moc-sub{color:#aab4e8;font-size:12.5px;margin-bottom:12px;line-height:1.6}
 /* ── Newspaper (Gazette) ── */
 .moc-gazette{background:var(--m-paper);color:var(--m-paperink);border:2px solid #b8a888;border-left:2px solid #b8a888;border-radius:2px;padding:10px 14px 8px;font-size:12.5px;font-style:normal;margin-bottom:14px;line-height:1.55;font-family:Georgia,serif;box-shadow:2px 2px 0 rgba(0,0,0,.4)}
-.moc-gazette::before{content:"DE CAMMELOTSE COURANT";display:block;text-align:center;font-family:Georgia,serif;font-weight:700;font-size:15px;letter-spacing:2px;border-bottom:3px double var(--m-paperink);padding-bottom:4px;margin-bottom:7px;color:var(--m-paperink)}
+.moc-gazette::before{content:"THE CAMMELOT COURANT";display:block;text-align:center;font-family:Georgia,serif;font-weight:700;font-size:15px;letter-spacing:2px;border-bottom:3px double var(--m-paperink);padding-bottom:4px;margin-bottom:7px;color:var(--m-paperink)}
 .gz-art{width:100%;height:56px;image-rendering:pixelated;border:1px solid #b8a888;margin:2px 0 6px;display:block;object-fit:cover}
 .gz-head{font-family:Georgia,serif;font-weight:700;font-size:17px;line-height:1.2;margin:0 0 7px;letter-spacing:.3px;color:var(--m-paperink)}
 /* ── Cards (events/dilemmas) ── */
@@ -1118,7 +1119,7 @@ const MoC = (function(){
       budget:780000, trust:60,
       story:'Monday, 07:40. Your predecessor left one thing on the desk: a folder marked THE CRISIS, and a sticky note \u2014 "Sorry." Outside, Cammelot is waking up. Dr. de Jong is already twelve patients behind, and in the Zonnebloem care home, Hendrik Veenstra (70) is waiting for a cardiology referral that should have come four weeks ago.',
       brief:{ situation:'The system runs at 62% effective capacity. Waits already breach the norm. Nothing is on fire yet \u2014 but the fuse is lit.',
-        threats:['Aging population, rising demand', 'Every tech shortcut adds fragility', 'One bad winter from Code Black'],
+        threats:['Demand rises every year as the town ages', 'Every tech shortcut adds fragility \u2014 hacks and outages hit harder', 'One heavy flu season can overwhelm the IC and force triage'],
         win:'Serve 10 years. Save more lives than the status quo would.' } },
     sprint: { id:'sprint', name:'Crisis Sprint', icon:'\u26a1', quarters:12, daily:true,
       desc:'Today\u2019s shared scenario: 3 years, \u20ac300K, system already on fire (~6 min).',
@@ -9933,17 +9934,13 @@ function buildSaveState(){
 // saveGameIDB removed for website version
 // showSaveSlotPicker removed for website version
 
-// ═══ ANIMATION LOOP (Sprint 18.1: visibility-aware; MoC: freeze frame while paused) ═══
-let _mocFrozeFrame = false;
+// ═══ ANIMATION LOOP (Sprint 18.1: visibility-aware; MoC: hard-freeze while paused) ═══
 function loop(){
   globalFrameCount++;
   const frozen = (typeof MoC !== 'undefined') && MoC.paused && !MoC.IS_BASELINE;
-  if (frozen) {
-    if (!_mocFrozeFrame) { render(); _mocFrozeFrame = true; } // draw one last frame, then hold
-  } else {
-    _mocFrozeFrame = false;
-    if (tabVisible || globalFrameCount % 4 === 0) render();
-  }
+  // While frozen we skip render() entirely — the canvas keeps its last frame,
+  // and render() also advances agent positions, so skipping truly freezes the town.
+  if (!frozen && (tabVisible || globalFrameCount % 4 === 0)) render();
   requestAnimationFrame(loop);
 }
 
@@ -11663,7 +11660,7 @@ document.getElementById('btn-tours').addEventListener('click', function() {
     var skipBtn = document.createElement("button");
     skipBtn.textContent = "Skip";
     skipBtn.style.cssText = "background:none;border:none;color:rgba(255,255,255,.3);font:12px Inter,sans-serif;cursor:pointer;padding:6px 0;";
-    skipBtn.addEventListener("click", function() { clearHighlight(); card.remove(); launchSimulation(); });
+    skipBtn.addEventListener("click", function() { clearHighlight(); card.remove(); step = 0; if (typeof MoC !== 'undefined' && window._mocGameStarted) { MoC.paused = false; } launchSimulation(); });
 
     var nextBtn = document.createElement("button");
     nextBtn.id = "wc-next";
@@ -11694,6 +11691,8 @@ document.getElementById('btn-tours').addEventListener('click', function() {
       if (step >= steps.length) {
         clearHighlight();
         card.remove();
+        step = 0; // allow replay via ❓
+        if (typeof MoC !== 'undefined' && window._mocGameStarted) { MoC.paused = false; }
         launchSimulation();
         return;
       }
@@ -11716,8 +11715,14 @@ document.getElementById('btn-tours').addEventListener('click', function() {
   // MoC: the game layer owns onboarding sequencing. It calls window.mocStartWalkthrough()
   // after the briefing; show only once per browser.
   window.mocStartWalkthrough = function(){
-    try { if (JSON.parse(localStorage.getItem('moc_tour_seen_v2'))) { launchSimulation(); return; } } catch(e){}
-    try { localStorage.setItem('moc_tour_seen_v2', 'true'); } catch(e){}
+    try { if (JSON.parse(localStorage.getItem('moc_tour_seen_v3'))) { launchSimulation(); return; } } catch(e){}
+    try { localStorage.setItem('moc_tour_seen_v3', 'true'); } catch(e){}
+    buildCard();
+  };
+  // Replayable anytime via the ❓ button
+  window.mocReplayTour = function(){
+    if (document.getElementById('welcome-card')) return;
+    if (typeof MoC !== 'undefined') MoC.paused = true;
     buildCard();
   };
   // Baseline runs and picker mode never show the tour
@@ -12154,19 +12159,19 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
   const SHOP = [
     { id:'scribes1', name:'\ud83c\udf99 EchoScribe pilot', cost:100000,
       fx:{admin:-0.18, dep:2}, max:1,
-      desc:'Ambient AI scribes at both GP practices. Admin burden 30% \u2192 12%. +2 tech dependence.' },
+      desc:'Tier 1 tech: ambient AI scribes at both GP practices. Admin 30% \u2192 12%. +2 dependence.' },
     { id:'scribes2', name:'\ud83c\udf99 EchoScribe full rollout', cost:80000, requires:'scribes1',
       fx:{admin:-0.07, ai:0.10, dep:1}, max:1,
-      desc:'Hospital-wide ambient documentation. Admin \u2192 5%, AI efficiency +0.10. +1 dependence.' },
+      desc:'Tier 2 tech: hospital-wide ambient documentation. Admin \u2192 5%, AI efficiency +0.10. +1 dependence.' },
     { id:'hire', name:'\ud83e\ude7a Recruit specialists', cost:80000, costStep:20000,
       fx:{tree:-2, trustD:3}, max:3,
       desc:'National shortage makes each hire pricier. Wait -2 weeks per hire. Doctors +3 (reinforcements!).' },
-    { id:'a2a', name:'\ud83d\udd17 Referral mesh', cost:60000,
+    { id:'a2a', name:'\ud83d\udd17 Referral mesh', cost:60000, requires:'scribes2',
       fx:{tree:-3, dep:3}, max:1,
-      desc:'Agent-to-agent scheduling: referrals in days, not weeks. Wait -3 weeks. +3 dependence.' },
-    { id:'twin', name:'\ud83e\ude9e Mirrorware digital twins', cost:120000,
+      desc:'Tier 3 tech: automated referral scheduling between practices. Needs a fully digitised workflow (EchoScribe rollout) first. Wait -3 weeks. +3 dependence.' },
+    { id:'twin', name:'\ud83e\ude9e Mirrorware digital twins', cost:120000, requires:'scribes1',
       fx:{drainMult:0.75, dep:2}, max:1,
-      desc:'Predictive risk profiles catch decline early. HP drain -25%. +2 dependence.' },
+      desc:'Tier 2 tech: predictive risk profiles need digital records (EchoScribe pilot) to feed on. HP drain -25%. +2 dependence.' },
     { id:'mtvp', name:'\u23f3 More Time for the Patient', cost:40000,
       fx:{drainMult:0.9, trustC:2, trustD:3}, max:1,
       desc:'Longer consultations, better outcomes. Drain -10%, Citizens +2, Doctors +3.' },
@@ -12203,6 +12208,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     GS.owned[item.id] = (GS.owned[item.id] || 0) + 1;
     GS.interventions.push({ q: GS.quarter, label: item.name.replace(/^\S+\s/, ''), cost: cost });
     applyFx(item.fx, 'Purchased: ' + item.name + ' (' + fmtK(cost) + ')');
+    Audio5.coin();
     renderShop();
     refreshMeters();
   }
@@ -12559,9 +12565,12 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
       const locked = item.requires && !(GS.owned[item.requires] > 0);
       let btn;
       if (maxed) btn = '<span class="moc-owned">\u2713 Active' + (item.max > 1 ? ' \u00d7' + owned : '') + '</span>';
-      else if (locked) btn = '<button class="moc-buy" disabled>Requires pilot</button>';
+      else if (locked) {
+        const req = SHOP.find(function(s){ return s.id === item.requires; });
+        btn = '<button class="moc-buy" disabled>\ud83d\udd12 Needs ' + (req ? req.name.replace(/^\S+\s/, '') : 'prerequisite') + '</button>';
+      }
       else if (item.fx.dep > 0 && GS.quarter < GS.techFreezeUntil) btn = '<button class="moc-buy" disabled>\u2696 Frozen by parliament</button>';
-      else if ((GS.buysThisCouncil || 0) >= BUY_CAP) btn = '<button class="moc-buy" disabled>Capacity used</button>';
+      else if ((GS.buysThisCouncil || 0) >= BUY_CAP) btn = '<button class="moc-buy" disabled>No slots left this quarter</button>';
       else btn = '<button class="moc-buy" data-buy="' + item.id + '"' + (GS.budget < shopCost(item) ? ' disabled' : '') + '>Buy ' + fmtK(shopCost(item)) + '</button>';
       const preview = (maxed || locked) ? '' : fxPreview(item.fx);
       return '<div class="moc-item"><b>' + item.name + (owned && !maxed ? ' (\u00d7' + owned + ')' : '') + '</b><span class="fx">' + item.desc + '</span>' + preview + btn + '</div>';
@@ -12570,7 +12579,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
       b.addEventListener('click', function(){ buy(SHOP.find(function(s){ return s.id === b.getAttribute('data-buy'); })); });
     });
     const bd = document.getElementById('moc-budget-line');
-    if (bd) bd.innerHTML = 'Budget: <b style="color:var(--m-gold)">' + fmtK(GS.budget) + '</b> \u00b7 Implementation capacity: <b style="color:' + ((GS.buysThisCouncil||0) >= BUY_CAP ? 'var(--m-red)' : 'var(--m-green)') + '">' + (BUY_CAP - (GS.buysThisCouncil || 0)) + '/' + BUY_CAP + ' left</b> \u00b7 Dependence: ' + GS.dependence
+    if (bd) bd.innerHTML = '\ud83c\udfd7 Implementation slots: <b style="color:' + ((GS.buysThisCouncil||0) >= BUY_CAP ? 'var(--m-red)' : 'var(--m-green)') + '">' + (BUY_CAP - (GS.buysThisCouncil || 0)) + ' of ' + BUY_CAP + ' left</b> \u2014 your civil service can only roll out ' + BUY_CAP + ' changes per quarter, however much money remains \u00b7 Budget: <b style="color:var(--m-gold)">' + fmtK(GS.budget) + '</b>'
       + (GS.trustP < 35 ? ' \u00b7 <span style="color:var(--m-red)">\u26a0 Parliament withholds co-funding: prices +25%</span>' : '');
   }
   function openCouncil(q){
@@ -12578,6 +12587,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     councilOpen = true;
     pauseSim();
     Audio5.sting();
+    Audio5.gazette(); // newspaper rustle if assets/sfx/gazette.mp3 exists
     // Quarterly trust dynamics: deaths hit citizens hardest, then parliament
     const sdNow = systemDeaths();
     const newDeaths = sdNow - (GS._sdLastQ || 0);
@@ -12772,6 +12782,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
         GS.laws[law.id] = q;
         GS.interventions.push({ q: q, label: 'Law enacted: ' + law.name, cost: law.cost });
         applyFx(law.fx, 'Law enacted: ' + law.name);
+        Audio5.gong(); // gavel
         if (law.beat) GS.pendingBeat = law.beat;
         b.textContent = '\u2713 Enacted';
         ov.querySelectorAll('[data-law]').forEach(function(o){ o.disabled = true; });
@@ -12990,6 +13001,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     ov.className = 'moc-overlay'; ov.id = 'moc-endscreen';
     let html = '<div class="moc-box"><h2>\ud83c\udfdb End of Term</h2>';
     // G8c: verdict as stamp + staged reveal + score count-up
+    Audio5.stamp();
     html += '<div class="moc-verdict"><span class="moc-stamp' + ((reason === 'served' && r.score >= 400) ? ' win' : '') + '">' + verdict(r, reason) + '</span></div>';
     html += '<div class="moc-sub" style="text-align:center;font-style:italic;font-size:13px">' + endStatement(r, reason) + '</div>';
     html += '<div class="moc-emoji">' + trail + '</div>';
@@ -13146,7 +13158,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     };
   })();
 
-  // ═══ G5d: AUDIO (WebAudio chiptune, zero files) ═══
+  // ═══ G5d/G8: AUDIO — file-based SFX (assets/sfx/*.mp3, e.g. Suno-generated) with chiptune fallback ═══
   const Audio5 = (function(){
     let ctx = null, muted = loadJSON('moc_muted', false);
     function ac(){ if (!ctx) { try { ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){} } return ctx; }
@@ -13160,14 +13172,35 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
       o.connect(g); g.connect(a.destination);
       o.start(a.currentTime + (when || 0)); o.stop(a.currentTime + (when || 0) + dur);
     }
+    // File-based SFX: drop mp3s in assets/sfx/ with these names and they take over automatically.
+    // gazette.mp3 (newspaper rustle), council.mp3, law.mp3 (gavel), klaxon.mp3 (alarm),
+    // bell.mp3 (death toll), win.mp3, lose.mp3, stamp.mp3, coin.mp3
+    const SFX_FILES = ['gazette','council','law','klaxon','bell','win','lose','stamp','coin'];
+    const sfxCache = {};   // name -> HTMLAudioElement | 'missing'
+    SFX_FILES.forEach(function(name){
+      const a2 = new window.Audio('assets/sfx/' + name + '.mp3');
+      a2.volume = 0.4;
+      a2.addEventListener('canplaythrough', function(){ sfxCache[name] = a2; }, { once: true });
+      a2.addEventListener('error', function(){ sfxCache[name] = 'missing'; }, { once: true });
+      a2.load();
+    });
+    function sfx(name, fallback){
+      if (MoC.IS_BASELINE || muted) return;
+      const f = sfxCache[name];
+      if (f && f !== 'missing') { try { f.currentTime = 0; f.play().catch(function(){}); return; } catch(e){} }
+      if (fallback) fallback();
+    }
     return {
       blip: function(f){ tone(f || 660, 0.09); },
-      sting: function(){ [392, 523, 659].forEach(function(f, i){ tone(f, 0.14, 'square', 0.05, i * 0.09); }); },
-      gong: function(){ tone(196, 0.7, 'triangle', 0.08); tone(98, 0.9, 'sine', 0.06); },
-      klaxon: function(){ [440, 330, 440, 330].forEach(function(f, i){ tone(f, 0.16, 'sawtooth', 0.06, i * 0.18); }); },
-      bell: function(){ tone(880, 0.5, 'sine', 0.05); tone(1318, 0.7, 'sine', 0.03, 0.05); },
-      jingle: function(){ [523, 659, 784, 1046].forEach(function(f, i){ tone(f, 0.12, 'square', 0.05, i * 0.1); }); },
-      dirge: function(){ [392, 370, 349, 330].forEach(function(f, i){ tone(f, 0.35, 'triangle', 0.06, i * 0.32); }); },
+      sting: function(){ sfx('council', function(){ [392, 523, 659].forEach(function(f, i){ tone(f, 0.14, 'square', 0.05, i * 0.09); }); }); },
+      gazette: function(){ sfx('gazette', null); }, // silent unless the paper-rustle file exists
+      gong: function(){ sfx('law', function(){ tone(196, 0.7, 'triangle', 0.08); tone(98, 0.9, 'sine', 0.06); }); },
+      klaxon: function(){ sfx('klaxon', function(){ [440, 330, 440, 330].forEach(function(f, i){ tone(f, 0.16, 'sawtooth', 0.06, i * 0.18); }); }); },
+      bell: function(){ sfx('bell', function(){ tone(880, 0.5, 'sine', 0.05); tone(1318, 0.7, 'sine', 0.03, 0.05); }); },
+      jingle: function(){ sfx('win', function(){ [523, 659, 784, 1046].forEach(function(f, i){ tone(f, 0.12, 'square', 0.05, i * 0.1); }); }); },
+      dirge: function(){ sfx('lose', function(){ [392, 370, 349, 330].forEach(function(f, i){ tone(f, 0.35, 'triangle', 0.06, i * 0.32); }); }); },
+      stamp: function(){ sfx('stamp', null); },
+      coin: function(){ sfx('coin', null); },
       // Title theme: prefers assets/minister-theme.mp3 (e.g. Sora/Suno-generated), falls back to a short chip motif
       title: (function(){
         let audio = null, stopped = false, chipTimer = null;
@@ -13181,11 +13214,11 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
         }
         return {
           start: function(){
-            if (MoC.IS_BASELINE || muted) return;
+            if (MoC.IS_BASELINE || muted || audio || chipTimer) return; // already playing
             stopped = false;
             audio = new window.Audio('assets/minister-theme.mp3');
             audio.volume = 0.28; audio.loop = true;
-            audio.play().catch(function(){ audio = null; chipMotif(); });
+            audio.play().catch(function(){ audio = null; /* wait for a user gesture retry */ });
           },
           stop: function(){
             stopped = true;
@@ -13348,48 +13381,101 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
   }
 
   // ═══ G5c: MINISTER PORTRAIT + WORLD EFFECTS ═══
+  // ═══ G5c: MINISTER PORTRAIT (seed-derived appearance, clickable) ═══
+  const MINISTER = (function(){
+    const s = MoC.seed;
+    const first = ['Amara','Joris','Fatima','Willem','Mei','Sanne','Kofi','Ingrid','Rafael','Noor','Tycho','Zainab'][s % 12];
+    const last = ['van Dam','Okafor','Jansen','El Idrissi','de Wit','Lindqvist','Bakker','Nguyen','Peters','Haddad','Visser','Kaya'][(s * 7 + 3) % 12];
+    return {
+      name: first + ' ' + last,
+      skin: ['#e8b88a','#c68a5a','#8a5a3a','#f0cfa8','#6a4028','#d8a878'][s % 6],
+      hair: ['#5a3a15','#1a1a1a','#c8c8c8','#8a2c10','#3a2a1a','#e0c060'][(s * 3 + 1) % 6],
+      style: s % 4,            // 0 short, 1 long, 2 bun, 3 bald-ish
+      glasses: (s * 5 + 2) % 3 === 0,
+      tiePref: ['#c0392b','#21468b','#2a7a3a','#7a2a7a'][(s * 11 + 4) % 4]
+    };
+  })();
   function drawMinister(mood){
     if (MoC.IS_BASELINE) return;
     let box = document.getElementById('moc-portrait');
     if (!box) {
       box = document.createElement('div');
       box.id = 'moc-portrait';
+      box.style.cursor = 'pointer';
+      box.title = 'Minister ' + MINISTER.name + ' \u2014 click for profile';
       box.innerHTML = '<canvas width="64" height="80" style="width:76px;height:95px"></canvas><div class="pl">THE MINISTER</div>';
+      box.addEventListener('click', showMinisterProfile);
       document.body.appendChild(box);
     }
     if (box._mood === mood) return;
     box._mood = mood;
     const c = box.querySelector('canvas').getContext('2d');
-    // Office background: wall, window, flag
-    c.fillStyle = '#2a3a8a'; c.fillRect(0, 0, 64, 80);          // wall
-    c.fillStyle = '#1a2560'; c.fillRect(0, 0, 64, 6);           // cornice
-    c.fillStyle = '#78c8f0'; c.fillRect(44, 12, 16, 20);        // window
+    // Office: wall, window, flag, desk
+    c.fillStyle = '#2a3a8a'; c.fillRect(0, 0, 64, 80);
+    c.fillStyle = '#1a2560'; c.fillRect(0, 0, 64, 6);
+    c.fillStyle = '#78c8f0'; c.fillRect(44, 12, 16, 20);
     c.fillStyle = '#a8e0f8'; c.fillRect(44, 12, 16, 8);
-    c.fillStyle = '#0a0a14'; c.strokeStyle = '#0a0a14';
-    c.fillRect(51, 12, 2, 20); c.fillRect(44, 21, 16, 2);       // window frame
-    // NL flag
+    c.fillStyle = '#0a0a14'; c.fillRect(51, 12, 2, 20); c.fillRect(44, 21, 16, 2);
     c.fillStyle = '#ae1c28'; c.fillRect(4, 10, 12, 4);
     c.fillStyle = '#f0f0e4'; c.fillRect(4, 14, 12, 4);
     c.fillStyle = '#21468b'; c.fillRect(4, 18, 12, 4);
-    c.fillStyle = '#5a4a30'; c.fillRect(9, 22, 2, 14);          // flag pole
-    // Desk front
+    c.fillStyle = '#5a4a30'; c.fillRect(9, 22, 2, 14);
     c.fillStyle = '#6a4a20'; c.fillRect(0, 68, 64, 12);
     c.fillStyle = '#8a6230'; c.fillRect(0, 68, 64, 3);
-    // Minister: suit, shirt, tie
+    // Suit + shirt + tie
     c.fillStyle = '#1a2a4a'; c.fillRect(14, 52, 36, 18);
     c.fillStyle = '#f0f0e4'; c.fillRect(27, 52, 10, 10);
-    c.fillStyle = mood === 'disgraced' ? '#888' : '#c0392b'; c.fillRect(30, 52, 4, 14);
-    // Face + hair
-    c.fillStyle = '#e8b88a'; c.fillRect(22, 24, 20, 24);
-    c.fillStyle = '#5a3a15'; c.fillRect(20, 20, 24, 8);
-    c.fillRect(20, 20, 4, 12); c.fillRect(40, 20, 4, 12);
+    c.fillStyle = mood === 'disgraced' ? '#888' : MINISTER.tiePref; c.fillRect(30, 52, 4, 14);
+    // Face
+    c.fillStyle = MINISTER.skin; c.fillRect(22, 24, 20, 24);
+    // Hair by style
+    c.fillStyle = MINISTER.hair;
+    if (MINISTER.style === 0) {          // short
+      c.fillRect(20, 20, 24, 8); c.fillRect(20, 20, 4, 10); c.fillRect(40, 20, 4, 10);
+    } else if (MINISTER.style === 1) {   // long
+      c.fillRect(20, 20, 24, 8); c.fillRect(18, 22, 6, 26); c.fillRect(40, 22, 6, 26);
+    } else if (MINISTER.style === 2) {   // bun
+      c.fillRect(20, 20, 24, 7); c.fillRect(27, 14, 10, 7); c.fillRect(20, 20, 4, 8); c.fillRect(40, 20, 4, 8);
+    } else {                              // bald-ish w/ sides
+      c.fillRect(20, 26, 3, 8); c.fillRect(41, 26, 3, 8);
+    }
+    // Eyes / mouth by mood
     c.fillStyle = '#0a0a14';
-    if (mood === 'happy') { c.fillRect(26, 32, 3, 3); c.fillRect(35, 32, 3, 3); c.fillRect(27, 41, 10, 2); c.fillStyle = '#e8b88a'; c.fillRect(29, 41, 6, 1); }
+    if (mood === 'happy') { c.fillRect(26, 32, 3, 3); c.fillRect(35, 32, 3, 3); c.fillRect(27, 41, 10, 2); c.fillStyle = MINISTER.skin; c.fillRect(29, 41, 6, 1); }
     else if (mood === 'worried') { c.fillRect(26, 33, 3, 2); c.fillRect(35, 33, 3, 2); c.fillRect(28, 42, 8, 2); c.fillStyle = '#4aa3e0'; c.fillRect(42, 27, 2, 4); }
     else if (mood === 'disgraced') { c.fillRect(26, 34, 3, 2); c.fillRect(35, 34, 3, 2); c.fillRect(27, 43, 10, 2); c.fillRect(25, 45, 3, 1); }
     else { c.fillRect(26, 32, 3, 3); c.fillRect(35, 32, 3, 3); c.fillRect(28, 42, 8, 2); }
+    if (MINISTER.glasses) {
+      c.fillStyle = '#0a0a14';
+      c.fillRect(24, 31, 7, 1); c.fillRect(33, 31, 7, 1); c.fillRect(31, 32, 2, 1);
+      c.fillRect(24, 31, 1, 4); c.fillRect(30, 31, 1, 4); c.fillRect(33, 31, 1, 4); c.fillRect(39, 31, 1, 4);
+    }
     const label = box.querySelector('.pl');
-    if (label) label.textContent = mood === 'disgraced' ? 'EX-MINISTER' : 'THE MINISTER';
+    if (label) label.textContent = (mood === 'disgraced' ? 'EX-MIN. ' : 'MIN. ') + MINISTER.name.split(' ')[0].toUpperCase();
+  }
+  function showMinisterProfile(){
+    if (document.getElementById('moc-minprofile')) return;
+    const wasPaused = MoC.paused;
+    pauseSim();
+    const sd = systemDeaths();
+    const qq = GS.quarter || 1;
+    const ov = document.createElement('div');
+    ov.className = 'moc-overlay'; ov.id = 'moc-minprofile';
+    ov.innerHTML = '<div class="moc-box" style="max-width:440px">'
+      + '<h2>\ud83c\udfdb Minister ' + MINISTER.name + '</h2>'
+      + '<div class="moc-sub">Appointed to avert the zorginfarct of Cammelot. Term #' + MoC.seed + ', currently Q' + qq + ' of ' + MoC.TOTAL_QUARTERS + '.</div>'
+      + '<div class="moc-score-row"><span>Citizens \u00b7 Doctors \u00b7 Parliament</span><b>' + GS.trustC + ' \u00b7 ' + GS.trustD + ' \u00b7 ' + GS.trustP + '</b></div>'
+      + '<div class="moc-score-row"><span>Budget remaining</span><b>' + fmtK(GS.budget) + '</b></div>'
+      + '<div class="moc-score-row"><span>Preventable deaths on your watch</span><b>' + sd + '</b></div>'
+      + '<div class="moc-score-row"><span>Interventions & decisions taken</span><b>' + GS.interventions.length + '</b></div>'
+      + '<div class="moc-score-row"><span>Tech dependence</span><b>' + GS.dependence + ' pts</b></div>'
+      + '<div class="moc-sub" style="margin-top:10px;font-style:italic">"' + (GS.trustC + GS.trustD + GS.trustP > 180 ? 'They still believe in me. I can feel it at the market.' : sd > 5 ? 'I read every name. Twice.' : 'Nobody becomes minister to be loved.') + '"</div>'
+      + '<button class="moc-continue" id="moc-minclose">Back to work \u25b6</button></div>';
+    document.body.appendChild(ov);
+    document.getElementById('moc-minclose').addEventListener('click', function(){
+      ov.remove();
+      if (!wasPaused && !councilOpen && !GS.over) resumeSim();
+    });
   }
   function ministerMood(){
     if (GS.over && (GS.endReason === 'noconfidence' || GS.endReason === 'scandal')) return 'disgraced';
@@ -13589,6 +13675,9 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     // fades out only when the simulation actually starts running.
     document.addEventListener('DOMContentLoaded', function(){
       if (MoC.IS_BASELINE) return;
+      // Try to start the theme immediately (works when the browser already trusts this origin);
+      // otherwise the first click/tap anywhere starts it — including on the scenario picker.
+      if (!Audio5.isMuted()) Audio5.title.start();
       document.addEventListener('pointerdown', function once(){
         document.removeEventListener('pointerdown', once);
         if (!Audio5.isMuted() && !window._mocGameStarted) Audio5.title.start();
@@ -13723,6 +13812,10 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
         crtBtn.className = 'cb'; crtBtn.title = 'Toggle CRT scanlines'; crtBtn.textContent = '\ud83d\udcfa';
         crtBtn.addEventListener('click', function(){ setCrt(!document.getElementById('moc-crt')); });
         cbar.appendChild(crtBtn);
+        const tourBtn = document.createElement('button');
+        tourBtn.className = 'cb'; tourBtn.title = 'Replay the guided tour'; tourBtn.textContent = '\u2753';
+        tourBtn.addEventListener('click', function(){ if (window.mocReplayTour) window.mocReplayTour(); });
+        cbar.appendChild(tourBtn);
       }
       refreshMeters();
     });
