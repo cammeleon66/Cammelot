@@ -860,6 +860,8 @@ body.embed-mode #app{display:block!important}
 /* ── Newspaper (Gazette) ── */
 .moc-gazette{background:var(--m-paper);color:var(--m-paperink);border:2px solid #b8a888;border-left:2px solid #b8a888;border-radius:2px;padding:10px 14px 8px;font-size:12.5px;font-style:normal;margin-bottom:14px;line-height:1.55;font-family:Georgia,serif;box-shadow:2px 2px 0 rgba(0,0,0,.4)}
 .moc-gazette::before{content:"DE CAMMELOTSE COURANT";display:block;text-align:center;font-family:Georgia,serif;font-weight:700;font-size:15px;letter-spacing:2px;border-bottom:3px double var(--m-paperink);padding-bottom:4px;margin-bottom:7px;color:var(--m-paperink)}
+.gz-art{width:100%;height:56px;image-rendering:pixelated;border:1px solid #b8a888;margin:2px 0 6px;display:block;object-fit:cover}
+.gz-head{font-family:Georgia,serif;font-weight:700;font-size:17px;line-height:1.2;margin:0 0 7px;letter-spacing:.3px;color:var(--m-paperink)}
 /* ── Cards (events/dilemmas) ── */
 .moc-dilemma{background:var(--m-blue3);border:2px solid var(--m-white);border-radius:3px;padding:0 0 10px;margin-bottom:14px;overflow:hidden;box-shadow:3px 3px 0 var(--m-ink)}
 .moc-dilemma .dq{font-size:12.5px;line-height:1.6;margin:10px 12px;color:#dde2ff}
@@ -6326,7 +6328,7 @@ function showTownFeed() {
   document.querySelector('.panel-header').textContent = 'TOWN FEED';
 
   const significant = EVENT_LOG.filter(function(e) {
-    return ['died','natural_death','admitted','referred','treated','discharged','recovered','worsened','social_chat','feeling_sick','visited_gp','gp_treated','checkup','insight','sick_leave'].indexOf(e.type) !== -1;
+    return e && e.type && ['died','natural_death','admitted','referred','treated','discharged','recovered','worsened','social_chat','feeling_sick','visited_gp','gp_treated','checkup','insight','sick_leave'].indexOf(e.type) !== -1;
   }).slice(-50).reverse();
 
   let html = '';
@@ -7965,7 +7967,7 @@ function tick(){
 }
 
 function batch(n){for(let i=0;i<n;i++)tick();}
-function autoRun(){if(autoTimer){clearInterval(autoTimer);autoTimer=null;return;}autoTimer=setInterval(tick,200);}
+function autoRun(){if(autoTimer){clearInterval(autoTimer);autoTimer=null;return;}autoTimer=setInterval(tick,350);}
 function resetSim(){
   if(autoTimer){clearInterval(autoTimer);autoTimer=null;}
   var playBtn = document.getElementById('btn-play');
@@ -10298,7 +10300,7 @@ if(EMBED_MODE){
     var interval=Math.max(10,Math.round(100/embedSpeed));
     autoTimer=setInterval(tick,interval);
   } else {
-    autoTimer=setInterval(tick,200);
+    autoTimer=setInterval(tick,350);
   }
   // Apply embed cycle fast-forward
   var embedCycle=parseInt(embedParams.get('cycle'),10);
@@ -10346,7 +10348,7 @@ function launchSimulation() {
   try { for(var i=0;i<10;i++) tick(); } catch(e) {}
   try { showTownFeed(); } catch(e) {}
   // Start the tick loop
-  autoTimer = setInterval(tick, 200);
+  autoTimer = setInterval(tick, 350);
   var pb = document.getElementById('btn-play');
   if (pb) pb.textContent = '⏸ Pause';
   // Remove walkthrough card if still present
@@ -11477,7 +11479,7 @@ function cleanupTourElements() {
 
 function resumeSimulation() {
   if (!autoTimer) {
-    autoTimer = setInterval(tick, 200);
+    autoTimer = setInterval(tick, 350);
     var pb = document.getElementById('btn-play');
     if (pb) pb.textContent = '\u23f8 Pause';
     console.log('Cammelot: simulation resumed');
@@ -12082,7 +12084,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
   function resumeSim(){
     MoC.paused = false;
     if (!autoTimer) {
-      autoTimer = setInterval(tick, Math.round(200 / (GS._speed || 1)));
+      autoTimer = setInterval(tick, Math.round(350 / (GS._speed || 1)));
       const pb = document.getElementById('btn-play'); if (pb) pb.textContent = '\u23f8 Pause';
     }
   }
@@ -12146,10 +12148,14 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
   ];
   function shopCost(item){
     const owned = GS.owned[item.id] || 0;
-    return item.cost + (item.costStep || 0) * owned;
+    let c = item.cost + (item.costStep || 0) * owned;
+    if (GS.trustP < 35) c = Math.round(c * 1.25); // parliament withholds co-funding
+    return c;
   }
+  const BUY_CAP = 2; // implementation capacity per quarter
   function canBuy(item){
     const owned = GS.owned[item.id] || 0;
+    if ((GS.buysThisCouncil || 0) >= BUY_CAP) return false;
     if (owned >= (item.max || 1)) return false;
     if (item.requires && !(GS.owned[item.requires] > 0)) return false;
     if (item.fx.dep > 0 && GS.quarter < GS.techFreezeUntil) return false; // parliament freeze
@@ -12159,6 +12165,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     if (!canBuy(item)) return;
     const cost = shopCost(item);
     GS.budget -= cost;
+    GS.buysThisCouncil = (GS.buysThisCouncil || 0) + 1;
     GS.owned[item.id] = (GS.owned[item.id] || 0) + 1;
     GS.interventions.push({ q: GS.quarter, label: item.name.replace(/^\S+\s/, ''), cost: cost });
     applyFx(item.fx, 'Purchased: ' + item.name + ' (' + fmtK(cost) + ')');
@@ -12388,19 +12395,67 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
 
   // ── Quarterly council modal ──
   let councilOpen = false;
-  function gazetteReport(q, dueDelayed){
+  // ── Gazette front page: pixel-art scene + big headline ──
+  function gazetteArt(kind){
+    const cv2 = document.createElement('canvas'); cv2.width = 160; cv2.height = 44;
+    const c = cv2.getContext('2d');
+    const sky = { death:'#2a2a42', hack:'#180a14', strike:'#b8c8d8', calm:'#a8d8f0', praise:'#a8d8f0', queue:'#c8d0d8' }[kind] || '#a8d8f0';
+    c.fillStyle = sky; c.fillRect(0, 0, 160, 44);
+    c.fillStyle = kind === 'death' ? '#1a1a2e' : kind === 'hack' ? '#0a0510' : '#5a8a4a';
+    c.fillRect(0, 36, 160, 8); // ground
+    function person(x, y, col){ c.fillStyle = '#e8b88a'; c.fillRect(x, y, 4, 4); c.fillStyle = col; c.fillRect(x - 1, y + 4, 6, 7); }
+    function house(x, w, h, col){ c.fillStyle = col; c.fillRect(x, 36 - h, w, h); c.fillStyle = '#8a3020'; c.fillRect(x - 1, 32 - h, w + 2, 4); }
+    if (kind === 'death') {
+      c.fillStyle = '#d8d8e8'; c.fillRect(126, 6, 10, 10); // moon
+      c.fillStyle = '#9aa'; [30, 60, 90].forEach(function(x){ c.fillRect(x, 26, 10, 10); c.fillRect(x + 3, 22, 4, 4); });
+      c.fillStyle = '#556'; [30, 60, 90].forEach(function(x){ c.fillRect(x + 2, 29, 6, 2); });
+    } else if (kind === 'hack') {
+      c.fillStyle = '#e05858';
+      [4, 40, 92, 130].forEach(function(x, i){ c.fillRect(x, 6 + i * 8, 26, 3); });
+      // skull
+      c.fillStyle = '#f0f0e4'; c.fillRect(70, 10, 20, 14); c.fillRect(74, 24, 12, 6);
+      c.fillStyle = '#180a14'; c.fillRect(74, 15, 4, 5); c.fillRect(82, 15, 4, 5); c.fillRect(76, 26, 2, 3); c.fillRect(81, 26, 2, 3);
+    } else if (kind === 'strike') {
+      [20, 38, 56, 74, 92, 110].forEach(function(x, i){ person(x, 24, i % 2 ? '#f0f0e4' : '#c04040'); });
+      c.fillStyle = '#f0f0e4'; c.fillRect(60, 6, 30, 10); c.fillStyle = '#8a5030'; c.fillRect(73, 16, 3, 9);
+      c.fillStyle = '#c02020'; c.font = '8px monospace'; c.fillText('NEE!', 64, 14);
+    } else if (kind === 'queue') {
+      house(120, 30, 24, '#c8c0b0');
+      c.fillStyle = '#e05858'; c.fillRect(132, 14, 6, 2); c.fillRect(134, 12, 2, 6);
+      [16, 32, 48, 64, 80, 96].forEach(function(x, i){ person(x, 25, ['#4060a0','#a04060','#40a060','#a08040'][i % 4]); });
+    } else if (kind === 'praise') {
+      c.fillStyle = '#ffd54f'; c.fillRect(130, 4, 12, 12);
+      house(20, 22, 18, '#c8a878'); house(60, 26, 22, '#b89868'); house(104, 20, 16, '#c8b088');
+      c.fillStyle = '#ae1c28'; c.fillRect(66, 2, 10, 3); c.fillStyle = '#f0f0e4'; c.fillRect(66, 5, 10, 3); c.fillStyle = '#21468b'; c.fillRect(66, 8, 10, 3);
+      c.fillStyle = '#5a4a30'; c.fillRect(64, 2, 2, 12);
+    } else { // calm
+      c.fillStyle = '#ffd54f'; c.fillRect(134, 5, 10, 10);
+      house(24, 22, 18, '#c8a878'); house(64, 26, 22, '#b89868'); house(108, 20, 16, '#c8b088');
+      person(50, 26, '#4060a0'); person(96, 26, '#a04060');
+    }
+    return cv2.toDataURL();
+  }
+  function gazetteReport(q, dueDelayed, evt){
     const sd = systemDeaths();
     const waits = agents.filter(a => a.waitWeeks > 0).map(a => a.waitWeeks);
     const avgWait = waits.length ? (waits.reduce((s,w) => s+w, 0) / waits.length).toFixed(1) : '0';
-    const lines = [];
     const lastQGraves = GRAVE_MARKERS.filter(function(g){ return g.cause === 'system_failure' && g.cycle > cycle - MoC.QUARTER_TICKS; });
+    // Choose front page: strike > deaths > event > citizens-avoid > praise > calm
+    let kind = 'calm', headline = 'A quiet quarter in Cammelot';
+    if (GS.activeStates && GS.activeStates.struck && GS.trustD < 40) { kind = 'strike'; headline = 'WHITE COATS WALK OUT'; }
+    else if (lastQGraves.length) { kind = 'death'; const g = lastQGraves[0]; headline = lastQGraves.length > 1 ? lastQGraves.length + ' PREVENTABLE DEATHS THIS QUARTER' : (g.name + ', ' + g.age + ', DIES WAITING').toUpperCase(); }
+    else if (evt && (evt.id === 'lockstep' || evt.id === 'ddos' || evt.id === 'lab')) { kind = 'hack'; headline = evt.id === 'lockstep' ? 'HACKERS HOLD OUR RECORDS HOSTAGE' : evt.id === 'lab' ? 'LAB DOWN: SURGERIES POSTPONED' : 'PATIENT PORTAL KNOCKED OFFLINE'; }
+    else if (GS.activeStates && GS.activeStates.citAvoid) { kind = 'queue'; headline = 'PATIENTS STAY HOME UNTIL IT\u2019S TOO LATE'; }
+    else if (parseFloat(avgWait) > M.IST.tree) { kind = 'queue'; headline = 'QUEUES BREACH THE NORM AGAIN'; }
+    else if (sd === 0 && q > 4) { kind = 'praise'; headline = 'STILL NO PREVENTABLE DEATHS UNDER THIS MINISTER'; }
+    const lines = [];
     if (lastQGraves.length) {
       const g = lastQGraves[0];
       const how = Math.round(g.waitWeeks) > 0 ? 'died after ' + Math.round(g.waitWeeks) + ' weeks on the list' : 'died before ever reaching the specialist list';
-      lines.push('\u2020 ' + g.name + ' (' + g.age + ') ' + how + '. ' + (lastQGraves.length > 1 ? '(' + (lastQGraves.length - 1) + ' more this quarter.)' : 'The market square held a minute of silence.'));
-    } else if (sd === 0) {
-      lines.push('No preventable deaths so far. The town holds its breath.');
+      lines.push(g.name + ' (' + g.age + ') ' + how + '. ' + (lastQGraves.length > 1 ? '(' + (lastQGraves.length - 1) + ' more this quarter.)' : 'The market square held a minute of silence.'));
     }
+    if (GS.activeStates && GS.activeStates.docWTR) lines.push('GPs work to rule: "We are done being invisible," says the union.');
+    if (GS.activeStates && GS.activeStates.citAvoid) lines.push('Pharmacist reports patients skipping check-ups. "They only come when it hurts too much."');
     lines.push('Average specialist wait: ' + avgWait + ' weeks (norm: ' + M.IST.tree + 'w). Admin burden: ' + Math.round(M.IST.admin * 100) + '%.');
     (dueDelayed || []).forEach(function(d){ lines.push(d.label); });
     const face = theFace();
@@ -12408,8 +12463,10 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
       GS._faceMourned = true;
       lines.push(face.name + ' \u2014 the town knew that name. Flowers pile up outside the practice.');
     }
-    if (q % 7 === 3) lines.push('Lighter news: an outbreak of "formulierenkoorts" at the town hall resolved itself when the printer broke.');
-    return lines.map(function(l){ return '\u00b6 ' + l; }).join('<br>');
+    if (q % 7 === 3 && kind === 'calm') lines.push('Lighter news: an outbreak of "formulierenkoorts" at the town hall resolved itself when the printer broke.');
+    return '<img class="gz-art" src="' + gazetteArt(kind) + '" alt="">'
+      + '<div class="gz-head">' + headline + '</div>'
+      + lines.map(function(l){ return '\u00b6 ' + l; }).join('<br>');
   }
   function meterHtml(label, val, color){
     return '<div class="moc-meter">' + label + ': <b>' + val + '</b><div class="bar"><div class="fill" style="width:' + Math.min(100, val) + '%;background:' + color + '"></div></div></div>';
@@ -12470,6 +12527,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
       if (maxed) btn = '<span class="moc-owned">\u2713 Active' + (item.max > 1 ? ' \u00d7' + owned : '') + '</span>';
       else if (locked) btn = '<button class="moc-buy" disabled>Requires pilot</button>';
       else if (item.fx.dep > 0 && GS.quarter < GS.techFreezeUntil) btn = '<button class="moc-buy" disabled>\u2696 Frozen by parliament</button>';
+      else if ((GS.buysThisCouncil || 0) >= BUY_CAP) btn = '<button class="moc-buy" disabled>Capacity used</button>';
       else btn = '<button class="moc-buy" data-buy="' + item.id + '"' + (GS.budget < shopCost(item) ? ' disabled' : '') + '>Buy ' + fmtK(shopCost(item)) + '</button>';
       const preview = (maxed || locked) ? '' : fxPreview(item.fx);
       return '<div class="moc-item"><b>' + item.name + (owned && !maxed ? ' (\u00d7' + owned + ')' : '') + '</b><span class="fx">' + item.desc + '</span>' + preview + btn + '</div>';
@@ -12478,7 +12536,8 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
       b.addEventListener('click', function(){ buy(SHOP.find(function(s){ return s.id === b.getAttribute('data-buy'); })); });
     });
     const bd = document.getElementById('moc-budget-line');
-    if (bd) bd.textContent = 'Budget remaining: ' + fmtK(GS.budget) + ' \u00b7 Trust: ' + GS.trust + ' \u00b7 Tech dependence: ' + GS.dependence;
+    if (bd) bd.innerHTML = 'Budget: <b style="color:var(--m-gold)">' + fmtK(GS.budget) + '</b> \u00b7 Implementation capacity: <b style="color:' + ((GS.buysThisCouncil||0) >= BUY_CAP ? 'var(--m-red)' : 'var(--m-green)') + '">' + (BUY_CAP - (GS.buysThisCouncil || 0)) + '/' + BUY_CAP + ' left</b> \u00b7 Dependence: ' + GS.dependence
+      + (GS.trustP < 35 ? ' \u00b7 <span style="color:var(--m-red)">\u26a0 Parliament withholds co-funding: prices +25%</span>' : '');
   }
   function openCouncil(q){
     if (councilOpen || GS.over) return;
@@ -12499,6 +12558,33 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     if (GS.trustD <= 10) { councilOpen = false; return endTerm('strike'); }
     if (GS.trustC <= 10) { councilOpen = false; return endTerm('protest'); }
     if (sdNow >= 15) { councilOpen = false; return endTerm('scandal'); }
+
+    // Reset implementation capacity for this council
+    GS.buysThisCouncil = 0;
+    // ═══ Stakeholder consequence bands (visible mid-game effects) ═══
+    GS.activeStates = GS.activeStates || {};
+    // Doctors demoralised: work-to-rule
+    if (GS.trustD < 35 && !GS.activeStates.docWTR) {
+      GS.activeStates.docWTR = true;
+      applyFx({sick:0.02}, 'Doctors demoralised \u2014 sick leave rising.');
+    } else if (GS.trustD >= 42 && GS.activeStates.docWTR) {
+      GS.activeStates.docWTR = false;
+      applyFx({sick:-0.02}, 'Doctors\u2019 morale recovering.');
+    }
+    // Doctor STRIKE (one per slump)
+    if (GS.trustD < 20 && !GS.activeStates.struck) {
+      GS.activeStates.struck = true;
+      applyTimedFx({sick:0.06, admin:0.05}, 1, 'DOCTOR STRIKE \u2014 practices run on skeleton staff');
+      Audio5.klaxon(); FX.shake();
+    } else if (GS.trustD >= 40) { GS.activeStates.struck = false; }
+    // Citizens avoid care: present sicker
+    if (GS.trustC < 35 && !GS.activeStates.citAvoid) {
+      GS.activeStates.citAvoid = true;
+      applyFx({drainMult:1.12}, 'Citizens delay seeing the GP \u2014 they arrive sicker.');
+    } else if (GS.trustC >= 42 && GS.activeStates.citAvoid) {
+      GS.activeStates.citAvoid = false;
+      applyFx({drainMult:1/1.12}, 'Citizens seek care earlier again.');
+    }
 
     // Expire timed effects, deliver delayed ones
     const dueDelayed = processQuarterEffects(q);
@@ -12536,7 +12622,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     ov.className = 'moc-overlay'; ov.id = 'moc-council';
     let html = '<div class="moc-box"><h2>\ud83c\udfdb Quarterly Council \u2014 Q' + qq + ', Year ' + year + '</h2>';
     html += '<div class="moc-sub">Quarter ' + q + ' of ' + MoC.TOTAL_QUARTERS + ' \u00b7 ' + (newDeaths > 0 ? '\u26a0 ' + newDeaths + ' preventable death' + (newDeaths > 1 ? 's' : '') + ' last quarter' : 'No preventable deaths last quarter') + '</div>';
-    html += '<div class="moc-gazette">' + gazetteReport(q, dueDelayed) + '</div>';
+    html += '<div class="moc-gazette">' + gazetteReport(q, dueDelayed, evt) + '</div>';
     html += '<div class="moc-meters">'
       + meterHtml(pixIcon('people') + ' Citizens', GS.trustC, GS.trustC >= 50 ? '#58c858' : GS.trustC >= 30 ? '#ffd54f' : '#e05858')
       + meterHtml(pixIcon('cross') + ' Doctors', GS.trustD, GS.trustD >= 50 ? '#58c858' : GS.trustD >= 30 ? '#ffd54f' : '#e05858')
@@ -13147,13 +13233,14 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     if (MoC.IS_BASELINE || flashActive || councilOpen || GS.over || MoC.paused) return;
     const inQuarter = cycle % MoC.QUARTER_TICKS;
     if (inQuarter !== Math.floor(MoC.QUARTER_TICKS / 2)) return;
-    if ((MoC.seed + GS.quarter) % 2 !== 0) return;
+    if ((MoC.seed + GS.quarter) % 3 !== 0) return; // roughly every 3rd quarter
     const pool = FLASH_POOL.filter(function(f, i){ return GS.flashSeen.indexOf(i) < 0; });
     if (!pool.length) { GS.flashSeen = []; return; }
     const flash = pool[(MoC.seed + GS.quarter * 5) % pool.length];
     GS.flashSeen.push(FLASH_POOL.indexOf(flash));
     const face = agents.find(function(a){ return (a.type === 'patient' || a.type === 'citizen') && a.state !== 'dead'; }) || { name:'A citizen', age:'?' };
     flashActive = true;
+    pauseSim(); // the town holds its breath — no council can interrupt your call
     Audio5.blip(880);
     const el = document.createElement('div');
     el.className = 'moc-flash';
@@ -13161,15 +13248,14 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
       + '<div class="ft">' + flash.d(face) + '</div>'
       + '<button id="moc-fa">' + flash.a.l + '</button><button id="moc-fb">' + flash.b.l + '</button>';
     document.body.appendChild(el);
-    let ttl = 8000;
+    let ttl = 10000;
     const bar = el.querySelector('#moc-fbar');
     const iv = setInterval(function(){
-      if (MoC.paused || councilOpen) return; // freeze timer during councils
       ttl -= 200;
-      if (bar) bar.style.width = Math.max(0, ttl / 80) + '%';
-      if (ttl <= 0) { cleanup(); MoC.adjustTrust(-1); FX.pop('Ignored\u2026 \u22121 Trust', '#e07050'); }
+      if (bar) bar.style.width = Math.max(0, ttl / 100) + '%';
+      if (ttl <= 0) { cleanup(); MoC.adjustTrust(-1); FX.pop('Ignored\u2026 \u22121 Trust', '#e05858'); }
     }, 200);
-    function cleanup(){ clearInterval(iv); el.remove(); flashActive = false; }
+    function cleanup(){ clearInterval(iv); el.remove(); flashActive = false; if (!councilOpen && !GS.over) resumeSim(); }
     el.querySelector('#moc-fa').addEventListener('click', function(){ flash.a.run(face); refreshMeters(); cleanup(); });
     el.querySelector('#moc-fb').addEventListener('click', function(){ flash.b.run(face); refreshMeters(); cleanup(); });
   }
@@ -13250,7 +13336,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
     if (mult > 0) {
       MoC.paused = false;
-      autoTimer = setInterval(tick, Math.round(200 / mult));
+      autoTimer = setInterval(tick, Math.round(350 / mult));
       const pb = document.getElementById('btn-play'); if (pb) pb.textContent = '\u23f8 Pause';
     } else {
       MoC.paused = true;
@@ -13282,10 +13368,16 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
       livesLine = (diff >= 0 ? '+' : '') + diff + ' vs status quo';
     }
     const ticksToCouncil = MoC.QUARTER_TICKS - (cycle % MoC.QUARTER_TICKS);
-    const secsToCouncil = Math.ceil(ticksToCouncil * (200 / (GS._speed || 1)) / 1000);
+    const secsToCouncil = Math.ceil(ticksToCouncil * (350 / (GS._speed || 1)) / 1000);
     const fxLines = GS.timedFx.map(function(t){
       return '<div class="mfx">\u23f3 ' + t.label + ' (' + (t.untilQ - GS.quarter) + 'q left)</div>';
     }).join('');
+    let stateLines = '';
+    if (GS.activeStates) {
+      if (GS.activeStates.docWTR) stateLines += '<div class="mfx" style="color:var(--m-red)">\u26a0 Doctors demoralised: sick leave +2%</div>';
+      if (GS.activeStates.citAvoid) stateLines += '<div class="mfx" style="color:var(--m-red)">\u26a0 Citizens avoiding care: faster decline</div>';
+      if (GS.trustP < 35) stateLines += '<div class="mfx" style="color:var(--m-red)">\u26a0 Parliament withholding co-funding</div>';
+    }
     const spd = GS._speed === undefined ? 1 : GS._speed;
     el.innerHTML = '<div class="mhead"><h4 style="margin:0">\ud83c\udfdb THE MINISTRY</h4>'
       + '<span class="spd">'
@@ -13302,6 +13394,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
       + '<div class="mrow">' + pixIcon('heart') + ' Lives saved<b>' + livesLine + '</b></div>'
       + '<div class="mrow">' + pixIcon('plug') + ' Fragility<b class="' + (fragility() < 30 ? 'g' : fragility() < 60 ? 'y' : 'r') + '">' + fragility() + '</b></div>'
       + (fxLines ? '<div style="margin-top:4px">' + fxLines + '</div>' : '')
+      + (stateLines ? '<div style="margin-top:2px">' + stateLines + '</div>' : '')
       + '<div class="mnext">\ud83d\uddd3 Next council: Q' + Math.min(MoC.TOTAL_QUARTERS, GS.quarter + 1) + ' \u00b7 ~' + secsToCouncil + 's</div>';
     const b0 = el.querySelector('#moc-spd0'), b1 = el.querySelector('#moc-spd1'), b2 = el.querySelector('#moc-spd2');
     if (b0) b0.onclick = function(){ speedSet(0); };
