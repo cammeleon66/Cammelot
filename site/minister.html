@@ -1116,12 +1116,14 @@ const MoC = (function(){
     campaign: { id:'campaign', name:'The Full Term', icon:'\ud83c\udfdb', quarters:40,
       desc:'10 years, \u20ac780K, the standard crisis. The complete Minister experience (~20 min).',
       budget:780000, trust:60,
+      story:'Monday, 07:40. Your predecessor left one thing on the desk: a folder marked THE CRISIS, and a sticky note \u2014 "Sorry." Outside, Cammelot is waking up. Dr. de Jong is already twelve patients behind, and in the Zonnebloem care home, Hendrik Veenstra (70) is waiting for a cardiology referral that should have come four weeks ago.',
       brief:{ situation:'The system runs at 62% effective capacity. Waits already breach the norm. Nothing is on fire yet \u2014 but the fuse is lit.',
         threats:['Aging population, rising demand', 'Every tech shortcut adds fragility', 'One bad winter from Code Black'],
         win:'Serve 10 years. Save more lives than the status quo would.' } },
     sprint: { id:'sprint', name:'Crisis Sprint', icon:'\u26a1', quarters:12, daily:true,
       desc:'Today\u2019s shared scenario: 3 years, \u20ac300K, system already on fire (~6 min).',
       budget:300000, trust:50,
+      story:'You were sworn in an hour ago, in a corridor, because the pressroom was full of angry GPs. The outgoing minister lasted eight months. The queue outside the hospital starts before dawn now. Someone hands you a coffee and a list of names \u2014 the people currently waiting past the legal limit. It is three pages long.',
       setup:function(){ M.IST.tree = 14; M.IST.sick = 0.11; M.IST.drain = 1.15;
         agents.forEach(function(a){ if ((a.type==='patient'||a.type==='citizen') && a.conditions && a.conditions.length && Math.random() < 0.4) a.waitWeeks = 8 + Math.random() * 8; }); },
       brief:{ situation:'You inherit a system ALREADY in meltdown: waits at 14 weeks, staff sick at 11%, patients deteriorating faster, and dozens already stuck on the list.',
@@ -1130,6 +1132,7 @@ const MoC = (function(){
     zeeland: { id:'zeeland', name:'The Shortage', icon:'\ud83c\udf0a', quarters:40,
       desc:'Hard mode: one GP already gone, waits at 14 weeks, \u20ac600K. Recruit or drown.',
       budget:600000, trust:50,
+      story:'Dr. Bakker\u2019s farewell reception was last Friday. Thirty-four years, one practice, no successor. Her 1,800 patients received a letter: "Please register elsewhere." There is no elsewhere. This morning, the first of them stood outside Dr. de Jong\u2019s door at 06:30, and the region is watching what you do next.',
       setup:function(){ M.IST.tree = 14; M.IST.sick = 0.11;
         const gp = agents.find(function(a){ return a.id === 'gp2' || (a.name||'').indexOf('Bakker') >= 0; });
         if (gp) gp.sickLeaveTimer = 9999; },
@@ -1139,6 +1142,7 @@ const MoC = (function(){
     codeblack: { id:'codeblack', name:'Code Black', icon:'\u26ab', quarters:20,
       desc:'Start mid-catastrophe: flu wave, IC overflowing, trust at 35. Stabilise in 5 years.',
       budget:400000, trust:35,
+      story:'The phone call came at 03:12. "Minister, we are at 104% and the flu wave hasn\u2019t peaked." Your predecessor resigned on live television last night. In the hospital, an exhausted intensivist has started a list nobody wants to write: who gets the last bed. You have until morning rounds to give her a better answer.',
       setup:function(){ M.IST.drain = 1.3; M.IST.sick = 0.12; M.IST.tree = 13;
         agents.forEach(function(a){ if ((a.type==='patient'||a.type==='citizen') && a.conditions && a.conditions.length && Math.random() < 0.3) { a.hp = Math.max(25, (a.hp || 80) - 20); a.waitWeeks = 6 + Math.random() * 8; } }); },
       brief:{ situation:'The IC is at 104%. The regional coordinator has stopped saying "if" and started saying "when". Trust in you is already at 35 \u2014 the last minister just resigned.',
@@ -1147,6 +1151,7 @@ const MoC = (function(){
     sandbox: { id:'sandbox', name:'Green Meadow', icon:'\ud83c\udf31', quarters:40,
       desc:'Sandbox for demos: double budget, gentle events, nothing explodes. Teach, don\u2019t sweat.',
       budget:1560000, trust:70, gentle:true,
+      story:'A quiet spring morning in Cammelot. The budget is generous, the press is friendly, and nothing is secretly on fire. A perfect day to learn how this town works.',
       brief:{ situation:'A generous world for learning the ropes: double budget, calm event deck, forgiving town.',
         threats:['Only your own curiosity'],
         win:'There is no losing here. Experiment freely.' } }
@@ -9928,8 +9933,19 @@ function buildSaveState(){
 // saveGameIDB removed for website version
 // showSaveSlotPicker removed for website version
 
-// ═══ ANIMATION LOOP (Sprint 18.1: visibility-aware) ═══
-function loop(){globalFrameCount++;if(tabVisible||globalFrameCount%4===0)render();requestAnimationFrame(loop);}
+// ═══ ANIMATION LOOP (Sprint 18.1: visibility-aware; MoC: freeze frame while paused) ═══
+let _mocFrozeFrame = false;
+function loop(){
+  globalFrameCount++;
+  const frozen = (typeof MoC !== 'undefined') && MoC.paused && !MoC.IS_BASELINE;
+  if (frozen) {
+    if (!_mocFrozeFrame) { render(); _mocFrozeFrame = true; } // draw one last frame, then hold
+  } else {
+    _mocFrozeFrame = false;
+    if (tabVisible || globalFrameCount % 4 === 0) render();
+  }
+  requestAnimationFrame(loop);
+}
 
 // saveGame is a no-op for website version
 function saveGame(){}
@@ -11506,32 +11522,50 @@ document.getElementById('btn-tours').addEventListener('click', function() {
     {
       icon: "\ud83c\udfdb",
       title: "You are the Minister",
-      text: "This town's healthcare system is failing. You have a budget, a term, and 45 citizens who will live or die by your choices. The pixel town below is not decoration \u2014 it is your electorate.",
+      text: "This town's healthcare system is failing. You have a budget, a term, and 45 citizens who will live or die by your choices. Everything you see is clickable \u2014 let me show you around before the clock starts.",
+      highlight: null
+    },
+    {
+      icon: "\ud83d\uddfa",
+      title: "The town (click it!)",
+      text: "Click any CITIZEN to open their medical dossier \u2014 age, conditions, HP, how long they've waited. Click a GP PRACTICE or the HOSPITAL to inspect queues. When someone dies waiting, a grave appears. Watch for citizens queueing outside buildings: that's your system failing in real time.",
       highlight: "#game-wrap"
     },
     {
       icon: "\ud83c\udfe6",
-      title: "The Ministry panel",
-      text: "Your cockpit: budget, the trust of Citizens, Doctors and Parliament, waiting times, preventable deaths, and system fragility. If any trust meter hits rock bottom, your term ends early. Use \u23f8/1\u00d7/2\u00d7 to control time.",
+      title: "THE MINISTRY \u2014 your cockpit",
+      text: "Top right: budget, three trust bars (Citizens, Doctors, Parliament), waiting times vs the norm, deaths, fragility, and active effects. If ANY trust bar bottoms out, your term ends: strike, protest, or a no-confidence vote. The \u23f8/1\u00d7/2\u00d7 buttons control time; \ud83d\udd0a toggles sound.",
       highlight: "#moc-ministry"
+    },
+    {
+      icon: "\ud83c\udfaf",
+      title: "The yearly objective",
+      text: "Bottom of the screen: this year's target, live-tracked \u2014 \u2713 ON TRACK or \u2717 FAILING, with the quarter countdown. Hit it for bonus points; miss it and the Gazette will let everyone know. Results appear in the first council of the new year.",
+      highlight: "#moc-objective"
     },
     {
       icon: "\ud83d\uddd3",
       title: "Quarterly Councils",
-      text: "Every quarter the game pauses: read the Gazette, face a decision, enact one irreversible law, and buy interventions. Every card shows exactly what it changes (now \u2192 after). Spend wisely \u2014 the budget never comes back.",
+      text: "Every quarter the world freezes and the council convenes: read the Gazette front page, face a decision, enact ONE irreversible law, and buy at most TWO interventions (your ministry can only implement so much at once). Every card shows exactly what it changes: now \u2192 after.",
       highlight: null
     },
     {
       icon: "\u26a1",
-      title: "Beware the trade-off",
-      text: "Technology makes the town faster AND more fragile. Ransomware, grid failures and parliamentary distrust are in the deck \u2014 all based on real Dutch incidents. Resilience looks like wasted money until the day it isn't.",
+      title: "Flash decisions",
+      text: "Between councils, urgent calls appear on the right with a timer \u2014 a citizen at your door, a TV crew, a server wobble. The world pauses while you decide. Ignoring them is also a choice (and costs trust).",
       highlight: null
     },
     {
-      icon: "\ud83c\udfaf",
+      icon: "\ud83d\udd0c",
+      title: "The trade-off that bites",
+      text: "Technology makes the town faster AND more fragile. Watch the Dependence number: the higher it climbs, the more likely ransomware and grid failures hit \u2014 all based on real Dutch incidents. Resilience packs look like wasted money until the day they aren't.",
+      highlight: null
+    },
+    {
+      icon: "\ud83c\udfc6",
       title: "Win the term",
-      text: "Score points every quarter, hit yearly objectives, and beat the status quo: a shadow-run of this exact town with no minister at all. Save more lives than doing nothing \u2014 that's the bar. Good luck, Minister.",
-      highlight: "#moc-objective"
+      text: "A shadow-run of this exact town plays out with NO minister at all. Beat it: save more lives than doing nothing would. Your score, the emoji trail, and every name you failed to save await you at the end. Good luck, Minister.",
+      highlight: null
     }
   ];
 
@@ -11682,8 +11716,8 @@ document.getElementById('btn-tours').addEventListener('click', function() {
   // MoC: the game layer owns onboarding sequencing. It calls window.mocStartWalkthrough()
   // after the briefing; show only once per browser.
   window.mocStartWalkthrough = function(){
-    try { if (JSON.parse(localStorage.getItem('moc_tour_seen'))) { launchSimulation(); return; } } catch(e){}
-    try { localStorage.setItem('moc_tour_seen', 'true'); } catch(e){}
+    try { if (JSON.parse(localStorage.getItem('moc_tour_seen_v2'))) { launchSimulation(); return; } } catch(e){}
+    try { localStorage.setItem('moc_tour_seen_v2', 'true'); } catch(e){}
     buildCard();
   };
   // Baseline runs and picker mode never show the tour
@@ -13550,6 +13584,26 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
       else overlay.appendChild(picker);
     });
 
+    // G8 audio: title theme across the whole menu flow (picker → briefing → tour).
+    // Starts on the first user gesture anywhere (browser autoplay rules);
+    // fades out only when the simulation actually starts running.
+    document.addEventListener('DOMContentLoaded', function(){
+      if (MoC.IS_BASELINE) return;
+      document.addEventListener('pointerdown', function once(){
+        document.removeEventListener('pointerdown', once);
+        if (!Audio5.isMuted() && !window._mocGameStarted) Audio5.title.start();
+      }, { once: true });
+      // Stop the theme the moment the real game launches
+      if (typeof window.launchSimulation === 'function') {
+        const _origLaunch = window.launchSimulation;
+        window.launchSimulation = function(){
+          window._mocGameStarted = true;
+          Audio5.title.stop();
+          return _origLaunch.apply(this, arguments);
+        };
+      }
+    });
+
     // G7: Situation Report briefing → assumption (once) → game tour (once) → play
     document.addEventListener('DOMContentLoaded', function(){
       if (!MoC.scenario || MoC.IS_BASELINE) return;
@@ -13558,17 +13612,24 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
       const ov = document.getElementById('play-overlay');
       if (!ov) return;
       ov.style.display = 'flex';
-      // Title theme starts on first user gesture anywhere on the briefing (browser autoplay rules)
-      ov.addEventListener('pointerdown', function once(){ ov.removeEventListener('pointerdown', once); Audio5.title.start(); }, { once: true });
       const b = sc.brief || { situation: sc.desc, threats: [], win: 'Serve your term.' };
       const years = Math.ceil(sc.quarters / 4);
-      ov.innerHTML = '<div class="moc-box" style="max-width:560px;cursor:default">'
-        + '<h2 style="text-align:center">' + sc.icon + ' ' + sc.name.toUpperCase() + '</h2>'        + '<div class="moc-sub" style="text-align:center">Term #' + MoC.seed + (GS.isDaily && sc.daily ? ' \u00b7 today\u2019s shared scenario' : '') + (GS.challengeScore !== null ? ' \u00b7 \ud83c\udfaf score to beat: ' + GS.challengeScore : '') + '</div>'
+      // Step 1: the story (in-world narrative, centre screen)
+      ov.innerHTML = '<div class="moc-box" style="max-width:540px;cursor:default;text-align:center">'
+        + '<h2>' + sc.icon + ' ' + sc.name.toUpperCase() + '</h2>'
+        + '<div class="moc-sub" style="margin:4px 0 14px">Term #' + MoC.seed + (GS.isDaily && sc.daily ? ' \u00b7 today\u2019s shared scenario' : '') + '</div>'
+        + '<div class="moc-gazette" style="text-align:left;font-size:13.5px;line-height:1.7">' + (sc.story || b.situation) + '</div>'
+        + '<div class="moc-sub" style="font-size:11px;color:#8a94d8">\ud83d\udd0a First click enables sound' + (Audio5.isMuted() ? ' (currently MUTED \u2014 unmute via \ud83d\udd07 in THE MINISTRY)' : '') + '</div>'
+        + '<button class="moc-continue" id="moc-story-next">OPEN THE DOSSIER \u25b6</button></div>';
+      document.getElementById('moc-story-next').addEventListener('click', function(){
+        ov.innerHTML = '<div class="moc-box" style="max-width:560px;cursor:default">'
+        + '<h2 style="text-align:center">\ud83d\udcc1 THE CRISIS \u2014 BRIEFING</h2>'
+        + '<div class="moc-sub" style="text-align:center">' + (GS.challengeScore !== null ? '\ud83c\udfaf score to beat: ' + GS.challengeScore : 'For the eyes of the Minister only') + '</div>'
         + '<h3>\ud83d\udccb Situation report</h3><div class="moc-sub" style="line-height:1.6">' + b.situation + '</div>'
         + '<div class="moc-sys" style="grid-template-columns:repeat(3,1fr)">'
-        + '<div class="cell">\ud83d\udcb0 Budget<b class="y">' + fmtK(sc.budget) + '</b></div>'
-        + '<div class="cell">\ud83d\uddd3 Term<b>' + years + ' year' + (years > 1 ? 's' : '') + '</b></div>'
-        + '<div class="cell">\ud83e\udd1d Trust<b class="' + (sc.trust >= 50 ? 'y' : 'r') + '">' + sc.trust + '/100</b></div>'
+        + '<div class="cell">' + pixIcon('coin') + ' Budget<b class="y">' + fmtK(sc.budget) + '</b></div>'
+        + '<div class="cell">' + pixIcon('clock') + ' Term<b>' + years + ' year' + (years > 1 ? 's' : '') + '</b></div>'
+        + '<div class="cell">' + pixIcon('people') + ' Trust<b class="' + (sc.trust >= 50 ? 'y' : 'r') + '">' + sc.trust + '/100</b></div>'
         + '</div>'
         + '<h3>\u26a0 Threats</h3><div class="moc-sub" style="line-height:1.7">' + (b.threats || []).map(function(t){ return '\u2022 ' + t; }).join('<br>') + '</div>'
         + '<h3>\ud83c\udfc6 Mandate</h3><div class="moc-sub">' + b.win + '</div>'
@@ -13576,7 +13637,6 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
       document.getElementById('moc-takeoffice').addEventListener('click', function(){
         ov.remove();
         window._mocBriefed = true;
-        Audio5.title.stop();
         Audio5.sting();
         function proceed(){
           MoC.paused = false;
@@ -13601,6 +13661,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
           });
         });
       });
+      }); // end story-next listener
     });
 
     // Wire hooks (G5: wrapped with live scoring, objectives, flash decisions)
