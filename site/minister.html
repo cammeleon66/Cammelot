@@ -12192,6 +12192,9 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     { id:'audit', name:'\u2696 Fairness audit', cost:20000,
       fx:{trust:4}, max:5,
       desc:'Independent review of triage decisions. Trust +4. Repeatable.' },
+    { id:'prevention', name:'\ud83e\udd66 Prevention programme', cost:90000,
+      fx:{trustC:2}, max:1,
+      desc:'Lifestyle coaching, early screening, neighbourhood health. Costs now \u2014 pays from year 3: halves the aging creep and softens the flu finale. The classic long game.' },
     { id:'resilience', name:'\ud83d\udd0b Resilience pack', cost:25000,
       fx:{dep:-2}, max:3,
       desc:'Backup power, paper fallback drills, offline protocols. -2 dependence.' },
@@ -12260,45 +12263,76 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     return GS._face;
   }
 
+  // ── G9a: RISK ENGINE ──
+  // Digital Fragility Index bands + act multiplier + dependence-scaled impact.
+  function dfiBand(){
+    const d = GS.dependence;
+    return d >= 12 ? 3 : d >= 8 ? 2 : d >= 4 ? 1 : 0; // 0 green, 1 amber, 2 red, 3 critical
+  }
+  function actNumber(q){
+    q = q || GS.quarter || 1;
+    const t = MoC.TOTAL_QUARTERS;
+    return q <= Math.ceil(t * 0.3) ? 1 : q <= Math.ceil(t * 0.7) ? 2 : 3;
+  }
+  function actMult(){ return [0, 1, 1.5, 2][actNumber()]; }
+  // Impact scale: how hard cyber/outage events hit, grows with dependence (1.0 at dep4 -> 2.0 at dep12+)
+  function impactScale(){ return Math.min(2, Math.max(1, GS.dependence / 6)); }
+  // Ransomware groups rotate: staying digital = carrying the risk forever
+  const CYBER_GROUPS = ['LOCKSTEP', 'NIGHTSHADE', 'COBALT WARD', 'GRAVEDIGGER 5'];
+  function nextCyberGroup(){
+    GS._cyberN = (GS._cyberN || 0);
+    return CYBER_GROUPS[GS._cyberN++ % CYBER_GROUPS.length];
+  }
+
   // ── Event deck (GAME_DESIGN.md section 5; fictionalized per section 9) ──
   const EVENTS = [
-    { id:'lockstep', name:'\ud83d\udd12 LOCKSTEP', once:true,
-      weight:function(){ return (GS.dependence >= 4 && (GS.owned.scribes1 || GS.owned.a2a || GS.owned.twin)) ? 26 : 0; },
+    { id:'lockstep', name:'\ud83d\udd12 RANSOMWARE', cooldown:8,
+      weight:function(){ return (dfiBand() >= 1 && (GS.owned.scribes1 || GS.owned.a2a || GS.owned.twin)) ? 20 + GS.dependence : 0; },
       text:function(){
+        const grp = GS._cyberCurrent = nextCyberGroup();
         const hardened = GS.owned.security > 0;
-        return 'Ransomware group LOCKSTEP has breached <b>Halcyon One</b>, the cloud platform behind your digital care services. '
-          + 'Patient portals are dark. ~100GB of medical data is in their hands. They want money and silence.'
-          + (hardened ? '<br><i>Your security hardening contained the breach \u2014 disruption will be shorter.</i>' : '');
+        const scale = impactScale();
+        return 'Ransomware group <b>' + grp + '</b> has breached <b>Halcyon One</b>, the cloud platform behind your digital care services. '
+          + (scale >= 1.7 ? 'With the whole town digitised, EVERYTHING is dark: portals, triage, referrals, the works.'
+            : scale >= 1.3 ? 'Patient portals and referral systems are dark.'
+            : 'Patient portals are dark.')
+          + ' Medical data is in their hands. They want money and silence.'
+          + (hardened ? '<br><i>Your security hardening contained the breach \u2014 disruption will be shorter.</i>' : '')
+          + (GS.eventsFired.indexOf('lockstep') >= 0 ? '<br><i>The second hit in one term. The Gazette asks: "Did we learn nothing?"</i>' : '');
       },
       choices:[
-        { label:'Negotiate quietly', note:'-\u20ac50K \u00b7 Parliament -8 (secrecy) \u00b7 short disruption \u00b7 they say the data is "destroyed"',
+        { label:'Negotiate quietly', note:'-\u20ac50K \u00b7 Parliament -8 (secrecy) \u00b7 disruption scales with your dependence',
           run:function(){
-            applyFx({budget:-50000, trustP:-8, trustC:-1}, 'LOCKSTEP: paid for silence.');
-            applyTimedFx({admin: GS.owned.security ? 0.05 : 0.10}, 1, 'LOCKSTEP disruption (paper fallback)');
+            const s = impactScale();
+            applyFx({budget:-50000, trustP:-8, trustC:-1}, (GS._cyberCurrent || 'Ransomware') + ': paid for silence.');
+            applyTimedFx({admin: (GS.owned.security ? 0.05 : 0.10) * s}, s >= 1.5 ? 2 : 1, 'Ransomware disruption (paper fallback)');
           } },
         { label:'Refuse and disclose everything', note:'Citizens -8 now, +6 later (honesty) \u00b7 longer disruption \u00b7 doctors respect it',
           run:function(){
-            applyFx({trustC:-8, trustD:2, trustP:-2}, 'LOCKSTEP: refused. Full public disclosure.');
-            applyTimedFx({admin: GS.owned.security ? 0.06 : 0.12}, GS.owned.security ? 1 : 2, 'LOCKSTEP disruption (paper fallback)');
-            GS.delayed.push({ atQ: GS.quarter + 2, fx:{trustC:6, trustP:4}, label:'The town remembers your honesty during LOCKSTEP.' });
+            const s = impactScale();
+            applyFx({trustC:-8, trustD:2, trustP:-2}, (GS._cyberCurrent || 'Ransomware') + ': refused. Full public disclosure.');
+            applyTimedFx({admin: (GS.owned.security ? 0.06 : 0.12) * s}, GS.owned.security ? 1 : 2, 'Ransomware disruption (paper fallback)');
+            GS.delayed.push({ atQ: GS.quarter + 2, fx:{trustC:6, trustP:4}, label:'The town remembers your honesty during the ransomware crisis.' });
           } }
       ] },
     { id:'outage', name:'\ud83d\udd0c Grid failure', cooldown:6,
-      weight:function(){ return Math.min(16, GS.dependence * 2); },
+      weight:function(){ return Math.min(20, GS.dependence * 2.5); },
       text:function(){
         return GS.owned.resilience
           ? 'A regional grid failure blacks out half the town. Your backup power and offline protocols hold: <b>care continues on paper, seamlessly.</b> The Gazette is impressed.'
-          : 'A regional grid failure blacks out half the town. Every AI system is down. Nobody remembers where the paper forms are kept.';
+          : 'A regional grid failure blacks out half the town. Every AI system is down. Nobody remembers where the paper forms are kept.'
+            + (impactScale() >= 1.5 ? ' <b>And in this town, EVERYTHING runs on those systems.</b>' : '');
       },
       auto:function(){
         if (GS.owned.resilience) { applyFx({trust:3}, 'Grid failure weathered. Resilience pays.'); }
         else {
-          applyTimedFx({ai: 1.0 - M.IST.ai, admin: 0.05}, 1, 'Grid failure: AI offline, paper chaos');
-          applyFx({trust:-3}, 'Grid failure: care disrupted.');
+          const s = impactScale();
+          applyTimedFx({ai: 1.0 - M.IST.ai, admin: 0.05 * s}, s >= 1.5 ? 2 : 1, 'Grid failure: AI offline, paper chaos');
+          applyFx({trust: -Math.round(3 * s)}, 'Grid failure: care disrupted.');
         }
       } },
-    { id:'ddos', name:'\ud83c\udf0a DDoS wave', once:true,
-      weight:function(){ return (GS.dependence >= 1 && GS.quarter <= 14) ? 12 : 0; },
+    { id:'ddos', name:'\ud83c\udf0a DDoS wave', cooldown:10,
+      weight:function(){ return GS.dependence >= 1 ? 10 : 0; },
       text:function(){ return 'A foreign hacktivist collective floods the patient portal for 12 hours. No clinical systems touched \u2014 but the waiting room is full of worried citizens holding phones.'; },
       auto:function(){ applyFx({trust: GS.owned.security ? -1 : -3}, 'DDoS wave: portal downtime.'); } },
     { id:'lab', name:'\ud83e\uddea Pathology blackout', once:true,
@@ -12362,21 +12396,25 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
       auto:function(){ applyFx({trust:5}, 'Inspectorate praise. Trust +5.'); } }
   ];
   function pickEvent(q){
+    // G9b: quiet quarters — every ~4th quarter is guaranteed crisis-free breathing room
+    GS._sinceQuiet = (GS._sinceQuiet || 0) + 1;
+    if (GS._sinceQuiet >= 4 && !GS._finaleActive) { GS._sinceQuiet = 0; return null; }
     const pool = EVENTS.filter(function(e){
       if (e.once && GS.eventsFired.indexOf(e.id) >= 0) return false;
       if (e.cooldown && GS.lastEventQ[e.id] && q - GS.lastEventQ[e.id] < e.cooldown) return false;
       return e.weight() > 0;
     });
     if (!pool.length) return null;
-    const quiet = GENTLE ? 90 : 34; // weight of "nothing happens"
+    const quiet = GENTLE ? 90 : 34;
+    const mult = GENTLE ? 1 : actMult(); // G9b: acts raise event pressure
     let total = quiet;
-    pool.forEach(function(e){ total += e.weight(); });
+    pool.forEach(function(e){ total += e.weight() * mult; });
     let roll = Math.random() * total;
     if (roll < quiet) return null;
     roll -= quiet;
     for (let i = 0; i < pool.length; i++) {
-      roll -= pool[i].weight();
-      if (roll <= 0) return pool[i];
+      roll -= pool[i].weight() * mult;
+      if (roll <= 0) { GS._sinceQuiet = Math.max(GS._sinceQuiet, 1); return pool[i]; }
     }
     return null;
   }
@@ -12437,7 +12475,37 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
       b:{ label:'Keep care close to home', fx:{trust:2, sick:0.01}, note:'Trust +2 \u00b7 sick leave +1%' } },
     { id:'cyberins', text:'An insurer offers a healthcare cyber-insurance policy. "You never need it \u2014 until you do."',
       a:{ label:'Take the policy', fx:{budget:-20000, dep:-1}, note:'-\u20ac20K \u00b7 -1 dependence' },
-      b:{ label:'Self-insure', fx:{}, note:'No change (fortune favours the bold?)' } }
+      b:{ label:'Self-insure', fx:{}, note:'No change (fortune favours the bold?)' } },
+    { id:'shortage', text:'National medicine shortages reach Cammelot: the pharmacy is out of a common blood-pressure drug. Importing costs triple.',
+      a:{ label:'Pay for imports', fx:{budget:-25000, trustC:4}, note:'-\u20ac25K \u00b7 Citizens +4' },
+      b:{ label:'Let pharmacists substitute generics', fx:{trustC:-3, drainMult:1.03}, note:'Citizens -3 \u00b7 drain +3% (switching hiccups)' } },
+    { id:'seh', text:'The regional hospital wants to close its night-time emergency post. "Volumes are too low to staff safely," says the board.',
+      a:{ label:'Accept the closure', fx:{budget:30000, trustC:-7, trustP:2}, note:'+\u20ac30K savings \u00b7 Citizens -7 \u00b7 Parliament +2' },
+      b:{ label:'Subsidise it to stay open', fx:{budget:-35000, trustC:5}, note:'-\u20ac35K \u00b7 Citizens +5' } },
+    { id:'algo', text:'A vendor pitches an AI triage algorithm that prioritises GP appointments. A journalist asks: "Who audits it for bias, Minister?"',
+      a:{ label:'Deploy with public audit board', fx:{budget:-15000, tree:-1, dep:1, trustC:2}, note:'-\u20ac15K \u00b7 wait -1w \u00b7 +1 dep \u00b7 Citizens +2' },
+      b:{ label:'Deploy fast, audit later', fxFn:function(){ return Math.random() < 0.4 ? {tree:-1, dep:1, trustC:-9, trustP:-5} : {tree:-1, dep:1}; }, note:'Wait -1w \u00b7 +1 dep \u00b7 40% chance of a bias scandal' } },
+    { id:'grid', text:'The grid operator warns: no new connection capacity for the planned health data centre until 2030. The vendor offers "temporary" diesel generators.',
+      a:{ label:'Run the generators', fx:{trustC:-4, dep:1}, note:'Citizens -4 (the town smells it) \u00b7 +1 dep' },
+      b:{ label:'Delay the data centre', fx:{ai:-0.03}, note:'AI multiplier -0.03 (projects slip)' } },
+    { id:'verpleeghuis', text:'The nursing home waiting list hits a record. Families are caring for parents at home, exhausted. "Something has to give, Minister."',
+      a:{ label:'Fund respite care beds', fx:{budget:-30000, trustC:6, drainMult:0.97}, note:'-\u20ac30K \u00b7 Citizens +6 \u00b7 drain -3%' },
+      b:{ label:'Prioritise the GP system first', fx:{trustC:-4}, note:'Citizens -4' } },
+    { id:'poach', text:'A commercial clinic chain opens nearby, offering nurses 30% more. Your practices are already stretched.',
+      a:{ label:'Match with a retention bonus', fx:{budget:-40000, trustD:6, sick:-0.01}, note:'-\u20ac40K \u00b7 Doctors +6 \u00b7 sick -1%' },
+      b:{ label:'Let the market decide', fx:{trustD:-6, sick:0.015}, note:'Doctors -6 \u00b7 sick +1.5%' } },
+    { id:'digibeten', text:'The patient portal is now the default. The elderly council protests: "A quarter of us cannot use it. Do we not count?"',
+      a:{ label:'Keep a staffed phone line', fx:{budget:-12000, admin:0.01, trustC:5}, note:'-\u20ac12K \u00b7 admin +1% \u00b7 Citizens +5' },
+      b:{ label:'Digital-only, with a helpdesk leaflet', fx:{trustC:-6, admin:-0.01}, note:'Citizens -6 \u00b7 admin -1%' } },
+    { id:'interop', text:'The neighbouring region asks to connect to your health records for shared night shifts. Useful \u2014 but their security track record is patchy.',
+      a:{ label:'Connect the systems', fx:{tree:-1, dep:1, trustD:3}, note:'Wait -1w \u00b7 +1 dep \u00b7 Doctors +3' },
+      b:{ label:'Demand a security audit first', fx:{budget:-10000}, note:'-\u20ac10K \u00b7 connection delayed but safe' } },
+    { id:'sugarlobby', text:'A national soda-tax bill needs regional endorsements. The local bottling plant employs 200 people and calls you directly.',
+      a:{ label:'Endorse the sugar tax', fx:{trustP:3, trustC:-2, drainMult:0.97}, note:'Parliament +3 \u00b7 Citizens -2 \u00b7 drain -3% long-term' },
+      b:{ label:'Stay neutral, protect jobs', fx:{trustC:2, trustP:-2}, note:'Citizens +2 \u00b7 Parliament -2' } },
+    { id:'sabbatical', text:'Dr. Bakker, your most experienced GP, requests a 3-month sabbatical. "I\u2019m running on fumes, Minister. Better three months now than gone for good."',
+      a:{ label:'Grant it, hire a locum', fx:{budget:-20000, trustD:5, sick:-0.01}, note:'-\u20ac20K \u00b7 Doctors +5 \u00b7 sick -1%' },
+      b:{ label:'Ask them to push through', fxFn:function(){ return Math.random() < 0.35 ? {sick:0.03, trustD:-8} : {trustD:-3}; }, note:'Doctors -3 \u00b7 35% risk of a burnout wave' } }
   ];
   // Deterministic dilemma order from seed
   function pickDilemma(){
@@ -12453,9 +12521,9 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
   function gazetteArt(kind){
     const cv2 = document.createElement('canvas'); cv2.width = 160; cv2.height = 44;
     const c = cv2.getContext('2d');
-    const sky = { death:'#2a2a42', hack:'#180a14', strike:'#b8c8d8', calm:'#a8d8f0', praise:'#a8d8f0', queue:'#c8d0d8' }[kind] || '#a8d8f0';
+    const sky = { death:'#2a2a42', hack:'#180a14', strike:'#b8c8d8', calm:'#a8d8f0', praise:'#a8d8f0', queue:'#c8d0d8', flu:'#dce4ec', election:'#a8d8f0' }[kind] || '#a8d8f0';
     c.fillStyle = sky; c.fillRect(0, 0, 160, 44);
-    c.fillStyle = kind === 'death' ? '#1a1a2e' : kind === 'hack' ? '#0a0510' : '#5a8a4a';
+    c.fillStyle = kind === 'death' ? '#1a1a2e' : kind === 'hack' ? '#0a0510' : kind === 'flu' ? '#e8e8f0' : '#5a8a4a';
     c.fillRect(0, 36, 160, 8); // ground
     function person(x, y, col){ c.fillStyle = '#e8b88a'; c.fillRect(x, y, 4, 4); c.fillStyle = col; c.fillRect(x - 1, y + 4, 6, 7); }
     function house(x, w, h, col){ c.fillStyle = col; c.fillRect(x, 36 - h, w, h); c.fillStyle = '#8a3020'; c.fillRect(x - 1, 32 - h, w + 2, 4); }
@@ -12482,6 +12550,22 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
       house(20, 22, 18, '#c8a878'); house(60, 26, 22, '#b89868'); house(104, 20, 16, '#c8b088');
       c.fillStyle = '#ae1c28'; c.fillRect(66, 2, 10, 3); c.fillStyle = '#f0f0e4'; c.fillRect(66, 5, 10, 3); c.fillStyle = '#21468b'; c.fillRect(66, 8, 10, 3);
       c.fillStyle = '#5a4a30'; c.fillRect(64, 2, 2, 12);
+    } else if (kind === 'flu') {
+      // winter town: snow, sick queue outside practice
+      c.fillStyle = '#f8f8ff'; [12, 40, 70, 98, 126, 150].forEach(function(x, i){ c.fillRect(x, 4 + (i % 3) * 9, 2, 2); c.fillRect(x + 14, 9 + (i % 2) * 11, 2, 2); });
+      house(112, 34, 24, '#c8c0b0');
+      c.fillStyle = '#e05858'; c.fillRect(126, 14, 6, 2); c.fillRect(128, 12, 2, 6);
+      [14, 30, 46, 62, 78, 94].forEach(function(x, i){ person(x, 25, i % 2 ? '#7080a0' : '#607090'); });
+      c.fillStyle = '#f8f8ff'; c.fillRect(0, 34, 160, 3); // snow on ground
+    } else if (kind === 'election') {
+      house(16, 26, 20, '#c8a878'); house(120, 26, 20, '#b89868');
+      // poster wall
+      c.fillStyle = '#8a7a5a'; c.fillRect(56, 12, 48, 24);
+      c.fillStyle = '#f0f0e4'; c.fillRect(60, 15, 18, 12); c.fillRect(84, 15, 16, 12);
+      c.fillStyle = '#c04040'; c.fillRect(62, 17, 14, 3);
+      c.fillStyle = '#4060a0'; c.fillRect(86, 17, 12, 3);
+      c.fillStyle = '#2a2a2e'; c.fillRect(62, 22, 14, 2); c.fillRect(86, 22, 12, 2);
+      person(40, 26, '#a04060'); person(108, 26, '#40a060');
     } else { // calm
       c.fillStyle = '#ffd54f'; c.fillRect(134, 5, 10, 10);
       house(24, 22, 18, '#c8a878'); house(64, 26, 22, '#b89868'); house(108, 20, 16, '#c8b088');
@@ -12496,9 +12580,12 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     const lastQGraves = GRAVE_MARKERS.filter(function(g){ return g.cause === 'system_failure' && g.cycle > cycle - MoC.QUARTER_TICKS; });
     // Choose front page: strike > deaths > event > citizens-avoid > praise > calm
     let kind = 'calm', headline = 'A quiet quarter in Cammelot';
-    if (GS.activeStates && GS.activeStates.struck && GS.trustD < 40) { kind = 'strike'; headline = 'WHITE COATS WALK OUT'; }
+    if (GS._finaleActive) { kind = 'flu'; headline = 'THE GREAT FLU GRIPS CAMMELOT'; }
+    else if (GS.activeStates && GS.activeStates.struck && GS.trustD < 40) { kind = 'strike'; headline = 'WHITE COATS WALK OUT'; }
     else if (lastQGraves.length) { kind = 'death'; const g = lastQGraves[0]; headline = lastQGraves.length > 1 ? lastQGraves.length + ' PREVENTABLE DEATHS THIS QUARTER' : (g.name + ', ' + g.age + ', DIES WAITING').toUpperCase(); }
+    else if (evt && evt.kind === 'cyber') { kind = 'hack'; headline = (evt.group || 'HACKERS') + ' HOLD OUR RECORDS HOSTAGE'; }
     else if (evt && (evt.id === 'lockstep' || evt.id === 'ddos' || evt.id === 'lab')) { kind = 'hack'; headline = evt.id === 'lockstep' ? 'HACKERS HOLD OUR RECORDS HOSTAGE' : evt.id === 'lab' ? 'LAB DOWN: SURGERIES POSTPONED' : 'PATIENT PORTAL KNOCKED OFFLINE'; }
+    else if (GS._electionNear) { kind = 'election'; headline = 'MIDTERM LOOMS: WILL THE MINISTER KEEP THE PROMISES?'; }
     else if (GS.activeStates && GS.activeStates.citAvoid) { kind = 'queue'; headline = 'PATIENTS STAY HOME UNTIL IT\u2019S TOO LATE'; }
     else if (parseFloat(avgWait) > M.IST.tree) { kind = 'queue'; headline = 'QUEUES BREACH THE NORM AGAIN'; }
     else if (sd === 0 && q > 4) { kind = 'praise'; headline = 'STILL NO PREVENTABLE DEATHS UNDER THIS MINISTER'; }
@@ -12518,9 +12605,36 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
       lines.push(face.name + ' \u2014 the town knew that name. Flowers pile up outside the practice.');
     }
     if (q % 7 === 3 && kind === 'calm') lines.push('Lighter news: an outbreak of "formulierenkoorts" at the town hall resolved itself when the printer broke.');
+    // G9f: citizen quote of the quarter — a real living agent speaks
+    const alive = agents.filter(function(a){ return a.state !== 'dead' && a.name; });
+    if (alive.length) {
+      const who = alive[Math.floor(Math.random() * alive.length)];
+      const mood = who.waitWeeks > 8 ? 'wait' : (M.IST.admin > 0.2 ? 'forms' : GS.trustC > 60 ? 'happy' : 'meh');
+      const QUOTES = {
+        wait: ['"Week ' + Math.round(who.waitWeeks) + ' on the list. I\u2019ve named my referral letter. It\u2019s called Hope."', '"The specialist will see me in ' + Math.round(who.waitWeeks) + ' weeks. My knee disagrees with the schedule."'],
+        forms: ['"My GP looked at me twice. The screen got the rest of the visit."', '"I brought one complaint and left with four forms."'],
+        happy: ['"Honestly? Saw the doctor Tuesday, sorted by Friday. Don\u2019t tell anyone, they\u2019ll all want it."', '"The minister\u2019s doing something right. I said what I said."'],
+        meh: ['"It works, mostly. Like the weather, you plan around it."', '"Could be worse. Has been worse. Ask my hip."']
+      };
+      const opts = QUOTES[mood];
+      lines.push('<i>' + opts[(q + who.name.length) % opts.length] + '</i> \u2014 ' + who.name + ', ' + who.age);
+    }
+    // G9f: satirical classified ad, rotates with the quarter
+    const ADS = [
+      'ADVERT: HALCYON ONE\u2122 \u2014 "One record. One login. One tiny licence renegotiation, annually."',
+      'ADVERT: Dr. Willems\u2019 Waiting Room Almanac \u2014 now with chapters. \u20ac9.95 at the pharmacy.',
+      'CLASSIFIED: Fax machine, barely used since 2019. Sentimental value. Make an offer, town hall basement.',
+      'ADVERT: EchoScribe \u2014 "Your doctor listens. We type. Everyone wins*" (*terms apply)',
+      'NOTICE: The Cammelot choir seeks tenors. Baritones welcome. Sopranos, we know where you are.',
+      'ADVERT: LOCKSTEP-B-GONE\u2122 cyber insurance \u2014 premiums quoted after a short look at your dependence score.',
+      'CLASSIFIED: Lost \u2014 one referral letter, sentimental value, last seen entering "the system".',
+      'ADVERT: Mirrorware Digital Twin \u2014 "See tomorrow\u2019s queue today. Regret nothing. Or everything, but earlier."'
+    ];
+    const ad = ADS[q % ADS.length];
     return '<img class="gz-art" src="' + gazetteArt(kind) + '" alt="">'
       + '<div class="gz-head">' + headline + '</div>'
-      + lines.map(function(l){ return '\u00b6 ' + l; }).join('<br>');
+      + lines.map(function(l){ return '\u00b6 ' + l; }).join('<br>')
+      + '<div style="margin-top:8px;padding-top:6px;border-top:1px dashed #8a8a7a;font-size:12px;opacity:.75">' + ad + '</div>';
   }
   function meterHtml(label, val, color){
     return '<div class="moc-meter">' + label + ': <b>' + val + '</b><div class="bar"><div class="fill" style="width:' + Math.min(100, val) + '%;background:' + color + '"></div></div></div>';
@@ -12613,7 +12727,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     else if (M.IST.admin > 0.25 || M.IST.sick > 0.09) adjustStakeholders(0, -1, 0); // one grievance: slow erosion
     else if (M.IST.admin < 0.12) adjustStakeholders(0, 2, 0);                        // real relief: morale climbs
     else adjustStakeholders(0, 1, 0);
-    // Lose checks per stakeholder
+    // Lose checks per stakeholder (parliament gets a confidence-vote near-miss first, see confidenceVote)
     if (GS.trustP <= 10) { councilOpen = false; return endTerm('noconfidence'); }
     if (GS.trustD <= 10) { councilOpen = false; return endTerm('strike'); }
     if (GS.trustC <= 10) { councilOpen = false; return endTerm('protest'); }
@@ -12682,6 +12796,13 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     ov.className = 'moc-overlay'; ov.id = 'moc-council';
     let html = '<div class="moc-box"><h2>\ud83c\udfdb Quarterly Council \u2014 Q' + qq + ', Year ' + year + '</h2>';
     html += '<div class="moc-sub">Quarter ' + q + ' of ' + MoC.TOTAL_QUARTERS + ' \u00b7 ' + (newDeaths > 0 ? '\u26a0 ' + newDeaths + ' preventable death' + (newDeaths > 1 ? 's' : '') + ' last quarter' : 'No preventable deaths last quarter') + '</div>';
+    // G9: pending narrative banners (act transitions, aging, finale, election)
+    (GS.pendingBanners || []).forEach(function(bn){
+      html += '<div class="moc-dilemma" style="border-color:' + (bn.soft ? '#5a66b0' : 'var(--m-amber)') + '">'
+        + '<div class="ec-head' + (bn.soft ? '' : ' ec-danger') + '">\ud83d\udcf0 ' + bn.head + '</div>'
+        + '<div class="dq">' + bn.body + '</div></div>';
+    });
+    GS.pendingBanners = [];
     // Year report banner: the settled objective from the year that just ended
     if (GS.pendingYearResult) {
       const yr = GS.pendingYearResult;
@@ -12833,6 +12954,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
   }
   function verdict(r, reason){
     if (reason === 'noconfidence') return 'VOTED OUT \u2014 parliament lost confidence in you';
+    if (reason === 'election') return 'REJECTED AT THE POLLS \u2014 zero promises kept';
     if (reason === 'strike') return 'BROUGHT DOWN BY THE WHITE COATS \u2014 the doctors walked out';
     if (reason === 'protest') return 'CHASED FROM OFFICE \u2014 the town square filled with protest';
     if (reason === 'scandal') return 'RESIGNED IN DISGRACE \u2014 the waiting list scandal ended your career';
@@ -12933,6 +13055,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
   function endStatement(r, reason){
     const failed = reason !== 'served' || r.score < 300;
     const opener = reason === 'noconfidence' ? 'Parliament voted you out.'
+      : reason === 'election' ? 'The voters read your manifesto one last time, and then they voted.'
       : reason === 'strike' ? 'The doctors went on strike and did not come back for you.'
       : reason === 'protest' ? 'The citizens stopped believing you long before the end.'
       : reason === 'scandal' ? 'The waiting-list scandal ended your career.'
@@ -13359,7 +13482,28 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
       b:{ l:'Too much liability', run:function(){ MoC.adjustTrust(-1); } } },
     { t:'\ud83d\udcc4 Consultant pitch', d:function(){ return '"For only \u20ac15K we\u2019ll write a vision document on AI-ready care pathways."'; },
       a:{ l:'Buy the report', run:function(){ if (GS.budget < 15000) { FX.pop('Cannot afford', '#e05858'); return; } GS.budget -= 15000; GS.liveScore = Math.max(0, GS.liveScore - 10); FX.pop('\u221210 pts (it\u2019s a PDF)', '#e07050'); } },
-      b:{ l:'Politely decline', run:function(){ GS.liveScore += 5; FX.pop('+5 pts', '#7bc67b'); } } }
+      b:{ l:'Politely decline', run:function(){ GS.liveScore += 5; FX.pop('+5 pts', '#7bc67b'); } } },
+    { t:'\ud83d\ude91 Neighbouring region calls', d:function(){ return 'Their ER is overflowing. "Can Cammelot take six ambulances tonight?"'; },
+      a:{ l:'Take the patients', run:function(){ MoC.adjustTrust(2); applyFx({sick:0.005}, 'Overflow night shift'); FX.pop('Solidarity', '#7bc67b'); } },
+      b:{ l:'"We\u2019re full too"', run:function(){ MoC.adjustTrust(-1); } } },
+    { t:'\ud83d\udcf1 Influencer trouble', d:function(){ return 'A local influencer (80K followers) posts that the patient portal "sells your data to Big Tech". It\u2019s going viral.'; },
+      a:{ l:'Rebut with the facts, on camera', run:function(){ MoC.adjustTrust(GS.dependence >= 6 ? -2 : 3); } },
+      b:{ l:'Ignore it', run:function(){ if (Math.random() < 0.4) { MoC.adjustTrust(-3); FX.pop('It spread', '#e05858'); } } } },
+    { t:'\ud83d\udc8a Pharmacy shelf empty', d:function(){ return 'The pharmacist calls: out of children\u2019s antibiotics until Thursday. Parents are in the shop, filming.'; },
+      a:{ l:'Emergency courier (\u2212\u20ac4K)', run:function(){ if (GS.budget < 4000) { FX.pop('Cannot afford', '#e05858'); return; } GS.budget -= 4000; MoC.adjustTrust(2); } },
+      b:{ l:'"National problem, not mine"', run:function(){ MoC.adjustTrust(-2); } } },
+    { t:'\ud83d\udcf0 Leaked memo', d:function(){ return 'The Gazette has your internal memo weighing practice closures. They call for comment before print.'; },
+      a:{ l:'Own it: "All options on the table"', run:function(){ MoC.adjustTrust(-1); GS.liveScore += 5; FX.pop('+5 pts (honesty)', '#7bc67b'); } },
+      b:{ l:'Deny everything', run:function(){ if (Math.random() < 0.5) { MoC.adjustTrust(-4); FX.shake(); FX.pop('Caught lying', '#e05858'); } else { FX.pop('It blew over', '#FFD54F'); } } } },
+    { t:'\ud83c\udfeb School visit request', d:function(){ return 'Group 7 of the primary school invites you for a health lesson. Your diary says no. Your comms chief says yes.'; },
+      a:{ l:'Go (lose an afternoon)', run:function(){ MoC.adjustTrust(2); GS.liveScore = Math.max(0, GS.liveScore - 3); FX.pop('Cute photos', '#7bc67b'); } },
+      b:{ l:'Send a video message', run:function(){} } },
+    { t:'\u26a1 Storm warning', d:function(){ return 'Code orange tonight. IT asks: pre-emptively switch systems to safe mode? It costs an evening of productivity.'; },
+      a:{ l:'Safe mode (cautious)', run:function(){ GS.liveScore = Math.max(0, GS.liveScore - 4); FX.pop('\u22124 pts (slow evening)', '#FFD54F'); } },
+      b:{ l:'Ride the storm', run:function(){ if (Math.random() < (GS.dependence >= 6 ? 0.45 : 0.15)) { MoC.adjustTrust(-3); applyFx({admin:0.01}, 'Storm outage cleanup'); FX.shake(); FX.pop('Systems down!', '#e05858'); } } } },
+    { t:'\ud83c\udf82 Dr. Willems retires?', d:function(){ return 'At her 64th birthday party, Dr. Willems jokes about retiring early. Half the town heard it.'; },
+      a:{ l:'Visit her practice personally', run:function(){ adjustStakeholders(0, 3, 0); FX.pop('She stays (for now)', '#7bc67b'); } },
+      b:{ l:'It was just a joke, surely', run:function(){ if (Math.random() < 0.25) { applyFx({sick:0.01}, 'Dr. Willems cut her hours'); FX.pop('She cut her hours', '#e05858'); } } } }
   ];
   let flashActive = false;
   GS.flashSeen = [];
@@ -13581,6 +13725,15 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
       + '<div class="mrow">' + pixIcon('skull') + ' Preventable deaths<b class="' + (sd === 0 ? 'g' : sd < 5 ? 'y' : 'r') + '">' + sd + '</b></div>'
       + '<div class="mrow">' + pixIcon('heart') + ' Lives saved<b>' + livesLine + '</b></div>'
       + '<div class="mrow">' + pixIcon('plug') + ' Fragility<b class="' + (fragility() < 30 ? 'g' : fragility() < 60 ? 'y' : 'r') + '">' + fragility() + '</b></div>'
+      + (function(){
+          // G9a: DFI doom track with named bands
+          const band = dfiBand();
+          const names = ['SAFE', 'EXPOSED', 'FRAGILE', 'CRITICAL'];
+          const cols = ['#58c858', '#ffd54f', '#e07050', '#e05858'];
+          const next = [4, 8, 12, null][band];
+          return '<div class="mrow">\ud83d\udea8 Digital risk<div class="tbar"><div style="width:' + Math.min(100, GS.dependence / 16 * 100) + '%;background:' + cols[band] + '"></div></div><b style="color:' + cols[band] + ';font-size:12px">' + names[band] + '</b></div>'
+            + (next !== null && band >= 1 ? '<div class="mfx" style="color:' + cols[band] + '">\u26a0 ' + (band === 1 ? 'Hackers have noticed this town' : band === 2 ? 'Attack impact now scales with dependence' : '') + (next ? ' \u00b7 next band at ' + next : '') + '</div>' : '');
+        })()
       + (fxLines ? '<div style="margin-top:4px">' + fxLines + '</div>' : '')
       + (stateLines ? '<div style="margin-top:2px">' + stateLines + '</div>' : '')
       + '<div class="mnext">\ud83d\uddd3 Next council: Q' + Math.min(MoC.TOTAL_QUARTERS, GS.quarter + 1) + ' \u00b7 ~' + secsToCouncil + 's</div>';
@@ -13768,12 +13921,219 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     });
 
     // Wire hooks (G5: wrapped with live scoring, objectives, flash decisions)
+    // ═══ G9b: AGING TOWN + ACTS + FINALE + CONFIDENCE VOTE · G9c: MANIFESTO/ELECTION · G9e: PREVENTION ═══
+    function agingCreep(q){
+      // Vergrijzing: demand grows every year — drain +4%/yr, sick +0.3%/yr (prevention dampens it)
+      if ((q - 1) % 4 !== 0 || q <= 1) return null;
+      const preventDampen = GS.owned.prevention ? 0.5 : 1;
+      M.IST.drain = Math.round(M.IST.drain * (1 + 0.04 * preventDampen) * 100) / 100;
+      M.IST.sick = Math.round((M.IST.sick + 0.003 * preventDampen) * 1000) / 1000;
+      return GS.owned.prevention
+        ? 'The town grows older \u2014 but your prevention programme is softening the wave.'
+        : 'The town grows older. Demand creeps up another notch. (Prevention would soften this.)';
+    }
+    function actTransition(q){
+      const act = actNumber(q);
+      if (act === (GS._lastAct || 1)) return null;
+      GS._lastAct = act;
+      Audio5.klaxon();
+      return act === 2
+        ? { head:'HALFWAY QUESTIONS', body:'The honeymoon is over. The Gazette runs a special: "What has the Minister actually delivered?" From now on, crises come harder and faster. (Act II: event pressure \u00d71.5)' }
+        : { head:'THE FINAL STRETCH', body:'Three years left. Every choice now echoes in your legacy. The deck is stacked \u2014 cascading failures are possible. (Act III: event pressure \u00d72)' };
+    }
+    function finaleCheck(q){
+      // The Great Flu: telegraphed 4 quarters before the end, hits the last 2 quarters
+      const t = MoC.TOTAL_QUARTERS;
+      if (t < 16) return null; // sprints have no finale
+      if (q === t - 4) {
+        GS._finaleTelegraphed = true;
+        return { head:'RIVM WARNS: HEAVY FLU SEASON AHEAD', body:'Models predict the worst flu wave in a decade, arriving in about a year. Everything you built \u2014 capacity, resilience, trust \u2014 is about to be tested. Prepare now.' };
+      }
+      if (q === t - 1) {
+        GS._finaleActive = true;
+        applyTimedFx({drainMult: GS.owned.prevention ? 1.15 : 1.3, sick: GS.owned.resilience ? 0.02 : 0.04}, 2, 'THE GREAT FLU \u2014 the decade\u2019s worst wave');
+        Audio5.klaxon(); FX.shake();
+        return { head:'THE GREAT FLU IS HERE', body:'It is exactly as bad as predicted' + (GS.owned.prevention ? ' \u2014 but your prevention programme means fewer citizens are fragile.' : '.') + (GS.owned.resilience ? ' Your resilience protocols keep staff on their feet.' : ' Staff are dropping. This is the test.') };
+      }
+      return null;
+    }
+    function confidenceVote(){
+      // Near-death experience instead of instant game over (fires once per slump)
+      if (GS.trustP > 25 || GS._voteHeld) return false;
+      GS._voteHeld = true;
+      pauseSim();
+      const ov = document.createElement('div');
+      ov.className = 'moc-overlay'; ov.id = 'moc-vote';
+      ov.innerHTML = '<div class="moc-box" style="max-width:540px"><h2>\u2696 MOTION OF NO CONFIDENCE</h2>'
+        + '<div class="moc-sub">Parliament has had enough. The vote is tonight. You have one card left to play.</div>'
+        + '<div class="moc-dilemma"><div class="ec-head ec-danger">\ud83c\udfdb THE VOTE</div>'
+        + '<div class="dq">The opposition smells blood. Your coalition wavers. How do you survive the night?</div>'
+        + '<button class="moc-opt" data-vote="promise">Promise the moon<span class="fx">Survive \u00b7 Parliament +10 now, \u221215 in 3 quarters when they remember</span></button>'
+        + '<button class="moc-opt" data-vote="sacrifice">Sacrifice your budget reserve<span class="fx">Survive \u00b7 hand \u20ac100K back to the treasury as a gesture</span></button>'
+        + '<button class="moc-opt" data-vote="defy">Defy them: "Vote me out if you dare"<span class="fx">50/50: heroic survival (+15 all trust) \u2014 or the end of your term</span></button>'
+        + '</div></div>';
+      document.body.appendChild(ov);
+      ov.querySelectorAll('[data-vote]').forEach(function(b){
+        b.addEventListener('click', function(){
+          const v = b.getAttribute('data-vote');
+          ov.remove();
+          if (v === 'promise') {
+            adjustStakeholders(0, 0, 10);
+            GS.delayed.push({ atQ: GS.quarter + 3, fx:{trustP:-15}, label:'Parliament remembers your moonshot promises. They were not kept.' });
+            GS._promiseDebt = true;
+            say('SYSTEM', 'Survived the confidence vote on promises. They will collect.', 'sys');
+          } else if (v === 'sacrifice') {
+            GS.budget = Math.max(0, GS.budget - 100000);
+            adjustStakeholders(0, 0, 12);
+            say('SYSTEM', 'Survived the confidence vote by returning \u20ac100K.', 'sys');
+          } else {
+            if (Math.random() < 0.5) {
+              adjustStakeholders(15, 15, 15);
+              FX.pop('THEY BLINKED', '#58c858');
+              Audio5.jingle();
+              say('SYSTEM', 'You defied parliament \u2014 and won. Legendary.', 'sys');
+            } else {
+              endTerm('noconfidence');
+              return;
+            }
+          }
+          refreshMeters();
+          if (!councilOpen && !GS.over) resumeSim();
+        });
+      });
+      return true;
+    }
+    // G9c: Manifesto — pick 2 of 5 promises at the start; judged at the Q~50% election
+    const PROMISES = [
+      { id:'waits', text:'Bring referral waits under 8 weeks', check:function(){ return M.IST.tree <= 8; } },
+      { id:'nodeaths', text:'Fewer than 3 preventable deaths by the election', check:function(){ return systemDeaths() < 3; } },
+      { id:'admin', text:'Cut GP admin burden below 15%', check:function(){ return M.IST.admin < 0.15; } },
+      { id:'digital', text:'Digitise care (2+ tech systems live)', check:function(){ return (GS.owned.scribes1?1:0)+(GS.owned.scribes2?1:0)+(GS.owned.a2a?1:0)+(GS.owned.twin?1:0) >= 2; } },
+      { id:'doctors', text:'Keep the doctors on side (trust \u2265 60)', check:function(){ return GS.trustD >= 60; } }
+    ];
+    function showManifesto(){
+      if (MoC.TOTAL_QUARTERS < 16) return; // no election in sprints
+      GS.promises = [];
+      const ov = document.createElement('div');
+      ov.className = 'moc-overlay'; ov.id = 'moc-manifesto';
+      let html = '<div class="moc-box" style="max-width:540px"><h2>\ud83d\udcdc YOUR MANIFESTO</h2>'
+        + '<div class="moc-sub">Pick TWO promises. The town will hold you to them at the <b>Year ' + Math.ceil(MoC.TOTAL_QUARTERS / 8) + ' election</b>. Choose what you can deliver \u2014 or what wins hearts.</div>'
+        + '<div class="moc-dilemma"><div class="ec-head">\ud83d\udcdc CAMPAIGN PROMISES (pick 2)</div>';
+      PROMISES.forEach(function(p, i){
+        html += '<button class="moc-opt" data-promise="' + i + '">' + p.text + '</button>';
+      });
+      html += '</div><button class="moc-continue" id="moc-manifesto-done" disabled>SIGN THE MANIFESTO \u25b6</button></div>';
+      ov.innerHTML = html;
+      document.body.appendChild(ov);
+      MoC.paused = true;
+      ov.querySelectorAll('[data-promise]').forEach(function(b){
+        b.addEventListener('click', function(){
+          const i = parseInt(b.getAttribute('data-promise'), 10);
+          const idx = GS.promises.indexOf(i);
+          if (idx >= 0) { GS.promises.splice(idx, 1); b.style.borderColor = ''; b.style.background = ''; }
+          else if (GS.promises.length < 2) { GS.promises.push(i); b.style.borderColor = 'var(--m-amber)'; b.style.background = '#232f80'; }
+          document.getElementById('moc-manifesto-done').disabled = GS.promises.length !== 2;
+        });
+      });
+      document.getElementById('moc-manifesto-done').addEventListener('click', function(){
+        ov.remove();
+        MoC.paused = false;
+        say('MINISTRY', 'Manifesto signed: ' + GS.promises.map(function(i){ return PROMISES[i].text; }).join(' + '), 'sys');
+      });
+    }
+    window._mocShowManifesto = showManifesto;
+    // Debug hook for automated tests (only with ?debug in the URL)
+    if (location.search.indexOf('debug') >= 0) window._mocDebug = { GS: GS, M: M, applyFx: applyFx, endTerm: endTerm, PROMISES: PROMISES, stepCascades: function(q){ return stepCascades(q); } };
+    function electionCheck(q){
+      const eq = Math.round(MoC.TOTAL_QUARTERS / 2);
+      if (MoC.TOTAL_QUARTERS < 16 || q !== eq || GS._electionHeld || !GS.promises) return null;
+      GS._electionHeld = true;
+      const met = GS.promises.filter(function(i){ return PROMISES[i].check(); });
+      const kept = met.length;
+      if (kept === 0) {
+        // Voted out mid-term
+        setTimeout(function(){ endTerm('election'); }, 400);
+        return { head:'ELECTION NIGHT: DEFEAT', body:'Zero promises kept. The town voted. You are out.' };
+      }
+      if (kept === 1) {
+        adjustStakeholders(-4, 0, -6);
+        return { head:'ELECTION NIGHT: A NARROW ESCAPE', body:'One promise kept ("' + PROMISES[met[0]].text + '"), one broken. You survive with a bruised mandate. The broken promise follows you.' };
+      }
+      adjustStakeholders(8, 4, 10);
+      GS.liveScore += 150;
+      FX.pop('+150 RE-ELECTED!', '#58c858');
+      Audio5.jingle();
+      return { head:'ELECTION NIGHT: TRIUMPH', body:'Both promises kept. The town renews your mandate with real enthusiasm. (+150 pts, all trust up)' };
+    }
+
+    // ═══ G9d: CASCADE CHAINS — slow-motion disasters you can see coming ═══
+    // Each cascade: arm-condition → Gazette warning → stage 2 (+2q) → stage 3 (+4q). Break it before it breaks you.
+    const CASCADES = [
+      {
+        id: 'exodus',
+        arm: function(){ return GS.trustD < 30; },
+        broken: function(){ return GS.trustD >= 45; },
+        stages: [
+          { head:'\u26a0 LOCUM AGENCIES REPORT RECORD DEMAND', body:'Doctors are quietly updating their CVs. If their trust stays this low, Cammelot starts losing staff. Win the white coats back (trust \u2265 45) before this spirals.' },
+          { head:'THE EXODUS BEGINS', body:'Two practice nurses and a GP hand in their notice. Remaining staff absorb the load \u2014 and start to crack.', fx:{sick:0.02, trustC:-4} },
+          { head:'PRACTICE CLOSES ITS DOORS', body:'Dr. Willems\u2019 practice cannot staff its roster. 800 patients reassigned. The town will not forget this one.', fx:{drainMult:1.15, trustC:-8, trustP:-6} }
+        ]
+      },
+      {
+        id: 'rot',
+        arm: function(){ return GS.dependence >= 8 && !GS.owned.resilience; },
+        broken: function(){ return GS.owned.resilience || GS.dependence < 8; },
+        stages: [
+          { head:'\u26a0 THE SERVER ROOM HUMS LOUDER', body:'IT reports growing technical debt: no failover, no offline drills, everything on one line. A resilience pack would break this chain \u2014 or reduce your dependence.' },
+          { head:'FOUR-HOUR OUTAGE AT THE WORST MOMENT', body:'The unpatched integration layer fell over on a Monday morning. Paper forms from the basement. Nobody remembered how.', fx:{admin:0.04, trustD:-5} },
+          { head:'CATASTROPHIC DATA LOSS', body:'The rot reached the backups. Weeks of records unrecoverable. This is what unmanaged dependence looks like.', fx:{tree:3, trustC:-8, trustD:-6, trustP:-8} }
+        ]
+      }
+    ];
+    function stepCascades(q){
+      if (actNumber(q) < 2) return; // cascades only arm from Act II
+      GS.cascades = GS.cascades || {};
+      const out = [];
+      CASCADES.forEach(function(c){
+        const st = GS.cascades[c.id];
+        if (!st) {
+          if (c.arm()) { GS.cascades[c.id] = { stage: 1, armedQ: q }; out.push(Object.assign({soft:false}, c.stages[0])); }
+          return;
+        }
+        if (st.stage >= 3 || st.dead) return;
+        if (c.broken()) {
+          st.dead = true;
+          out.push({ head:'CHAIN BROKEN: ' + (c.id === 'exodus' ? 'THE DOCTORS STAY' : 'SYSTEMS SHORED UP'), body:'The Gazette runs a rare good-news piece. The slow-motion disaster has been stopped.', soft:true });
+          return;
+        }
+        const next = st.stage + 1;
+        if (q >= st.armedQ + (next - 1) * 2) {
+          st.stage = next;
+          const s = c.stages[next - 1];
+          if (s.fx) applyFx(s.fx, s.head);
+          Audio5.klaxon(); FX.shake();
+          out.push(s);
+        }
+      });
+      out.forEach(function(b){ GS.pendingBanners.push(b); });
+    }
+
     MoC.onQuarter = function(q){
       liveScoreTick();
       if ((q - 1) % 4 === 0 && q > 1) {  // year boundary: settle before the new year's objective
         GS.pendingYearResult = settleYearObjective();
         newYearObjective(Math.ceil(q / 4));
       }
+      // G9b: aging + act transitions + finale + election + confidence vote
+      GS.pendingBanners = GS.pendingBanners || [];
+      GS._electionNear = MoC.TOTAL_QUARTERS >= 16 && !GS._electionHeld && q >= Math.round(MoC.TOTAL_QUARTERS / 2) - 2 && q < Math.round(MoC.TOTAL_QUARTERS / 2);
+      const aging = agingCreep(q); if (aging) GS.pendingBanners.push({ head:'THE GREYING TOWN', body:aging, soft:true });
+      const act = actTransition(q); if (act) GS.pendingBanners.push(act);
+      const fin = finaleCheck(q); if (fin) GS.pendingBanners.push(fin);
+      stepCascades(q);
+      const el = electionCheck(q); if (el) GS.pendingBanners.push(el);
+      if (GS.over) return;
+      if (confidenceVote()) return; // vote modal replaces this council
       openCouncil(q);
     };
     const _coreOnTick = MoC.onTick;
@@ -13808,6 +14168,14 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
         drawMinister(ministerMood());
         newYearObjective(1);
         renderMinistry();
+        // G9c: manifesto after the tour finishes (hook into first sim launch)
+        const _mfCheck = setInterval(function(){
+          if (window._mocGameStarted && !GS._manifestoShown) {
+            GS._manifestoShown = true;
+            clearInterval(_mfCheck);
+            if (window._mocShowManifesto) setTimeout(window._mocShowManifesto, 600);
+          }
+        }, 500);
       }
       const st = document.getElementById('sound-toggle');
       if (st) st.addEventListener('click', function(){ Audio5.setMuted(!Audio5.isMuted()); });
