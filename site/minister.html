@@ -870,6 +870,7 @@ body.embed-mode #app{display:block!important}
 .moc-chip{display:inline-block;background:#0a1030;border:1px solid #2a6a35;border-left:3px solid var(--m-green);border-radius:3px;padding:2px 7px;margin:2px 4px 2px 0;font:600 11px 'Inter',sans-serif;color:#a8e0b0;white-space:nowrap}
 .moc-chip.bad{border-color:#6a2a2a;border-left-color:var(--m-red);color:#e8b0b0}
 .moc-chip.money{border-color:#6a5a20;border-left-color:var(--m-gold);color:#e8d8a0}
+.moc-chip.risk{border-color:#6a5a20;border-left-color:var(--m-amber);color:#f0d8a0}
 .moc-chip img{margin-right:3px}
 .gz-art{width:100%;height:56px;image-rendering:pixelated;border:1px solid #b8a888;margin:2px 0 6px;display:block;object-fit:cover}
 .gz-head{font-family:Georgia,serif;font-weight:700;font-size:17px;line-height:1.2;margin:0 0 7px;letter-spacing:.3px;color:var(--m-paperink)}
@@ -3066,6 +3067,10 @@ function pickDialogue(a, b, rng) {
   // ── Sprint 27: Context-aware dialogue (priority check) ──
   const ctxLine = getContextDialogue(a) || getContextDialogue(b);
   if (ctxLine) return ctxLine;
+  // ── Minister of Cammelot: town reacts to recent policy decisions ──
+  if (window._mocTownTalk && window._mocTownTalk.length && rng() < 0.4) {
+    return window._mocTownTalk[Math.floor(rng() * window._mocTownTalk.length)];
+  }
   // ── Sprint 28.1: Memory-based dialogue (30% chance for adults with memories) ──
   if (rng() < 0.3) {
     const memLine = getMemoryDialogue(a) || getMemoryDialogue(b);
@@ -4625,8 +4630,11 @@ function drawAgent(e){
   
   // ── Sprint 4: Emotional visual effects ──
   const hasConditions = e.conditions && e.conditions.length > 0;
-  const isHappy = !isG && e.hp > 80 && !hasConditions;
-  const isWorried = !isG && e.hp > 50 && e.hp <= 80 && hasConditions;
+  // MoC: public mood follows citizen trust — happy faces fade when trust drops, anger shows below 35
+  const _mocTC = (typeof window._mocTrustC === 'number') ? window._mocTrustC : 60;
+  const isHappy = !isG && e.hp > 80 && !hasConditions && _mocTC >= 45;
+  const isAngry = !isG && e.hp > 50 && _mocTC < 35 && ((e.id ? e.id.charCodeAt(e.id.length-1) : 0) % 3 === 0);
+  const isWorried = !isG && ((e.hp > 50 && e.hp <= 80 && hasConditions) || (e.waitWeeks || 0) > 8);
   const isInPain = !isG && e.hp > 20 && e.hp <= 50;
   const isCritical = !isG && e.hp > 0 && e.hp <= 20;
   const isGrieving = !isG && (e.grievingTimer || 0) > 0;
@@ -4727,7 +4735,7 @@ function drawAgent(e){
   }
   
   // Name
-  if(e.name && (zoom > .6 || selectedAgent===e.id)){
+  if(e.name && (zoom > .45 || selectedAgent===e.id)){
     const fontSize = Math.max(7, 8*s);
     cx.font = `600 ${fontSize}px Inter,sans-serif`;
     cx.textAlign = 'center';
@@ -4798,6 +4806,8 @@ function drawAgent(e){
     // ❗ already shown by state bubble above
   } else if (isInPain && frameCount % 150 < 30) {
     emojiToShow = '😣';
+  } else if (isAngry && frameCount % 240 < 30) {
+    emojiToShow = '😠';
   } else if (isWorried && frameCount % 300 < 30) {
     emojiToShow = '😟';
   } else if (isHappy && frameCount % 200 < 30) {
@@ -12102,6 +12112,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
   function clamp01(v){ return Math.max(0, Math.min(100, v)); }
   function syncTrustAvg(){
     GS.trust = Math.round((GS.trustC + GS.trustD + GS.trustP) / 3);
+    window._mocTrustC = GS.trustC; // world renderer reads this for citizen moods
     MoC.updateHUD();
   }
   function adjustStakeholders(dc, dd, dp){
@@ -12225,10 +12236,41 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     GS.owned[item.id] = (GS.owned[item.id] || 0) + 1;
     GS.interventions.push({ q: GS.quarter, label: item.name.replace(/^\S+\s/, ''), cost: cost });
     applyFx(item.fx, 'Purchased: ' + item.name + ' (' + fmtK(cost) + ')');
+    townSay(TOWN_REACTIONS[item.id] || ['The ministry is spending money on us again. We\u2019ll see.']);
     Audio5.coin();
     renderShop();
     refreshMeters();
   }
+
+  // ── Town talk: citizens react to what the minister actually did ──
+  // Lines land in the speech-bubble pool so decisions visibly ripple through the town.
+  GS.townTalk = [];
+  function townSay(lines){
+    (Array.isArray(lines) ? lines : [lines]).forEach(function(l){ GS.townTalk.push(l); });
+    while (GS.townTalk.length > 8) GS.townTalk.shift();
+    window._mocTownTalk = GS.townTalk;
+  }
+  window._mocTownTalk = GS.townTalk;
+  const TOWN_REACTIONS = {
+    scribes1: ['My GP actually looked at me today. The computer writes the notes now, apparently.', 'The doctor talked WITH me instead of at a screen. New minister thing?'],
+    scribes2: ['Even the assistant uses the talking computer now. Visits feel quicker.', 'They say the paperwork robot got smarter.'],
+    a2a: ['My referral went through in DAYS. The systems talk to each other now.', 'No more carrying my own letters between doctors. Finally.'],
+    twin: ['They say the hospital has a crystal ball now. A digital one.', 'The planners knew the queue would jam before it did. Spooky.'],
+    hires: ['Two new faces at the practice! Young, but keen.', 'Got an appointment this week. THIS week!'],
+    mtvp: ['The practice feels calmer lately. The staff actually smile.', 'Dr. Bakker took a real lunch break. First time in years, she said.'],
+    prevention: ['There\u2019s a health coach at the community centre now. I went. It was... actually nice.', 'Free check-ups at the market square. The minister plays the long game.'],
+    resilience: ['The practice ran a paper drill this week. "In case the computers die," they said.', 'They installed a backup line at the pharmacy. Someone is thinking ahead.'],
+    campaign: ['Saw the minister\u2019s health campaign poster at the bus stop.', 'Everyone\u2019s talking about that TV spot with the GP.']
+  };
+  const EVENT_REACTIONS = {
+    cyber: ['Did you hear? Hackers got into the health records\u2026', 'My neighbour won\u2019t use the portal anymore. Says the criminals read it first.', 'Is my file out there on the internet now?'],
+    outage: ['The whole practice went dark yesterday. Paper forms from the basement!', 'No power, no records, no appointments. What a mess.'],
+    meds: ['The pharmacy shelf was EMPTY. Empty!', 'Three pharmacies for one box of pills. Ridiculous.'],
+    yearWin: ['The paper says the minister actually hit the year\u2019s target!', 'Maybe this one\u2019s different. Maybe.'],
+    yearLoss: ['Missed the target again, says the Gazette. Typical.', 'Big promises, small results. Same as always.'],
+    election: ['Election night soon. I know what MY vote says.', 'Those manifesto promises\u2026 anyone keeping count?'],
+    flu: ['Everyone\u2019s coughing. The wave is here.', 'Half my street is in bed with the flu.']
+  };
 
   // ── Timed & delayed effects ──
   function applyTimedFx(fx, quarters, label){
@@ -12787,6 +12829,10 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
         GS.eventLog.push({ q: q, name: evt.name });
         if (evt.id === 'lockstep') { Audio5.klaxon(); FX.shake(); setGlitch(true); setTimeout(function(){ setGlitch(false); }, 7000); }
         else if (evt.id === 'outage' || evt.id === 'lab') { Audio5.klaxon(); }
+        // Town talk: citizens gossip about what just hit them
+        if (evt.id === 'lockstep' || evt.id === 'ddos' || evt.kind === 'cyber') townSay(EVENT_REACTIONS.cyber);
+        else if (evt.id === 'outage' || evt.id === 'lab') townSay(EVENT_REACTIONS.outage);
+        else if (evt.id === 'meds') townSay(EVENT_REACTIONS.meds);
       }
     }
     const dilemma = (beat || evt) ? null : pickDilemma();
@@ -12796,6 +12842,17 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     ov.className = 'moc-overlay'; ov.id = 'moc-council';
     let html = '<div class="moc-box"><h2>\ud83c\udfdb Quarterly Council \u2014 Q' + qq + ', Year ' + year + '</h2>';
     html += '<div class="moc-sub">Quarter ' + q + ' of ' + MoC.TOTAL_QUARTERS + ' \u00b7 ' + (newDeaths > 0 ? '\u26a0 ' + newDeaths + ' preventable death' + (newDeaths > 1 ? 's' : '') + ' last quarter' : 'No preventable deaths last quarter') + '</div>';
+    // Year report: the settled objective gets top billing — you should never miss it
+    if (GS.pendingYearResult) {
+      const yr = GS.pendingYearResult;
+      GS.pendingYearResult = null;
+      html += '<div class="moc-dilemma" style="border-width:3px;border-color:' + (yr.achieved ? 'var(--m-green)' : 'var(--m-red)') + ';background:' + (yr.achieved ? '#0e2a14' : '#2a0e12') + '">'
+        + '<div style="font-family:\'Press Start 2P\',monospace;font-size:15px;line-height:1.5;text-align:center;padding:10px 6px 4px;color:' + (yr.achieved ? 'var(--m-green)' : 'var(--m-red)') + '">'
+        + (yr.achieved ? '\u2705 YEAR ' + yr.year + ' TARGET: MET' : '\u274c YEAR ' + yr.year + ' TARGET: MISSED') + '</div>'
+        + '<div class="dq" style="text-align:center">' + yr.text + '<br>' + (yr.achieved ? '<b style="color:var(--m-green)">+' + yr.bonus + ' pts awarded.</b> The Gazette prints a rare compliment.' : '<b style="color:var(--m-red)">No bonus.</b> The Gazette noticed. So did parliament.') + '</div></div>';
+      if (!yr.achieved) MoC.adjustTrust(-1);
+      townSay(yr.achieved ? EVENT_REACTIONS.yearWin : EVENT_REACTIONS.yearLoss);
+    }
     // G9: pending narrative banners (act transitions, aging, finale, election)
     (GS.pendingBanners || []).forEach(function(bn){
       html += '<div class="moc-dilemma" style="border-color:' + (bn.soft ? '#5a66b0' : 'var(--m-amber)') + '">'
@@ -12803,16 +12860,6 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
         + '<div class="dq">' + bn.body + '</div></div>';
     });
     GS.pendingBanners = [];
-    // Year report banner: the settled objective from the year that just ended
-    if (GS.pendingYearResult) {
-      const yr = GS.pendingYearResult;
-      GS.pendingYearResult = null;
-      html += '<div class="moc-dilemma" style="border-color:' + (yr.achieved ? 'var(--m-green)' : 'var(--m-red)') + '">'
-        + '<div class="ec-head" style="background:' + (yr.achieved ? 'linear-gradient(90deg,#1e5a28,#123a1a)' : 'linear-gradient(90deg,#6a1820,#40101a)') + '">'
-        + (yr.achieved ? '\u2705 YEAR ' + yr.year + ' OBJECTIVE ACHIEVED' : '\u274c YEAR ' + yr.year + ' OBJECTIVE MISSED') + '</div>'
-        + '<div class="dq">' + yr.text + (yr.achieved ? ' \u2014 <b style="color:var(--m-green)">+' + yr.bonus + ' pts awarded.</b>' : ' \u2014 no bonus. The Gazette noticed.') + '</div></div>';
-      if (!yr.achieved) MoC.adjustTrust(-1);
-    }
     html += '<div class="moc-gazette">' + gazetteReport(q, dueDelayed, evt) + '</div>';
     html += '<div class="moc-meters">'
       + meterHtml(pixIcon('people') + ' Citizens', GS.trustC, GS.trustC >= 50 ? '#58c858' : GS.trustC >= 30 ? '#ffd54f' : '#e05858')
@@ -12843,9 +12890,14 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     if (dilemma) {
       needsDecision = true;
       GS.dilemmasSeen.push(dilemma.id);
+      const optHtml = function(opt){
+        if (opt.fx && Object.keys(opt.fx).length) return '<br>' + fxPreview(opt.fx).replace('class="delta"', 'class="delta" style="margin:2px 0 0"');
+        if (opt.fxFn) return '<br><span class="delta" style="margin:2px 0 0"><span class="moc-chip risk">\ud83c\udfb2 Gamble \u2014 outcome varies</span></span>';
+        return '';
+      };
       html += '<div class="moc-dilemma"><div class="ec-head">' + pixIcon('scroll') + ' DECISION REQUIRED</div><div class="dq">' + dilemma.text + '</div>'
-        + '<button class="moc-opt" id="moc-opt-a">' + dilemma.a.label + '<span class="fx">' + dilemma.a.note + (dilemma.a.fx ? '<br>' + fxPreview(dilemma.a.fx).replace('class="delta"', 'class="delta" style="margin:2px 0 0"') : '') + '</span></button>'
-        + '<button class="moc-opt" id="moc-opt-b">' + dilemma.b.label + '<span class="fx">' + dilemma.b.note + (dilemma.b.fx ? '<br>' + fxPreview(dilemma.b.fx).replace('class="delta"', 'class="delta" style="margin:2px 0 0"') : '') + '</span></button></div>';
+        + '<button class="moc-opt" id="moc-opt-a">' + dilemma.a.label + '<span class="fx">' + dilemma.a.note + optHtml(dilemma.a) + '</span></button>'
+        + '<button class="moc-opt" id="moc-opt-b">' + dilemma.b.label + '<span class="fx">' + dilemma.b.note + optHtml(dilemma.b) + '</span></button></div>';
     }
     // Book of Laws: next node per track, one law per council
     html += '<h3>' + pixIcon('scroll') + ' Book of Laws <span style="font-family:Inter,sans-serif;font-weight:400;font-size:10.5px;color:#8a94d8;letter-spacing:0">one per quarter \u00b7 laws cannot be repealed</span></h3><div class="moc-shop" id="moc-laws">';
@@ -13439,8 +13491,10 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
   function updateObjectiveBar(){
     if (!GS.objective || MoC.IS_BASELINE || GS.over) return;
     const el = objectiveBar();
+    // Stay hidden until the game actually starts (no overlap with intro/tour)
+    el.style.display = window._mocGameStarted ? '' : 'none';
     const onTrack = GS.objective.check();
-    const qInYear = ((GS.quarter - 1) % 4) + 1;
+    const qInYear = Math.min(4, Math.max(1, ((GS.quarter - 1) % 4) + 1));
     el.className = 'moc-objective';
     el.style.borderColor = onTrack ? 'var(--m-green)' : 'var(--m-red)';
     el.innerHTML = '\ud83c\udfaf Year ' + GS.objective._year + ' (Q' + qInYear + '/4): ' + GS.objective.text
@@ -13461,6 +13515,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
       GS.lastYearResult = { year: obj._year, text: obj.text, bonus: obj.bonus, achieved: true };
     } else {
       Audio5.blip(180);
+      FX.pop('\u2717 YEAR ' + obj._year + ' TARGET MISSED', '#e05858');
       GS.lastYearResult = { year: obj._year, text: obj.text, bonus: obj.bonus, achieved: false };
     }
     return GS.lastYearResult;
@@ -13902,9 +13957,9 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
         if (loadJSON('moc_assumption', null) !== null) { GS.assumption = loadJSON('moc_assumption', null); return proceed(); }
         const am = document.createElement('div');
         am.className = 'moc-overlay'; am.id = 'moc-assume';
-        am.innerHTML = '<div class="moc-box" style="max-width:520px"><h2>\ud83d\udcdd Before you take office\u2026</h2>'
-          + '<div class="moc-sub">One question. Answer honestly \u2014 we\u2019ll come back to it at the end of your term.</div>'
-          + '<div class="moc-dilemma"><div class="dq">How much of a Dutch GP\u2019s working time do you think goes to administration instead of patients?</div>'
+        am.innerHTML = '<div class="moc-box" style="max-width:520px"><h2>\ud83d\udcf0 ON THE MINISTRY STEPS</h2>'
+          + '<div class="moc-sub">Your first morning. A Gazette reporter blocks your path \u2014 your answer prints on tomorrow\u2019s front page, and at the end of your term the paper will check it against reality.</div>'
+          + '<div class="moc-dilemma"><div class="dq">"Minister! One question: how much of a GP\u2019s working day here goes to paperwork instead of patients?"</div>'
           + [10, 20, 30, 40].map(function(v){ return '<button class="moc-opt" data-guess="' + v + '">' + v + '%</button>'; }).join('')
           + '</div></div>';
         document.body.appendChild(am);
@@ -13953,6 +14008,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
         GS._finaleActive = true;
         applyTimedFx({drainMult: GS.owned.prevention ? 1.15 : 1.3, sick: GS.owned.resilience ? 0.02 : 0.04}, 2, 'THE GREAT FLU \u2014 the decade\u2019s worst wave');
         Audio5.klaxon(); FX.shake();
+        townSay(EVENT_REACTIONS.flu);
         return { head:'THE GREAT FLU IS HERE', body:'It is exactly as bad as predicted' + (GS.owned.prevention ? ' \u2014 but your prevention programme means fewer citizens are fragile.' : '.') + (GS.owned.resilience ? ' Your resilience protocols keep staff on their feet.' : ' Staff are dropping. This is the test.') };
       }
       return null;
@@ -14127,6 +14183,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
       // G9b: aging + act transitions + finale + election + confidence vote
       GS.pendingBanners = GS.pendingBanners || [];
       GS._electionNear = MoC.TOTAL_QUARTERS >= 16 && !GS._electionHeld && q >= Math.round(MoC.TOTAL_QUARTERS / 2) - 2 && q < Math.round(MoC.TOTAL_QUARTERS / 2);
+      if (GS._electionNear && !GS._electionTalked) { GS._electionTalked = true; townSay(EVENT_REACTIONS.election); }
       const aging = agingCreep(q); if (aging) GS.pendingBanners.push({ head:'THE GREYING TOWN', body:aging, soft:true });
       const act = actTransition(q); if (act) GS.pendingBanners.push(act);
       const fin = finaleCheck(q); if (fin) GS.pendingBanners.push(fin);
@@ -14168,6 +14225,15 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
         drawMinister(ministerMood());
         newYearObjective(1);
         renderMinistry();
+        // Everyone in town has a name — sweep any nameless walkers (visitors, workers)
+        setTimeout(function(){
+          if (typeof agents === 'undefined') return;
+          agents.forEach(function(a){
+            if (a.name || a.state === 'dead') return;
+            const pool = (a.gender === 'F') ? FIRST_NAMES_F : FIRST_NAMES_M;
+            a.name = pool[Math.floor(Math.random() * pool.length)] + ' ' + SURNAMES[Math.floor(Math.random() * SURNAMES.length)];
+          });
+        }, 1500);
         // G9c: manifesto after the tour finishes (hook into first sim launch)
         const _mfCheck = setInterval(function(){
           if (window._mocGameStarted && !GS._manifestoShown) {
