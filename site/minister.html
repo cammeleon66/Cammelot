@@ -12137,11 +12137,14 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
   GS.lastEventQ = {};     // eventId -> quarter (cooldowns)
   GS.mantelzorg = 30;     // G15: informal carer pressure (30=normal, 80+=crisis)
   GS._yearResults = [];   // G16: {year, achieved, bonus} for each settled year objective
+  GS.fragmentation = 0;  // G17: AI silo count (0=clean, 4+=fragmented, 8+=archipelago)
+  GS.platformMaturity = 0; // G17: shared health data platform level (0=none, 1=built, 2=scaled)
 
   // ── Helpers over engine state ──
   function systemDeaths(){ return GRAVE_MARKERS.filter(g => g.cause === 'system_failure').length; }
   function totalDeaths(){ return GRAVE_MARKERS.length; }
   function fragility(){ return Math.min(100, GS.dependence * 10); }
+  function fragPenalty(){ return Math.max(0, ((GS.fragmentation || 0) - 2) * 8); } // G17: score cost for AI archipelago
   function fmtK(v){ return '\u20ac' + Math.round(v / 1000) + 'K'; }
   function pauseSim(){
     MoC.paused = true;
@@ -12193,6 +12196,8 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     if (fx.ai) M.IST.ai = Math.round((M.IST.ai + fx.ai) * 100) / 100;
     if (fx.drainMult) M.IST.drain = Math.round(M.IST.drain * fx.drainMult * 100) / 100;
     if (fx.mantelzorg) GS.mantelzorg = Math.max(0, Math.min(100, (GS.mantelzorg || 30) + fx.mantelzorg)); // G15
+    if (fx.frag) GS.fragmentation = Math.max(0, (GS.fragmentation || 0) + fx.frag); // G17
+    if (fx.platform) GS.platformMaturity = Math.min(2, (GS.platformMaturity || 0) + fx.platform); // G17
     if (label && typeof say === 'function') say('MINISTRY', label, 'sys');
     refreshMeters();
   }
@@ -12235,7 +12240,18 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     // G16: GP Retention Fund — the only dedicated doctor trust recovery item
     { id:'gpfund', name:'\ud83e\ude7a GP Retention Fund', cost:45000,
       fx:{trustD:8, sick:-0.01}, max:1,
-      desc:'Structural salary top-up for GPs and assistants. Doctors +8 \u2014 the hard reset after a strike or sabbatical fallout. Sick leave -1%. One-time structural commitment.' }
+      desc:'Structural salary top-up for GPs and assistants. Doctors +8 \u2014 the hard reset after a strike or sabbatical fallout. Sick leave -1%. One-time structural commitment.' },
+    // G17: Point Solution Paradox — the build-vs-buy-vs-platform tension
+    { id:'pilotgrant', name:'\ud83d\udcc4 AI Pilot Grant', cost:30000,
+      fx:{trustP:4, frag:2}, max:3,
+      desc:'Another targeted AI pilot. The press release writes itself. Fragmentation +2 (one more disconnected silo). Parliament trust +4 \u2014 it looks decisive. No clinical outcomes guaranteed. Max 3.' },
+    { id:'platform', name:'\ud83c\udfd7 Health Data Platform', cost:120000, requires:'scribes1',
+      fx:{admin:-0.05, frag:-3, platform:1}, max:1,
+      desc:'Unified health data infrastructure: one schema, one pipeline, all practices. The hard route. No press release. Platform maturity +1. Fragmentation -3. Admin -5%. Requires digital records.' },
+    { id:'platformai', name:'\ud83e\udd16 Platform AI Applications', cost:80000,
+      requiresMaturity:1,
+      fx:{admin:-0.10, drainMult:0.90, trustD:3}, max:1,
+      desc:'AI built on real shared data: validated, integrated, clinic-adopted. Admin -10%, drain -10%, Doctors +3. The strongest AI outcome in the game \u2014 when built on the right foundation.' }
   ];
   function shopCost(item){
     const owned = GS.owned[item.id] || 0;
@@ -12252,6 +12268,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     if (GS.budget < 0) return false; // G15: no purchases while in deficit
     if (owned >= (item.max || 1)) return false;
     if (item.requires && !(GS.owned[item.requires] > 0)) return false;
+    if (item.requiresMaturity && (GS.platformMaturity || 0) < item.requiresMaturity) return false; // G17
     if (item.fx && item.fx.dep > 0 && GS.quarter < GS.techFreezeUntil) return false; // parliament freeze
     return GS.budget >= shopCost(item);
   }
@@ -12288,7 +12305,10 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     prevention: ['There\u2019s a health coach at the community centre now. I went. It was... actually nice.', 'Free check-ups at the market square. The minister plays the long game.'],
     resilience: ['The practice ran a paper drill this week. "In case the computers die," they said.', 'They installed a backup line at the pharmacy. Someone is thinking ahead.'],
     campaign: ['Saw the minister\u2019s health campaign poster at the bus stop.', 'Everyone\u2019s talking about that TV spot with the GP.'],
-    gpfund: ['"Dr. Bakker actually smiled today. Properly.", said Marjolein.', '"The waiting room vibe is calmer. Something changed. Feels like the staff breathe again."']
+    gpfund: ['"Dr. Bakker actually smiled today. Properly.", said Marjolein.', '"The waiting room vibe is calmer. Something changed. Feels like the staff breathe again."'],
+    pilotgrant: ['"There\u2019s a new AI pilot at the hospital. The press release sounded promising. Does it help my waiting time?" said Jansen.', '"Another AI project. Wake me up when the queue actually moves."'],
+    platform: ['"Something changed in the data system. My GP said: finally, the records just work.", said Marjolein.', '"They hired ten data engineers. I don\u2019t know what they built. But it works."'],
+    platformai: ['"The diagnostic tool caught something my GP nearly missed. It was right.", said Veenstra.', '"AI used to feel like a press release. Now it actually catches things in my file."']
   };
   const EVENT_REACTIONS = {
     cyber: ['Did you hear? Hackers got into the health records\u2026', 'My neighbour won\u2019t use the portal anymore. Says the criminals read it first.', 'Is my file out there on the internet now?'],
@@ -12514,7 +12534,56 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
           run:function(){ applyFx({trustP:6, trustC:2}, 'Interpellatie: volle transparantie. Coalitie gerustgesteld.'); townSay(['"First time I understood what my council actually does.", said Van Dijk.', '"The minister showed up, answered questions, and didn\u2019t dodge once. That\u2019s something."']); } },
         { label:'Defend the record, deflect the questions', note:'Parliament \u22122 \u00b7 opposition grows louder',
           run:function(){ applyFx({trustP:-2}, 'Interpellatie: ontwijkend antwoord. Oppositie scherper.'); townSay(['"Same old. Questions in, non-answers out.", sighed Jansen.', '"They had every chance to explain themselves. They chose not to."']); } }
-      ] }
+      ] },
+    // G17: Point Solution Paradox events
+    { id:'algodubbelop', name:'\ud83d\udd04 Algorithm Reinvented (Again)', once:true,
+      weight:function(){ return (GS.fragmentation || 0) >= 3 && GS.quarter >= 8 ? 22 : 0; },
+      text:function(){ return 'A researcher at the regional hospital presents a new AI tool: <b>"predictive early discharge support."</b> Your data team confirms it overlaps 80% with the Mirrorware digital twin \u2014 already live. "We didn\u2019t know," the researcher says. "Our systems don\u2019t talk."<br><br>The Gazette calls it a coordination failure. The vendor calls it an opportunity.'; },
+      choices:[
+        { label:'Halt the new tool, mandate integration', note:'Fragmentation -1 \u00b7 Parliament +2',
+          run:function(){ applyFx({frag:-1, trustP:2}, 'Halted duplicate algorithm, mandated integration'); townSay(['"Someone finally said: wait, we already have that.", said Van Dijk.', '"A victory for coordination. Rare in this municipality."']); } },
+        { label:'Let both run \u2014 clinical choice is valuable', note:'Fragmentation +1 \u00b7 Admin +2%',
+          run:function(){ applyFx({frag:1, admin:0.02}, 'Dual tools authorised: coexistence policy'); townSay(['"Two systems, same patient, different advice. I pick the one I like.", said Jansen.', '"Clinical choice means nobody ever agrees on one standard."']); } }
+      ] },
+    { id:'researchgrant', name:'\ud83d\udcb6 Research Grant: How Do You Invest?', once:true,
+      weight:function(){ return GS.quarter >= 6 && GS.quarter <= 20 ? 16 : 0; },
+      text:function(){ return 'An unexpected \u20ac80K research grant arrives \u2014 ZonMw, unrestricted. The letter says: <i>"To be applied to health system innovation in Cammelot."</i> Your team presents three options.'; },
+      choices:[
+        { label:'Quick AI pilot: early sepsis detection', note:'+\u20ac30K \u00b7 Fragmentation +2 \u00b7 Parliament +3',
+          run:function(){ applyFx({budget:30000, frag:2, trustP:3}, 'Research grant: AI pilot funded'); townSay(['"New sepsis AI at the hospital. Impressive brochure.", said Veenstra.', '"Another pilot. Let\u2019s see if this one reaches practice."']); } },
+        { label:'Platform investment: shared data infrastructure', note:'+\u20ac80K \u00b7 Platform +1 \u00b7 Fragmentation -2',
+          run:function(){ applyFx({budget:80000, platform:1, frag:-2}, 'Research grant: platform investment'); townSay(['"The data infrastructure got a serious upgrade. Not glamorous, but it actually works.", said Dr. Bakker.', '"Less duplication, better signal. About time."']); } },
+        { label:'GP recruitment and retention (people, not tech)', note:'+\u20ac80K \u00b7 Doctors +5 \u00b7 Wait -1 week',
+          run:function(){ applyFx({budget:80000, trustD:5, tree:-1}, 'Research grant: GP recruitment'); townSay(['"A new GP in the practice. FINALLY.", said Marjolein.', '"Best use of a research grant I\u2019ve seen in years."']); } }
+      ] },
+    { id:'platformdividend', name:'\ud83c\udf10 Platform Dividend', once:true,
+      weight:function(){ return (GS.platformMaturity || 0) >= 1 && GS.quarter >= 16 ? 25 : 0; },
+      text:function(){ return 'Four years after the platform investment, the Cammelot Regional Health Authority publishes its annual report. <b>Admin burden is down 18%.</b> Algorithm duplication: zero. GP feedback shows 82% satisfaction with record access \u2014 highest in the region.<br><br>A neighbouring municipality calls, asking for the playbook.'; },
+      auto:function(){
+        applyFx({trustD:4, trustP:3, admin:-0.03}, 'Platform dividend: multi-year payoff validated');
+        townSay(['"My GP doesn\u2019t ask the same questions every visit anymore. The data just\u2026 knows.", said Veenstra.', '"Didn\u2019t notice it happening. Noticed when it was done. That\u2019s how good infrastructure works."']);
+      } },
+    { id:'papervspractice', name:'\ud83d\udcc4 Papers Don\u2019t Cure Patients', once:true,
+      weight:function(){ return (GS.fragmentation || 0) >= 5 && GS.quarter >= 12 ? 20 : 0; },
+      text:function(){ return 'The regional academic hospital presents a study: <b>"Predictive Discharge Support for Cammelot."</b> The paper is excellent. Algorithm accuracy: 94% in the lab. Implementation timeline: 3\u20135 years. Validation budget: not included.<br><br>Your GP says the same thing she said two years ago: "We still can\u2019t get the basics right."'; },
+      auto:function(){
+        applyFx({trustC:-3, trustD:-4}, 'Point solution paper: no clinical impact, trust erodes');
+        townSay(['"Another algorithm, another paper. I\u2019m still on the list.", grumbled Jansen.', '"94% accurate in a lab. 0% in my GP practice. Wonderful research."']);
+      } },
+    { id:'aiaudit', name:'\ud83c\udfd7 AI Governance Board: Annual Accountability', once:true,
+      weight:function(){ return GS.quarter >= 20 ? 15 : 0; },
+      text:function(){
+        const frag = GS.fragmentation || 0; const plat = GS.platformMaturity || 0;
+        if (frag >= 6) return 'The regional AI governance board publishes its review. Headline: <b>"Cammelot operates ' + frag + ' disconnected health algorithms, none evaluated at scale."</b> The board recommends an immediate moratorium on new AI pilots. The press picks it up.';
+        if (plat >= 1) return 'The regional AI governance board publishes its review. Headline: <b>"Cammelot\u2019s platform approach: a model for the region."</b> Two neighbouring municipalities request an implementation visit. Rare praise from the board.';
+        return 'The regional AI governance board publishes its annual review. "Progress, but coordination remains the open question," says the chair.';
+      },
+      auto:function(){
+        const frag = GS.fragmentation || 0; const plat = GS.platformMaturity || 0;
+        if (frag >= 6) applyFx({trustP:-4, trustC:-2}, 'AI board: fragmentation scandal');
+        else if (plat >= 1) applyFx({trustP:4, trustD:2}, 'AI board: platform praised');
+        else applyFx({trustP:-1}, 'AI board: mixed verdict');
+      } }
   ];
   function pickEvent(q){
     // G9b: quiet quarters — every ~4th quarter is guaranteed crisis-free breathing room
@@ -12557,6 +12626,15 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
         desc:'Shared locum pool across the region. Sick leave -1%. Irreversible.' },
       { id:'work3', name:'Community Health Workers', cost:0, fx:{drainMult:0.92, trust:2},
         desc:'Neighbourhood teams reach citizens before crisis. Drain -8%, Trust +2. Irreversible.' }
+    ] },
+    // G17: Innovation Governance track — the slow, structural route
+    inno: { name:'\ud83e\udde9 Innovation Governance', laws:[
+      { id:'inno1', name:'Open Algorithm Register', cost:0, fx:{trustP:3, frag:-1},
+        desc:'All health algorithms used in Cammelot must be publicly registered. Parliament +3. Fragmentation -1 (visibility forces consolidation). Irreversible.' },
+      { id:'inno2', name:'Platform-First Procurement Mandate', cost:20000, fx:{frag:-2, trustP:2},
+        desc:'No new health AI without data interoperability compliance. Fragmentation -2. Parliament +2. Slows quick pilots. The hard choice. Irreversible.' },
+      { id:'inno3', name:'Regional AI Adoption Board', cost:0, fx:{trustP:3, trustD:2},
+        desc:'Joint board of GPs, data scientists, and patient reps evaluates all health AI before deployment. Parliament +3, Doctors +2. Irreversible.' }
     ] }
   };
   function nextLaw(track){
@@ -12651,7 +12729,32 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     { id:'mantelzorg', text:'Cammelot telt 14.000 mantelzorgers \u2014 partners, kinderen, buren die onbetaald zorg verlenen. De gemeente ontvangt een signaal: 1 op 5 dreigt overbelast te raken. De thuiszorg wachtlijst groeit al vier kwartalen. Wat doet u?',
       a:{ label:'Formaliseer: betaal mantelzorgers een vergoeding', fx:{budget:-25000, trustC:5, mantelzorg:-10}, note:'-\u20ac25K \u00b7 Citizens +5 \u00b7 mantelzorg druk -10' },
       b:{ label:'Verwijs door naar informele netwerken (buren, kerken)', fx:{mantelzorg:10, trustC:-3}, note:'Mantelzorg druk +10 \u00b7 Citizens -3 (voelen zich in de steek gelaten)' },
-      c:{ label:'Pilot: respijtzorgplekken op bestaand budget', fx:{budget:-12000, trustD:2, trustC:3, mantelzorg:-5}, note:'-\u20ac12K \u00b7 Doctors +2 \u00b7 Citizens +3 \u00b7 mantelzorg druk -5' } }
+      c:{ label:'Pilot: respijtzorgplekken op bestaand budget', fx:{budget:-12000, trustD:2, trustC:3, mantelzorg:-5}, note:'-\u20ac12K \u00b7 Doctors +2 \u00b7 Citizens +3 \u00b7 mantelzorg druk -5' } },
+    // G17: Point Solution Paradox dilemmas
+    { id:'buildorbuy', text:'A Dutch health-tech startup pitches Cammelot a ready-built AI triage tool: \u20ac40K/year, live in 6 weeks, 87% accuracy in three pilots. Your CTO says: "We should build our own \u2014 we know our population." The Gazette is watching.',
+      a:{ label:'Buy the startup tool, deploy fast', fx:{budget:-40000, trustP:3, frag:2}, note:'-\u20ac40K/yr \u00b7 Parliament +3 (decisive) \u00b7 Fragmentation +2' },
+      b:{ label:'Build in-house, own the data', fxFn:function(){ applyFx({budget:-70000, trustD:2}, 'In-house AI build: 18-month project started'); GS.delayed.push({ atQ: GS.quarter + 8, fx:{trustD:3, admin:-0.03}, label:'In-house AI delivers: Doctors +3, Admin -3%' }); return {}; }, note:'-\u20ac70K \u00b7 Doctors +2 now \u00b7 18-month delay then: Doctors +3, Admin -3%' },
+      c:{ label:'Require platform-first: no tool without shared data access', fxFn:function(){
+        if ((GS.platformMaturity || 0) >= 1) { applyFx({budget:-40000, frag:-1, trustD:3}, 'Platform-first procurement enforced'); townSay(['"They actually read the procurement criteria this time.", said Dr. Bakker.', '"A tool that talks to our records. First time ever."']); }
+        else { applyFx({trustP:-2}, 'Platform-first blocked: no platform exists yet'); townSay(['"Great policy. No platform to connect to.", said Van Dijk.']); }
+        return {};
+      }, note:'If platform built: Frag -1, Doctors +3, -\u20ac40K \u00b7 If no platform: Parliament -2' } },
+    { id:'phddata', text:'A PhD candidate from Erasmus MC requests access to Cammelot\u2019s anonymised GP data for a 3-year readmission study. The data would leave the municipality. The research is legitimate. The paper will cite Cammelot.',
+      a:{ label:'Grant full access \u2014 science matters', fx:{trustP:3, frag:1}, note:'Parliament +3 (open science) \u00b7 Fragmentation +1 (another external data consumer)' },
+      b:{ label:'Refuse \u2014 patient data stays local', fx:{trustP:-3, trustC:2}, note:'Parliament -3 \u00b7 Citizens +2 (trust their data stays private)' },
+      c:{ label:'Grant access only via federated query \u2014 data stays, insights travel', fxFn:function(){
+        if ((GS.platformMaturity || 0) >= 1) { applyFx({trustP:4, trustD:2}, 'Federated data access: privacy-preserving science'); townSay(['"The study used our data without touching our data. Future policy.", said Van Dijk.']); }
+        else { applyFx({trustP:-1}, 'Federated query impossible without platform infrastructure'); townSay(['"Good idea. Platform does not exist yet."']); }
+        return {};
+      }, note:'If platform: Parliament +4, Doctors +2 \u00b7 If no platform: Parliament -1' } },
+    { id:'aistartup', text:'An AI health startup (Series B, Amsterdam) wants Cammelot as a pilot site. In return: free tool for 2 years and \u20ac20K in co-funding. Their hospital-at-home risk scoring tool stores data on their servers, not yours.',
+      a:{ label:'Yes \u2014 innovation needs pilots', fx:{budget:20000, trustP:2, frag:2}, note:'+\u20ac20K \u00b7 Parliament +2 \u00b7 Fragmentation +2 (vendor-owned data silo)' },
+      b:{ label:'No \u2014 patient data leaving Cammelot is unacceptable', fx:{trustC:3, trustP:-2}, note:'Citizens +3 (data protection) \u00b7 Parliament -2 (blocking innovation)' },
+      c:{ label:'Yes, if data residency is Cammelot-controlled', fxFn:function(){
+        if ((GS.platformMaturity || 0) >= 1) { applyFx({budget:20000, frag:1, trustD:2}, 'Startup pilot: data sovereignty enforced'); townSay(['"Innovation on our terms. Good precedent.", said Dr. Bakker.']); }
+        else { applyFx({trustP:-2}, 'Startup rejected: data residency not feasible without platform'); townSay(['"They wanted our data on their cloud. We said no. They left."']); }
+        return {};
+      }, note:'If platform: +\u20ac20K, Doctors +2, Frag +1 (managed) \u00b7 If no platform: Parliament -2' } }
   ];
   // G15: Deterministic shuffle per seed (Fisher-Yates with mulberry32)
   function pickDilemma(){
@@ -12771,6 +12874,9 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
       kind = 'queue';
       headline = inactionMsgs[Math.min(3, Math.floor((q - 4) / 4))];
     }
+    // G17: fragmentation / platform headline overrides
+    if ((GS.fragmentation || 0) >= 6 && kind === 'calm') { kind = 'queue'; headline = 'TWELVE ALGORITHMS, ZERO PATIENTS HELPED'; }
+    if ((GS.platformMaturity || 0) >= 2 && kind === 'praise') { headline = 'CAMMELOT BUILDS THE FOUNDATION FOR TOMORROW\u2019S CARE'; }
     // G9f: citizen quote of the quarter — a real living agent speaks
     const alive = agents.filter(function(a){ return a.state !== 'dead' && a.name; });
     if (alive.length) {
@@ -12794,7 +12900,8 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
       'NOTICE: The Cammelot choir seeks tenors. Baritones welcome. Sopranos, we know where you are.',
       'ADVERT: LOCKSTEP-B-GONE\u2122 cyber insurance \u2014 premiums quoted after a short look at your dependence score.',
       'CLASSIFIED: Lost \u2014 one referral letter, sentimental value, last seen entering "the system".',
-      'ADVERT: Mirrorware Digital Twin \u2014 "See tomorrow\u2019s queue today. Regret nothing. Or everything, but earlier."'
+      'ADVERT: Mirrorware Digital Twin \u2014 "See tomorrow\u2019s queue today. Regret nothing. Or everything, but earlier."',
+      'ADVERT: AI Archipelago Consulting \u2014 "Twelve silos. Twelve vendors. Twelve licence renegotiations. We help you manage the complexity we sold you."' // G17
     ];
     const ad = ADS[q % ADS.length];
     return '<img class="gz-art" src="' + gazetteArt(kind) + '" alt="">'
@@ -12825,7 +12932,9 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
       [pixIcon('cross') + ' Capacity', ceff + '%', sysCls(ceff, false, 70, 85)],
       [pixIcon('brheart') + ' HP drain', M.IST.drain.toFixed(2) + '\u00d7', sysCls(M.IST.drain, true, 0.7, 1.0)],
       [pixIcon('plug') + ' Dependence', GS.dependence + ' pts', sysCls(GS.dependence, true, 3, 6)],
-      [pixIcon('people') + ' Mantelzorg druk', (GS.mantelzorg || 30) + '%', sysCls(GS.mantelzorg || 30, true, 50, 75)]
+      [pixIcon('people') + ' Mantelzorg druk', (GS.mantelzorg || 30) + '%', sysCls(GS.mantelzorg || 30, true, 50, 75)],
+      ['\ud83e\udde9 AI Silos', (GS.fragmentation || 0) + ' active', sysCls(GS.fragmentation || 0, true, 2, 5)], // G17
+      ['\ud83c\udfd7 Platform', (GS.platformMaturity || 0) === 0 ? 'none' : 'level ' + (GS.platformMaturity || 0), (GS.platformMaturity || 0) >= 1 ? 'g' : 'y'] // G17
     ];
     return '<div class="moc-sys" id="moc-syspanel">' + cells.map(function(c){
       return '<div class="cell">' + c[0] + '<b class="' + c[2] + '">' + c[1] + '</b></div>';
@@ -12850,6 +12959,8 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     if (fx.trustP) chip('bank', 'Parliament', GS.trustP, Math.max(0, Math.min(100, GS.trustP + fx.trustP)), fx.trustP > 0);
     if (fx.budget) chips.push('<span class="moc-chip ' + (fx.budget > 0 ? 'good' : 'money') + '">' + pixIcon('coin') + ' ' + (fx.budget > 0 ? '+' : '\u2212') + fmtK(Math.abs(fx.budget)) + '</span>');
     if (fx.mantelzorg) chips.push('<span class="moc-chip ' + (fx.mantelzorg < 0 ? 'good' : 'bad') + '">\ud83d\udc9c Mantelzorg ' + (fx.mantelzorg > 0 ? '+' : '') + fx.mantelzorg + '</span>'); // G15
+    if (fx.frag) chips.push('<span class="moc-chip ' + (fx.frag < 0 ? 'good' : 'bad') + '">\ud83e\udde9 Silos ' + (fx.frag > 0 ? '+' : '') + fx.frag + '</span>'); // G17
+    if (fx.platform) chips.push('<span class="moc-chip good">\ud83c\udfd7 Platform +' + fx.platform + '</span>'); // G17
     return chips.length ? '<span class="delta">' + chips.join('') + '</span>' : '';
   }
   function renderShop(){
@@ -12861,12 +12972,14 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     wrap.innerHTML = SHOP.map(function(item){
       const owned = GS.owned[item.id] || 0;
       const maxed = owned >= (item.max || 1);
-      const locked = item.requires && !(GS.owned[item.requires] > 0);
+      const lockedReq = item.requires && !(GS.owned[item.requires] > 0);
+      const lockedMat = item.requiresMaturity && (GS.platformMaturity || 0) < item.requiresMaturity; // G17
+      const locked = lockedReq || lockedMat;
       let btn;
       if (maxed) btn = '<span class="moc-owned">\u2713 Active' + (item.max > 1 ? ' \u00d7' + owned : '') + '</span>';
       else if (locked) {
         const req = SHOP.find(function(s){ return s.id === item.requires; });
-        btn = '<button class="moc-buy" disabled>\ud83d\udd12 Needs ' + (req ? req.name.replace(/^\S+\s/, '') : 'prerequisite') + '</button>';
+        btn = '<button class="moc-buy" disabled>\ud83d\udd12 Needs ' + (lockedMat ? 'Health Data Platform first' : (req ? req.name.replace(/^\S+\s/, '') : 'prerequisite')) + '</button>';
       }
       else if (item.fx.dep > 0 && GS.quarter < GS.techFreezeUntil) btn = '<button class="moc-buy" disabled>\u2696 Frozen by parliament</button>';
       else if ((GS.buysThisCouncil || 0) >= ((GS._bruisedMandate > 0) ? 1 : BUY_CAP)) btn = '<button class="moc-buy" disabled>' + (GS._bruisedMandate > 0 ? '\ud83e\ude79 Bruised mandate: 1 slot only' : 'No slots left this quarter') + '</button>';
@@ -13187,7 +13300,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     const lenFactor = Math.min(2.5, 40 / Math.max(1, MoC.TOTAL_QUARTERS));
     const score = Math.max(0, Math.round(
       livesSaved * 100 * lenFactor + GS.trust * 3 + Math.round(GS.budget / 10000)
-      + adminGain * 3 + waitGain * 15 - fragility()
+      + adminGain * 3 + waitGain * 15 - fragility() - fragPenalty() // G17: fragPenalty for AI archipelago
       + Math.round((GS.liveScore || 0) * 0.25)
     ));
     return { score: score, livesSaved: livesSaved, baseSd: baseSd, sd: sd, adminGain: adminGain, waitGain: waitGain };
@@ -13204,6 +13317,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     const rotCascade = GS.cascades && GS.cascades.rot && GS.cascades.rot.stage >= 3 && !GS.cascades.rot.dead;
     const exodusCascade = GS.cascades && GS.cascades.exodus && GS.cascades.exodus.stage >= 3 && !GS.cascades.exodus.dead;
     if (rotCascade || exodusCascade) return '\ud83d\udcbb DIGITAL DISASTER \u2014 the systems collapsed and the doctors fled';
+    if ((GS.fragmentation || 0) >= 8 && r.score < 350) return '\ud83e\udde9 ALGORITHM ARCHIPELAGO \u2014 twelve silos, zero at scale'; // G17
     if (r.sd === 0) return '\u2b50 ZERO DEATHS \u2014 not a single preventable death on your watch';
     if (r.score >= 600 && r.baseSd !== null && r.sd <= Math.floor(r.baseSd / 2)) return '\ud83c\udfc6 ZORGINFARCT AVERTED';
     if (r.score >= 400) return 'THE REFORMER';
@@ -13310,7 +13424,11 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
       : failed ? 'You tried. The system won.'
       : 'You kept the town standing.';
 
-    const lesson = GS.dependence >= 8
+    const lesson = (GS.fragmentation || 0) >= 6 // G17: frag/platform takes priority in lesson
+      ? 'You built algorithm after algorithm and never built the thing that makes algorithms useful: shared, trusted data. Every pilot added another silo. AI without infrastructure always fails at scale.'
+      : (GS.platformMaturity || 0) >= 1
+      ? 'You chose the hard route \u2014 the data platform, not the press release. The payoff was slow, real, and durable. Your successor has something to build on.'
+      : GS.dependence >= 8
       ? 'You automated everything and forgot to buy resilience \u2014 when the ransomware came, the whole town felt it.'
       : GS.dependence <= 2
       ? 'You played it safe on technology. Nobody got hacked \u2014 but the waiting lists never really shrank either.'
@@ -13347,13 +13465,18 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     edclosure: { t:'Night closures are real.', d:'Emergency departments in Zutphen, Den Haag (Bronovo), Stadskanaal and Hoogeveen closed or cut hours in recent years. The patients did not disappear \u2014 they went to the neighbours.' },
     distrust: { t:'Parliament HAS frozen algorithms.', d:'In 2020 a Dutch court struck down the SyRI welfare-fraud algorithm on human-rights grounds; in 2021 the childcare-benefits algorithm scandal brought down the entire cabinet. Algorithmic distrust is not a game mechanic \u2014 it is Dutch political reality.' },
     gpretire: { t:'The retiring GP is everywhere.', d:'Dozens of practices in regions like Groningen and Zeeland are searching for successors. When no one comes, thousands of patients redistribute to already-full practices.' },
-    scribes: { t:'The AI scribes exist.', d:'Ambient scribing tools are live in 30+ Dutch hospitals today, with vendors claiming 60%+ reductions in documentation time. The Admin Paradox \u2014 freed hours becoming more patients, not more attention \u2014 is the open research question.' }
+    scribes: { t:'The AI scribes exist.', d:'Ambient scribing tools are live in 30+ Dutch hospitals today, with vendors claiming 60%+ reductions in documentation time. The Admin Paradox \u2014 freed hours becoming more patients, not more attention \u2014 is the open research question.' },
+    // G17: Point Solution Paradox reveals
+    fragmentation: { t:'The fragmentation problem is real.', d:'A 2024 Dutch Health Authority analysis found hundreds of disconnected health AI tools across Dutch hospitals \u2014 with 2 in 100 validated in clinical practice and 1 in 1,000 reaching scale. Pacmed CEO Wouter Kroese: "The bottleneck is never the algorithm. It\u2019s shared infrastructure, governance, and clinical adoption." Academic hospitals keep building point solutions while the hard problems \u2014 validation, scale, interoperability \u2014 stay unsolved.' },
+    platform: { t:'Platform-first is the minority choice.', d:'Shared health data platforms \u2014 at Erasmus MC, Amsterdam UMC, and regional consortia \u2014 dramatically reduce AI duplication and accelerate adoption. But they require 2\u20134 years of investment before payoff, no press release, and no paper citation. Almost no hospital or municipality chooses this path voluntarily. The typical choice: the pilot.' }
   };
   function dataRevealHtml(){
     let h = '';
     const keys = [];
     Object.keys(REVEALS).forEach(function(k){
       if (k === 'scribes') { if (GS.owned.scribes1) keys.push(k); }
+      else if (k === 'fragmentation') { if ((GS.fragmentation || 0) >= 3 || GS.owned.pilotgrant) keys.push(k); } // G17
+      else if (k === 'platform') { if ((GS.platformMaturity || 0) >= 1 || GS.owned.platform) keys.push(k); } // G17
       else if (GS.eventsFired.indexOf(k) >= 0) keys.push(k);
     });
     let evtBlock = '';
@@ -13493,6 +13616,12 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
       if (lawsPassed2.length) html += '\ud83d\udcdc <b>Laws on the books:</b> ' + lawsPassed2.length + ' (permanent)<br>';
       html += '\u2620 <b>Preventable deaths:</b> ' + deaths + '<br>';
       html += '\ud83d\udd0b <b>Digital dependence inherited by successor:</b> ' + dep + ' pts (' + (dep >= 8 ? 'CRITICAL' : dep >= 5 ? 'elevated' : 'managed') + ')<br>';
+      // G17: fragmentation and platform legacy
+      if ((GS.fragmentation || 0) > 0) {
+        const fragLevel = (GS.fragmentation || 0) >= 6 ? 'coordination failure' : (GS.fragmentation || 0) >= 3 ? 'manageable' : 'low';
+        html += '\ud83e\udde9 <b>AI silos left running:</b> ' + (GS.fragmentation || 0) + ' disconnected algorithms (' + fragLevel + ')<br>';
+      }
+      if ((GS.platformMaturity || 0) > 0) html += '\ud83c\udfd7 <b>Platform maturity:</b> Level ' + (GS.platformMaturity || 0) + ' of 2 \u2014 ' + ((GS.platformMaturity || 0) >= 2 ? 'regional model' : 'foundation built') + '<br>';
       html += '</div>';
     })();
     html += '<h3>Scorecard</h3>';
