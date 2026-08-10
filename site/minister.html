@@ -1189,7 +1189,7 @@ const MoC = (function(){
     quarter: 0,                     // 0 = pre-term, 1..40 during term
     budget: scenario ? scenario.budget : 780000,
     trust: scenario ? scenario.trust : 60,
-    dependence: 0,                  // tech dependence points
+    dependence: 2,                  // tech dependence points (Cammelot already runs DigiD, Halcyon One, MS365)
     interventions: [],              // purchased interventions log
     challengeScore: parseInt(hashParams.get('score'), 10) || null,
     over: false
@@ -12134,6 +12134,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
   GS.techFreezeUntil = 0; // parliament freeze on dep-adding purchases
   GS.pendingBeat = null;  // scripted named-citizen beat queued for next council
   GS.lastEventQ = {};     // eventId -> quarter (cooldowns)
+  GS.mantelzorg = 30;     // G15: informal carer pressure (30=normal, 80+=crisis)
 
   // ── Helpers over engine state ──
   function systemDeaths(){ return GRAVE_MARKERS.filter(g => g.cause === 'system_failure').length; }
@@ -12167,7 +12168,10 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
   // ── Effect applicator ──
   // fx: {budget, trust, trustC, trustD, trustP, dep, admin, sick, tree, ai, drainMult}
   function applyFx(fx, label){
-    if (fx.budget) { GS.budget = Math.max(0, GS.budget + fx.budget); }
+    if (fx.budget) {
+      GS.budget = GS.budget + fx.budget;
+      GS._cashflowThisQ = (GS._cashflowThisQ || 0) + fx.budget; // G15: cashflow tracking
+    }
     if (fx.trust) MoC.adjustTrust(fx.trust);
     if (fx.trustC || fx.trustD || fx.trustP) adjustStakeholders(fx.trustC, fx.trustD, fx.trustP);
     if (fx.dep) GS.dependence = Math.max(0, GS.dependence + fx.dep);
@@ -12176,6 +12180,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     if (fx.tree) M.IST.tree = Math.max(3, M.IST.tree + fx.tree);
     if (fx.ai) M.IST.ai = Math.round((M.IST.ai + fx.ai) * 100) / 100;
     if (fx.drainMult) M.IST.drain = Math.round(M.IST.drain * fx.drainMult * 100) / 100;
+    if (fx.mantelzorg) GS.mantelzorg = Math.max(0, Math.min(100, (GS.mantelzorg || 30) + fx.mantelzorg)); // G15
     if (label && typeof say === 'function') say('MINISTRY', label, 'sys');
     refreshMeters();
   }
@@ -12195,14 +12200,14 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
       fx:{tree:-3, dep:3}, max:1,
       desc:'Tier 3 tech: automated referral scheduling between practices. Needs a fully digitised workflow (EchoScribe rollout) first. Wait -3 weeks. +3 dependence.' },
     { id:'twin', name:'\ud83e\ude9e Mirrorware digital twins', cost:120000, requires:'scribes1',
-      fx:{drainMult:0.75, dep:2}, max:1,
-      desc:'Tier 2 tech: predictive risk profiles need digital records (EchoScribe pilot) to feed on. HP drain -25%. +2 dependence.' },
+      fx:{drainMult:0.85, dep:3}, max:1,
+      desc:'Tier 2 tech: predictive risk profiles need digital records (EchoScribe pilot) to feed on. HP drain \u221215%. +3 dependence. High reward \u2014 high fragility.' },
     { id:'mtvp', name:'\u23f3 More Time for the Patient', cost:40000,
       fx:{drainMult:0.9, trustC:2, trustD:3}, max:1,
       desc:'Longer consultations, better outcomes. Drain -10%, Citizens +2, Doctors +3.' },
     { id:'audit', name:'\u2696 Fairness audit', cost:20000,
-      fx:{trust:4}, max:5,
-      desc:'Independent review of triage decisions. Trust +4. Repeatable.' },
+      fx:{trustP:5}, max:3,
+      desc:'Independent review of triage decisions. Parliament trust +5. Max 3 per term \u2014 after three audits, parliament demands action not paper.' },
     { id:'prevention', name:'\ud83e\udd66 Prevention programme', cost:90000,
       fx:{trustC:2}, max:1,
       desc:'Lifestyle coaching, early screening, neighbourhood health. Costs now \u2014 pays from year 3: halves the aging creep and softens the flu finale. The classic long game.' },
@@ -12213,8 +12218,8 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
       fx:{dep:-1, trust:1}, max:2,
       desc:'Pen-testing, vendor audits, network segmentation. -1 dependence, +1 Trust.' },
     { id:'campaign', name:'\ud83d\udce3 Public Awareness Campaign', cost:30000,
-      fx:{trustC:4, trustP:2}, max:2,
-      desc:'Posters, radio spots, town hall sessions on prevention and care access. Citizens +4, Parliament +2. Repeatable.' }
+      fx:{trustC:6}, max:2,
+      desc:'Posters, radio spots, town hall sessions on prevention and care access. Citizens +6. Repeatable. Pure public trust play \u2014 parliament gets the message from the ballot box.' }
   ];
   function shopCost(item){
     const owned = GS.owned[item.id] || 0;
@@ -12228,6 +12233,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     // G12: bruised mandate reduces effective buy cap to 1
     const effectiveCap = (GS._bruisedMandate > 0) ? 1 : BUY_CAP;
     if ((GS.buysThisCouncil || 0) >= effectiveCap) return false;
+    if (GS.budget < 0) return false; // G15: no purchases while in deficit
     if (owned >= (item.max || 1)) return false;
     if (item.requires && !(GS.owned[item.requires] > 0)) return false;
     if (item.fx && item.fx.dep > 0 && GS.quarter < GS.techFreezeUntil) return false; // parliament freeze
@@ -12445,7 +12451,20 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
         return recent === 0 ? 12 : 0;
       },
       text:function(){ return 'The Health Inspectorate publishes its regional report: "Cammelot is the quiet exception. No preventable deaths in a full year." Someone frames the page and hangs it in the town hall.'; },
-      auto:function(){ applyFx({trust:5}, 'Inspectorate praise. Trust +5.'); } }
+      auto:function(){ applyFx({trust:5}, 'Inspectorate praise. Trust +5.'); } },
+    // G15: AI efficiency dividend — makes scribes2 feel worth buying
+    { id:'aidividend', name:'\ud83e\udd16 AI efficiency dividend', once:true,
+      weight:function(){ return M.IST.ai > 1.10 && GS.quarter >= 8 ? 20 : 0; },
+      text:function(){ return 'Your EchoScribe network has reached critical mass. Dr. Bakker\u2019s morning list was 20% shorter before she touched a keyboard. <b>"The system did something useful for once,"</b> she says, visibly surprised. The Gazette asks if AI is taking over the waiting room.'; },
+      auto:function(){
+        applyFx({tree:-1, trustD:2}, 'AI efficiency dividend: EchoScribe network pays off');
+        townSay(['"The app told me about my appointment before my GP did. I\u2019m not sure how I feel about that.", said Veenstra.', '"Things move faster now. I don\u2019t know why, but I\u2019ll take it."', '"Ask me in five years if it\u2019s actually better."']);
+      } },
+    // G15: GGD warning — Dutch public health body enters the scene
+    { id:'ggd', name:'\ud83d\udfe5 GGD: Cammelot kleurt rood', once:true,
+      weight:function(){ return (M.IST.sick > 0.10 || systemDeaths() >= 3) && GS.quarter >= 8 ? 20 : 0; },
+      text:function(){ return 'De GGD publiceert haar regionale volksgezondheidsstatus: <b>Cammelot kleurt rood op de kaart.</b> Preventabele sterfte ligt boven het landelijk gemiddelde. "Dit is een systeemfalen, geen incident." \u2014 GGD-directeur. Nationale media pikken het op.'; },
+      auto:function(){ applyFx({trustP:-3, trustC:-2}, 'GGD publiceert rood rapport'); } }
   ];
   function pickEvent(q){
     // G9b: quiet quarters — every ~4th quarter is guaranteed crisis-free breathing room
@@ -12577,14 +12596,27 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     { id:'gpstrike', text:'GP assistants announce a 2-day strike over workload. Patients are being asked to call 112 for non-emergencies. The Gazette runs a front page: "TOWN WITHOUT A DOCTOR".',
       a:{ label:'Emergency mediator, grant a 10% bonus', fx:{budget:-45000, trustD:8, trustC:2, sick:-0.01}, note:'-\u20ac45K \u00b7 Doctors +8 \u00b7 Citizens +2 \u00b7 sick -1%' },
       b:{ label:'Publicly condemn the strike', fx:{trustD:-10, trustC:-3, trustP:4}, note:'Doctors -10 \u00b7 Citizens -3 \u00b7 Parliament +4' },
-      c:{ label:'Let it run, wait them out', fxFn:function(){ applyFx({sick:0.02, trustC:-5}, 'Strike drags on'); setTimeout(function(){ applyFx({trustD:-6}, 'Strike ends bitter'); }, 4000); return {}; }, note:'Sick +2% \u00b7 Citizens -5 \u00b7 Doctors -6 after' } }
+      c:{ label:'Let it run, wait them out', fxFn:function(){ applyFx({sick:0.02, trustC:-5}, 'Strike drags on'); setTimeout(function(){ applyFx({trustD:-6}, 'Strike ends bitter'); }, 4000); return {}; }, note:'Sick +2% \u00b7 Citizens -5 \u00b7 Doctors -6 after' } },
+    // G15: Mantelzorg dilemma — biggest Dutch care gap
+    { id:'mantelzorg', text:'Cammelot telt 14.000 mantelzorgers \u2014 partners, kinderen, buren die onbetaald zorg verlenen. De gemeente ontvangt een signaal: 1 op 5 dreigt overbelast te raken. De thuiszorg wachtlijst groeit al vier kwartalen. Wat doet u?',
+      a:{ label:'Formaliseer: betaal mantelzorgers een vergoeding', fx:{budget:-25000, trustC:5, mantelzorg:-10}, note:'-\u20ac25K \u00b7 Citizens +5 \u00b7 mantelzorg druk -10' },
+      b:{ label:'Verwijs door naar informele netwerken (buren, kerken)', fx:{mantelzorg:10, trustC:-3}, note:'Mantelzorg druk +10 \u00b7 Citizens -3 (voelen zich in de steek gelaten)' },
+      c:{ label:'Pilot: respijtzorgplekken op bestaand budget', fx:{budget:-12000, trustD:2, trustC:3, mantelzorg:-5}, note:'-\u20ac12K \u00b7 Doctors +2 \u00b7 Citizens +3 \u00b7 mantelzorg druk -5' } }
   ];
-  // Deterministic dilemma order from seed
+  // G15: Deterministic shuffle per seed (Fisher-Yates with mulberry32)
   function pickDilemma(){
-    const remaining = DILEMMAS.filter(d => GS.dilemmasSeen.indexOf(d.id) < 0);
-    if (!remaining.length) return null;
-    const idx = (MoC.seed + GS.quarter * 7) % remaining.length;
-    return remaining[idx];
+    if (!GS._dilemmaOrder) {
+      const rng = mulberry32(MoC.seed ^ 0xD11EMMA);
+      GS._dilemmaOrder = DILEMMAS.map(function(d){ return d.id; });
+      for (let i = GS._dilemmaOrder.length - 1; i > 0; i--) {
+        const j = Math.floor(rng() * (i + 1));
+        const tmp = GS._dilemmaOrder[i];
+        GS._dilemmaOrder[i] = GS._dilemmaOrder[j];
+        GS._dilemmaOrder[j] = tmp;
+      }
+    }
+    const nextId = GS._dilemmaOrder.find(function(id){ return GS.dilemmasSeen.indexOf(id) < 0; });
+    return nextId ? DILEMMAS.find(function(d){ return d.id === nextId; }) : null;
   }
 
   // ── Quarterly council modal ──
@@ -12677,8 +12709,9 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
       lines.push(face.name + ' \u2014 the town knew that name. Flowers pile up outside the practice.');
     }
     if (q % 7 === 3 && kind === 'calm') lines.push('Lighter news: an outbreak of "formulierenkoorts" at the town hall resolved itself when the printer broke.');
-    // G11: do-nothing Gazette escalation
-    if (GS.interventions.length === 0 && q >= 4 && kind === 'calm') {
+    // G11: do-nothing Gazette escalation — G15: exclude law-only players
+    const nonLawInterventions = GS.interventions.filter(function(iv){ return !iv.label.startsWith('Law enacted:'); });
+    if (nonLawInterventions.length === 0 && q >= 4 && kind === 'calm') {
       const inactionMsgs = [
         'MINISTER STILL "STUDYING THE DOSSIER" \u2014 Sources confirm no policy decisions made yet.',
         'WHAT IS THE MINISTER WAITING FOR? \u2014 The dossier sits unopened, say sources.',
@@ -12730,15 +12763,19 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
   }
   function systemPanelHtml(){
     const ceff = Math.round((1 - M.IST.admin - M.IST.sick) * M.IST.ai * 100);
+    const cashflow = GS._cashflowThisQ || 0;
+    const cashStr = (cashflow >= 0 ? '+' : '') + fmtK(cashflow) + ' this Q';
     const cells = [
       [pixIcon('coin') + ' Budget', fmtK(GS.budget), GS.budget > 200000 ? 'g' : GS.budget > 50000 ? 'y' : 'r'],
+      [pixIcon('coin') + ' Cashflow', cashStr, cashflow >= 0 ? 'g' : cashflow > -50000 ? 'y' : 'r'],
       [pixIcon('scroll') + ' Admin burden', Math.round(M.IST.admin * 100) + '%', sysCls(M.IST.admin, true, 0.10, 0.22)],
       [pixIcon('clock') + ' Referral wait', M.IST.tree + ' wk', sysCls(M.IST.tree, true, 6, 10)],
       [pixIcon('bed') + ' Sick leave', Math.round(M.IST.sick * 100) + '%', sysCls(M.IST.sick, true, 0.05, 0.09)],
       [pixIcon('chip') + ' AI multiplier', M.IST.ai.toFixed(2) + '\u00d7', M.IST.ai > 1.15 ? 'g' : M.IST.ai > 1.0 ? 'y' : 'r'],
       [pixIcon('cross') + ' Capacity', ceff + '%', sysCls(ceff, false, 70, 85)],
       [pixIcon('brheart') + ' HP drain', M.IST.drain.toFixed(2) + '\u00d7', sysCls(M.IST.drain, true, 0.7, 1.0)],
-      [pixIcon('plug') + ' Dependence', GS.dependence + ' pts', sysCls(GS.dependence, true, 3, 6)]
+      [pixIcon('plug') + ' Dependence', GS.dependence + ' pts', sysCls(GS.dependence, true, 3, 6)],
+      [pixIcon('people') + ' Mantelzorg druk', (GS.mantelzorg || 30) + '%', sysCls(GS.mantelzorg || 30, true, 50, 75)]
     ];
     return '<div class="moc-sys" id="moc-syspanel">' + cells.map(function(c){
       return '<div class="cell">' + c[0] + '<b class="' + c[2] + '">' + c[1] + '</b></div>';
@@ -12781,7 +12818,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
         btn = '<button class="moc-buy" disabled>\ud83d\udd12 Needs ' + (req ? req.name.replace(/^\S+\s/, '') : 'prerequisite') + '</button>';
       }
       else if (item.fx.dep > 0 && GS.quarter < GS.techFreezeUntil) btn = '<button class="moc-buy" disabled>\u2696 Frozen by parliament</button>';
-      else if ((GS.buysThisCouncil || 0) >= BUY_CAP) btn = '<button class="moc-buy" disabled>No slots left this quarter</button>';
+      else if ((GS.buysThisCouncil || 0) >= ((GS._bruisedMandate > 0) ? 1 : BUY_CAP)) btn = '<button class="moc-buy" disabled>' + (GS._bruisedMandate > 0 ? '\ud83e\ude79 Bruised mandate: 1 slot only' : 'No slots left this quarter') + '</button>';
       else btn = '<button class="moc-buy" data-buy="' + item.id + '"' + (GS.budget < shopCost(item) ? ' disabled' : '') + '>Buy ' + fmtK(shopCost(item)) + '</button>';
       const preview = (maxed || locked) ? '' : fxPreview(item.fx);
       return '<div class="moc-item"><b>' + item.name + (owned && !maxed ? ' (\u00d7' + owned + ')' : '') + '</b><span class="fx">' + item.desc + '</span>' + preview + btn + '</div>';
@@ -12791,9 +12828,13 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     });
     const bd = document.getElementById('moc-budget-line');
     if (bd) {
+      const effectiveCapDisplay = (GS._bruisedMandate > 0) ? 1 : BUY_CAP;
+      const slotsUsed = GS.buysThisCouncil || 0;
       const budgetColor = GS.budget < 0 ? 'var(--m-red)' : GS.budget < 50000 ? '#ff7043' : 'var(--m-gold)';
-      const budgetAlert = GS.budget < 0 ? ' \u26a0 BUDGET DEFICIT' : GS.budget < 50000 ? ' \u26a0 BUDGET CRITICAL' : '';
-      bd.innerHTML = '\ud83c\udfd7 Implementation slots: <b style="color:' + ((GS.buysThisCouncil||0) >= BUY_CAP ? 'var(--m-red)' : 'var(--m-green)') + '">' + (BUY_CAP - (GS.buysThisCouncil || 0)) + ' of ' + BUY_CAP + ' left</b> \u2014 your civil service can only roll out ' + BUY_CAP + ' changes per quarter, however much money remains \u00b7 Budget: <b style="color:' + budgetColor + '">' + fmtK(GS.budget) + budgetAlert + '</b>'
+      const budgetAlert = GS.budget < 0 ? ' \u26a0 DEFICIT \u2014 no purchases allowed' : GS.budget < 50000 ? ' \u26a0 BUDGET CRITICAL' : '';
+      bd.innerHTML = '\ud83c\udfd7 Implementation slots: <b style="color:' + (slotsUsed >= effectiveCapDisplay ? 'var(--m-red)' : 'var(--m-green)') + '">' + (effectiveCapDisplay - slotsUsed) + ' of ' + effectiveCapDisplay + ' left</b>'
+        + (GS._bruisedMandate > 0 ? ' <span style="color:#ff7043">(bruised mandate)</span>' : '')
+        + ' \u2014 your civil service can only roll out ' + effectiveCapDisplay + ' changes per quarter \u00b7 Budget: <b style="color:' + budgetColor + '">' + fmtK(GS.budget) + budgetAlert + '</b>'
         + (GS.trustP < 35 ? ' \u00b7 <span style="color:var(--m-red)">\u26a0 Parliament withholds co-funding: prices +25%</span>' : '');
     }
   }
@@ -12819,9 +12860,11 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     if (GS.trustD <= 10) { councilOpen = false; return endTerm('strike'); }
     if (GS.trustC <= 10) { councilOpen = false; return endTerm('protest'); }
     if (sdNow >= 15) { councilOpen = false; return endTerm('scandal'); }
+    if (GS.budget < -150000) { councilOpen = false; return endTerm('bankrupt'); }
 
     // Reset implementation capacity for this council
     GS.buysThisCouncil = 0;
+    GS._cashflowThisQ = 0; // G15: reset cashflow tracker each council
     // G12: decrement bruised mandate counter
     if (GS._bruisedMandate > 0) {
       GS._bruisedMandate--;
@@ -12909,17 +12952,6 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
       html += '</div>';
     }
     html += '<div class="moc-sub">Quarter ' + q + ' of ' + MoC.TOTAL_QUARTERS + ' \u00b7 ' + (newDeaths > 0 ? '\u26a0 ' + newDeaths + ' preventable death' + (newDeaths > 1 ? 's' : '') + ' last quarter' : 'No preventable deaths last quarter') + '</div>';
-    // Year report: the settled objective gets top billing — you should never miss it
-    if (GS.pendingYearResult) {
-      const yr = GS.pendingYearResult;
-      GS.pendingYearResult = null;
-      html += '<div class="moc-dilemma" style="border-width:3px;border-color:' + (yr.achieved ? 'var(--m-green)' : 'var(--m-red)') + ';background:' + (yr.achieved ? '#0e2a14' : '#2a0e12') + '">'
-        + '<div style="font-family:\'Press Start 2P\',monospace;font-size:15px;line-height:1.5;text-align:center;padding:10px 6px 4px;color:' + (yr.achieved ? 'var(--m-green)' : 'var(--m-red)') + '">'
-        + (yr.achieved ? '\u2705 YEAR ' + yr.year + ' TARGET: MET' : '\u274c YEAR ' + yr.year + ' TARGET: MISSED') + '</div>'
-        + '<div class="dq" style="text-align:center">' + yr.text + '<br>' + (yr.achieved ? '<b style="color:var(--m-green)">+' + yr.bonus + ' pts awarded.</b> The Gazette prints a rare compliment.' : '<b style="color:var(--m-red)">No bonus.</b> The Gazette noticed. So did parliament.') + '</div></div>';
-      if (!yr.achieved) MoC.adjustTrust(-1);
-      townSay(yr.achieved ? EVENT_REACTIONS.yearWin : EVENT_REACTIONS.yearLoss);
-    }
     // G9: pending narrative banners (act transitions, aging, finale, election)
     (GS.pendingBanners || []).forEach(function(bn){
       if (bn.election) {
@@ -13028,6 +13060,20 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
         const fx = opt.fxFn ? opt.fxFn() : opt.fx;
         applyFx(fx, 'Council decision: ' + opt.label);
         GS.interventions.push({ q: q, label: 'Decision: ' + opt.label, cost: 0 });
+        // G15: Dr. Bakker reacts to decisions that affect doctors negatively
+        const BAKKER_REACTS = [
+          '"I expected nothing and I\'m still disappointed." \u2014 Dr. Bakker',
+          '"You know what? Fine. Add it to the pile." \u2014 Dr. Bakker, flatly',
+          '"My patients will remember this. I will too." \u2014 Dr. Bakker',
+          '"The system asked too much of us again. And again we said yes." \u2014 Dr. Bakker',
+          '"There are limits, Minister. We just found another one." \u2014 Dr. Bakker',
+          '"Three colleagues left for Belgium last month. Now I understand why." \u2014 Dr. Bakker'
+        ];
+        const bakkerTriggers = ['overtime','sabbatical','refugees','gpstrike','nzatariff'];
+        if (dilemma && bakkerTriggers.indexOf(dilemma.id) >= 0 && fx && (fx.trustD < 0 || (fx.sick && fx.sick > 0))) {
+          const idx = (GS.dilemmasSeen.length) % BAKKER_REACTS.length;
+          townSay([BAKKER_REACTS[idx]]);
+        }
         // G13: outcome toast showing what actually changed
         if (fx && Object.keys(fx).length) {
           const msg = fxPreview(fx).replace(/<[^>]+>/g, ' ').replace(/\s+/g,' ').trim();
@@ -13055,6 +13101,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
         lawPassedThisCouncil = true;
         if (law.cost) GS.budget -= law.cost;
         GS.laws[law.id] = q;
+        GS._lawsThisAct = (GS._lawsThisAct || 0) + 1; // G15: track for mandatory-law penalty
         GS.interventions.push({ q: q, label: 'Law enacted: ' + law.name, cost: law.cost });
         applyFx(law.fx, 'Law enacted: ' + law.name);
         Audio5.gong(); // gavel
@@ -13093,6 +13140,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     return { score: score, livesSaved: livesSaved, baseSd: baseSd, sd: sd, adminGain: adminGain, waitGain: waitGain };
   }
   function verdict(r, reason){
+    if (reason === 'bankrupt') return '\ud83d\udca8 BANKRUPT MUNICIPALITY \u2014 the treasury ran dry';
     if (reason === 'noconfidence') return 'VOTED OUT \u2014 parliament lost confidence in you';
     if (reason === 'election') return 'REJECTED AT THE POLLS \u2014 zero promises kept';
     if (reason === 'strike') return 'BROUGHT DOWN BY THE WHITE COATS \u2014 the doctors walked out';
@@ -13205,14 +13253,34 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
       : reason === 'strike' ? 'The doctors went on strike and did not come back for you.'
       : reason === 'protest' ? 'The citizens stopped believing you long before the end.'
       : reason === 'scandal' ? 'The waiting-list scandal ended your career.'
+      : reason === 'bankrupt' ? 'The municipality ran out of money. Healthcare doesn\u2019t pause for balance sheets.'
       : failed ? 'You tried. The system won.'
       : 'You kept the town standing.';
+
     const lesson = GS.dependence >= 8
       ? 'You automated everything and forgot to buy resilience \u2014 when the ransomware came, the whole town felt it.'
       : GS.dependence <= 2
       ? 'You played it safe on technology. Nobody got hacked \u2014 but the waiting lists never really shrank either.'
       : 'Every euro for AI was a euro not spent on people. Both choices had a cost.';
-    return opener + ' ' + lesson;
+
+    // G15: richer narrative per score band
+    const scoreAddendum = r.score < 200
+      ? (function(){
+          const worstDomain = GS.trustC < GS.trustD && GS.trustC < GS.trustP ? 'citizens'
+            : GS.trustD < GS.trustC && GS.trustD < GS.trustP ? 'doctors'
+            : 'parliament';
+          const deathCount = GRAVE_MARKERS.filter(function(g){ return g.cause === 'system_failure'; }).length;
+          const budgetNote = GS.budget < 50000 ? ' The treasury is nearly empty.' : '';
+          return ' ' + (deathCount > 0 ? deathCount + ' preventable death' + (deathCount > 1 ? 's' : '') + ' on your watch.' : '')
+            + ' ' + worstDomain.charAt(0).toUpperCase() + worstDomain.slice(1) + ' trust collapsed first.'
+            + budgetNote + ' Your successor inherits a broken system.';
+        })()
+      : r.score < 400
+      ? ' Not heroic, but it never broke. Your successor inherits a fragile system \u2014 still standing.'
+        + (GS.owned && Object.keys(GS.owned).length ? ' What you built: ' + Object.keys(GS.owned).join(', ') + '.' : '')
+      : '';
+
+    return opener + ' ' + lesson + scoreAddendum;
   }
 
   // ── G4: Post-game data reveal (play-first-explain-later) ──
@@ -14093,6 +14161,12 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     function actTransition(q){
       const act = actNumber(q);
       if (act === (GS._lastAct || 1)) return null;
+      // G15: parliament penalty if no laws enacted last Act
+      if (act > 1 && (GS._lawsThisAct || 0) === 0) {
+        applyFx({ trustP: -6 }, 'No legislation enacted this Act');
+        GS.pendingBanners.push({ head: 'GEEN WET AANGENOMEN', body: 'Parliament notes that four years passed without a single law enacted. Coalition partners file a motion of concern. <b style="color:var(--m-red)">Parliament \u22126</b>', soft: false });
+      }
+      GS._lawsThisAct = 0; // reset counter for next Act
       GS._lastAct = act;
       Audio5.klaxon();
       return act === 2
@@ -14142,7 +14216,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
             GS._promiseDebt = true;
             say('SYSTEM', 'Survived the confidence vote on promises. They will collect.', 'sys');
           } else if (v === 'sacrifice') {
-            GS.budget = Math.max(0, GS.budget - 100000);
+            GS.budget = GS.budget - 100000;
             adjustStakeholders(0, 0, 12);
             say('SYSTEM', 'Survived the confidence vote by returning \u20ac100K.', 'sys');
           } else {
@@ -14321,6 +14395,43 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
       const fin = finaleCheck(q); if (fin) GS.pendingBanners.push(fin);
       stepCascades(q);
       const el = electionCheck(q); if (el) GS.pendingBanners.push(el);
+      // G15: Forced first death if player made zero interventions by Q6 (pedagogy)
+      if (q === 6 && !GS._doNothingDeathFired && GS.interventions.length === 0 && systemDeaths() === 0) {
+        GS._doNothingDeathFired = true;
+        const victim = (typeof agents !== 'undefined') && agents.find(function(a){ return a.waitWeeks > 4 && a.state !== 'dead'; });
+        if (victim) {
+          victim.hp = 0; victim.state = 'dead';
+          GRAVE_MARKERS.push({ name: victim.name, age: victim.age, cause: 'system_failure',
+            waitWeeks: victim.waitWeeks || 8, cycle: (typeof cycle !== 'undefined' ? cycle : 0) });
+          GS.pendingBanners.push({ head: 'HET EERSTE SLACHTOFFER',
+            body: (victim.name || 'A citizen') + ' (' + (victim.age || '?') + ') waited ' + Math.round(victim.waitWeeks || 8) + ' weeks for a referral that never came. '
+              + 'The Gazette prints their name on the front page. '
+              + '<b>"Six months into your term, Minister. Zero decisions. One name."</b>' });
+          Audio5.klaxon(); FX.shake();
+        }
+      }
+      // G15: Quarterly deficit pain — can\'t govern when bankrupt
+      if (GS.budget < 0 && !GS.over) {
+        applyFx({ trustP: -2 }, 'Deficit: parliament is losing patience with the spending crisis');
+        if (GS.budget < -100000 && !GS._deficitWarned) {
+          GS._deficitWarned = true;
+          GS.pendingBanners.push({ head: '\ud83d\udca8 MUNICIPALITY IN DEFICIT', body: 'The treasury is empty and then some. Parliament has frozen all new spending. Bankruptcy looms at \u2212\u20ac150K.', soft: false });
+        }
+      }
+      // G15: Mantelzorg pressure — creeps up when drain is high, fires burnout event at >= 80
+      if (q % 4 === 0 && !GS.over) { // yearly
+        if (M.IST.drain > 1.15) {
+          GS.mantelzorg = Math.min(100, (GS.mantelzorg || 30) + 5);
+        }
+        if ((GS.mantelzorg || 30) >= 80 && !GS._mantelzorgFired) {
+          GS._mantelzorgFired = true;
+          GS.pendingBanners.push({ head: '\ud83d\udc9c MANTELZORGCRISIS',
+            body: 'De gemeente telt meer dan 14.000 mantelzorgers. Na jaren van overbelasting vallen er nu massaal uit. '
+              + 'Thuiszorgwachtrijen exploderen. <b>Informele zorg is geen vanzelfsprekendheid \u2014 het is infrastructuur die breekt.</b> '
+              + 'Drain +5% dit kwartaal. Citizens \u22123.', soft: false });
+          applyFx({ sick: 0.05, trustC: -3 }, 'Mantelzorgcrisis: informal carer burnout');
+        }
+      }
       // G11: Parliament Question Hour every 4 quarters
       if (q > 1 && q % 4 === 0 && !GS.over) {
         const isHealthy = GS.trustP >= 55;
@@ -14334,7 +14445,39 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
       }
       if (GS.over) return;
       if (confidenceVote()) return; // vote modal replaces this council
-      openCouncil(q);
+      // G15: year-result interstitial — show as dedicated screen before council opens
+      if (GS.pendingYearResult) {
+        const yr = GS.pendingYearResult;
+        GS.pendingYearResult = null;
+        if (!yr.achieved) MoC.adjustTrust(-1);
+        townSay(yr.achieved ? EVENT_REACTIONS.yearWin : EVENT_REACTIONS.yearLoss);
+        // Build next year objective preview
+        const nextObj = GS.objective;
+        const nextYearHtml = nextObj
+          ? '<div style="margin-top:14px;padding:10px 14px;background:#1a1a2e;border-radius:6px;border:1px solid #2e2e5e">'
+            + '<div style="font-family:\'Press Start 2P\',monospace;font-size:9px;color:#8a94d8;margin-bottom:6px">YEAR ' + nextObj._year + ' OBJECTIVE</div>'
+            + '<div style="color:#FFD54F">' + nextObj.text + '</div>'
+            + '<div style="color:#8a94d8;font-size:12px;margin-top:4px">Bonus if achieved: +' + nextObj.bonus + ' pts</div></div>'
+          : '';
+        const yov = document.createElement('div');
+        yov.className = 'moc-overlay'; yov.id = 'moc-yearend';
+        yov.innerHTML = '<div class="moc-box" style="max-width:480px;text-align:center">'
+          + '<h2>\ud83c\udfaf Year ' + yr.year + ' Results</h2>'
+          + '<div style="font-family:\'Press Start 2P\',monospace;font-size:16px;padding:14px 0;color:' + (yr.achieved ? 'var(--m-green)' : 'var(--m-red)') + '">'
+          + (yr.achieved ? '\u2705 TARGET MET' : '\u274c TARGET MISSED') + '</div>'
+          + '<div class="moc-sub">' + yr.text + '<br><br>'
+          + (yr.achieved ? '<b style="color:var(--m-green)">+' + yr.bonus + ' pts awarded. The Gazette prints a rare compliment.</b>'
+                         : '<b style="color:var(--m-red)">No bonus. \u22121 trust. The Gazette noticed.</b>') + '</div>'
+          + nextYearHtml
+          + '<button class="moc-continue" id="moc-yearend-btn">Enter Year ' + (yr.year + 1) + ' Council \u25b6</button></div>';
+        document.body.appendChild(yov);
+        document.getElementById('moc-yearend-btn').addEventListener('click', function(){
+          yov.remove();
+          openCouncil(q);
+        });
+      } else {
+        openCouncil(q);
+      }
     };
     const _coreOnTick = MoC.onTick;
     MoC.onTick = function(c){
