@@ -12178,6 +12178,18 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
       if (id === 'oS') e.textContent = Math.round(M.IST.sick * 100) + '%';
       if (id === 'oT') e.textContent = M.IST.tree + ' weeks';
     });
+    // G17: live AI silos HUD counter with warning at frag >= 4
+    const elSilos = document.getElementById('hSilos');
+    if (elSilos) {
+      const frag = GS.fragmentation || 0;
+      elSilos.textContent = frag;
+      elSilos.className = 'n ' + (frag <= 2 ? 'g' : frag <= 5 ? 'y' : 'r');
+      elSilos.title = frag >= 6 ? '\u26a0\ufe0f ALGORITHM ARCHIPELAGO risk \u2014 governance board audit incoming, score penalty accumulating'
+        : frag >= 4 ? 'Fragmentation rising \u2014 coordination costs are mounting. Consider the platform path.'
+        : '';
+      if (frag >= 6) elSilos.style.animation = 'moc-hud-pulse 1.5s ease-in-out infinite';
+      else elSilos.style.animation = '';
+    }
   }
 
   // ── Effect applicator ──
@@ -12244,7 +12256,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     // G17: Point Solution Paradox — the build-vs-buy-vs-platform tension
     { id:'pilotgrant', name:'\ud83d\udcc4 AI Pilot Grant', cost:30000,
       fx:{trustP:4, frag:2}, max:3,
-      desc:'Another targeted AI pilot. The press release writes itself. Fragmentation +2 (one more disconnected silo). Parliament trust +4 \u2014 it looks decisive. No clinical outcomes guaranteed. Max 3.' },
+      desc:'Another targeted AI pilot. Fragmentation +2 (one more disconnected silo). Parliament trust +4 \u2014 it looks decisive. No clinical outcomes guaranteed. Buy three of these and the governance board will have questions. Max 3.' },
     { id:'platform', name:'\ud83c\udfd7 Health Data Platform', cost:120000, requires:'scribes1',
       fx:{admin:-0.05, frag:-3, platform:1}, max:1,
       desc:'Unified health data infrastructure: one schema, one pipeline, all practices. The hard route. No press release. Platform maturity +1. Fragmentation -3. Admin -5%. Requires digital records.' },
@@ -13631,6 +13643,11 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     html += '<div class="moc-score-row"><span>Admin burden reduced</span><b>' + r.adminGain + ' pts (now ' + Math.round(M.IST.admin * 100) + '%)</b></div>';
     html += '<div class="moc-score-row"><span>Referral wait reduced</span><b>' + r.waitGain + ' weeks (now ' + M.IST.tree + 'w)</b></div>';
     html += '<div class="moc-score-row"><span>Final trust / fragility</span><b>' + GS.trust + ' / ' + fragility() + '</b></div>';
+    if ((GS.fragmentation || 0) > 2) { // G17: show frag penalty only when it actually costs something
+      html += '<div class="moc-score-row"><span>AI fragmentation penalty (' + (GS.fragmentation || 0) + ' silos)</span><b style="color:#e07050">\u2212' + fragPenalty() + ' pts</b></div>';
+    } else if ((GS.fragmentation || 0) > 0) {
+      html += '<div class="moc-score-row"><span>AI fragmentation</span><b style="color:#7bc67b">' + (GS.fragmentation || 0) + ' silo' + ((GS.fragmentation||0)>1?'s':'') + ' \u2014 no penalty yet</b></div>';
+    }
     html += '<div class="moc-score-row"><span>Budget unspent</span><b>' + fmtK(GS.budget) + '</b></div>';
     html += '<div class="moc-score-row"><span>Term points (25% of live play + objectives)</span><b>' + Math.round((GS.liveScore || 0) * 0.25) + '</b></div>';
     html += '<div class="moc-score-row" style="font-size:15px"><span><b>FINAL SCORE</b></span><b id="moc-scoreval" style="color:#FFB300">' + r.score + '</b></div>';
@@ -14730,6 +14747,11 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
         cell.className = 'ts';
         cell.innerHTML = '<div class="n g" id="hFrag">0</div><div class="l">Fragility</div>';
         trustCell.parentElement.parentElement.insertBefore(cell, trustCell.parentElement.nextSibling);
+        // G17: AI Silos HUD cell — live fragmentation counter
+        const silosCell = document.createElement('div');
+        silosCell.className = 'ts';
+        silosCell.innerHTML = '<div class="n g" id="hSilos">0</div><div class="l">AI Silos</div>';
+        cell.parentElement.insertBefore(silosCell, cell.nextSibling);
       }
       // Reset = new term (game state lives in page scope)
       const rb = document.getElementById('btn-reset');
