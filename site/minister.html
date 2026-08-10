@@ -12966,7 +12966,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
       return '<div class="cell">' + c[0] + '<b class="' + c[2] + '">' + c[1] + '</b></div>';
     }).join('') + '</div>';
     return '<div id="moc-syspanel">'
-      + '<button class="moc-syspanel-toggle" onclick="window._mocSysPanelOpen=!window._mocSysPanelOpen;const b=document.getElementById(\'moc-syspanel-body\');if(b){b.style.display=window._mocSysPanelOpen?\'\':\\x27none\\x27}this.textContent=\'📊 System State \'+(window._mocSysPanelOpen?\'▲\':\'▼\')" style="background:none;border:1px solid #3a3a5c;border-radius:6px;color:#8a94d8;font:600 10px Inter,sans-serif;padding:4px 10px;cursor:pointer;margin-bottom:4px;width:100%">'
+      + '<button class="moc-syspanel-toggle" style="background:none;border:1px solid #3a3a5c;border-radius:6px;color:#8a94d8;font:600 10px Inter,sans-serif;padding:4px 10px;cursor:pointer;margin-bottom:4px;width:100%">'
       + '\ud83d\udcca System State ' + chevron + '</button>'
       + bodyHtml + '</div>';
   }
@@ -13043,6 +13043,16 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
         + (GS._bruisedMandate > 0 ? ' <span style="color:#ff7043">(bruised mandate)</span>' : '')
         + ' \u2014 your civil service can only roll out ' + effectiveCapDisplay + ' changes per quarter \u00b7 Budget: <b style="color:' + budgetColor + '">' + fmtK(GS.budget) + budgetAlert + '</b>'
         + (GS.trustP < 35 ? ' \u00b7 <span style="color:var(--m-red)">\u26a0 Parliament withholds co-funding: prices +25%</span>' : '');
+    }
+    // G18-E: system panel toggle event listener (re-attached each renderShop call)
+    const toggleBtn = document.querySelector('#moc-syspanel .moc-syspanel-toggle');
+    if (toggleBtn) {
+      toggleBtn.addEventListener('click', function(){
+        window._mocSysPanelOpen = !window._mocSysPanelOpen;
+        const body = document.getElementById('moc-syspanel-body');
+        if (body) body.style.display = window._mocSysPanelOpen ? '' : 'none';
+        this.textContent = '\ud83d\udcca System State ' + (window._mocSysPanelOpen ? '\u25b2' : '\u25bc');
+      });
     }
   }
   function openCouncil(q){
