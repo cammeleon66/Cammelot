@@ -917,6 +917,7 @@ body.embed-mode #app{display:block!important}
 .moc-stamp{display:inline-block;border:4px solid var(--m-red);border-radius:4px;padding:10px 16px;transform:rotate(-2.5deg);animation:stampIn .4s cubic-bezier(.3,1.6,.5,1)}
 .moc-stamp.win{border-color:var(--m-green);color:var(--m-green)}
 @keyframes stampIn{0%{opacity:0;transform:rotate(-2.5deg) scale(2.6)}70%{opacity:1;transform:rotate(-2.5deg) scale(.94)}100%{transform:rotate(-2.5deg) scale(1)}}
+@keyframes moc-hud-pulse{0%,100%{opacity:1}50%{opacity:.45}}
 .moc-emoji{font-size:21px;text-align:center;letter-spacing:4px;margin:8px 0}
 .moc-dead{background:var(--m-blue3);border:2px solid #5a66b0;border-left:4px solid #9aa;border-radius:3px;padding:8px 12px;font-size:12px;line-height:1.7;color:#c0c8f4}
 .moc-score-row{display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px dashed rgba(240,240,228,.18);color:#aab4e8}
@@ -12135,6 +12136,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
   GS.pendingBeat = null;  // scripted named-citizen beat queued for next council
   GS.lastEventQ = {};     // eventId -> quarter (cooldowns)
   GS.mantelzorg = 30;     // G15: informal carer pressure (30=normal, 80+=crisis)
+  GS._yearResults = [];   // G16: {year, achieved, bonus} for each settled year objective
 
   // ── Helpers over engine state ──
   function systemDeaths(){ return GRAVE_MARKERS.filter(g => g.cause === 'system_failure').length; }
@@ -12156,7 +12158,17 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
   function refreshMeters(){
     MoC.updateHUD();
     const el = document.getElementById('hFrag');
-    if (el) { el.textContent = fragility(); el.className = 'n ' + (fragility() < 30 ? 'g' : fragility() < 60 ? 'y' : 'r'); }
+    if (el) {
+      el.textContent = fragility();
+      el.className = 'n ' + (fragility() < 30 ? 'g' : fragility() < 60 ? 'y' : 'r');
+      // G16: dep HUD warning — cascade armed indicator
+      const dep = GS.dependence;
+      el.title = dep >= 8 ? '\u26a0\ufe0f DIGITALE KWETSBAARHEID: rot cascade armed \u2014 one breach can chain across all systems'
+        : dep >= 5 ? 'Rising fragility \u2014 resilience pack recommended'
+        : '';
+      if (dep >= 8) el.style.animation = 'moc-hud-pulse 1.5s ease-in-out infinite';
+      else el.style.animation = '';
+    }
     ['oA','oS','oT'].forEach(function(id){
       const e = document.getElementById(id); if (!e) return;
       if (id === 'oA') e.textContent = Math.round(M.IST.admin * 100) + '%';
@@ -12211,15 +12223,19 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     { id:'prevention', name:'\ud83e\udd66 Prevention programme', cost:90000,
       fx:{trustC:2}, max:1,
       desc:'Lifestyle coaching, early screening, neighbourhood health. Costs now \u2014 pays from year 3: halves the aging creep and softens the flu finale. The classic long game.' },
-    { id:'resilience', name:'\ud83d\udd0b Resilience pack', cost:25000,
-      fx:{dep:-2}, max:3,
-      desc:'Backup power, paper fallback drills, offline protocols. -2 dependence.' },
+    { id:'resilience', name:'\ud83d\udd0b Resilience pack', cost:35000,
+      fx:{dep:-2}, max:2,
+      desc:'Backup power, paper fallback drills, offline protocols. -2 dependence. Max 2 \u2014 beyond that, the town asks why you built so much risk to begin with.' },
     { id:'security', name:'\ud83d\udee1 Security hardening', cost:40000,
       fx:{dep:-1, trust:1}, max:2,
       desc:'Pen-testing, vendor audits, network segmentation. -1 dependence, +1 Trust.' },
     { id:'campaign', name:'\ud83d\udce3 Public Awareness Campaign', cost:30000,
       fx:{trustC:6}, max:2,
-      desc:'Posters, radio spots, town hall sessions on prevention and care access. Citizens +6. Repeatable. Pure public trust play \u2014 parliament gets the message from the ballot box.' }
+      desc:'Posters, radio spots, town hall sessions on prevention and care access. Citizens +6. Repeatable. Pure public trust play \u2014 parliament gets the message from the ballot box.' },
+    // G16: GP Retention Fund — the only dedicated doctor trust recovery item
+    { id:'gpfund', name:'\ud83e\ude7a GP Retention Fund', cost:45000,
+      fx:{trustD:8, sick:-0.01}, max:1,
+      desc:'Structural salary top-up for GPs and assistants. Doctors +8 \u2014 the hard reset after a strike or sabbatical fallout. Sick leave -1%. One-time structural commitment.' }
   ];
   function shopCost(item){
     const owned = GS.owned[item.id] || 0;
@@ -12271,7 +12287,8 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     mtvp: ['The practice feels calmer lately. The staff actually smile.', 'Dr. Bakker took a real lunch break. First time in years, she said.'],
     prevention: ['There\u2019s a health coach at the community centre now. I went. It was... actually nice.', 'Free check-ups at the market square. The minister plays the long game.'],
     resilience: ['The practice ran a paper drill this week. "In case the computers die," they said.', 'They installed a backup line at the pharmacy. Someone is thinking ahead.'],
-    campaign: ['Saw the minister\u2019s health campaign poster at the bus stop.', 'Everyone\u2019s talking about that TV spot with the GP.']
+    campaign: ['Saw the minister\u2019s health campaign poster at the bus stop.', 'Everyone\u2019s talking about that TV spot with the GP.'],
+    gpfund: ['"Dr. Bakker actually smiled today. Properly.", said Marjolein.', '"The waiting room vibe is calmer. Something changed. Feels like the staff breathe again."']
   };
   const EVENT_REACTIONS = {
     cyber: ['Did you hear? Hackers got into the health records\u2026', 'My neighbour won\u2019t use the portal anymore. Says the criminals read it first.', 'Is my file out there on the internet now?'],
@@ -12364,13 +12381,20 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
             const s = impactScale();
             applyFx({budget:-50000, trustP:-8, trustC:-1}, (GS._cyberCurrent || 'Ransomware') + ': paid for silence.');
             applyTimedFx({admin: (GS.owned.security ? 0.05 : 0.10) * s}, s >= 1.5 ? 2 : 1, 'Ransomware disruption (paper fallback)');
+            if (GS.dependence >= 8) applyFx({tree: 1}, 'High-dep ransomware: waits lengthen during recovery');
+            townSay(['"I heard the health system got hacked. They\u2019re not saying anything official.", said Veenstra.', '"Why is my portal offline for two weeks and no one will explain? Something happened."']);
           } },
         { label:'Refuse and disclose everything', note:'Citizens -8 now, +6 later (honesty) \u00b7 longer disruption \u00b7 doctors respect it',
           run:function(){
             const s = impactScale();
             applyFx({trustC:-8, trustD:2, trustP:-2}, (GS._cyberCurrent || 'Ransomware') + ': refused. Full public disclosure.');
             applyTimedFx({admin: (GS.owned.security ? 0.06 : 0.12) * s}, GS.owned.security ? 1 : 2, 'Ransomware disruption (paper fallback)');
+            if (GS.dependence >= 8) applyFx({tree: 1}, 'High-dep ransomware: waits lengthen during recovery');
             GS.delayed.push({ atQ: GS.quarter + 2, fx:{trustC:6, trustP:4}, label:'The town remembers your honesty during the ransomware crisis.' });
+            const depQuote = GS.dependence >= 8
+              ? '"Everything is down. The portal, the referrals, the prescriptions. My whole health record is in criminal hands and the minister just announced it on TV.", said Van Dijk.'
+              : '"The minister told us straight. Hackers got in. I appreciate the honesty, even if I don\u2019t like the news."';
+            townSay([depQuote, '"At least they came clean. Some politicians would have buried this."']);
           } }
       ] },
     { id:'outage', name:'\ud83d\udd0c Grid failure', cooldown:6,
@@ -12382,11 +12406,19 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
             + (impactScale() >= 1.5 ? ' <b>And in this town, EVERYTHING runs on those systems.</b>' : '');
       },
       auto:function(){
-        if (GS.owned.resilience) { applyFx({trust:3}, 'Grid failure weathered. Resilience pays.'); }
+        if (GS.owned.resilience) {
+          applyFx({trust:3}, 'Grid failure weathered. Resilience pays.');
+          townSay(['"The whole grid went down but the practice kept going. Backup systems actually worked!", said Marjolein.', '"We were on paper for one afternoon. Smooth. Someone planned for this."']);
+        }
         else {
           const s = impactScale();
           applyTimedFx({ai: 1.0 - M.IST.ai, admin: 0.05 * s}, s >= 1.5 ? 2 : 1, 'Grid failure: AI offline, paper chaos');
           applyFx({trust: -Math.round(3 * s)}, 'Grid failure: care disrupted.');
+          if (GS.dependence >= 8) applyFx({tree: 1}, 'High-dep grid failure: waits lengthen in the chaos');
+          const depQuote = GS.dependence >= 8
+            ? '"Nothing works. Referrals, prescriptions, the portal, all of it. One power cut and the whole town goes dark.", said Van Dijk.'
+            : '"The practice couldn\u2019t find my file. Three-hour wait for paper forms. Great system we built."';
+          townSay([depQuote, '"They said we were resilient. They were wrong."']);
         }
       } },
     { id:'ddos', name:'\ud83c\udf0a DDoS wave', cooldown:10,
@@ -12464,7 +12496,25 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     { id:'ggd', name:'\ud83d\udfe5 GGD: Cammelot kleurt rood', once:true,
       weight:function(){ return (M.IST.sick > 0.10 || systemDeaths() >= 3) && GS.quarter >= 8 ? 20 : 0; },
       text:function(){ return 'De GGD publiceert haar regionale volksgezondheidsstatus: <b>Cammelot kleurt rood op de kaart.</b> Preventabele sterfte ligt boven het landelijk gemiddelde. "Dit is een systeemfalen, geen incident." \u2014 GGD-directeur. Nationale media pikken het op.'; },
-      auto:function(){ applyFx({trustP:-3, trustC:-2}, 'GGD publiceert rood rapport'); } }
+      auto:function(){ applyFx({trustP:-3, trustC:-2}, 'GGD publiceert rood rapport'); } },
+    // G16: Prevention dividend — pays back visibly for long-term prevention investors
+    { id:'prevdividend', name:'\ud83c\udf31 Prevention pays off', once:true,
+      weight:function(){ return (GS.owned.prevention > 0) && GS.quarter >= 12 && M.IST.drain < M_ORIG.IST.drain * 0.97 ? 18 : 0; },
+      text:function(){ return 'Three years after the minister invested in prevention, the data arrives: Cammelot\u2019s chronic-disease hospital admission rate is <b>14% below the regional average.</b><br>"Was this luck, or leadership?" asks the Gazette. The long game rewarded.'; },
+      auto:function(){
+        applyFx({trustC:3, trustD:2}, 'Prevention dividend: long-game pays off');
+        townSay(['"I went to those health checks. Turns out they caught something early.", said Veenstra.', '"Less waiting because there\u2019s less wrong with us. I\u2019ll take that math."']);
+      } },
+    // G16: Gemeenteraad interpellatie — political governance tension
+    { id:'gemeenteraad', name:'\ud83c\udfdb Gemeenteraad: interpellatie', once:true,
+      weight:function(){ return GS.quarter >= 8 && GS.trustP < 55 ? 20 : 0; },
+      text:function(){ return 'Three council factions demand an emergency debate. "The minister governs by press release," says one councillor, waving last quarter\u2019s Gazette. "We want numbers, plans, and accountability \u2014 not slogans." The camera is rolling. Your response shapes the coalition\u2019s next four years.'; },
+      choices:[
+        { label:'Full accountability session \u2014 open the books', note:'Parliament +6 \u00b7 Citizens +2 \u00b7 signals transparency',
+          run:function(){ applyFx({trustP:6, trustC:2}, 'Interpellatie: volle transparantie. Coalitie gerustgesteld.'); townSay(['"First time I understood what my council actually does.", said Van Dijk.', '"The minister showed up, answered questions, and didn\u2019t dodge once. That\u2019s something."']); } },
+        { label:'Defend the record, deflect the questions', note:'Parliament \u22122 \u00b7 opposition grows louder',
+          run:function(){ applyFx({trustP:-2}, 'Interpellatie: ontwijkend antwoord. Oppositie scherper.'); townSay(['"Same old. Questions in, non-answers out.", sighed Jansen.', '"They had every chance to explain themselves. They chose not to."']); } }
+      ] }
   ];
   function pickEvent(q){
     // G9b: quiet quarters — every ~4th quarter is guaranteed crisis-free breathing room
@@ -13133,8 +13183,10 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     const livesSaved = baseSd !== null ? Math.max(0, baseSd - sd) : 0;
     const adminGain = Math.round((0.30 - M.IST.admin) * 100);
     const waitGain = 12 - M.IST.tree;
+    // G16: normalize livesSaved by scenario length — Code Black (20Q) shouldn't trump full 40Q
+    const lenFactor = Math.min(2.5, 40 / Math.max(1, MoC.TOTAL_QUARTERS));
     const score = Math.max(0, Math.round(
-      livesSaved * 100 + GS.trust * 3 + Math.round(GS.budget / 10000)
+      livesSaved * 100 * lenFactor + GS.trust * 3 + Math.round(GS.budget / 10000)
       + adminGain * 3 + waitGain * 15 - fragility()
       + Math.round((GS.liveScore || 0) * 0.25)
     ));
@@ -13337,7 +13389,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
       return 'Minister of Cammelot #' + MoC.seed + ' \u2014 ' + scName + '\n' + trail + '\nScore: ' + rr.score
         + (rr.baseSd !== null ? ' \u00b7 Lives saved vs status quo: ' + rr.livesSaved : '') + streakTag
         + (GS.challengeScore !== null ? '\nChallenge target: ' + GS.challengeScore + ' \u2014 ' + (rr.score > GS.challengeScore ? 'BEATEN \u2705' : 'not beaten') : '')
-        + '\nCan you avert the zorginfarct? https://cammelot.org/minister.html#scn=' + GS.scenario + '&seed=' + MoC.seed + '&score=' + rr.score;
+        + '\nCan you avert the zorginfarct? https://cammelot.org/minister#scn=' + GS.scenario + '&seed=' + MoC.seed + '&score=' + rr.score;
     }
     const shareText = buildShareText(r);
     const lb = recordRun(r, reason);
@@ -13406,6 +13458,42 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
       if (moments.length) {
         html += '<h3>Defining moments</h3><div class="moc-sub" style="line-height:2">' + moments.join('<br>') + '</div>';
       }
+    })();
+    // G16: Year objectives track (all years settled, including year 10)
+    (function(){
+      const yrs = GS._yearResults || [];
+      if (!yrs.length) return;
+      const hit = yrs.filter(function(y){ return y.achieved; }).length;
+      html += '<h3>\ud83c\udfaf Year objectives \u2014 ' + hit + ' of ' + yrs.length + ' met</h3>';
+      html += '<div class="moc-sub" style="line-height:2">';
+      // Year 10 result (settled by endTerm call above) — add it if not already in _yearResults
+      const year10Settled = yrs.find(function(y){ return y.year >= Math.ceil(MoC.TOTAL_QUARTERS / 4); });
+      if (GS.lastYearResult && !year10Settled) yrs.push(GS.lastYearResult);
+      yrs.forEach(function(y){
+        html += (y.achieved ? '\u2705' : '\u274c') + ' <b>Year ' + y.year + ':</b> ' + y.text
+          + (y.achieved ? ' <span style="color:#7bc67b">+' + y.bonus + ' pts</span>' : ' <span style="color:#e05858">missed</span>') + '<br>';
+      });
+      html += '</div>';
+    })();
+    // G16: YOUR LEGACY synthesis — what you leave behind
+    (function(){
+      const owned = Object.keys(GS.owned || {});
+      const lawsPassed2 = Object.keys(GS.laws || {});
+      const deaths = GRAVE_MARKERS.filter(function(g){ return g.cause === 'system_failure'; }).length;
+      const dep = GS.dependence;
+      const synthesis = dep >= 8 ? 'Your successor inherits a highly automated, fragile municipality. If a cyber incident strikes, it will cascade.'
+        : dep <= 2 ? 'You left a cautious, analogue system. Safe from hackers, still slow for patients.'
+        : lawsPassed2.length >= 3 ? 'You built durable law. These frameworks outlast you by decades.'
+        : deaths === 0 && r.score >= 400 ? 'No preventable deaths. Strong trust. Good budget. A rare trifecta in Dutch municipal health.'
+        : deaths >= 5 ? 'The names are in the Gazette. Future ministers will quote them in campaign speeches.'
+        : 'A modest, fragile handover. Not the worst. Not what was possible.';
+      html += '<h3>\ud83c\udff6 YOUR LEGACY</h3><div class="moc-sub" style="line-height:1.75">';
+      html += '<i style="color:#aab4e8">' + synthesis + '</i><br><br>';
+      if (owned.length) html += '\ud83d\udda5 <b>Systems built:</b> ' + owned.join(', ') + '<br>';
+      if (lawsPassed2.length) html += '\ud83d\udcdc <b>Laws on the books:</b> ' + lawsPassed2.length + ' (permanent)<br>';
+      html += '\u2620 <b>Preventable deaths:</b> ' + deaths + '<br>';
+      html += '\ud83d\udd0b <b>Digital dependence inherited by successor:</b> ' + dep + ' pts (' + (dep >= 8 ? 'CRITICAL' : dep >= 5 ? 'elevated' : 'managed') + ')<br>';
+      html += '</div>';
     })();
     html += '<h3>Scorecard</h3>';
     html += '<div class="moc-score-row"><span>Preventable deaths (your term)</span><b>' + r.sd + '</b></div>';
@@ -13701,14 +13789,17 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
       FX.pop('\u2717 YEAR ' + obj._year + ' TARGET MISSED', '#e05858');
       GS.lastYearResult = { year: obj._year, text: obj.text, bonus: obj.bonus, achieved: false };
     }
+    // G16: push to _yearResults for legacy screen
+    GS._yearResults = GS._yearResults || [];
+    GS._yearResults.push(GS.lastYearResult);
     return GS.lastYearResult;
   }
 
   // ═══ G5b: FLASH DECISIONS (mid-quarter, 8s timer) ═══
   const FLASH_POOL = [
     { t:'\ud83d\udeaa A citizen at your door', d:function(f){ return f.name + ' (' + f.age + ') can\u2019t get through to the GP line. "Two hours of hold music, Minister."'; },
-      a:{ l:'Send a case manager (\u2212\u20ac5K)', run:function(f){ if (GS.budget < 5000) { FX.pop('Cannot afford', '#e05858'); return; } GS.budget -= 5000; f.hp = Math.min(100, (f.hp || 60) + 8); FX.pop('+8 HP for ' + f.name.split(' ')[0], '#7bc67b'); } },
-      b:{ l:'Point to the waiting list', run:function(f){ MoC.adjustTrust(-1); } } },
+      a:{ l:'Send a case manager (\u2212\u20ac5K)', run:function(f){ if (GS.budget < 5000) { FX.pop('Cannot afford', '#e05858'); return; } GS.budget -= 5000; f.hp = Math.min(100, (f.hp || 60) + 8); FX.pop('+8 HP for ' + f.name.split(' ')[0], '#7bc67b'); townSay(['"Someone from the ministry actually picked up my case. I didn\u2019t expect that.", said ' + f.name.split(' ')[0] + '.']); } },
+      b:{ l:'Point to the waiting list', run:function(f){ MoC.adjustTrust(-1); townSay(['"The minister\u2019s office told me to wait in the queue. That\u2019s it. The queue.", said ' + f.name.split(' ')[0] + '.']); } } },
     { t:'\ud83d\udcfa Regional TV wants a quote', d:function(){ return 'Camera crew outside about the waiting lists. Live in ten seconds.'; },
       a:{ l:'Take the interview', run:function(){ MoC.adjustTrust(systemDeaths() <= 2 ? 2 : -2); } },
       b:{ l:'"No comment"', run:function(){ MoC.adjustTrust(-1); } } },
@@ -13722,14 +13813,14 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
       a:{ l:'Buy the report', run:function(){ if (GS.budget < 15000) { FX.pop('Cannot afford', '#e05858'); return; } GS.budget -= 15000; GS.liveScore = Math.max(0, GS.liveScore - 10); FX.pop('\u221210 pts (it\u2019s a PDF)', '#e07050'); } },
       b:{ l:'Politely decline', run:function(){ GS.liveScore += 5; FX.pop('+5 pts', '#7bc67b'); } } },
     { t:'\ud83d\ude91 Neighbouring region calls', d:function(){ return 'Their ER is overflowing. "Can Cammelot take six ambulances tonight?"'; },
-      a:{ l:'Take the patients', run:function(){ MoC.adjustTrust(2); applyFx({sick:0.005}, 'Overflow night shift'); FX.pop('Solidarity', '#7bc67b'); } },
-      b:{ l:'"We\u2019re full too"', run:function(){ MoC.adjustTrust(-1); } } },
+      a:{ l:'Take the patients', run:function(){ MoC.adjustTrust(2); applyFx({sick:0.005}, 'Overflow night shift'); FX.pop('Solidarity', '#7bc67b'); townSay(['"We helped six families from across the border last night. That\u2019s the system working.", said Dr. Willems.']); } },
+      b:{ l:'"We\u2019re full too"', run:function(){ MoC.adjustTrust(-1); townSay(['"We turned away six ambulances. Six.", sighed Veenstra.']); } } },
     { t:'\ud83d\udcf1 Influencer trouble', d:function(){ return 'A local influencer (80K followers) posts that the patient portal "sells your data to Big Tech". It\u2019s going viral.'; },
       a:{ l:'Rebut with the facts, on camera', run:function(){ MoC.adjustTrust(GS.dependence >= 6 ? -2 : 3); } },
       b:{ l:'Ignore it', run:function(){ if (Math.random() < 0.4) { MoC.adjustTrust(-3); FX.pop('It spread', '#e05858'); } } } },
     { t:'\ud83d\udc8a Pharmacy shelf empty', d:function(){ return 'The pharmacist calls: out of children\u2019s antibiotics until Thursday. Parents are in the shop, filming.'; },
-      a:{ l:'Emergency courier (\u2212\u20ac4K)', run:function(){ if (GS.budget < 4000) { FX.pop('Cannot afford', '#e05858'); return; } GS.budget -= 4000; MoC.adjustTrust(2); } },
-      b:{ l:'"National problem, not mine"', run:function(){ MoC.adjustTrust(-2); } } },
+      a:{ l:'Emergency courier (\u2212\u20ac4K)', run:function(){ if (GS.budget < 4000) { FX.pop('Cannot afford', '#e05858'); return; } GS.budget -= 4000; MoC.adjustTrust(2); townSay(['"The minister got antibiotics here overnight. My son can sleep again.", said Van Dijk.']); } },
+      b:{ l:'"National problem, not mine"', run:function(){ MoC.adjustTrust(-2); townSay(['"Ministry says it\u2019s not their problem. My sick kid says otherwise.", said Jansen.']); } } },
     { t:'\ud83d\udcf0 Leaked memo', d:function(){ return 'The Gazette has your internal memo weighing practice closures. They call for comment before print.'; },
       a:{ l:'Own it: "All options on the table"', run:function(){ MoC.adjustTrust(-1); GS.liveScore += 5; FX.pop('+5 pts (honesty)', '#7bc67b'); } },
       b:{ l:'Deny everything', run:function(){ if (Math.random() < 0.5) { MoC.adjustTrust(-4); FX.shake(); FX.pop('Caught lying', '#e05858'); } else { FX.pop('It blew over', '#FFD54F'); } } } },
@@ -14420,6 +14511,15 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
           GS._deficitWarned = true;
           GS.pendingBanners.push({ head: '\ud83d\udca8 MUNICIPALITY IN DEFICIT', body: 'The treasury is empty and then some. Parliament has frozen all new spending. Bankruptcy looms at \u2212\u20ac150K.', soft: false });
         }
+      }
+      // G16: dep cascade-armed banner — one-time warning when fragility hits critical
+      if (GS.dependence >= 7 && !GS._depWarnFired && !GS.over) {
+        GS._depWarnFired = true;
+        GS.pendingBanners.push({ head: '\ud83d\udd25 DIGITALE KWETSBAARHEID KRITIEK',
+          body: 'Cammelot\u2019s digital care stack now has <b>' + GS.dependence + ' interdependencies.</b> '
+            + 'The rot cascade is armed: one ransomware hit or power failure can chain through all systems simultaneously. '
+            + '<b>Resilience packs are your only remaining safety margin.</b> You have been warned.',
+          soft: false });
       }
       // G15: Mantelzorg pressure — creeps up when drain is high, fires burnout event at >= 80
       if (q % 4 === 0 && !GS.over) { // yearly
