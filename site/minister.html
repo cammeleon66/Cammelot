@@ -12606,7 +12606,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
   // G15: Deterministic shuffle per seed (Fisher-Yates with mulberry32)
   function pickDilemma(){
     if (!GS._dilemmaOrder) {
-      const rng = mulberry32(MoC.seed ^ 0xD11EMMA);
+      const rng = mulberry32(MoC.seed ^ 0xD11E11A); // 0xD11E11A = "DILEMMA" mnemonic in hex
       GS._dilemmaOrder = DILEMMAS.map(function(d){ return d.id; });
       for (let i = GS._dilemmaOrder.length - 1; i > 0; i--) {
         const j = Math.floor(rng() * (i + 1));
@@ -12799,6 +12799,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     if (fx.trustD) chip('cross', 'Doctors', GS.trustD, Math.max(0, Math.min(100, GS.trustD + fx.trustD)), fx.trustD > 0);
     if (fx.trustP) chip('bank', 'Parliament', GS.trustP, Math.max(0, Math.min(100, GS.trustP + fx.trustP)), fx.trustP > 0);
     if (fx.budget) chips.push('<span class="moc-chip ' + (fx.budget > 0 ? 'good' : 'money') + '">' + pixIcon('coin') + ' ' + (fx.budget > 0 ? '+' : '\u2212') + fmtK(Math.abs(fx.budget)) + '</span>');
+    if (fx.mantelzorg) chips.push('<span class="moc-chip ' + (fx.mantelzorg < 0 ? 'good' : 'bad') + '">\ud83d\udc9c Mantelzorg ' + (fx.mantelzorg > 0 ? '+' : '') + fx.mantelzorg + '</span>'); // G15
     return chips.length ? '<span class="delta">' + chips.join('') + '</span>' : '';
   }
   function renderShop(){
@@ -14395,8 +14396,10 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
       const fin = finaleCheck(q); if (fin) GS.pendingBanners.push(fin);
       stepCascades(q);
       const el = electionCheck(q); if (el) GS.pendingBanners.push(el);
-      // G15: Forced first death if player made zero interventions by Q6 (pedagogy)
-      if (q === 6 && !GS._doNothingDeathFired && GS.interventions.length === 0 && systemDeaths() === 0) {
+      // G15: Forced first death if player made zero REAL interventions by Q6 (pedagogy)
+      // Only shop purchases and enacted laws count — dilemma choices are forced and don't count as action.
+      const _realInterventions = GS.interventions.filter(function(i){ return i.cost > 0 || i.label.startsWith('Law enacted:'); });
+      if (q === 6 && !GS._doNothingDeathFired && _realInterventions.length === 0 && systemDeaths() === 0) {
         GS._doNothingDeathFired = true;
         const victim = (typeof agents !== 'undefined') && agents.find(function(a){ return a.waitWeeks > 4 && a.state !== 'dead'; });
         if (victim) {
