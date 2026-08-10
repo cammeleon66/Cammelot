@@ -12294,8 +12294,9 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     GS.owned[item.id] = (GS.owned[item.id] || 0) + 1;
     GS.interventions.push({ q: GS.quarter, label: item.name.replace(/^\S+\s/, ''), cost: cost });
     applyFx(item.fx, 'Purchased: ' + item.name + ' (' + fmtK(cost) + ')');
-    // G18-D: first pilotgrant purchase — make the fragmentation cost visible before it bites
-    if (item.id === 'pilotgrant' && GS.owned.pilotgrant === 1) {
+    // G18-D: first pilotgrant — make fragmentation cost visible before it bites (flag prevents double-fire)
+    if (item.id === 'pilotgrant' && !GS._pilotGrantWarnFired && (GS.owned.pilotgrant || 0) >= 1) {
+      GS._pilotGrantWarnFired = true;
       (GS.pendingBanners = GS.pendingBanners || []).push({
         head: '\uD83E\uDDE9 AI PILOT GRANT BOUGHT',
         body: 'AI Silos are now at 2. Buy one more and governance costs start accumulating, penalising your final score. The point-solution approach is fast \u2014 but someone eventually has to pay the integration debt.',
@@ -12317,6 +12318,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     window._mocTownTalk = GS.townTalk;
   }
   window._mocTownTalk = GS.townTalk;
+  window._mocSysPanelOpen = false; // G18-E: explicit default — panel starts collapsed
   const TOWN_REACTIONS = {
     scribes1: ['My GP actually looked at me today. The computer writes the notes now, apparently.', 'The doctor talked WITH me instead of at a screen. New minister thing?'],
     scribes2: ['Even the assistant uses the talking computer now. Visits feel quicker.', 'They say the paperwork robot got smarter.'],
@@ -13044,10 +13046,12 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
         + ' \u2014 your civil service can only roll out ' + effectiveCapDisplay + ' changes per quarter \u00b7 Budget: <b style="color:' + budgetColor + '">' + fmtK(GS.budget) + budgetAlert + '</b>'
         + (GS.trustP < 35 ? ' \u00b7 <span style="color:var(--m-red)">\u26a0 Parliament withholds co-funding: prices +25%</span>' : '');
     }
-    // G18-E: system panel toggle event listener (re-attached each renderShop call)
+    // G18-E: system panel toggle — clone-and-replace strips any stacked listeners from prior renderShop calls
     const toggleBtn = document.querySelector('#moc-syspanel .moc-syspanel-toggle');
     if (toggleBtn) {
-      toggleBtn.addEventListener('click', function(){
+      const freshBtn = toggleBtn.cloneNode(true);
+      toggleBtn.parentNode.replaceChild(freshBtn, toggleBtn);
+      freshBtn.addEventListener('click', function(){
         window._mocSysPanelOpen = !window._mocSysPanelOpen;
         const body = document.getElementById('moc-syspanel-body');
         if (body) body.style.display = window._mocSysPanelOpen ? '' : 'none';
