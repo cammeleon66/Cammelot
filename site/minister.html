@@ -13136,14 +13136,6 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
   };
   function dataRevealHtml(){
     let h = '';
-    const guess = GS.assumption !== undefined ? GS.assumption : loadJSON('moc_assumption', null);
-    if (guess !== null && guess !== undefined) {
-      h += '<h3>\ud83d\udcdd Your guess, revisited</h3><div class="moc-sub" style="line-height:1.65">'
-        + 'Before taking office you guessed GPs lose <b>' + guess + '%</b> of their time to administration. '
-        + 'The real figure (NZa): <b style="color:#FFD54F">~30%</b>'
-        + (guess === 30 ? ' \u2014 exactly right. Painfully so.' : guess < 30 ? ' \u2014 worse than you thought.' : ' \u2014 you expected even worse. Understandable.')
-        + ' In your Cammelot it ended at <b>' + Math.round(M.IST.admin * 100) + '%</b>.</div>';
-    }
     const keys = [];
     Object.keys(REVEALS).forEach(function(k){
       if (k === 'scribes') { if (GS.owned.scribes1) keys.push(k); }
@@ -13954,23 +13946,8 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
           if (window.mocStartWalkthrough) window.mocStartWalkthrough();
         }
         // Assumption check (once per browser)
-        if (loadJSON('moc_assumption', null) !== null) { GS.assumption = loadJSON('moc_assumption', null); return proceed(); }
-        const am = document.createElement('div');
-        am.className = 'moc-overlay'; am.id = 'moc-assume';
-        am.innerHTML = '<div class="moc-box" style="max-width:520px"><h2>\ud83d\udcf0 ON THE MINISTRY STEPS</h2>'
-          + '<div class="moc-sub">Your first morning. A Gazette reporter blocks your path \u2014 your answer prints on tomorrow\u2019s front page, and at the end of your term the paper will check it against reality.</div>'
-          + '<div class="moc-dilemma"><div class="dq">"Minister! One question: how much of a GP\u2019s working day here goes to paperwork instead of patients?"</div>'
-          + [10, 20, 30, 40].map(function(v){ return '<button class="moc-opt" data-guess="' + v + '">' + v + '%</button>'; }).join('')
-          + '</div></div>';
-        document.body.appendChild(am);
-        am.querySelectorAll('[data-guess]').forEach(function(bt){
-          bt.addEventListener('click', function(){
-            GS.assumption = parseInt(bt.getAttribute('data-guess'), 10);
-            saveJSON('moc_assumption', GS.assumption);
-            am.remove();
-            proceed();
-          });
-        });
+        if (loadJSON('moc_assumption', null) !== null) { return proceed(); }
+        proceed();
       });
       }); // end story-next listener
     });
