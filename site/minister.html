@@ -918,6 +918,7 @@ body.embed-mode #app{display:block!important}
 .moc-stamp.win{border-color:var(--m-green);color:var(--m-green)}
 @keyframes stampIn{0%{opacity:0;transform:rotate(-2.5deg) scale(2.6)}70%{opacity:1;transform:rotate(-2.5deg) scale(.94)}100%{transform:rotate(-2.5deg) scale(1)}}
 @keyframes moc-hud-pulse{0%,100%{opacity:1}50%{opacity:.45}}
+.moc-hud-intro{animation:moc-hud-pulse 1.2s ease-in-out 3;box-shadow:0 0 8px 2px var(--m-gold);border-radius:3px;transition:box-shadow .5s}
 .moc-emoji{font-size:21px;text-align:center;letter-spacing:4px;margin:8px 0}
 .moc-dead{background:var(--m-blue3);border:2px solid #5a66b0;border-left:4px solid #9aa;border-radius:3px;padding:8px 12px;font-size:12px;line-height:1.7;color:#c0c8f4}
 .moc-score-row{display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px dashed rgba(240,240,228,.18);color:#aab4e8}
@@ -6155,6 +6156,7 @@ function selectAgent(a){
       <div class="hp-outer" data-tooltip="Health Points. Drains when waiting too long for care. At 0, the citizen dies."><div class="hp-inner ${hp>50?'g':hp>20?'y':hp>0?'r':'d'}" style="width:${hp}%"></div><div class="hp-label">${hp} / 100 HP</div></div>
       <div class="ac-row"><span class="k">Activity</span><span class="state-badge ${a.behaviorState||'roaming'}">${stateLabel}</span></div>
       ${a.waitWeeks>0?`<div class="ac-row"><span class="k">Wait time</span><span class="v ${a.waitWeeks>12?'bad':a.waitWeeks>6?'mid':'ok'}" data-tooltip="How long this citizen has been waiting for specialist treatment">${Math.round(a.waitWeeks*10)/10} weeks</span></div>`:''}
+      ${a.waitWeeks>10?`<div class="ac-row"><span class="k" style="color:var(--red)">⚠ Risk</span><span class="v bad" style="font-size:10px" data-tooltip="Waiting this long with conditions raises risk of deterioration or preventable death">Delayed care — deterioration risk</span></div>`:''}
       ${a.gpName?`<div class="ac-row"><span class="k">GP</span><span class="v">${a.gpName}</span></div>`:''}
       ${a.healingTicksLeft>0?`<div class="ac-row"><span class="k">Recovery</span><span class="v ok">Healing (${a.healingTicksLeft} ticks)</span></div>`:''}
       ${a.insideBuilding?`<div class="ac-row"><span class="k">Location</span><span class="v mid">${BUILDINGS.find(b=>b.id===a.insideBuilding)?.label||a.insideBuilding}</span></div>`:''}
@@ -12292,6 +12294,14 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     GS.owned[item.id] = (GS.owned[item.id] || 0) + 1;
     GS.interventions.push({ q: GS.quarter, label: item.name.replace(/^\S+\s/, ''), cost: cost });
     applyFx(item.fx, 'Purchased: ' + item.name + ' (' + fmtK(cost) + ')');
+    // G18-D: first pilotgrant purchase — make the fragmentation cost visible before it bites
+    if (item.id === 'pilotgrant' && GS.owned.pilotgrant === 1) {
+      (GS.pendingBanners = GS.pendingBanners || []).push({
+        head: '\uD83E\uDDE9 AI PILOT GRANT BOUGHT',
+        body: 'AI Silos are now at 2. Buy one more and governance costs start accumulating, penalising your final score. The point-solution approach is fast \u2014 but someone eventually has to pay the integration debt.',
+        soft: true
+      });
+    }
     townSay(TOWN_REACTIONS[item.id] || ['The ministry is spending money on us again. We\u2019ll see.']);
     Audio5.coin();
     renderShop();
@@ -12948,16 +12958,37 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
       ['\ud83e\udde9 AI Silos', (GS.fragmentation || 0) + ' active', sysCls(GS.fragmentation || 0, true, 2, 5)], // G17
       ['\ud83c\udfd7 Platform', (GS.platformMaturity || 0) === 0 ? 'none' : 'level ' + (GS.platformMaturity || 0), (GS.platformMaturity || 0) >= 1 ? 'g' : 'y'] // G17
     ];
-    return '<div class="moc-sys" id="moc-syspanel">' + cells.map(function(c){
+    // G18-E: collapsible panel — default collapsed, state persisted in window var
+    const isOpen = window._mocSysPanelOpen || false;
+    const bodyStyle = isOpen ? '' : ' style="display:none"';
+    const chevron = isOpen ? '\u25b2' : '\u25bc';
+    const bodyHtml = '<div class="moc-sys" id="moc-syspanel-body"' + bodyStyle + '>' + cells.map(function(c){
       return '<div class="cell">' + c[0] + '<b class="' + c[2] + '">' + c[1] + '</b></div>';
     }).join('') + '</div>';
+    return '<div id="moc-syspanel">'
+      + '<button class="moc-syspanel-toggle" onclick="window._mocSysPanelOpen=!window._mocSysPanelOpen;const b=document.getElementById(\'moc-syspanel-body\');if(b){b.style.display=window._mocSysPanelOpen?\'\':\\x27none\\x27}this.textContent=\'📊 System State \'+(window._mocSysPanelOpen?\'▲\':\'▼\')" style="background:none;border:1px solid #3a3a5c;border-radius:6px;color:#8a94d8;font:600 10px Inter,sans-serif;padding:4px 10px;cursor:pointer;margin-bottom:4px;width:100%">'
+      + '\ud83d\udcca System State ' + chevron + '</button>'
+      + bodyHtml + '</div>';
   }
   // ── Concrete now->after preview per intervention ──
   // ── Impact preview as readable chips (green = better, red = worse) ──
   function fxPreview(fx){
     const chips = [];
+    // G18-B: plain-language tooltips so noobs know what each chip means
+    const CHIP_TIPS = {
+      Admin: 'Admin burden: lower means doctors spend more time on patients, not paperwork',
+      Sick: 'Sick leave rate: high sick leave reduces effective GP capacity across town',
+      Wait: 'Referral wait (Treeknorm): beyond the limit, HP drains faster toward death',
+      AI: 'AI multiplier: boosts care capacity and cuts admin time across all providers',
+      Decline: 'HP drain rate: how fast citizen health falls while waiting for a referral',
+      Fragile: 'Digital dependence: higher values mean hacks and outages cascade harder',
+      Citizens: 'Citizen trust: below 40 people avoid care until crisis, driving up deaths',
+      Doctors: 'Doctor trust: below 40 they start leaving for private practice permanently',
+      Parliament: 'Parliament trust: at 0 a confidence vote can end your term early'
+    };
     function chip(icon, label, from, to, better){
-      chips.push('<span class="moc-chip ' + (better ? 'good' : 'bad') + '">' + (icon ? pixIcon(icon) + ' ' : '') + label + ' ' + from + ' \u2192 ' + to + '</span>');
+      const tip = CHIP_TIPS[label] || '';
+      chips.push('<span class="moc-chip ' + (better ? 'good' : 'bad') + '"' + (tip ? ' title="' + tip + '"' : '') + '>' + (icon ? pixIcon(icon) + ' ' : '') + label + ' ' + from + ' \u2192 ' + to + '</span>');
     }
     if (fx.admin) { const to = Math.max(3, Math.round((M.IST.admin + fx.admin) * 100)); chip('scroll', 'Admin', Math.round(M.IST.admin * 100) + '%', to + '%', fx.admin < 0); }
     if (fx.sick) { const to = Math.max(2, Math.round((M.IST.sick + fx.sick) * 100)); chip('bed', 'Sick', Math.round(M.IST.sick * 100) + '%', to + '%', fx.sick < 0); }
@@ -12965,14 +12996,14 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     if (fx.ai) { chip('chip', 'AI', M.IST.ai.toFixed(2) + '\u00d7', (M.IST.ai + fx.ai).toFixed(2) + '\u00d7', fx.ai > 0); }
     if (fx.drainMult) { chip('brheart', 'Decline', M.IST.drain.toFixed(2) + '\u00d7', (M.IST.drain * fx.drainMult).toFixed(2) + '\u00d7', fx.drainMult < 1); }
     if (fx.dep) { chip('plug', 'Fragile', GS.dependence, Math.max(0, GS.dependence + fx.dep), fx.dep < 0); }
-    if (fx.trust) chips.push('<span class="moc-chip ' + (fx.trust > 0 ? 'good' : 'bad') + '">All trust ' + (fx.trust > 0 ? '+' : '') + fx.trust + '</span>');
+    if (fx.trust) chips.push('<span class="moc-chip ' + (fx.trust > 0 ? 'good' : 'bad') + '" title="All stakeholder trust bars: citizens, doctors, and parliament move together">All trust ' + (fx.trust > 0 ? '+' : '') + fx.trust + '</span>');
     if (fx.trustC) chip('people', 'Citizens', GS.trustC, Math.max(0, Math.min(100, GS.trustC + fx.trustC)), fx.trustC > 0);
     if (fx.trustD) chip('cross', 'Doctors', GS.trustD, Math.max(0, Math.min(100, GS.trustD + fx.trustD)), fx.trustD > 0);
     if (fx.trustP) chip('bank', 'Parliament', GS.trustP, Math.max(0, Math.min(100, GS.trustP + fx.trustP)), fx.trustP > 0);
     if (fx.budget) chips.push('<span class="moc-chip ' + (fx.budget > 0 ? 'good' : 'money') + '">' + pixIcon('coin') + ' ' + (fx.budget > 0 ? '+' : '\u2212') + fmtK(Math.abs(fx.budget)) + '</span>');
-    if (fx.mantelzorg) chips.push('<span class="moc-chip ' + (fx.mantelzorg < 0 ? 'good' : 'bad') + '">\ud83d\udc9c Mantelzorg ' + (fx.mantelzorg > 0 ? '+' : '') + fx.mantelzorg + '</span>'); // G15
-    if (fx.frag) chips.push('<span class="moc-chip ' + (fx.frag < 0 ? 'good' : 'bad') + '">\ud83e\udde9 Silos ' + (fx.frag > 0 ? '+' : '') + fx.frag + '</span>'); // G17
-    if (fx.platform) chips.push('<span class="moc-chip good">\ud83c\udfd7 Platform +' + fx.platform + '</span>'); // G17
+    if (fx.mantelzorg) chips.push('<span class="moc-chip ' + (fx.mantelzorg < 0 ? 'good' : 'bad') + '" title="Informal care pressure: above 80% triggers a mantelzorg crisis and care quality drops">\ud83d\udc9c Mantelzorg ' + (fx.mantelzorg > 0 ? '+' : '') + fx.mantelzorg + '</span>'); // G15
+    if (fx.frag) chips.push('<span class="moc-chip ' + (fx.frag < 0 ? 'good' : 'bad') + '" title="AI silo count: 3+ unintegrated systems starts costing points at end of term">\ud83e\udde9 Silos ' + (fx.frag > 0 ? '+' : '') + fx.frag + '</span>'); // G17
+    if (fx.platform) chips.push('<span class="moc-chip good" title="Platform maturity: a fully built platform unlocks the strongest late-game AI outcomes">\ud83c\udfd7 Platform +' + fx.platform + '</span>'); // G17
     return chips.length ? '<span class="delta">' + chips.join('') + '</span>' : '';
   }
   function renderShop(){
@@ -13192,15 +13223,24 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
       const track = LAW_TRACKS[tk];
       const law = nextLaw(track);
       const passed = track.laws.filter(function(l){ return GS.laws[l.id]; }).length;
+      // G18-F: status badge per track
+      let badge;
+      if (passed >= track.laws.length) {
+        badge = '<span style="font:600 9px Inter,sans-serif;background:rgba(76,175,80,.15);color:#81c784;border:1px solid rgba(76,175,80,.3);border-radius:10px;padding:1px 7px;margin-left:6px">\u2713 Complete</span>';
+      } else if (tk === 'dig' && GS.quarter < GS.techFreezeUntil) {
+        badge = '<span style="font:600 9px Inter,sans-serif;background:rgba(255,179,0,.1);color:#b87a00;border:1px solid rgba(255,179,0,.25);border-radius:10px;padding:1px 7px;margin-left:6px">\u2696 Frozen until Q' + GS.techFreezeUntil + '</span>';
+      } else {
+        badge = '<span style="font:600 9px Inter,sans-serif;background:rgba(138,148,216,.12);color:#8a94d8;border:1px solid rgba(138,148,216,.25);border-radius:10px;padding:1px 7px;margin-left:6px">\u2192 ' + passed + '/3 enacted</span>';
+      }
       if (law) {
         const frozen = tk === 'dig' && GS.quarter < GS.techFreezeUntil;
-        html += '<div class="moc-item"><b>' + track.name + ' ' + (passed + 1) + '/3: ' + law.name + '</b><span class="fx">' + law.desc + '</span>'
+        html += '<div class="moc-item"><b>' + track.name + ' ' + (passed + 1) + '/3: ' + law.name + badge + '</b><span class="fx">' + law.desc + '</span>'
           + fxPreview(law.fx)
           + (frozen ? '<button class="moc-buy" disabled>\u2696 Frozen by parliament</button>'
                     : '<button class="moc-buy" data-law="' + law.id + '"' + (GS.budget < law.cost ? ' disabled' : '') + '>Enact' + (law.cost ? ' ' + fmtK(law.cost) : '') + '</button>')
           + '</div>';
       } else {
-        html += '<div class="moc-item"><b>' + track.name + ' 3/3</b><span class="fx">Track complete.</span><span class="moc-owned">\u2713 All enacted</span></div>';
+        html += '<div class="moc-item"><b>' + track.name + ' 3/3' + badge + '</b><span class="fx">Track complete.</span><span class="moc-owned">\u2713 All enacted</span></div>';
       }
     });
     html += '</div>';
@@ -13267,7 +13307,14 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     let lawPassedThisCouncil = false;
     ov.querySelectorAll('[data-law]').forEach(function(b){
       b.addEventListener('click', function(){
-        if (lawPassedThisCouncil) return;
+        if (lawPassedThisCouncil) { // G18-A: toast instead of silent no-op
+          const toast = document.createElement('div');
+          toast.style.cssText = 'position:fixed;top:56px;left:50%;transform:translateX(-50%);background:#2a1508;border:2px solid #FFB300;border-radius:8px;padding:8px 20px;color:#F5E6C8;font:600 12px Inter,sans-serif;z-index:9999;pointer-events:none;transition:opacity .4s';
+          toast.textContent = '\u2696 1 law already enacted this quarter \u2014 you can pass another next council';
+          document.body.appendChild(toast);
+          setTimeout(function(){ toast.style.opacity = '0'; setTimeout(function(){ toast.remove(); }, 450); }, 2600);
+          return;
+        }
         const lawId = b.getAttribute('data-law');
         let law = null;
         Object.keys(LAW_TRACKS).forEach(function(tk){
@@ -14667,6 +14714,14 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
             + '<b>Resilience packs are your only remaining safety margin.</b> You have been warned.',
           soft: false });
       }
+      // G18-G: mid-game platform investment confirmation signal at Q8
+      if ((GS.platformMaturity || 0) >= 1 && GS.quarter >= 8 && !GS._platformSignalFired && !GS.over) {
+        GS._platformSignalFired = true;
+        GS.pendingBanners.push({ head: '\ud83c\udfd7 PLATFORM INVESTMENT COMPOUNDING',
+          body: 'Your health data platform has been running for two years. Integrations are live across practices and the hospital. Admin burden is falling. '
+            + 'The payoff doesn\u2019t headline in the Gazette \u2014 it shows up quietly in the System State panel.',
+          soft: true });
+      }
       // G15: Mantelzorg pressure — creeps up when drain is high, fires burnout event at >= 80
       if (q % 4 === 0 && !GS.over) { // yearly
         if (M.IST.drain > 1.15) {
@@ -14752,6 +14807,19 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
         silosCell.className = 'ts';
         silosCell.innerHTML = '<div class="n g" id="hSilos">0</div><div class="l">AI Silos</div>';
         cell.parentElement.insertBefore(silosCell, cell.nextSibling);
+        // G18-C: brief attention pulse on Deaths and Trust HUD cells at game start
+        setTimeout(function(){
+          ['hTrust', 'hDW'].forEach(function(id){
+            const el = document.getElementById(id);
+            if (el && el.parentElement) el.parentElement.classList.add('moc-hud-intro');
+          });
+          setTimeout(function(){
+            ['hTrust', 'hDW'].forEach(function(id){
+              const el = document.getElementById(id);
+              if (el && el.parentElement) el.parentElement.classList.remove('moc-hud-intro');
+            });
+          }, 4200);
+        }, 2000);
       }
       // Reset = new term (game state lives in page scope)
       const rb = document.getElementById('btn-reset');
