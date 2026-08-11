@@ -1647,7 +1647,7 @@ var PERSONA_ENABLED = (typeof PERSONA_ENABLED !== 'undefined') ? PERSONA_ENABLED
     var PERSONA_USE_BIGFIVE = (typeof PERSONA_USE_BIGFIVE !== 'undefined') ? PERSONA_USE_BIGFIVE : true;
 // ═══ Sprint 30: Citizen Agent PoC — LLM Integration ═══
 let llmProxyAvailable = false;
-let llmProxyUrl = 'http://localhost:3001';
+let llmProxyUrl = null;
 const M={IST:{admin:.3,sick:.08,tree:12,ai:1,drain:1},SOLL:{admin:.05,sick:.05,tree:4,ai:1.34,drain:.3}};
 const M_ORIG={IST:{admin:.3,sick:.08,tree:12,ai:1,drain:1},SOLL:{admin:.05,sick:.05,tree:4,ai:1.34,drain:.3}};
 // NZa 2025 tariffs and simulation cost estimates
@@ -12040,7 +12040,7 @@ document.getElementById('btn-taximeter').addEventListener('click', function() {
 // --- AgentLLMClient: Communicates with the proxy server ---
 class AgentLLMClient {
   constructor(baseUrl) {
-    this.baseUrl = baseUrl || 'http://localhost:3001';
+    this.baseUrl = null;
     this.available = false;
     this.totalTokens = { input: 0, output: 0 };
     this.totalCalls = 0;
@@ -12048,47 +12048,12 @@ class AgentLLMClient {
   }
 
   async checkHealth() {
-    try {
-      const res = await fetch(this.baseUrl + '/api/health', { signal: AbortSignal.timeout(3000) });
-      const data = await res.json();
-      this.available = data.status === 'ok' && data.ollamaAvailable;
-      return this.available;
-    } catch (e) {
-      this.available = false;
-      return false;
-    }
+    this.available = false;
+    return false;
   }
 
   async think(agent, prompt) {
-    if (!this.available) return this.fallbackResponse(agent);
-    try {
-      const res = await fetch(this.baseUrl + '/api/think', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          agentId: agent.id,
-          prompt: prompt,
-          personality: agent.bigFive,
-          model: 'llama3.2:1b'
-        }),
-        signal: AbortSignal.timeout(60000)
-      });
-      if (!res.ok) {
-        if (res.status === 429) console.warn('[LLM] Rate limited for ' + agent.id);
-        return this.fallbackResponse(agent);
-      }
-      const data = await res.json();
-      this.totalCalls++;
-      if (data.tokens) {
-        this.totalTokens.input += data.tokens.input || 0;
-        this.totalTokens.output += data.tokens.output || 0;
-      }
-      if (data.error) return this.fallbackResponse(agent);
-      return data;
-    } catch (e) {
-      console.warn('[LLM] Request failed for ' + agent.id + ':', e.message);
-      return this.fallbackResponse(agent);
-    }
+    return this.fallbackResponse(agent);
   }
 
   fallbackResponse(agent) {
@@ -12336,12 +12301,7 @@ async function initLLMSubsystem() {
   }, 30000);
 }
 
-// Local developer opt-in only. Public visitors must never be prompted for device access.
-const localLLMOptIn = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
-  && new URLSearchParams(location.search).get('llm') === '1';
-if (localLLMOptIn) {
-  initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
-}
+// Website build: intentionally offline-only. No local-device networking.
 
 // ════════════════════════════════════════════════════════════
 // MINISTER OF CAMMELOT — G1 GAME LAYER
