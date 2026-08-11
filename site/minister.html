@@ -10410,8 +10410,7 @@ try { startNewGame(); } catch(e) { console.error('startNewGame error:', e); }
 // Show the town feed while walkthrough is active
 try { showTownFeed(); } catch(e) {}
 
-// Do NOT start autoTimer here — wait for walkthrough to finish.
-// The walkthrough's 'Start' button calls launchSimulation() below.
+// Do NOT start autoTimer here — wait for walkthrough → manifesto → launchSimulation chain.
 var playBtnInSim = document.getElementById('btn-play');
 if (playBtnInSim) playBtnInSim.textContent = '▶ Play';
 } // end non-embed block
@@ -11765,12 +11764,12 @@ document.getElementById('btn-tours').addEventListener('click', function() {
         clearHighlight();
         card.remove();
         step = 0; // allow replay via ❓
-        // Show manifesto before launching — manifesto Sign button calls launchSimulation()
-        if (window._mocShowManifesto) {
+        // First play: _mocGameStarted is false → show manifesto → Sign calls launchSimulation()
+        // Replay mid-game: _mocGameStarted is true → just unpause and return
+        if (window._mocShowManifesto && !window._mocGameStarted) {
           window._mocShowManifesto();
         } else {
           if (typeof MoC !== 'undefined') MoC.paused = false;
-          launchSimulation();
         }
         return;
       }
@@ -12224,7 +12223,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
       el.className = 'n ' + (fragility() < 30 ? 'g' : fragility() < 60 ? 'y' : 'r');
       // G16: dep HUD warning — cascade armed indicator
       const dep = GS.dependence;
-      el.title = dep >= 8 ? '\u26a0\ufe0f DIGITALE KWETSBAARHEID: rot cascade armed \u2014 one breach can chain across all systems'
+      el.title = dep >= 8 ? '\u26a0\ufe0f DIGITAL FRAGILITY: rot cascade armed \u2014 one breach can chain across all systems'
         : dep >= 5 ? 'Rising fragility \u2014 resilience pack recommended'
         : '';
       if (dep >= 8) el.style.animation = 'moc-hud-pulse 1.5s ease-in-out infinite';
@@ -12884,11 +12883,11 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
       a:{ label:'Emergency mediator, grant a 10% bonus', fx:{budget:-45000, trustD:8, trustC:2, sick:-0.01}, note:'-\u20ac45K \u00b7 Doctors +8 \u00b7 Citizens +2 \u00b7 sick -1%' },
       b:{ label:'Publicly condemn the strike', fx:{trustD:-10, trustC:-3, trustP:4}, note:'Doctors -10 \u00b7 Citizens -3 \u00b7 Parliament +4' },
       c:{ label:'Let it run, wait them out', fxFn:function(){ applyFx({sick:0.02, trustC:-5}, 'Strike drags on'); setTimeout(function(){ applyFx({trustD:-6}, 'Strike ends bitter'); }, 4000); return {}; }, note:'Sick +2% \u00b7 Citizens -5 \u00b7 Doctors -6 after' } },
-    // G15: Mantelzorg dilemma — biggest Dutch care gap
-    { id:'mantelzorg', text:'Cammelot telt 14.000 mantelzorgers \u2014 partners, kinderen, buren die onbetaald zorg verlenen. De gemeente ontvangt een signaal: 1 op 5 dreigt overbelast te raken. De thuiszorg wachtlijst groeit al vier kwartalen. Wat doet u?',
-      a:{ label:'Formaliseer: betaal mantelzorgers een vergoeding', fx:{budget:-25000, trustC:5, mantelzorg:-10}, note:'-\u20ac25K \u00b7 Citizens +5 \u00b7 mantelzorg druk -10' },
-      b:{ label:'Verwijs door naar informele netwerken (buren, kerken)', fx:{mantelzorg:10, trustC:-3}, note:'Mantelzorg druk +10 \u00b7 Citizens -3 (voelen zich in de steek gelaten)' },
-      c:{ label:'Pilot: respijtzorgplekken op bestaand budget', fx:{budget:-12000, trustD:2, trustC:3, mantelzorg:-5}, note:'-\u20ac12K \u00b7 Doctors +2 \u00b7 Citizens +3 \u00b7 mantelzorg druk -5' } },
+    // G15: Mantelzorg / informal carer dilemma — biggest Dutch care gap
+    { id:'mantelzorg', text:'Cammelot has 14,000 informal carers \u2014 partners, children, neighbours providing unpaid care. The municipality signals that 1 in 5 is at risk of burnout. The home-care waiting list has grown for four consecutive quarters. What do you do?',
+      a:{ label:'Formalise: pay informal carers a stipend', fx:{budget:-25000, trustC:5, mantelzorg:-10}, note:'-\u20ac25K \u00b7 Citizens +5 \u00b7 Carer pressure -10' },
+      b:{ label:'Redirect to community networks (neighbours, faith groups)', fx:{mantelzorg:10, trustC:-3}, note:'Carer pressure +10 \u00b7 Citizens -3 (feel abandoned)' },
+      c:{ label:'Pilot: respite care slots within existing budget', fx:{budget:-12000, trustD:2, trustC:3, mantelzorg:-5}, note:'-\u20ac12K \u00b7 Doctors +2 \u00b7 Citizens +3 \u00b7 Carer pressure -5' } },
     // G17: Point Solution Paradox dilemmas
     { id:'buildorbuy', text:'A Dutch health-tech startup pitches Cammelot a ready-built AI triage tool: \u20ac40K/year, live in 6 weeks, 87% accuracy in three pilots. Your CTO says: "We should build our own \u2014 we know our population." The Gazette is watching.',
       a:{ label:'Buy the startup tool, deploy fast', fx:{budget:-40000, trustP:3, frag:2}, note:'-\u20ac40K/yr \u00b7 Parliament +3 (decisive) \u00b7 Fragmentation +2' },
@@ -13091,7 +13090,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
       [pixIcon('cross') + ' Capacity', ceff + '%', sysCls(ceff, false, 70, 85)],
       [pixIcon('brheart') + ' HP drain', M.IST.drain.toFixed(2) + '\u00d7', sysCls(M.IST.drain, true, 0.7, 1.0)],
       [pixIcon('plug') + ' Dependence', GS.dependence + ' pts', sysCls(GS.dependence, true, 3, 6)],
-      [pixIcon('people') + ' Mantelzorg druk', (GS.mantelzorg || 30) + '%', sysCls(GS.mantelzorg || 30, true, 50, 70)], // G23: warning earlier
+      [pixIcon('people') + ' Carer pressure', (GS.mantelzorg || 30) + '%', sysCls(GS.mantelzorg || 30, true, 50, 70)], // G23: warning earlier
       ['\ud83e\udde9 AI Silos', (GS.fragmentation || 0) + ' active', sysCls(GS.fragmentation || 0, true, 2, 5)], // G17
       ['\ud83c\udfd7 Platform', (GS.platformMaturity || 0) === 0 ? 'none' : 'level ' + (GS.platformMaturity || 0), (GS.platformMaturity || 0) >= 1 ? 'g' : 'y'] // G17
     ];
@@ -13138,7 +13137,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     if (fx.trustD) chip('cross', 'Doctors', GS.trustD, Math.max(0, Math.min(100, GS.trustD + fx.trustD)), fx.trustD > 0);
     if (fx.trustP) chip('bank', 'Parliament', GS.trustP, Math.max(0, Math.min(100, GS.trustP + fx.trustP)), fx.trustP > 0);
     if (fx.budget) chips.push('<span class="moc-chip ' + (fx.budget > 0 ? 'good' : 'money') + '">' + pixIcon('coin') + ' ' + (fx.budget > 0 ? '+' : '\u2212') + fmtK(Math.abs(fx.budget)) + '</span>');
-    if (fx.mantelzorg) chips.push('<span class="moc-chip ' + (fx.mantelzorg < 0 ? 'good' : 'bad') + '" title="Informal care pressure: above 80% triggers a mantelzorg crisis and care quality drops">\ud83d\udc9c Mantelzorg ' + (fx.mantelzorg > 0 ? '+' : '') + fx.mantelzorg + '</span>'); // G15
+    if (fx.mantelzorg) chips.push('<span class="moc-chip ' + (fx.mantelzorg < 0 ? 'good' : 'bad') + '" title="Informal carer pressure: above 80% triggers a carer burnout crisis and care quality drops">\ud83d\udc9c Carers ' + (fx.mantelzorg > 0 ? '+' : '') + fx.mantelzorg + '</span>'); // G15
     if (fx.frag) chips.push('<span class="moc-chip ' + (fx.frag < 0 ? 'good' : 'bad') + '" title="AI silo count: 3+ unintegrated systems starts costing points at end of term">\ud83e\udde9 Silos ' + (fx.frag > 0 ? '+' : '') + fx.frag + '</span>'); // G17
     if (fx.platform) chips.push('<span class="moc-chip good" title="Platform maturity: a fully built platform unlocks the strongest late-game AI outcomes">\ud83c\udfd7 Platform +' + fx.platform + '</span>'); // G17
     return chips.length ? '<span class="delta">' + chips.join('') + '</span>' : '';
@@ -13351,7 +13350,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     if (evt) {
       const ic = EVT_ICONS[evt.id] || ['scroll', false];
       html += '<div class="moc-dilemma"><div class="ec-head' + (ic[1] ? ' ec-danger' : '') + '">' + pixIcon(ic[0]) + ' ' + evt.name.replace(/^\S+\s/, '').toUpperCase() + '</div><div class="dq">' + evt.text() + '</div>';
-      if (evt.choices) {
+      if (evt.choices && evt.choices.length > 0) {
         needsDecision = true;
         evt.choices.forEach(function(c, i){
           html += '<button class="moc-opt" data-evtopt="' + i + '">' + c.label + '<span class="fx">' + c.note + '</span></button>';
@@ -14963,7 +14962,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
             body: 'The municipality counts over 14,000 informal carers. After years of overload, burnout is now cascading. '
               + 'Home care queues are exploding. <b>Informal care is not a given \u2014 it is infrastructure, and it is breaking.</b> '
               + 'Drain +5% this quarter. Citizens \u22123.', soft: false });
-          applyFx({ sick: 0.05, trustC: -3 }, 'Mantelzorgcrisis: informal carer burnout');
+          applyFx({ sick: 0.05, trustC: -3 }, 'Carer burnout crisis: informal care network collapsing');
         }
       }
       // G11: Parliament Question Hour every 4 quarters
