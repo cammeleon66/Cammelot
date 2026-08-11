@@ -14939,15 +14939,29 @@ if (localLLMOptIn) {
       ov.style.display = 'flex';
       const b = sc.brief || { situation: sc.desc, threats: [], win: 'Serve your term.' };
       const years = Math.ceil(sc.quarters / 4);
-      // Step 1: the story (in-world narrative, centre screen)
+      // Step 1: why the game exists and how to read its goals.
       ov.innerHTML = '<div class="moc-box" style="max-width:540px;cursor:default;text-align:center">'
         + '<div style="text-align:center;padding:4px 0 8px"><img src="logo.png" alt="" style="height:44px;width:auto;image-rendering:pixelated;max-width:160px"></div>'
-        + '<h2>' + sc.icon + ' ' + sc.name.toUpperCase() + '</h2>'
-        + '<div class="moc-sub" style="margin:4px 0 14px">Term #' + MoC.seed + (GS.isDaily && sc.daily ? ' \u00b7 today\u2019s shared scenario' : '') + '</div>'
-        + '<div class="moc-memo"><div class="dateline">' + (sc.dateline || 'Cammelot') + '</div><div class="body">' + (sc.story || b.situation) + '</div></div>'
-        + '<div class="moc-sub" style="font-size:11px;color:#8a94d8">\ud83d\udd0a First click enables sound' + (Audio5.isMuted() ? ' (currently MUTED \u2014 unmute via \ud83d\udd07 in THE MINISTRY)' : '') + '</div>'
-        + '<button class="moc-continue" id="moc-story-next">OPEN THE DOSSIER \u25b6</button></div>';
-      document.getElementById('moc-story-next').addEventListener('click', function(){
+        + '<h2>WHY THIS GAME EXISTS</h2>'
+        + '<div class="moc-memo"><div class="body" style="font-size:13.5px">'
+        + 'The original Cammelot simulation compared today\u2019s healthcare system with an AI-augmented future. The harder question came afterwards: <b>how do you get there?</b><br><br>'
+        + 'Do you take the quick AI win that shows results now, or build foundations that pay off later? How do you keep care running while transforming it? And as you digitise more, how much dependence can the system safely carry?<br><br>'
+        + '<b>This game puts you in that chair.</b></div></div>'
+        + '<div style="text-align:left;background:#0a1030;border:2px solid #5a66b0;border-radius:4px;padding:10px 12px;margin:10px 0 14px">'
+        + '<div style="font:700 9px var(--px);color:var(--m-gold);margin-bottom:7px">WHAT THE GOAL MEANS</div>'
+        + '<div class="moc-sub" style="margin:0">Your job is not to buy the most technology. Keep care standing, save more lives than the no-minister shadow run, protect trust and the workforce, and manage the fragility you create.<br><br>'
+        + 'The <b>yearly objective</b> is one urgent political target for that year. It earns bonus points and focuses attention, but it is <b>not the whole mission</b>. Hitting it while the wider system collapses is still failure.</div></div>'
+        + '<button class="moc-continue" id="moc-purpose-next">ENTER CAMMELOT \u25b6</button></div>';
+      document.getElementById('moc-purpose-next').addEventListener('click', function(){
+        // Step 2: the story (in-world narrative, centre screen)
+        ov.innerHTML = '<div class="moc-box" style="max-width:540px;cursor:default;text-align:center">'
+          + '<div style="text-align:center;padding:4px 0 8px"><img src="logo.png" alt="" style="height:44px;width:auto;image-rendering:pixelated;max-width:160px"></div>'
+          + '<h2>' + sc.icon + ' ' + sc.name.toUpperCase() + '</h2>'
+          + '<div class="moc-sub" style="margin:4px 0 14px">Term #' + MoC.seed + (GS.isDaily && sc.daily ? ' \u00b7 today\u2019s shared scenario' : '') + '</div>'
+          + '<div class="moc-memo"><div class="dateline">' + (sc.dateline || 'Cammelot') + '</div><div class="body">' + (sc.story || b.situation) + '</div></div>'
+          + '<div class="moc-sub" style="font-size:11px;color:#8a94d8">\ud83d\udd0a First click enables sound' + (Audio5.isMuted() ? ' (currently MUTED \u2014 unmute via \ud83d\udd07 in THE MINISTRY)' : '') + '</div>'
+          + '<button class="moc-continue" id="moc-story-next">OPEN THE DOSSIER \u25b6</button></div>';
+        document.getElementById('moc-story-next').addEventListener('click', function(){
         ov.innerHTML = '<div class="moc-box" style="max-width:560px;cursor:default">'
         + '<div style="text-align:center;padding:4px 0 8px"><img src="logo.png" alt="" style="height:44px;width:auto;image-rendering:pixelated;max-width:160px"></div>'
         + '<h2 style="text-align:center">\ud83d\udcc1 THE CRISIS \u2014 BRIEFING</h2>'
@@ -14973,7 +14987,8 @@ if (localLLMOptIn) {
         if (loadJSON('moc_assumption', null) !== null) { return proceed(); }
         proceed();
       });
-      }); // end story-next listener
+        }); // end story-next listener
+      }); // end purpose-next listener
     });
 
     // Wire hooks (G5: wrapped with live scoring, objectives, flash decisions)
