@@ -13557,7 +13557,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     c.fillText('SCORE ' + r.score, 50, 560);
     // Footer
     c.fillStyle = '#8a7a5a'; c.font = '400 24px Inter, Arial';
-    c.fillText('Can you avert the zorginfarct?  \u2192  cammelot.org/minister.html', 480, 585);
+    c.fillText('Can you avert the zorginfarct?  \u2192  cammelot.org/minister', 480, 585);
     return cv2;
   }
   function downloadShareCard(r, reason){
@@ -13680,16 +13680,17 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     const deadList = GRAVE_MARKERS.filter(function(g){ return g.cause === 'system_failure'; }).slice(0, 6)
       .map(function(g){ return g.name + ' (' + g.age + '), waited ' + Math.round(g.waitWeeks) + ' weeks'; });
     const trail = yearEmojiTrail();
-    function buildShareText(rr){
+    function buildShareText(rr, reason){
       const scName = MoC.scenario ? MoC.scenario.name : 'The Full Term';
       const streakData = loadJSON('moc_streak', { count: 0 });
       const streakTag = (GS.scenario === 'sprint' && streakData.count > 1) ? ' \u00b7 \ud83d\udd25 ' + streakData.count + '-day streak' : '';
-      return 'Minister of Cammelot #' + MoC.seed + ' \u2014 ' + scName + '\n' + trail + '\nScore: ' + rr.score
+      const verdictTag = reason ? ' \u00b7 ' + verdict(rr, reason) : '';
+      return 'Minister of Cammelot #' + MoC.seed + ' \u2014 ' + scName + verdictTag + '\n' + trail + '\nScore: ' + rr.score
         + (rr.baseSd !== null ? ' \u00b7 Lives saved vs status quo: ' + rr.livesSaved : '') + streakTag
         + (GS.challengeScore !== null ? '\nChallenge target: ' + GS.challengeScore + ' \u2014 ' + (rr.score > GS.challengeScore ? 'BEATEN \u2705' : 'not beaten') : '')
         + '\nCan you avert the zorginfarct? https://cammelot.org/minister#scn=' + GS.scenario + '&seed=' + MoC.seed + '&score=' + rr.score;
     }
-    const shareText = buildShareText(r);
+    const shareText = buildShareText(r, reason);
     const lb = recordRun(r, reason);
     const ov = document.createElement('div');
     ov.className = 'moc-overlay'; ov.id = 'moc-endscreen';
