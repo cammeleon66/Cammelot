@@ -12283,12 +12283,17 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     // G20: Digital Inclusion Officer — requires AI Triage Gate law to be active
     { id:'inclofficer', name:'\ud83e\udd1d Digital Inclusion Officer', cost:30000, requiresLaw:'dig2',
       fx:{trustC:3}, max:1,
-      desc:'Dedicated support for patients locked out by digital-only pathways. Citizens +3. Stops the DigiD exclusion spiral. Requires AI Triage Gate law.' }
+      desc:'Dedicated support for patients locked out by digital-only pathways. Citizens +3. Stops the DigiD exclusion spiral. Requires AI Triage Gate law.' },
+    // G23: Carer Support Programme — relieves mantelzorg pressure
+    { id:'carersupport', name:'\ud83e\udec2 Carer Support Programme', cost:35000,
+      fx:{trustC:2, mantelzorg:-15}, max:2,
+      desc:'Home care coaching, respite breaks, and a social welfare liaison for informal carers. Citizens +2. Reduces carer pressure by 15 points \u2014 without it, burnout fires fast when the system is under strain. Max 2.' }
   ];
   function shopCost(item){
     const owned = GS.owned[item.id] || 0;
     let c = item.cost + (item.costStep || 0) * owned;
     if (GS.trustP < 35) c = Math.round(c * 1.25); // parliament withholds co-funding
+    if (item.id === 'platformai' && GS._fasttrackTaken) c = Math.round(c * 1.5); // G22: FastTrack integration debt
     return c;
   }
   const BUY_CAP = 2; // implementation capacity per quarter
@@ -12396,7 +12401,8 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     platform: ['"Something changed in the data system. My GP said: finally, the records just work.", said Marjolein.', '"They hired ten data engineers. I don\u2019t know what they built. But it works."'],
     platformai: ['"The diagnostic tool caught something my GP nearly missed. It was right.", said Veenstra.', '"AI used to feel like a press release. Now it actually catches things in my file."'],
     changeprog: ['"The new EchoScribe training actually made sense. Took a while, but now I use it." said Dr. de Jong.', '"Someone finally explained the system instead of just installing it.", said the receptionist.'],
-    inclofficer: ['"She came to my house to help me set up the portal. I couldn\u2019t believe it.", said Veenstra.', '"There\u2019s a real person at the counter again. Not just a screen.", said Mevrouw Jansen.']
+    inclofficer: ['"She came to my house to help me set up the portal. I couldn\u2019t believe it.", said Veenstra.', '"There\u2019s a real person at the counter again. Not just a screen.", said Mevrouw Jansen.'],
+    carersupport: ['"The respite centre opened on Tuesday. My neighbour finally got a day off from caring for her mum. First in two years.", said Van Dijk.', '"Informal carers do the work the system doesn\u2019t pay for. At least someone sees it."']
   };
   const EVENT_REACTIONS = {
     cyber: ['Did you hear? Hackers got into the health records\u2026', 'My neighbour won\u2019t use the portal anymore. Says the criminals read it first.', 'Is my file out there on the internet now?'],
@@ -12645,7 +12651,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
           run:function(){ applyFx({budget:80000, trustD:5, tree:-1}, 'Research grant: GP recruitment'); townSay(['"A new GP in the practice. FINALLY.", said Marjolein.', '"Best use of a research grant I\u2019ve seen in years."']); } }
       ] },
     { id:'platformdividend', name:'\ud83c\udf10 Platform Dividend', once:true,
-      weight:function(){ return (GS.platformMaturity || 0) >= 1 && GS.quarter >= 16 ? 25 : 0; },
+      weight:function(){ return (GS.platformMaturity || 0) >= 1 && GS.quarter >= (GS._fasttrackDeclined ? 14 : 16) ? 25 : 0; }, // G22: 2q earlier if FastTrack was declined
       text:function(){ return 'Four years after the platform investment, the Cammelot Regional Health Authority publishes its annual report. <b>Admin burden is down 18%.</b> Algorithm duplication: zero. GP feedback shows 82% satisfaction with record access \u2014 highest in the region.<br><br>A neighbouring municipality calls, asking for the playbook.'; },
       auto:function(){
         applyFx({trustD:4, trustP:3, admin:-0.03}, 'Platform dividend: multi-year payoff validated');
@@ -12658,6 +12664,25 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
         applyFx({trustC:-3, trustD:-4}, 'Point solution paper: no clinical impact, trust erodes');
         townSay(['"Another algorithm, another paper. I\u2019m still on the list.", grumbled Jansen.', '"94% accurate in a lab. 0% in my GP practice. Wonderful research."']);
       } },
+    // G22: Mid-journey temptation — fires when platform built but platformai not yet bought
+    { id:'fasttrack', name:'\u26a1 FastTrack Health Is Knocking', once:true,
+      weight:function(){ return (GS.platformMaturity || 0) >= 1 && !GS.owned.platformai && GS.quarter >= 12 && GS.quarter <= 20 ? 22 : 0; },
+      text:function(){ return 'FastTrack Health shows up at your ministry office. PowerPoint deck: 18 slides. Pitch: <b>"Our AI layer integrates in 6 weeks, shows results in 6 months, and looks perfect in a press release before the election."</b><br><br>Your data team whispers: "It bypasses the platform schema. We\u2019d need a separate pipeline forever."<br><br>Your comms chief whispers: "The election is in two years and the platform is still not headlines."'; },
+      choices:[
+        { label:'Take the deal', note:'Parliament +6 \u00b7 Fragmentation +2 \u00b7 Platform AI costs +50% later',
+          run:function(){
+            applyFx({trustP:6, frag:2}, 'FastTrack deal: AI layer bypasses platform, election-ready press release');
+            GS._fasttrackTaken = true;
+            townSay(['"FastTrack\u2019s new AI feature is live. The demo was impressive. The waiting list is still the same.", said Van Dijk.', '"Quick win. Every politician\u2019s favourite technology."']);
+          } },
+        { label:'Not now. Stay the course.', note:'Nothing now \u00b7 Platform dividend fires 2 quarters earlier',
+          run:function(){
+            GS._fasttrackDeclined = true;
+            GS.pendingBanners = GS.pendingBanners || [];
+            GS.pendingBanners.push({ head: '\ud83c\udfd7 STAYING THE COURSE', body: 'You turned down the shortcut. The platform keeps compounding quietly. The press release will come \u2014 just not on FastTrack\u2019s timeline.', soft: true });
+            townSay(['"The minister said no to the fast AI vendor. First time I\u2019ve seen that.", said Dr. Bakker.', '"Boring decision. Probably the right one."']);
+          } }
+      ] },
     { id:'aiaudit', name:'\ud83c\udfd7 AI Governance Board: Annual Accountability', once:true,
       weight:function(){ return GS.quarter >= 20 ? 15 : 0; },
       text:function(){
@@ -13020,7 +13045,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
       [pixIcon('cross') + ' Capacity', ceff + '%', sysCls(ceff, false, 70, 85)],
       [pixIcon('brheart') + ' HP drain', M.IST.drain.toFixed(2) + '\u00d7', sysCls(M.IST.drain, true, 0.7, 1.0)],
       [pixIcon('plug') + ' Dependence', GS.dependence + ' pts', sysCls(GS.dependence, true, 3, 6)],
-      [pixIcon('people') + ' Mantelzorg druk', (GS.mantelzorg || 30) + '%', sysCls(GS.mantelzorg || 30, true, 50, 75)],
+      [pixIcon('people') + ' Mantelzorg druk', (GS.mantelzorg || 30) + '%', sysCls(GS.mantelzorg || 30, true, 50, 70)], // G23: warning earlier
       ['\ud83e\udde9 AI Silos', (GS.fragmentation || 0) + ' active', sysCls(GS.fragmentation || 0, true, 2, 5)], // G17
       ['\ud83c\udfd7 Platform', (GS.platformMaturity || 0) === 0 ? 'none' : 'level ' + (GS.platformMaturity || 0), (GS.platformMaturity || 0) >= 1 ? 'g' : 'y'] // G17
     ];
@@ -14117,43 +14142,57 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
       a:{ l:'Send a case manager (\u2212\u20ac5K)', run:function(f){ if (GS.budget < 5000) { FX.pop('Cannot afford', '#e05858'); return; } GS.budget -= 5000; f.hp = Math.min(100, (f.hp || 60) + 8); FX.pop('+8 HP for ' + f.name.split(' ')[0], '#7bc67b'); townSay(['"Someone from the ministry actually picked up my case. I didn\u2019t expect that.", said ' + f.name.split(' ')[0] + '.']); } },
       b:{ l:'Point to the waiting list', run:function(f){ MoC.adjustTrust(-1); townSay(['"The minister\u2019s office told me to wait in the queue. That\u2019s it. The queue.", said ' + f.name.split(' ')[0] + '.']); } } },
     { t:'\ud83d\udcfa Regional TV wants a quote', d:function(){ return 'Camera crew outside about the waiting lists. Live in ten seconds.'; },
-      a:{ l:'Take the interview', run:function(){ MoC.adjustTrust(systemDeaths() <= 2 ? 2 : -2); } },
-      b:{ l:'"No comment"', run:function(){ MoC.adjustTrust(-1); } } },
+      a:{ l:'Take the interview', run:function(){ MoC.adjustTrust(systemDeaths() <= 2 ? 2 : -2); townSay(systemDeaths() <= 2 ? ['"Smooth interview. The minister had the numbers. You can tell they know the file.", said Van Dijk.'] : ['"They went live. They didn\u2019t have good answers. Neither did we.", sighed Jansen.']); } },
+      b:{ l:'"No comment"', run:function(){ MoC.adjustTrust(-1); townSay(['"No comment." Two words. That\u2019s all they gave us.', '"At least the previous minister talked to us. This one just walked past the cameras.']); } } },
     { t:'\u26a0 Practice server hiccup', d:function(){ return 'Halcyon One reports "intermittent degraded performance". The practices ask: switch to paper for the afternoon?'; },
-      a:{ l:'Switch to paper (safe, slow)', run:function(){ GS.liveScore = Math.max(0, GS.liveScore - 5); FX.pop('\u22125 pts (slow day)', '#FFD54F'); } },
-      b:{ l:'Ride it out', run:function(){ if (Math.random() < 0.3) { MoC.adjustTrust(-2); FX.shake(); } } } },
+      a:{ l:'Switch to paper (safe, slow)', run:function(){ GS.liveScore = Math.max(0, GS.liveScore - 5); FX.pop('\u22125 pts (slow day)', '#FFD54F'); townSay(['"Paper forms today. The receptionist found the 2019 binder under her desk.", said Marjolein.', '"Systems go down, binders come out. At least the fallback exists."']); } },
+      b:{ l:'Ride it out', run:function(){ if (Math.random() < 0.3) { MoC.adjustTrust(-2); FX.shake(); townSay(['"The records were frozen for three hours. Three hours.", said Van Dijk.', '"They could have switched to paper. They didn\u2019t. Classic."']); } else { townSay(['"A little glitch. Back online by lunch. The system held.", said Dr. de Jong.']); } } } },
     { t:'\ud83d\udc65 Volunteers offer help', d:function(){ return 'The church group offers weekly transport for elderly patients. They just need insurance cover.'; },
-      a:{ l:'Cover it (\u2212\u20ac3K)', run:function(){ if (GS.budget < 3000) { FX.pop('Cannot afford', '#e05858'); return; } GS.budget -= 3000; MoC.adjustTrust(2); } },
-      b:{ l:'Too much liability', run:function(){ MoC.adjustTrust(-1); } } },
+      a:{ l:'Cover it (\u2212\u20ac3K)', run:function(){ if (GS.budget < 3000) { FX.pop('Cannot afford', '#e05858'); return; } GS.budget -= 3000; MoC.adjustTrust(2); townSay(['"The church van picks up Mevrouw Jansen every Tuesday now. The ministry covered the insurance.", said Van Dijk.', '"Elderly care, sorted by a minivan and a bit of paperwork. Not glamorous. Works."']); } },
+      b:{ l:'Too much liability', run:function(){ MoC.adjustTrust(-1); townSay(['"The ministry said: liability issues. The volunteers said: fine. Mevrouw Jansen still can\u2019t get to the clinic.", sighed Marjolein.']); } } },
     { t:'\ud83d\udcc4 Consultant pitch', d:function(){ return '"For only \u20ac15K we\u2019ll write a vision document on AI-ready care pathways."'; },
-      a:{ l:'Buy the report', run:function(){ if (GS.budget < 15000) { FX.pop('Cannot afford', '#e05858'); return; } GS.budget -= 15000; GS.liveScore = Math.max(0, GS.liveScore - 10); FX.pop('\u221210 pts (it\u2019s a PDF)', '#e07050'); } },
-      b:{ l:'Politely decline', run:function(){ GS.liveScore += 5; FX.pop('+5 pts', '#7bc67b'); } } },
+      a:{ l:'Buy the report', run:function(){ if (GS.budget < 15000) { FX.pop('Cannot afford', '#e05858'); return; } GS.budget -= 15000; GS.liveScore = Math.max(0, GS.liveScore - 10); FX.pop('\u221210 pts (it\u2019s a PDF)', '#e07050'); townSay(['"Ninety-three pages. Seventeen frameworks. Zero recommendations that weren\u2019t already on page 3.", said Dr. Bakker.', '"The consultants arrived in a lease car. That\u2019s where our budget went."']); } },
+      b:{ l:'Politely decline', run:function(){ GS.liveScore += 5; FX.pop('+5 pts', '#7bc67b'); townSay(['"The ministry turned down a consultant today. Wrote one sentence back. \u2018Thank you, no.\u2019 That\u2019s new.", said Veenstra.']); } } },
     { t:'\ud83d\ude91 Neighbouring region calls', d:function(){ return 'Their ER is overflowing. "Can Cammelot take six ambulances tonight?"'; },
       a:{ l:'Take the patients', run:function(){ MoC.adjustTrust(2); applyFx({sick:0.005}, 'Overflow night shift'); FX.pop('Solidarity', '#7bc67b'); townSay(['"We helped six families from across the border last night. That\u2019s the system working.", said Dr. Willems.']); } },
       b:{ l:'"We\u2019re full too"', run:function(){ MoC.adjustTrust(-1); townSay(['"We turned away six ambulances. Six.", sighed Veenstra.']); } } },
     { t:'\ud83d\udcf1 Influencer trouble', d:function(){ return 'A local influencer (80K followers) posts that the patient portal "sells your data to Big Tech". It\u2019s going viral.'; },
-      a:{ l:'Rebut with the facts, on camera', run:function(){ MoC.adjustTrust(GS.dependence >= 6 ? -2 : 3); } },
-      b:{ l:'Ignore it', run:function(){ if (Math.random() < 0.4) { MoC.adjustTrust(-3); FX.pop('It spread', '#e05858'); } } } },
+      a:{ l:'Rebut with the facts, on camera', run:function(){ MoC.adjustTrust(GS.dependence >= 6 ? -2 : 3); townSay(GS.dependence >= 6 ? ['"The minister said the data is safe. Meanwhile the system has been down twice this month.", said Van Dijk.'] : ['"The minister went on record. Privacy policy, plain Dutch, on camera. That\u2019s what I wanted to hear.", said Marjolein.']); } },
+      b:{ l:'Ignore it', run:function(){ if (Math.random() < 0.4) { MoC.adjustTrust(-3); FX.pop('It spread', '#e05858'); townSay(['"They ignored it. Half the neighbourhood uninstalled the portal app.", said Jansen.', '"If it wasn\u2019t true, they\u2019d have said so."']); } else { townSay(['"The influencer posted again. Most people scrolled past it this time.", said Van Dijk.']); } } } },
     { t:'\ud83d\udc8a Pharmacy shelf empty', d:function(){ return 'The pharmacist calls: out of children\u2019s antibiotics until Thursday. Parents are in the shop, filming.'; },
       a:{ l:'Emergency courier (\u2212\u20ac4K)', run:function(){ if (GS.budget < 4000) { FX.pop('Cannot afford', '#e05858'); return; } GS.budget -= 4000; MoC.adjustTrust(2); townSay(['"The minister got antibiotics here overnight. My son can sleep again.", said Van Dijk.']); } },
       b:{ l:'"National problem, not mine"', run:function(){ MoC.adjustTrust(-2); townSay(['"Ministry says it\u2019s not their problem. My sick kid says otherwise.", said Jansen.']); } } },
     { t:'\ud83d\udcf0 Leaked memo', d:function(){ return 'The Gazette has your internal memo weighing practice closures. They call for comment before print.'; },
-      a:{ l:'Own it: "All options on the table"', run:function(){ MoC.adjustTrust(-1); GS.liveScore += 5; FX.pop('+5 pts (honesty)', '#7bc67b'); } },
-      b:{ l:'Deny everything', run:function(){ if (Math.random() < 0.5) { MoC.adjustTrust(-4); FX.shake(); FX.pop('Caught lying', '#e05858'); } else { FX.pop('It blew over', '#FFD54F'); } } } },
+      a:{ l:'Own it: "All options on the table"', run:function(){ MoC.adjustTrust(-1); GS.liveScore += 5; FX.pop('+5 pts (honesty)', '#7bc67b'); townSay(['"They could have denied it. They didn\u2019t. That counts for something.", said Van Dijk.', '"Our practice might close? I wanted to know that. I would rather not \u2014 but I wanted to know."']); } },
+      b:{ l:'Deny everything', run:function(){ if (Math.random() < 0.5) { MoC.adjustTrust(-4); FX.shake(); FX.pop('Caught lying', '#e05858'); townSay(['"The Gazette printed the memo AND the denial. Side by side. Front page.", said Jansen.', '"They lied. We have the document."']); } else { FX.pop('It blew over', '#FFD54F'); townSay(['"Remember that memo scandal? Already forgotten. News cycle moves fast.", said Marjolein.']); } } } },
     { t:'\ud83c\udfeb School visit request', d:function(){ return 'Group 7 of the primary school invites you for a health lesson. Your diary says no. Your comms chief says yes.'; },
-      a:{ l:'Go (lose an afternoon)', run:function(){ MoC.adjustTrust(2); GS.liveScore = Math.max(0, GS.liveScore - 3); FX.pop('Cute photos', '#7bc67b'); } },
-      b:{ l:'Send a video message', run:function(){} } },
+      a:{ l:'Go (lose an afternoon)', run:function(){ MoC.adjustTrust(2); GS.liveScore = Math.max(0, GS.liveScore - 3); FX.pop('Cute photos', '#7bc67b'); townSay(['"The minister came to our class! They answered every question, even the weird ones.", said a kid in the Gazette.', '"My son got a signed photo. First minister he\u2019s ever seen up close.", said Marjolein.']); } },
+      b:{ l:'Send a video message', run:function(){ townSay(['"The minister sent a video. Group 7 watched it on a phone. Not quite the same.", said the teacher.']); } } },
     { t:'\u26a1 Storm warning', d:function(){ return 'Code orange tonight. IT asks: pre-emptively switch systems to safe mode? It costs an evening of productivity.'; },
-      a:{ l:'Safe mode (cautious)', run:function(){ GS.liveScore = Math.max(0, GS.liveScore - 4); FX.pop('\u22124 pts (slow evening)', '#FFD54F'); } },
-      b:{ l:'Ride the storm', run:function(){ if (Math.random() < (GS.dependence >= 6 ? 0.45 : 0.15)) { MoC.adjustTrust(-3); applyFx({admin:0.01}, 'Storm outage cleanup'); FX.shake(); FX.pop('Systems down!', '#e05858'); } } } },
+      a:{ l:'Safe mode (cautious)', run:function(){ GS.liveScore = Math.max(0, GS.liveScore - 4); FX.pop('\u22124 pts (slow evening)', '#FFD54F'); townSay(['"Systems on safe mode last night. Slower, but every case handled.", said Dr. de Jong.', '"An evening of reduced capacity. No incidents. Boring is fine."']); } },
+      b:{ l:'Ride the storm', run:function(){ if (Math.random() < (GS.dependence >= 6 ? 0.45 : 0.15)) { MoC.adjustTrust(-3); applyFx({admin:0.01}, 'Storm outage cleanup'); FX.shake(); FX.pop('Systems down!', '#e05858'); townSay(['"Every system down during the storm. Every appointment rescheduled. Every record locked.", said Dr. Bakker.', '"They gambled on the weather. They lost."']); } else { townSay(['"Code orange but the systems held. Lucky night.', '"The servers survived. Or we got lucky. A bit of both."']); } } } },
     { t:'\ud83c\udf82 Dr. Willems retires?', d:function(){ return 'At her 64th birthday party, Dr. Willems jokes about retiring early. Half the town heard it.'; },
-      a:{ l:'Visit her practice personally', run:function(){ adjustStakeholders(0, 3, 0); FX.pop('She stays (for now)', '#7bc67b'); } },
-      b:{ l:'It was just a joke, surely', run:function(){ if (Math.random() < 0.25) { applyFx({sick:0.01}, 'Dr. Willems cut her hours'); FX.pop('She cut her hours', '#e05858'); } } } },
+      a:{ l:'Visit her practice personally', run:function(){ adjustStakeholders(0, 3, 0); FX.pop('She stays (for now)', '#7bc67b'); townSay(['"The minister visited Dr. Willems at her practice. Brought her favourite coffee. Stayed an hour.", said Marjolein.', '"She\u2019s staying. For now. You can see it in how she talks about the job again."']); } },
+      b:{ l:'It was just a joke, surely', run:function(){ if (Math.random() < 0.25) { applyFx({sick:0.01}, 'Dr. Willems cut her hours'); FX.pop('She cut her hours', '#e05858'); townSay(['"Dr. Willems cut her Thursday sessions.", said Jansen.', '"We all saw this coming. Except apparently the ministry."']); } else { townSay(['"Dr. Willems is still full-time. Sixty-four must suit her.", said Marjolein.']); } } } },
     // G19: Dr. de Jong EchoScribe reaction — conditional on scribes1 being owned
     { t:'\ud83d\udcac Dr. de Jong messages you', d:function(){ return 'A rare text from GP de Jong: "I used EchoScribe today. Finished my notes before 20:00 for the first time this year. My daughter asked if I was sick."'; },
       cond: function(){ return !!(GS.owned && GS.owned.scribes1); },
       a:{ l:'Reply: "This is the point"', run:function(){ adjustStakeholders(0, 2, 0); FX.pop('+2 Doctors (rare)', '#7bc67b'); townSay(['"Dr. de Jong actually texted the ministry. Nobody does that unless something works.", said the receptionist.']); } },
-      b:{ l:'Forward it to comms', run:function(){} } }
+      b:{ l:'Forward it to comms', run:function(){} } },
+    // G23: Maria Jansen — informal carer under pressure — conditional on high mantelzorg
+    { t:'\ud83d\udcde Maria Jansen calls the ministry', d:function(){ return '"I\u2019ve been caring for my mother for four years," she says. "No days off. No support. My own health is going. If I stop, she goes to emergency. If I continue, I go to emergency."'; },
+      cond: function(){ return (GS.mantelzorg || 30) >= 65; },
+      a:{ l:'Fund her a two-week break (\u2212\u20ac4K)', run:function(){
+        if (GS.budget < 4000) { FX.pop('Cannot afford', '#e05858'); return; }
+        GS.budget -= 4000; MoC.adjustTrust(2);
+        GS.mantelzorg = Math.max(30, (GS.mantelzorg || 65) - 8);
+        FX.pop('Carer supported', '#7bc67b');
+        townSay(['"Maria got two weeks. She cried on the phone.", said Van Dijk.', '"One person helped. How many more are there that nobody called?"']);
+      } },
+      b:{ l:'Refer her to local care services', run:function(){
+        MoC.adjustTrust(-1);
+        townSay(['"I was referred to a waiting list. For help managing a waiting list.", said Maria.', '"The ministry\u2019s answer to burnout: more administration."']);
+      } } }
   ];
   let flashActive = false;
   GS.flashSeen = [];
@@ -14859,9 +14898,15 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
         }
       }
       // G15: Mantelzorg pressure — creeps up when drain is high, fires burnout event at >= 80
-      if (q % 4 === 0 && !GS.over) { // yearly
+      // G23: also rises with high wait times quarterly (carers fill the gap formal care can't)
+      if (!GS.over) {
+        const waitStress = Math.max(0, (M.IST.tree || 12) - 12) * 0.3; // wait >12w = carer pressure
+        const drainStress = M.IST.drain > 1.10 ? 1.5 : 0;
+        if (waitStress + drainStress > 0) GS.mantelzorg = Math.min(100, (GS.mantelzorg || 30) + Math.round(waitStress + drainStress));
+      }
+      if (q % 4 === 0 && !GS.over) { // yearly escalation if drain very high
         if (M.IST.drain > 1.15) {
-          GS.mantelzorg = Math.min(100, (GS.mantelzorg || 30) + 5);
+          GS.mantelzorg = Math.min(100, (GS.mantelzorg || 30) + 3); // reduced from 5 since quarterly now adds too
         }
         if ((GS.mantelzorg || 30) >= 80 && !GS._mantelzorgFired) {
           GS._mantelzorgFired = true;
