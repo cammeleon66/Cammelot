@@ -81,7 +81,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a1a2e;font-family:
 @keyframes fu{0%{opacity:0;transform:translateY(4px)}100%{opacity:1;transform:translateY(0)}}
 
 /* Zoom indicator */
-#zoom-ind{position:absolute;top:10px;left:10px;background:rgba(61,36,21,.8);border:1px solid var(--frame2);border-radius:6px;padding:4px 10px;color:var(--parchment);font:500 10px 'JetBrains Mono',monospace;z-index:5}
+#zoom-ind{display:none}
 
 /* ── RIGHT PANEL (parchment style like AI Town) ── */
 #panel{width:320px;background:linear-gradient(180deg,var(--parchment) 0%,var(--parchment2) 100%);border-left:6px solid var(--frame);overflow-y:auto;padding:0;display:flex;flex-direction:column}
@@ -853,7 +853,7 @@ body.embed-mode #app{display:block!important}
 #top .ts .n{font-family:var(--px);font-size:11px!important;padding-top:2px}
 /* ── SNES window ── */
 .moc-overlay{position:fixed;inset:0;z-index:2000;background:rgba(4,6,20,.82);display:flex;align-items:center;justify-content:center;font-family:'Inter',sans-serif}
-.moc-box{background:linear-gradient(180deg,var(--m-blue) 0%,var(--m-blue2) 55%,var(--m-blue3) 100%);border:3px solid var(--m-white);outline:3px solid var(--m-ink);border-radius:4px;max-width:680px;width:92%;max-height:88vh;overflow-y:auto;padding:20px 24px;color:#dde2ff;box-shadow:0 10px 50px rgba(0,0,0,.75), inset 0 0 0 1px rgba(255,255,255,.12);animation:mocBoxIn .28s cubic-bezier(.2,1.4,.4,1)}
+.moc-box{background:linear-gradient(180deg,var(--m-blue) 0%,var(--m-blue2) 55%,var(--m-blue3) 100%);border:3px solid var(--m-white);outline:3px solid var(--m-ink);border-radius:4px;max-width:860px;width:92%;max-height:88vh;overflow-y:auto;padding:20px 24px;color:#dde2ff;box-shadow:0 10px 50px rgba(0,0,0,.75), inset 0 0 0 1px rgba(255,255,255,.12);animation:mocBoxIn .28s cubic-bezier(.2,1.4,.4,1)}
 @keyframes mocBoxIn{from{opacity:0;transform:translateY(26px) scale(.95)}to{opacity:1;transform:none}}
 .moc-box h2{color:var(--m-white);font-family:var(--px);font-size:13px;line-height:1.7;margin:0 0 6px;text-shadow:2px 2px 0 var(--m-ink)}
 .moc-box h3{color:var(--m-gold);font-family:var(--px);font-size:9px;letter-spacing:.5px;margin:16px 0 8px;border-bottom:2px solid rgba(240,240,228,.25);padding-bottom:6px;text-shadow:1px 1px 0 var(--m-ink)}
@@ -1262,7 +1262,7 @@ const MoC = (function(){
   });
 
   const api = { S, onTick, spend, adjustTrust, updateHUD, QUARTER_TICKS, TOTAL_QUARTERS, seed, IS_BASELINE,
-    SCENARIOS, scenario, dailySeed,
+    SCENARIOS, scenario, dailySeed, mulberry32,
     paused: false, onQuarter: null, onTermEnd: null, baseline: null };
   return api;
 })();
@@ -12377,7 +12377,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     window._mocTownTalk = GS.townTalk;
   }
   window._mocTownTalk = GS.townTalk;
-  window._mocSysPanelOpen = false; // G18-E: explicit default — panel starts collapsed
+  window._mocSysPanelOpen = true; // G18-E / visual-review: panel starts expanded so players see system data
   const TOWN_REACTIONS = {
     scribes1: ['My GP actually looked at me today. The computer writes the notes now, apparently.', 'The doctor talked WITH me instead of at a screen. New minister thing?'],
     scribes2: ['Even the assistant uses the talking computer now. Visits feel quicker.', 'They say the paperwork robot got smarter.'],
@@ -12844,7 +12844,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
   // G15: Deterministic shuffle per seed (Fisher-Yates with mulberry32)
   function pickDilemma(){
     if (!GS._dilemmaOrder) {
-      const rng = mulberry32(MoC.seed ^ 0xD11E11A); // 0xD11E11A = "DILEMMA" mnemonic in hex
+      const rng = MoC.mulberry32(MoC.seed ^ 0xD11E11A); // 0xD11E11A = "DILEMMA" mnemonic in hex
       GS._dilemmaOrder = DILEMMAS.map(function(d){ return d.id; });
       for (let i = GS._dilemmaOrder.length - 1; i > 0; i--) {
         const j = Math.floor(rng() * (i + 1));
@@ -13233,10 +13233,11 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     ov.className = 'moc-overlay'; ov.id = 'moc-council';
     let html = '<div class="moc-box"><h2>\ud83c\udfdb Quarterly Council \u2014 Q' + qq + ', Year ' + year + '</h2>';
     // G12: Promise tracker strip
-    if (PROMISES && PROMISES.length && q <= Math.round(MoC.TOTAL_QUARTERS / 2) + 2) {
+    const _promises = GS.PROMISES || [];
+    if (_promises.length && q <= Math.round(MoC.TOTAL_QUARTERS / 2) + 2) {
       html += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 10px;padding:8px 10px;background:#1a1a2e;border-radius:6px;border:1px solid #2e2e5e">'
         + '<span style="font-family:\'Press Start 2P\',monospace;font-size:9px;color:#8a94d8;align-self:center">PROMISES:</span>';
-      PROMISES.forEach(function(p){
+      _promises.forEach(function(p){
         const done = p.check();
         const elapsed = q >= Math.round(MoC.TOTAL_QUARTERS / 2);
         const icon = done ? '\u2705' : elapsed ? '\u274c' : '\u23f3';
@@ -14652,6 +14653,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
       { id:'digital', label:'2+ tech', text:'Digitise care (2+ tech systems live)', check:function(){ return (GS.owned.scribes1?1:0)+(GS.owned.scribes2?1:0)+(GS.owned.a2a?1:0)+(GS.owned.twin?1:0) >= 2; } },
       { id:'doctors', label:'Doctors \u226560', text:'Keep the doctors on side (trust \u2265 60)', check:function(){ return GS.trustD >= 60; } }
     ];
+    GS.PROMISES = PROMISES; // bridge: openCouncil is in outer IIFE scope and cannot see this closure
     function showManifesto(){
       if (MoC.TOTAL_QUARTERS < 16) return; // no election in sprints
       GS.promises = [];
@@ -14685,6 +14687,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     window._mocShowManifesto = showManifesto;
     // Debug hook for automated tests (only with ?debug in the URL)
     if (location.search.indexOf('debug') >= 0) window._mocDebug = { GS: GS, M: M, applyFx: applyFx, endTerm: endTerm, PROMISES: PROMISES, stepCascades: function(q){ return stepCascades(q); } };
+    window._mocForceCouncil = function(q){ councilOpen = false; openCouncil(q || MoC.S.quarter || 2); };
     function electionCheck(q){
       const eq = Math.round(MoC.TOTAL_QUARTERS / 2);
       if (MoC.TOTAL_QUARTERS < 16 || q !== eq || GS._electionHeld || !GS.promises) return null;
