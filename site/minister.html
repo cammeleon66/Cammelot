@@ -12336,8 +12336,12 @@ async function initLLMSubsystem() {
   }, 30000);
 }
 
-// Start LLM subsystem (non-blocking)
-initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
+// Local developer opt-in only. Public visitors must never be prompted for device access.
+const localLLMOptIn = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+  && new URLSearchParams(location.search).get('llm') === '1';
+if (localLLMOptIn) {
+  initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
+}
 
 // ════════════════════════════════════════════════════════════
 // MINISTER OF CAMMELOT — G1 GAME LAYER
