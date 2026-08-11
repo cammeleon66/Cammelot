@@ -161,6 +161,35 @@ body:has(#play-overlay) .top-stats,body:has(#moc-manifesto) .top-stats{visibilit
 .wt-btn.secondary:hover{border-color:#7a6a40;color:#F5E6C8}
 @media(max-width:500px){.walkthrough-modal{padding:20px 18px 16px}.walkthrough-modal h2{font-size:11px}.walkthrough-step{font-size:13px}}
 
+/* Minister onboarding must sit above every HUD element, especially on phones. */
+#welcome-card{z-index:9700!important;max-height:calc(100dvh - 24px);overflow-y:auto;overscroll-behavior:contain}
+body.moc-walkthrough-active #moc-portrait,
+body.moc-walkthrough-active #moc-objective,
+body.moc-walkthrough-active #moc-ministry{visibility:hidden!important;pointer-events:none!important}
+body.moc-walkthrough-active #moc-portrait.moc-walkthrough-target,
+body.moc-walkthrough-active #moc-objective.moc-walkthrough-target,
+body.moc-walkthrough-active #moc-ministry.moc-walkthrough-target,
+body.moc-walkthrough-active .moc-walkthrough-target{
+  visibility:visible!important;
+  pointer-events:auto!important;
+  z-index:9650!important
+}
+body:has(#moc-manifesto) #moc-portrait,
+body:has(#moc-manifesto) #moc-objective,
+body:has(#moc-manifesto) #moc-ministry{visibility:hidden!important;pointer-events:none!important}
+@media(max-width:768px){
+  #welcome-card{
+    width:calc(100% - 16px)!important;
+    max-height:min(46dvh,390px);
+    bottom:8px!important;
+    padding:12px 14px 10px!important
+  }
+  #welcome-card.wc-top{top:52px!important;bottom:auto!important}
+  #welcome-card #wc-text{font-size:12px!important;line-height:1.45!important;margin-bottom:10px!important}
+  #welcome-card #wc-title{font-size:13px!important}
+  #welcome-card #wc-next{min-height:44px;padding:10px 18px!important}
+}
+
 .fvp-icon{font-size:24px}
 .fvp-text{font:13px/1.5 'Inter',sans-serif;color:var(--parchment,#f4e4c1)}
 .fvp-text strong{font-size:14px;color:#FFB300}
@@ -966,6 +995,70 @@ body.moc-shake{animation:mocShake .5s}
 #moc-ministry .spd button.on{border-color:var(--m-amber);color:var(--m-gold)}
 #moc-ministry .mnext{font-size:10.5px;color:#8a94d8;margin-top:6px;border-top:1px dashed rgba(240,240,228,.2);padding-top:6px}
 .moc-icon{image-rendering:pixelated;width:14px;height:14px;vertical-align:-2px;margin-right:2px}
+@media(max-width:768px){
+  .moc-overlay{
+    align-items:flex-start;
+    padding:calc(8px + env(safe-area-inset-top)) 0 calc(8px + env(safe-area-inset-bottom))
+  }
+  .moc-box{
+    width:calc(100% - 12px);
+    max-height:calc(100dvh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    padding:14px 12px 10px
+  }
+  .moc-box h2{font-size:10px;line-height:1.55}
+  .moc-box h3{font-size:8px;margin-top:12px}
+  .moc-sub,.moc-gazette,.moc-dilemma .dq{font-size:12px;line-height:1.5}
+  .moc-memo{padding:12px}
+  .moc-memo .body{font-size:13px;line-height:1.6}
+  .moc-shop{grid-template-columns:1fr}
+  .moc-sys{grid-template-columns:repeat(2,1fr);padding:8px}
+  .moc-meters{display:grid;grid-template-columns:1fr}
+  .moc-meter{min-width:0}
+  .moc-opt,.moc-buy,.moc-continue{min-height:44px}
+  .moc-opt{width:calc(100% - 16px);margin:6px 8px;padding:10px}
+  .moc-continue{
+    width:100%;
+    margin:12px auto 0;
+    padding:12px 8px;
+    font-size:9px;
+    bottom:2px
+  }
+  .moc-objective{
+    left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom));
+    transform:none;
+    padding:7px 9px;
+    font-size:9.5px;
+    line-height:1.35;
+    text-align:center;
+    max-width:none
+  }
+  #moc-portrait{
+    left:8px;top:50px;bottom:auto;
+    width:58px;
+    padding-bottom:3px
+  }
+  #moc-portrait canvas{
+    width:46px!important;
+    height:58px!important;
+    margin-top:3px
+  }
+  #moc-portrait .pl{font-size:5px}
+  .moc-flash{
+    left:8px;right:8px;top:54px;
+    width:auto;
+    max-height:calc(100dvh - 62px);
+    overflow-y:auto
+  }
+  #moc-ministry{margin:4px;padding:8px}
+  #moc-ministry .mrow{font-size:10px}
+  #moc-ministry .mrow b{font-size:15px}
+  #moc-ministry .spd button{min-width:38px;min-height:34px;margin-left:2px}
+}
+@media(max-height:500px) and (orientation:landscape){
+  .moc-box{max-height:calc(100dvh - 8px);padding-top:10px}
+  #moc-portrait{display:none}
+  .moc-objective{left:auto;right:8px;width:min(62vw,520px)}
+}
 </style>
 </head>
 <body>
@@ -4978,16 +5071,16 @@ function drawBuildingStatus() {
     const capacity = b.id === 'hospital' ? MAX_HOSPITAL_BEDS : MAX_GP_CONSULTS_PER_DAY;
     const load = queueLen / Math.max(1, capacity);
 
-    // Glow color based on load
-    const color = load > 1.0 ? 'rgba(229,57,53,0.3)' : load > 0.5 ? 'rgba(255,179,0,0.3)' : 'rgba(76,175,80,0.2)';
-
     const x1 = (b.x1 * worldW - camX) * zoom;
     const y1 = (b.y1 * worldH - camY) * zoom;
     const w = (b.x2 - b.x1) * worldW * zoom;
     const h = (b.y2 - b.y1) * worldH * zoom;
 
-    cx.fillStyle = color;
-    cx.fillRect(x1, y1, w, h);
+    // Healthy buildings stay visually clean; only pressure gets an overlay.
+    if (load > 0.5) {
+      cx.fillStyle = load > 1.0 ? 'rgba(229,57,53,0.3)' : 'rgba(255,179,0,0.22)';
+      cx.fillRect(x1, y1, w, h);
+    }
 
     // Pulse animation when overloaded
     if (load > 1.0) {
@@ -4996,27 +5089,26 @@ function drawBuildingStatus() {
       cx.fillRect(x1, y1, w, h);
     }
 
-    // Queue count badge
+    // A labeled pill cannot be mistaken for an orphan citizen status dot.
     if (queueLen > 0) {
-      const bx = (b.x2 * worldW - camX) * zoom;
-      const by = (b.y1 * worldH - camY) * zoom;
-      cx.fillStyle = load > 1.0 ? '#E53935' : load > 0.5 ? '#FF9800' : '#4CAF50';
-      // Sprint S1: Pulsing badge when overflow
-      let badgeRadius = 10 * zoom;
-      if (load > 1.0) {
-        badgeRadius += Math.sin(Date.now() / 200) * 3 * zoom;
-      }
-      cx.beginPath(); cx.arc(bx, by, badgeRadius, 0, 6.28); cx.fill();
+      const label = queueLen + ' WAITING';
+      const fontSize = Math.max(8, 9 * zoom);
+      cx.font = `bold ${fontSize}px 'JetBrains Mono',monospace`;
+      const pillW = cx.measureText(label).width + 12 * zoom;
+      const pillH = 17 * zoom;
+      const bx = x1 + w / 2 - pillW / 2;
+      const by = y1 - pillH - 4 * zoom;
+      cx.fillStyle = load > 1.0 ? '#E53935' : load > 0.5 ? '#FF9800' : 'rgba(28,40,116,0.9)';
+      cx.fillRect(bx, by, pillW, pillH);
       cx.fillStyle = '#fff';
-      cx.font = `bold ${9 * zoom}px Inter`;
       cx.textAlign = 'center'; cx.textBaseline = 'middle';
-      cx.fillText(queueLen.toString(), bx, by);
+      cx.fillText(label, bx + pillW / 2, by + pillH / 2);
       // Sprint S1: "OVERFLOW" text when overloaded
       if (load > 1.0) {
         const overAlpha = Math.sin(Date.now() / 400) * 0.4 + 0.6;
         cx.fillStyle = `rgba(229,57,53,${overAlpha})`;
         cx.font = `bold ${8 * zoom}px 'JetBrains Mono',monospace`;
-        cx.fillText('OVERFLOW', bx, by + badgeRadius + 8 * zoom);
+        cx.fillText('OVERFLOW', bx + pillW / 2, by - 6 * zoom);
       }
       cx.textBaseline = 'alphabetic';
       cx.textAlign = 'left';
@@ -5050,13 +5142,12 @@ function drawBuildingStatus() {
         } else if (bo > 40) {
           borderColor = 'rgba(255,179,0,0.7)';
           borderWidth = 2 * zoom;
-        } else {
-          borderColor = 'rgba(76,175,80,0.5)';
-          borderWidth = 1.5 * zoom;
         }
-        cx.strokeStyle = borderColor;
-        cx.lineWidth = borderWidth;
-        cx.strokeRect(x1 - 1, y1 - 1, w + 2, h + 2);
+        if (borderColor) {
+          cx.strokeStyle = borderColor;
+          cx.lineWidth = borderWidth;
+          cx.strokeRect(x1 - 1, y1 - 1, w + 2, h + 2);
+        }
         // Sick leave overlay text
         if (gpAgent.sickLeaveTimer > 0) {
           const slx = x1 + w / 2;
@@ -10417,7 +10508,10 @@ if (playBtnInSim) playBtnInSim.textContent = '▶ Play';
 // Safety: if simulation not started within 45 seconds, force-start
 // (MoC: only after the briefing is dismissed — never during picker/briefing/tour)
 setTimeout(function() {
-  if (!autoTimer && (MoC.IS_BASELINE || window._mocBriefed)) {
+  var onboardingOpen = document.getElementById('welcome-card')
+    || document.getElementById('moc-manifesto')
+    || document.getElementById('moc-briefing');
+  if (!autoTimer && !onboardingOpen && (MoC.IS_BASELINE || window._mocBriefed)) {
     console.warn('Cammelot: walkthrough timeout, force-starting simulation');
     launchSimulation();
   }
@@ -10432,6 +10526,8 @@ window.addEventListener('resize',()=>{userZoomed=false;zoom=1;render();});
 function launchSimulation() {
   if (autoTimer) return; // already running
   if (!MoC.scenario && !MoC.IS_BASELINE) return; // MoC: waiting for scenario pick
+  window._mocGameStarted = true;
+  document.body.classList.remove('moc-walkthrough-active');
   console.log('Cammelot: launching simulation!');
   // Pre-tick to populate the world
   try { for(var i=0;i<10;i++) tick(); } catch(e) {}
@@ -11649,6 +11745,7 @@ document.getElementById('btn-tours').addEventListener('click', function() {
 
   function clearHighlight() {
     if (highlightEl) {
+      highlightEl.classList.remove("moc-walkthrough-target");
       highlightEl.style.outline = "";
       highlightEl.style.outlineOffset = "";
       highlightEl.style.boxShadow = highlightEl._oldBoxShadow || "";
@@ -11677,6 +11774,7 @@ document.getElementById('btn-tours').addEventListener('click', function() {
     el._oldZIndex = el.style.zIndex;
     
     // Apply highlight
+    el.classList.add("moc-walkthrough-target");
     el.style.transition = "outline 0.3s ease, box-shadow 0.3s ease";
     el.style.outline = "3px solid #FFB300";
     el.style.outlineOffset = "3px";
@@ -11692,6 +11790,7 @@ document.getElementById('btn-tours').addEventListener('click', function() {
   }
 
   function buildCard() {
+    document.body.classList.add("moc-walkthrough-active");
     var card = document.createElement("div");
     card.id = "welcome-card";
     card.style.cssText = "position:fixed;bottom:16px;left:50%;transform:translateX(-50%);z-index:200;background:linear-gradient(180deg,#1a1510 0%,#12100a 100%);border:2px solid #FFB300;border-radius:12px;padding:16px 20px 14px;max-width:520px;width:calc(100% - 32px);box-shadow:0 8px 40px rgba(0,0,0,.6);font-family:Inter,sans-serif;";
@@ -11756,6 +11855,18 @@ document.getElementById('btn-tours').addEventListener('click', function() {
       }
       
       applyHighlight(steps[step].highlight);
+      positionCard(steps[step].highlight);
+    }
+
+    function positionCard(selector) {
+      card.classList.remove("wc-top");
+      if (window.innerWidth > 768 || !selector) return;
+      var target = document.querySelector(selector);
+      if (!target) return;
+      var rect = target.getBoundingClientRect();
+      if (rect.top + rect.height / 2 > window.innerHeight * 0.5) {
+        card.classList.add("wc-top");
+      }
     }
 
     nextBtn.addEventListener("click", function() {
@@ -11763,6 +11874,7 @@ document.getElementById('btn-tours').addEventListener('click', function() {
       if (step >= steps.length) {
         clearHighlight();
         card.remove();
+        document.body.classList.remove("moc-walkthrough-active");
         step = 0; // allow replay via ❓
         // First play: _mocGameStarted is false → show manifesto → Sign calls launchSimulation()
         // Replay mid-game: _mocGameStarted is true → just unpause and return
@@ -11786,12 +11898,13 @@ document.getElementById('btn-tours').addEventListener('click', function() {
 
     // Apply first highlight
     applyHighlight(steps[0].highlight);
+    positionCard(steps[0].highlight);
   }
 
   // MoC: the game layer owns onboarding sequencing. It calls window.mocStartWalkthrough()
   // after the briefing; show only once per browser.
   window.mocStartWalkthrough = function(){
-    // Playtest phase: show the tour at the start of every term (Skip is one click away).
+    // Playtest phase: show the complete tour at the start of every term.
     buildCard();
   };
   // Replayable anytime via the ❓ button
@@ -14629,7 +14742,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
         window._mocBriefed = true;
         Audio5.sting();
         function proceed(){
-          MoC.paused = false;
+          MoC.paused = true;
           if (window.mocStartWalkthrough) window.mocStartWalkthrough();
         }
         // Assumption check (once per browser)
@@ -14743,7 +14856,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     ];
     GS.PROMISES = PROMISES; // bridge: openCouncil is in outer IIFE scope and cannot see this closure
     function showManifesto(){
-      if (MoC.TOTAL_QUARTERS < 16) return; // no election in sprints
+      if (MoC.TOTAL_QUARTERS < 16) { launchSimulation(); return; } // no election in sprints
       if (GS._manifestoShown) return; // guard: never show twice
       GS._manifestoShown = true; // prevents _mfCheck from firing it again
       GS.promises = [];
