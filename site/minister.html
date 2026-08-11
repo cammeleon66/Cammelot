@@ -900,7 +900,7 @@ body.embed-mode #app{display:block!important}
 .moc-buy:active:not(:disabled){transform:translateY(1px)}
 .moc-buy:disabled{background:#3a4270;border-color:#5a66b0;outline-color:transparent;color:#7a86c8;cursor:not-allowed}
 .moc-owned{color:var(--m-green);font-weight:700;font-size:10px;font-family:var(--px)}
-.moc-continue{display:block;margin:18px auto 2px;background:linear-gradient(180deg,var(--m-amber),#e08800);border:3px solid var(--m-white);outline:3px solid var(--m-ink);color:#1a0e00;font:700 12px var(--px);padding:12px 28px;border-radius:3px;cursor:pointer;letter-spacing:1px;transition:transform .1s}
+.moc-continue{display:block;margin:18px auto 2px;background:linear-gradient(180deg,var(--m-amber),#e08800);border:3px solid var(--m-white);outline:3px solid var(--m-ink);color:#1a0e00;font:700 12px var(--px);padding:12px 28px;border-radius:3px;cursor:pointer;letter-spacing:1px;transition:transform .1s;position:sticky;bottom:0;z-index:10}
 .moc-continue:hover:not(:disabled){transform:scale(1.04)}
 .moc-continue:disabled{background:#3a4270;border-color:#5a66b0;color:#7a86c8;cursor:not-allowed}
 /* ── Meters ── */
@@ -1359,16 +1359,16 @@ const NO_WALK_ZONES = [
 
 // Building zones — agents inside are hidden on map
 const BUILDINGS = [
-  { id:'hospital', x1:.25, y1:.02, x2:.45, y2:.20, label:'Cammelot Hospital' },
+  { id:'hospital', x1:.22, y1:.10, x2:.44, y2:.34, label:'Cammelot Hospital' },
   { id:'gp1_bldg', x1:.56, y1:.13, x2:.68, y2:.25, label:'GP de Jong' },
-  { id:'gp2_bldg', x1:.04, y1:.60, x2:.14, y2:.70, label:'GP Bakker' },
+  { id:'gp2_bldg', x1:.13, y1:.59, x2:.22, y2:.71, label:'GP Bakker' },
 ];
 
 // Key destinations for agent pathfinding
 const DESTINATIONS = {
   gp_collins:  { entrance:{x:.62,y:.26}, building:'gp1_bldg' },
-  gp_bennett:  { entrance:{x:.09,y:.71}, building:'gp2_bldg' },
-  hospital:    { entrance:{x:.35,y:.21}, building:'hospital' },
+  gp_bennett:  { entrance:{x:.17,y:.71}, building:'gp2_bldg' },
+  hospital:    { entrance:{x:.33,y:.34}, building:'hospital' },
 };
 function getGPDest(gpName){
   if(gpName && gpName.includes('Bakker')) return DESTINATIONS.gp_bennett;
@@ -2906,25 +2906,60 @@ function generateBio(id, age, gender) {
 const SOCIAL_DIALOGUES = {
   healthy_healthy: [
     "Lovely weather today!","Have you tried the new bakery?","How are the grandchildren?",
-    "Heading to the park?","Did you see the match last night?"
+    "Heading to the park?","Did you see the match last night?",
+    "The minister's been busy this term — have you noticed any change?",
+    "They say wait times are coming down. Haven't noticed it myself.",
+    "My nephew works at the hospital. Says it's still chaos in there.",
+    "Have you been to the health check at the market square?",
+    "Dr. de Jong looked exhausted last week. She works too hard.",
+    "I booked my appointment online! Five minutes. Actually progress.",
+    "Everyone in my family has had their check-up. Are you up to date?",
+    "My GP says the admin load is down this year. She actually smiled.",
+    "The park benches are always taken now. Good sign, people are out.",
+    "I walked past the hospital — queue was short for once.",
+    "They installed new screens at the practice. Better than waiting with a number.",
+    "The Gazette says we're at average now. Average! What an achievement.",
+    "I hope they keep the prevention programme going. My cholesterol is finally down.",
+    "Three new doctors joining next month, apparently. Let's hope it's true.",
+    "Did you hear about the data breach scare? Everything fine in the end, they say."
   ],
   healthy_sick: [
     "You don't look well. Have you seen the doctor?","Take care of yourself!",
-    "I hope you feel better soon.","My neighbor had the same thing. It took weeks..."
+    "I hope you feel better soon.","My neighbor had the same thing. It took weeks...",
+    "Don't wait too long — the queue gets longer every day.",
+    "Have you tried GP Bakker? Sometimes de Jong has a shorter wait.",
+    "There's a triage hotline now — did you know? Might be faster.",
+    "Rest up. The system is what it is, but your rest is yours.",
+    "I went through something similar. It took patience. You'll get there.",
+    "Make sure you keep your appointment — they're hard to rebook."
   ],
   sick_sick: [
     "How long have you been waiting?","The queue at the hospital is terrible.",
     "I've been waiting weeks...","My GP says there's nothing more they can do.",
-    "At least we're not alone in this."
+    "At least we're not alone in this.",
+    "They promised change every election. The waiting rooms still smell the same.",
+    "I heard the minister visited the hospital last week. In and out in twenty minutes.",
+    "My referral got lost. Third time this year.",
+    "The pharmacist knows more about my care than anyone with an office.",
+    "If I get sicker I go to the front of the queue. Some silver lining."
   ],
   about_death: [
     "Did you hear? Such a shame.","Another one lost to the system...",
-    "I'm scared it could happen to me.","The town feels emptier every week."
+    "I'm scared it could happen to me.","The town feels emptier every week.",
+    "I knew them from the Tuesday walk. Just... gone.",
+    "The Gazette had a piece on it. Called it a 'systemic failure'. Too late for that.",
+    "Someone should be held accountable. Someone always should be.",
+    "We light a candle at the town hall tonight. Will you come?"
   ],
   about_system: [
     "The hospital wait is terrible now!","Dr. de Jong looks exhausted.",
     "They say the system is 'under pressure'. I say it's broken.",
-    "In SOLL mode it would be different, they say..."
+    "In SOLL mode it would be different, they say...",
+    "The minister's been here two years. What changed, exactly?",
+    "Budget cuts, they say. But they found money for the new plaza.",
+    "My data is in three different systems and none of them talk to each other.",
+    "The digital transformation they promised feels very analogue from this waiting chair.",
+    "I trust the doctors. It's the administrators I'm not sure about."
   ],
   // Sprint 28.2: Word-of-mouth experience sharing
   wordOfMouth: [
@@ -2946,20 +2981,30 @@ const SOCIAL_DIALOGUES = {
 const CHILD_DIALOGUES = [
   "Want to play?","School was boring today!","My tummy hurts",
   "Can we get ice cream?","I found a cool bug!","Tag, you're it!",
-  "My teacher is really nice","I don't want to go home yet"
+  "My teacher is really nice","I don't want to go home yet",
+  "Do you think the doctor will give me a sticker?","Why is the hospital so big?",
+  "My mum says the town is getting better. Is it?","Can we race to the park?"
 ];
 const TEEN_DIALOGUES = [
   "This town is so boring","Did you finish the homework?",
   "I can't wait to get my license","Have you seen that new show?",
   "My parents don't understand anything","Want to hang out later?",
-  "I need a summer job","School is stressing me out"
+  "I need a summer job","School is stressing me out",
+  "We should move somewhere bigger when we're older",
+  "My friend's mum waited six weeks for a scan. Six weeks.",
+  "The politics class did a simulation about healthcare. It was actually kind of hard.",
+  "I got an alert from that health app. Bit creepy but also useful."
 ];
 const ELDERLY_DIALOGUES = [
   "My knees aren't what they used to be","I remember when this town had only one doctor",
   "The grandchildren keep me young","Back in my day things were different",
   "I've got an appointment next week, dreading the wait",
   "At least the weather is nice for a walk","Have you taken your pills today?",
-  "The new doctor is nice, but so young!"
+  "The new doctor is nice, but so young!",
+  "I waited forty years for that ward to be renovated. Still waiting.",
+  "My carer is wonderful. But she's one person. She can't be everywhere.",
+  "In my day you saw the same doctor your whole life. That trust meant something.",
+  "The computer system went down at the practice again. Third time this month."
 ];
 // ── Sprint 27: Friend-specific dialogue ──
 const FRIEND_DIALOGUES = [
@@ -2970,7 +3015,9 @@ const FRIEND_DIALOGUES = [
   "I missed our chats!",
   "You look well! What's your secret?",
   "Let's catch up properly soon",
-  "I heard the news — are you doing okay?"
+  "I heard the news — are you doing okay?",
+  "We should look out for each other more. This town needs it.",
+  "I keep meaning to call. Life gets in the way."
 ];
 // ── Sprint 27: Context-aware dialogue pools ──
 const CONTEXT_DIALOGUES = {
@@ -4892,9 +4939,9 @@ function drawLabels(){
   cx.save();
   cx.font=`600 ${Math.max(9,11*zoom)}px Inter,sans-serif`;
   cx.textAlign='center';
-  [[.37,.04,'Cammelot Hospital','#c62828'],
+  [[.30,.09,'Cammelot Hospital','#c62828'],
    [.62,.07,'GP de Jong','#2e7d32'],
-   [.22,.50,'GP Bakker','#2e7d32'],
+   [.15,.58,'GP Bakker','#2e7d32'],
    [.48,.42,'Town Park','#2e7d32']].forEach(([fx,fy,txt,col])=>{
     const sx=(fx*worldW-camX)*zoom, sy=(fy*worldH-camY)*zoom;
     cx.fillStyle='rgba(0,0,0,.4)';cx.fillText(txt,sx+1,sy+1);
@@ -4906,8 +4953,8 @@ function drawLabels(){
 // ── Sprint 5: Queue positions per building ──
 const QUEUE_ORIGINS = {
   gp1_bldg: { x: 0.62, y: 0.23, dir: 1 },   // GP de Jong — queue going south
-  gp2_bldg: { x: 0.22, y: 0.46, dir: 1 },   // GP Bakker — queue going south
-  hospital: { x: 0.38, y: 0.23, dir: 1 }     // Hospital — queue going south
+  gp2_bldg: { x: 0.17, y: 0.66, dir: 1 },   // GP Bakker — queue going south
+  hospital: { x: 0.33, y: 0.32, dir: 1 }     // Hospital — queue going south
 };
 
 function getQueuePosition(buildingId, slotIndex) {
@@ -11688,11 +11735,6 @@ document.getElementById('btn-tours').addEventListener('click', function() {
     var btns = document.createElement("div");
     btns.style.cssText = "display:flex;justify-content:space-between;align-items:center;";
 
-    var skipBtn = document.createElement("button");
-    skipBtn.textContent = "Skip";
-    skipBtn.style.cssText = "background:none;border:none;color:rgba(255,255,255,.3);font:12px Inter,sans-serif;cursor:pointer;padding:6px 0;";
-    skipBtn.addEventListener("click", function() { clearHighlight(); card.remove(); step = 0; if (typeof MoC !== 'undefined' && window._mocGameStarted) { MoC.paused = false; } launchSimulation(); });
-
     var nextBtn = document.createElement("button");
     nextBtn.id = "wc-next";
     nextBtn.textContent = "Next \u2192";
@@ -11723,14 +11765,18 @@ document.getElementById('btn-tours').addEventListener('click', function() {
         clearHighlight();
         card.remove();
         step = 0; // allow replay via ❓
-        if (typeof MoC !== 'undefined' && window._mocGameStarted) { MoC.paused = false; }
-        launchSimulation();
+        // Show manifesto before launching — manifesto Sign button calls launchSimulation()
+        if (window._mocShowManifesto) {
+          window._mocShowManifesto();
+        } else {
+          if (typeof MoC !== 'undefined') MoC.paused = false;
+          launchSimulation();
+        }
         return;
       }
       updateStep();
     });
 
-    btns.appendChild(skipBtn);
     btns.appendChild(nextBtn);
     
     card.appendChild(stepRow);
@@ -14616,7 +14662,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
       // G15: parliament penalty if no laws enacted last Act
       if (act > 1 && (GS._lawsThisAct || 0) === 0) {
         applyFx({ trustP: -6 }, 'No legislation enacted this Act');
-        GS.pendingBanners.push({ head: 'GEEN WET AANGENOMEN', body: 'Parliament notes that four years passed without a single law enacted. Coalition partners file a motion of concern. <b style="color:var(--m-red)">Parliament \u22126</b>', soft: false });
+        GS.pendingBanners.push({ head: 'NO LEGISLATION ENACTED', body: 'Parliament notes that four years passed without a single law enacted. Coalition partners file a motion of concern. <b style="color:var(--m-red)">Parliament \u22126</b>', soft: false });
       }
       GS._lawsThisAct = 0; // reset counter for next Act
       GS._lastAct = act;
@@ -14699,6 +14745,8 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
     GS.PROMISES = PROMISES; // bridge: openCouncil is in outer IIFE scope and cannot see this closure
     function showManifesto(){
       if (MoC.TOTAL_QUARTERS < 16) return; // no election in sprints
+      if (GS._manifestoShown) return; // guard: never show twice
+      GS._manifestoShown = true; // prevents _mfCheck from firing it again
       GS.promises = [];
       const ov = document.createElement('div');
       ov.className = 'moc-overlay'; ov.id = 'moc-manifesto';
@@ -14725,6 +14773,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
         ov.remove();
         MoC.paused = false;
         say('MINISTRY', 'Manifesto signed: ' + GS.promises.map(function(i){ return PROMISES[i].text; }).join(' + '), 'sys');
+        launchSimulation(); // walkthrough → manifesto → game: simulation starts here
       });
     }
     window._mocShowManifesto = showManifesto;
@@ -14859,7 +14908,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
           victim.hp = 0; victim.state = 'dead';
           GRAVE_MARKERS.push({ name: victim.name, age: victim.age, cause: 'system_failure',
             waitWeeks: victim.waitWeeks || 8, cycle: (typeof cycle !== 'undefined' ? cycle : 0) });
-          GS.pendingBanners.push({ head: 'HET EERSTE SLACHTOFFER',
+          GS.pendingBanners.push({ head: 'THE FIRST VICTIM',
             body: (victim.name || 'A citizen') + ' (' + (victim.age || '?') + ') waited ' + Math.round(victim.waitWeeks || 8) + ' weeks for a referral that never came. '
               + 'The Gazette prints their name on the front page. '
               + '<b>"Six months into your term, Minister. Zero decisions. One name."</b>' });
@@ -14877,7 +14926,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
       // G16: dep cascade-armed banner — one-time warning when fragility hits critical
       if (GS.dependence >= 7 && !GS._depWarnFired && !GS.over) {
         GS._depWarnFired = true;
-        GS.pendingBanners.push({ head: '\ud83d\udd25 DIGITALE KWETSBAARHEID KRITIEK',
+        GS.pendingBanners.push({ head: '\ud83d\udd25 DIGITAL FRAGILITY: CRITICAL',
           body: 'Cammelot\u2019s digital care stack now has <b>' + GS.dependence + ' interdependencies.</b> '
             + 'The rot cascade is armed: one ransomware hit or power failure can chain through all systems simultaneously. '
             + '<b>Resilience packs are your only remaining safety margin.</b> You have been warned.',
@@ -14910,10 +14959,10 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
         }
         if ((GS.mantelzorg || 30) >= 80 && !GS._mantelzorgFired) {
           GS._mantelzorgFired = true;
-          GS.pendingBanners.push({ head: '\ud83d\udc9c MANTELZORGCRISIS',
-            body: 'De gemeente telt meer dan 14.000 mantelzorgers. Na jaren van overbelasting vallen er nu massaal uit. '
-              + 'Thuiszorgwachtrijen exploderen. <b>Informele zorg is geen vanzelfsprekendheid \u2014 het is infrastructuur die breekt.</b> '
-              + 'Drain +5% dit kwartaal. Citizens \u22123.', soft: false });
+          GS.pendingBanners.push({ head: '\ud83d\udc9c INFORMAL CARER BURNOUT CRISIS',
+            body: 'The municipality counts over 14,000 informal carers. After years of overload, burnout is now cascading. '
+              + 'Home care queues are exploding. <b>Informal care is not a given \u2014 it is infrastructure, and it is breaking.</b> '
+              + 'Drain +5% this quarter. Citizens \u22123.', soft: false });
           applyFx({ sick: 0.05, trustC: -3 }, 'Mantelzorgcrisis: informal carer burnout');
         }
       }
@@ -14922,7 +14971,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
         const isHealthy = GS.trustP >= 55;
         const change = isHealthy ? 4 : -4;
         applyFx({ trustP: change }, 'Question Hour');
-        const qhTitle = isHealthy ? '\ud83c\udfdb Parlementaire Vragenuur: supporters' : '\ud83c\udfdb Parlementaire Vragenuur: kritiek';
+        const qhTitle = isHealthy ? '\ud83c\udfdb PARLIAMENTARY QUESTIONS: CONFIDENCE' : '\ud83c\udfdb PARLIAMENTARY QUESTIONS: SCRUTINY';
         const qhBody = isHealthy
           ? 'Parliament is broadly satisfied. Your coalition holds another quarter. (+4 Parliament Trust)'
           : 'A coalition MP tables a motion of concern: "Enough dossier study \u2014 we demand action." Parliamentary confidence wobbles. (-4 Parliament Trust)';
@@ -15025,6 +15074,7 @@ initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
         }, 1500);
         // G9c: manifesto after the tour finishes (hook into first sim launch)
         const _mfCheck = setInterval(function(){
+          if (GS._manifestoShown) { clearInterval(_mfCheck); return; } // already shown manually
           if (window._mocGameStarted && !GS._manifestoShown) {
             GS._manifestoShown = true;
             clearInterval(_mfCheck);
