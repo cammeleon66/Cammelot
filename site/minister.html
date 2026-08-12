@@ -81,6 +81,20 @@ body:has(#play-overlay) .top-stats,body:has(#moc-manifesto) .top-stats{visibilit
 .cm.alert .w{color:var(--red)}.cm.alert .t{color:#f99}
 .cm.sys .w{color:var(--blue)}.cm.sys .t{color:#9cf}
 @keyframes fu{0%{opacity:0;transform:translateY(4px)}100%{opacity:1;transform:translateY(0)}}
+/* Town pulse consequence feed */
+#town-pulse{position:absolute;bottom:54px;right:10px;width:260px;max-width:calc(100vw - 80px);background:rgba(30,20,10,.88);border:1.5px solid rgba(255,179,0,.35);border-radius:8px;padding:8px 12px;z-index:6;font-size:11px;line-height:1.5;color:var(--parchment);pointer-events:none;transition:opacity .4s}
+#town-pulse.hidden{opacity:0}
+#town-pulse .tp-head{font-size:9px;color:var(--gold);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+#town-pulse .tp-line{padding:2px 0;border-bottom:1px solid rgba(255,179,0,.1)}
+#town-pulse .tp-line:last-child{border-bottom:0}
+@media(max-width:768px){
+  #town-pulse{
+    display:block;left:6px;right:6px;bottom:6px;width:auto;max-width:none;
+    padding:6px 9px;font-size:10px;line-height:1.35
+  }
+  #town-pulse .tp-head{font-size:8px;margin-bottom:2px}
+  #town-pulse .tp-line:nth-child(n+3){display:none}
+}
 
 /* Zoom indicator */
 #zoom-ind{display:none}
@@ -1296,7 +1310,19 @@ const MoC = (function(){
       dateline:'Spring \u00b7 A good day, for once',
       brief:{ situation:'A generous world for learning the ropes: double budget, calm event deck, forgiving town.',
         threats:['Only your own curiosity'],
-        win:'There is no losing here. Experiment freely.' } }
+        win:'There is no losing here. Experiment freely.' } },
+    cabinetcrisis: { id:'cabinetcrisis', name:'3-Min Cabinet Crisis', icon:'🚨', quarters:8,
+      desc:'8 quarters, 2 years. System already under pressure, budget tight. Fast decisions, hard consequences, final confidence vote. No sandbox ease (~3 min at 4x).',
+      budget:400000, trust:50,
+      story:'The coalition nearly fell last night. Your chief of staff woke you at 05:15: <i>"We need a decision by nine."</i><br><br>Dr. de Jong\'s waiting room is already three weeks over the legal limit. Parliament has tabled two motions. The Gazette has your photo under the headline: <i>HOW LONG?</i><br><br>You have eight councils to prove the cabinet deserves to survive.',
+      dateline:'Tuesday 05:15 · The Minister\'s residence, Cammelot',
+      setup:function(){
+        M.IST.tree = 13; M.IST.sick = 0.10; M.IST.drain = 1.12;
+        MoC.S._speed = 4;
+      },
+      brief:{ situation:'System under pressure: waits at 13 weeks, staff sick leave at 10%, drain elevated. Eight councils. Budget of €400K. No midterm election - just a hard final confidence gate at Q8.',
+        threats:['Only 8 quarters - no slow plays, no long-term bets', 'Every wrong call shows up before the term ends', 'Final gate: all trusts >=40, deaths <5, no stage-3 cascade'],
+        win:'Cabinet survives Q8 final confidence vote. All three trust pillars >=40. Deaths below 5. No stage-3 cascade.' } }
   };
   const scenarioId = hashParams.get('scn') || (hashParams.get('seed') ? 'campaign' : null);
   const scenario = SCENARIOS[scenarioId] || null; // null => show picker
@@ -7047,6 +7073,7 @@ function tick(){
   if (cycle % 50 === 0) captureSnapshot();
   agents.forEach(a=>{
     if(a.type!=='patient'&&a.type!=='citizen') return;
+    if(a.moved) return;
     // Sprint 30: Capture pre-tick state for LLM trigger detection
     const _prevHp = a.hp;
     const _prevState = a.state;
@@ -10561,7 +10588,7 @@ function launchSimulation() {
   try { for(var i=0;i<10;i++) tick(); } catch(e) {}
   try { showTownFeed(); } catch(e) {}
   // Start the tick loop
-  autoTimer = setInterval(tick, 350);
+  autoTimer = setInterval(tick, Math.round(350 / ((MoC.S && MoC.S._speed) || 1)));
   var pb = document.getElementById('btn-play');
   if (pb) pb.textContent = '⏸ Pause';
   // Remove walkthrough card if still present
@@ -12347,6 +12374,9 @@ async function initLLMSubsystem() {
   GS.platformMaturity = 0; // G17: shared health data platform level (0=none, 1=built, 2=scaled)
   GS.adoptionRate = 0.7;     // G19: staff tech adoption multiplier (0.7 default, max 1.0 with change management)
   GS._biasDeaths = 0;        // G20: count of digigate "hold the line" choices (each = excluded citizen)
+  GS._lowTrustCQ = 0;        // consecutive quarters below trustC 30
+  GS._relocatedHouseholds = []; // names of moved households
+  GS._strikeUnresolvedQ = 0; // quarters strike has been unresolved
   GS._digigateRecurs = false; // G20: true after first digigate beat fires — enables recurring exclusion pressure
   GS._digigateLastQ = 0;     // G20: quarter when digigate last fired (recurring cooldown)
 
@@ -12572,6 +12602,11 @@ async function initLLMSubsystem() {
       GS.pendingBeat = 'archipchallenge';
     }
     townSay(TOWN_REACTIONS[item.id] || ['The ministry is spending money on us again. We\u2019ll see.']);
+    const pckind = (item.id.indexOf('scribe') >= 0 || item.id === 'a2a' || item.id === 'twin' || item.id === 'platform' || item.id === 'platformai') ? 'digital'
+      : (item.id === 'gpfund' || item.id === 'mtvp' || item.id === 'hire') ? 'doctors'
+      : (item.id === 'campaign' || item.id === 'prevention') ? 'citizens'
+      : 'citizens';
+    showPolicyConsequences(item.name, item.fx, pckind);
     Audio5.coin();
     renderShop(window._councilWizardMode || false);
     refreshMeters();
@@ -12583,6 +12618,69 @@ async function initLLMSubsystem() {
     while (GS.townTalk.length > 8) GS.townTalk.shift();
     window._mocTownTalk = GS.townTalk;
   }
+  function showPolicyConsequences(label, fx, kind){
+    if (typeof agents === 'undefined') return;
+    if (!kind) {
+      if (fx && (fx.trustD || fx.admin || fx.sick)) kind = 'doctors';
+      else if (fx && (fx.dep || fx.frag || fx.platform)) kind = 'digital';
+      else if (fx && fx.tree) kind = 'wait';
+      else kind = 'citizens';
+    }
+    const relevant = [];
+    if (kind === 'admin' || kind === 'doctors' || kind === 'strike') {
+      const gps = agents.filter(function(a){ return a.type === 'gp' || a.type === 'specialist' || /practitioner|doctor/i.test(a.role || ''); })
+        .filter(function(a){ return a.state !== 'dead' && !a.moved; });
+      gps.slice(0, 2).forEach(function(a){ relevant.push({ agent: a, kind: 'doctor' }); });
+    }
+    if (kind === 'citizens' || kind === 'wait' || kind === 'drain') {
+      const pats = agents.filter(function(a){ return (a.type === 'patient' || a.type === 'citizen') && a.state !== 'dead' && !a.moved; });
+      pats.slice(0, 2).forEach(function(a){ relevant.push({ agent: a, kind: 'citizen' }); });
+    }
+    if (kind === 'digital' || kind === 'dependence') {
+      const elderly = agents.filter(function(a){ return (a.type === 'patient' || a.type === 'citizen') && a.age >= 65 && a.state !== 'dead' && !a.moved; });
+      elderly.slice(0, 2).forEach(function(a){ relevant.push({ agent: a, kind: 'elderly' }); });
+    }
+    if (!relevant.length) {
+      const any = agents.filter(function(a){ return a.state !== 'dead' && !a.moved; });
+      any.slice(0, 2).forEach(function(a){ relevant.push({ agent: a, kind: 'citizen' }); });
+    }
+    const positiveChoice = fx && (fx.trustC > 0 || fx.trustD > 0 || fx.admin < 0 || fx.tree < 0);
+    const reactionLines = [];
+    relevant.forEach(function(r){
+      const name = (r.agent.name || 'A resident').split(' ')[0];
+      let line;
+      if (r.kind === 'doctor') {
+        line = positiveChoice
+          ? '"' + name + ': Actually had time to read the guidelines today." '
+          : '"' + name + ': Another form to fill. Twelve patients waiting."';
+      } else if (r.kind === 'elderly') {
+        line = positiveChoice
+          ? '"' + name + ': The nurse helped me with the app. Works now."'
+          : '"' + name + ': They want a DigiD. I have never had the internet."';
+      } else {
+        line = positiveChoice
+          ? '"' + name + ': Appointment in under two weeks. When did that start?"'
+          : '"' + name + ': Waited three weeks. Still no referral letter."';
+      }
+      reactionLines.push(line);
+      r.agent.chatBubbleText = line.replace(/^"/, '').replace(/"\s*$/, '').replace(name + ': ', '');
+      r.agent.chatTimer = 180;
+    });
+    townSay(reactionLines);
+    const existing = document.getElementById('town-pulse');
+    const el = existing || document.createElement('div');
+    el.id = 'town-pulse';
+    el.innerHTML = '<div class="tp-head">Town reaction: ' + String(label || 'policy decision').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</div>'
+      + reactionLines.slice(0, 3).map(function(l){ return '<div class="tp-line">' + l + '</div>'; }).join('');
+    if (!existing) {
+      const gw = document.getElementById('game-wrap');
+      if (gw) gw.appendChild(el);
+    }
+    el.classList.remove('hidden');
+    clearTimeout(el._hideTimer);
+    el._hideTimer = setTimeout(function(){ el.classList.add('hidden'); }, 7000);
+  }
+  window._mocShowPolicyConsequences = showPolicyConsequences;
   window._mocTownTalk = GS.townTalk;
   window._mocSysPanelOpen = true; // G18-E / visual-review: panel starts expanded so players see system data
   const TOWN_REACTIONS = {
@@ -12638,8 +12736,8 @@ async function initLLMSubsystem() {
 
   // ── Recurring named citizen (Papers, Please pattern) ──
   function theFace(){
-    if (GS._face && GS._face.state !== undefined) return GS._face;
-    const elders = agents.filter(function(a){ return (a.type === 'patient' || a.type === 'citizen') && a.age >= 65 && a.conditions && a.conditions.length; })
+    if (GS._face && GS._face.state !== undefined && GS._face.state !== 'dead' && !GS._face.moved) return GS._face;
+    const elders = agents.filter(function(a){ return (a.type === 'patient' || a.type === 'citizen') && a.age >= 65 && a.conditions && a.conditions.length && a.state !== 'dead' && !a.moved; })
       .sort(function(x, y){ return x.name < y.name ? -1 : 1; });
     if (!elders.length) return null;
     GS._face = elders[MoC.seed % elders.length];
@@ -13190,7 +13288,7 @@ async function initLLMSubsystem() {
     if ((GS.fragmentation || 0) >= 6 && kind === 'calm') { kind = 'queue'; headline = 'TWELVE ALGORITHMS, ZERO PATIENTS HELPED'; }
     if ((GS.platformMaturity || 0) >= 2 && kind === 'praise') { headline = 'CAMMELOT BUILDS THE FOUNDATION FOR TOMORROW\u2019S CARE'; }
     // G9f: citizen quote of the quarter — a real living agent speaks
-    const alive = agents.filter(function(a){ return a.state !== 'dead' && a.name; });
+    const alive = agents.filter(function(a){ return a.state !== 'dead' && !a.moved && a.name; });
     if (alive.length) {
       const who = alive[Math.floor(Math.random() * alive.length)];
       const mood = who.waitWeeks > 8 ? 'wait' : (M.IST.admin > 0.2 ? 'forms' : GS.trustC > 60 ? 'happy' : 'meh');
@@ -13388,9 +13486,9 @@ async function initLLMSubsystem() {
     else if (M.IST.admin < 0.12) adjustStakeholders(0, 2, 0);
     else adjustStakeholders(0, 1, 0);
     // Lose checks
-    if (GS.trustP <= 10) { councilOpen = false; window._councilWizardMode = false; return endTerm('noconfidence'); }
-    if (GS.trustD <= 10) { councilOpen = false; window._councilWizardMode = false; return endTerm('strike'); }
-    if (GS.trustC <= 10) { councilOpen = false; window._councilWizardMode = false; return endTerm('protest'); }
+    if (GS.trustP <= 15) { councilOpen = false; window._councilWizardMode = false; return endTerm('noconfidence'); }
+    if (GS.trustD <= 15 || (GS.activeStates && GS.activeStates.struck && GS._strikeUnresolvedQ >= 1 && GS.trustD < 22)) { councilOpen = false; window._councilWizardMode = false; return endTerm('strike'); }
+    if (GS.trustC <= 15) { councilOpen = false; window._councilWizardMode = false; return endTerm('protest'); }
     if (sdNow >= 15) { councilOpen = false; window._councilWizardMode = false; return endTerm('scandal'); }
     if (GS.budget < -150000) { councilOpen = false; window._councilWizardMode = false; return endTerm('bankrupt'); }
 
@@ -13409,22 +13507,78 @@ async function initLLMSubsystem() {
     GS.activeStates = GS.activeStates || {};
     if (GS.trustD < 35 && !GS.activeStates.docWTR) {
       GS.activeStates.docWTR = true;
-      applyFx({sick:0.02}, 'Doctors demoralised \u2014 sick leave rising.');
+      applyFx({sick:0.02}, 'Doctors demoralised - sick leave rising.');
+      GS.pendingBanners = GS.pendingBanners || [];
+      GS.pendingBanners.push({ head:'⚕ DOCTORS: WORK-TO-RULE BEGINS', body:'GP trust has fallen below 35. Doctors now work strictly to contract - no overtime, no emergency cover swaps. Sick leave is rising. Restore doctor trust above 42 before the next council or the situation worsens.', soft:false });
+      showPolicyConsequences('doctors demoralised', {trustD:-3}, 'doctors');
     } else if (GS.trustD >= 42 && GS.activeStates.docWTR) {
       GS.activeStates.docWTR = false;
-      applyFx({sick:-0.02}, 'Doctors\u2019 morale recovering.');
+      applyFx({sick:-0.02}, "Doctors' morale recovering.");
     }
-    if (GS.trustD < 20 && !GS.activeStates.struck) {
+    if (GS.trustD < 22 && !GS.activeStates.struck) {
       GS.activeStates.struck = true;
-      applyTimedFx({sick:0.06, admin:0.05}, 1, 'DOCTOR STRIKE \u2014 practices run on skeleton staff');
+      GS._strikeUnresolvedQ = 1;
+      applyTimedFx({sick:0.06, admin:0.05}, 1, 'DOCTOR STRIKE - practices run on skeleton staff');
       Audio5.klaxon(); FX.shake();
-    } else if (GS.trustD >= 40) { GS.activeStates.struck = false; }
+      GS.pendingBanners = GS.pendingBanners || [];
+      GS.pendingBanners.push({ head:'🚨 DOCTOR STRIKE', body:'GP trust has collapsed below 22. Practices are running on skeleton staff. If trust does not recover above 35 by next council, or if it falls to 15, the cabinet falls. The Retention Fund is your fastest lever.', soft:false });
+      showPolicyConsequences('doctor strike', {trustD:-5}, 'strike');
+    } else if (GS.activeStates.struck) {
+      if (GS.trustD >= 35) {
+        GS.activeStates.struck = false;
+        GS._strikeUnresolvedQ = 0;
+      } else {
+        GS._strikeUnresolvedQ = Math.max(1, (GS._strikeUnresolvedQ || 0) + 1);
+        applyTimedFx({sick:0.06, admin:0.05}, 1, 'DOCTOR STRIKE CONTINUES - practices remain skeleton staffed');
+      }
+    }
     if (GS.trustC < 35 && !GS.activeStates.citAvoid) {
       GS.activeStates.citAvoid = true;
-      applyFx({drainMult:1.12}, 'Citizens delay seeing the GP \u2014 they arrive sicker.');
+      applyFx({drainMult:1.12}, 'Citizens delay seeing the GP - they arrive sicker.');
     } else if (GS.trustC >= 42 && GS.activeStates.citAvoid) {
       GS.activeStates.citAvoid = false;
       applyFx({drainMult:1/1.12}, 'Citizens seek care earlier again.');
+    }
+    if (GS.trustC < 30) {
+      GS._lowTrustCQ = (GS._lowTrustCQ || 0) + 1;
+    } else {
+      GS._lowTrustCQ = Math.max(0, (GS._lowTrustCQ || 0) - 1);
+    }
+    if ((GS._lowTrustCQ || 0) >= 2 && !GS.over) {
+      const household = agents.find(function(a){
+        return (a.type === 'citizen' || a.type === 'patient') && a.state !== 'dead' && !a.moved
+          && (GS._relocatedHouseholds || []).indexOf(a.name) < 0;
+      });
+      if (household) {
+        household.moved = true;
+        household.state = 'moved';
+        household.insideBuilding = 'moved';
+        household.x = household.tx = -1;
+        household.y = household.ty = -1;
+        Object.keys(QUEUES).forEach(function(k){
+          const queue = QUEUES[k];
+          if (!queue || !queue.agents) return;
+          queue.agents = queue.agents.filter(function(id){ return id !== household.id; });
+        });
+        GS._relocatedHouseholds = GS._relocatedHouseholds || [];
+        GS._relocatedHouseholds.push(household.name);
+        const famName = (household.name || 'A family').split(' ').slice(-1)[0];
+        const movedCount = GS._relocatedHouseholds.length;
+        applyFx({ trustP: -3, budget: -5000 }, 'Family relocation: population loss reduces tax base');
+        GS.pendingBanners = GS.pendingBanners || [];
+        GS.pendingBanners.push({
+          head: '🚗 FAMILY LEAVING CAMMELOT',
+          body: 'The ' + famName + ' family is moving out. "We tried. The wait list never moved." Population loss will reduce your tax base and parliament trust. '
+            + (movedCount >= 2 ? '<b>Two households have now left. If four relocate, the cabinet collapses.</b>' : 'One more departure in consecutive low-trust quarters will follow.'),
+          soft: false
+        });
+        showPolicyConsequences('family relocation', {trustC:-5}, 'citizens');
+        GS._lowTrustCQ = 0;
+        if (movedCount >= 4 && !GS.over) {
+          GS.pendingBanners.push({ head:'📢 PROTEST: MASS EXODUS', body:'Four families have left Cammelot. A protest march fills the town square. Parliament tables a motion of no confidence.', soft:false });
+          setTimeout(function(){ if (!GS.over) endTerm('protest'); }, 1200);
+        }
+      }
     }
 
     // Expire timed effects, deliver delayed ones
@@ -13687,6 +13841,7 @@ async function initLLMSubsystem() {
               const c = evt.choices[parseInt(b.getAttribute('data-evtopt'), 10)];
               c.run();
               GS.interventions.push({ q: q, label: evt.name.replace(/^\S+\s/, '') + ': ' + c.label, cost: 0 });
+              showPolicyConsequences(c.label, c.fx || {}, null);
               markDecided(b);
             });
           });
@@ -13698,6 +13853,7 @@ async function initLLMSubsystem() {
             const fx = opt.fxFn ? opt.fxFn() : opt.fx;
             applyFx(fx, 'Council decision: ' + opt.label);
             GS.interventions.push({ q: q, label: 'Decision: ' + opt.label, cost: 0 });
+            showPolicyConsequences(opt.label, fx || {}, null);
             // G15: Dr. Bakker reacts to decisions that affect doctors negatively
             const BAKKER_REACTS = [
               '"I expected nothing and I\'m still disappointed." \u2014 Dr. Bakker',
@@ -13776,6 +13932,7 @@ async function initLLMSubsystem() {
             GS._lawsThisAct = (GS._lawsThisAct || 0) + 1; // G15: track for mandatory-law penalty
             GS.interventions.push({ q: q, label: 'Law enacted: ' + law.name, cost: law.cost });
             applyFx(law.fx, 'Law enacted: ' + law.name);
+            showPolicyConsequences(law.name, law.fx || {}, null);
             Audio5.gong();
             if (law.beat) GS.pendingBeat = law.beat;
             b.textContent = '\u2713 Enacted';
@@ -13837,7 +13994,7 @@ async function initLLMSubsystem() {
   function verdict(r, reason){
     if (reason === 'bankrupt') return '\ud83d\udca8 BANKRUPT MUNICIPALITY \u2014 the treasury ran dry';
     if (reason === 'noconfidence') return 'VOTED OUT \u2014 parliament lost confidence in you';
-    if (reason === 'election') return 'REJECTED AT THE POLLS \u2014 zero promises kept';
+    if (reason === 'election') return 'REJECTED AT THE POLLS \u2014 the mandate collapsed';
     if (reason === 'strike') return 'BROUGHT DOWN BY THE WHITE COATS \u2014 the doctors walked out';
     if (reason === 'protest') return 'CHASED FROM OFFICE \u2014 the town square filled with protest';
     if (reason === 'scandal') return 'RESIGNED IN DISGRACE \u2014 the waiting list scandal ended your career';
@@ -13847,6 +14004,10 @@ async function initLLMSubsystem() {
     const exodusCascade = GS.cascades && GS.cascades.exodus && GS.cascades.exodus.stage >= 3 && !GS.cascades.exodus.dead;
     if (rotCascade || exodusCascade) return '\ud83d\udcbb DIGITAL DISASTER \u2014 the systems collapsed and the doctors fled';
     if ((GS.fragmentation || 0) >= 8 && r.score < 350) return '\ud83e\udde9 ALGORITHM ARCHIPELAGO \u2014 twelve silos, zero at scale'; // G17
+    if (reason === 'served' && GS.scenario === 'cabinetcrisis') {
+      return GS._cabinetResult === 'strong' ? '\ud83c\udfdb CABINET SURVIVES' : '\ud83c\udfdb CABINET SURVIVES BY ONE VOTE';
+    }
+    if (reason === 'served' && MoC.TOTAL_QUARTERS >= 16 && GS.scenario !== 'sandbox' && GS._electionResult !== 'strong') return '\u23f3 SURVIVED WITHOUT A MANDATE';
     // G19/G21: SYSTEM BUILDER — platform coherence + high score (must precede zero-deaths to reward architecture)
     if (GS.owned && GS.owned.platform && GS.owned.platformai && r.score >= 500) return '\ud83c\udfd7 SYSTEM BUILDER \u2014 you built what lasts';
     if (r.sd === 0) return '\u2b50 ZERO DEATHS \u2014 not a single preventable death on your watch';
@@ -13946,7 +14107,9 @@ async function initLLMSubsystem() {
   // ── G4: End statement (succeed/fail epitaph under the verdict) ──
   function endStatement(r, reason){
     const failed = reason !== 'served' || r.score < 300;
-    const opener = reason === 'noconfidence' ? 'Parliament voted you out.'
+    const opener = GS.scenario === 'cabinetcrisis' && reason === 'election'
+      ? 'The cabinet lost its final confidence vote.'
+      : reason === 'noconfidence' ? 'Parliament voted you out.'
       : reason === 'election' ? 'The voters read your manifesto one last time, and then they voted.'
       : reason === 'strike' ? 'The doctors went on strike and did not come back for you.'
       : reason === 'protest' ? 'The citizens stopped believing you long before the end.'
@@ -13988,7 +14151,10 @@ async function initLLMSubsystem() {
         + (GS.owned && Object.keys(GS.owned).length ? ' What you built: ' + Object.keys(GS.owned).join(', ') + '.' : '')
       : '';
 
-    return opener + ' ' + lesson + scoreAddendum;
+    const cabinetReasons = GS.scenario === 'cabinetcrisis' && reason === 'election' && (GS._cabinetReasons || []).length
+      ? ' The final gate failed because ' + GS._cabinetReasons.join('; ') + '.'
+      : '';
+    return opener + cabinetReasons + ' ' + lesson + scoreAddendum;
   }
 
   // ── G4: Post-game data reveal (play-first-explain-later) ──
@@ -14062,7 +14228,11 @@ async function initLLMSubsystem() {
     let html = '<div class="moc-box"><h2>\ud83c\udfdb End of Term</h2>';
     // G8c: verdict as stamp + staged reveal + score count-up
     Audio5.stamp();
-    html += '<div class="moc-verdict"><span class="moc-stamp' + ((reason === 'served' && r.score >= 400) ? ' win' : '') + '">' + verdict(r, reason) + '</span></div>';
+    const politicalWin = GS.scenario === 'sandbox'
+      || (GS.scenario === 'cabinetcrisis' ? GS._cabinetResult === 'strong'
+        : (MoC.TOTAL_QUARTERS < 16 || GS._electionResult === 'strong'));
+    const earnedWinStamp = reason === 'served' && politicalWin && (GS.scenario === 'cabinetcrisis' || r.score >= 400);
+    html += '<div class="moc-verdict"><span class="moc-stamp' + (earnedWinStamp ? ' win' : '') + '">' + verdict(r, reason) + '</span></div>';
     html += '<div class="moc-sub" style="text-align:center;font-style:italic;font-size:13px">' + endStatement(r, reason) + '</div>';
     html += '<div class="moc-emoji">' + trail + '</div>';
     // The mirror: narrate choices back
@@ -14545,7 +14715,7 @@ async function initLLMSubsystem() {
     if (!pool.length) { GS.flashSeen = []; return; }
     const flash = pool[(MoC.seed + GS.quarter * 5) % pool.length];
     GS.flashSeen.push(FLASH_POOL.indexOf(flash));
-    const face = agents.find(function(a){ return (a.type === 'patient' || a.type === 'citizen') && a.state !== 'dead'; }) || { name:'A citizen', age:'?' };
+    const face = agents.find(function(a){ return (a.type === 'patient' || a.type === 'citizen') && a.state !== 'dead' && !a.moved; }) || { name:'A citizen', age:'?' };
     flashActive = true;
     pauseSim(); // the town holds its breath — no council can interrupt your call
     Audio5.blip(880);
@@ -14734,9 +14904,12 @@ async function initLLMSubsystem() {
     }).join('');
     let stateLines = '';
     if (GS.activeStates) {
-      if (GS.activeStates.docWTR) stateLines += '<div class="mfx" style="color:var(--m-red)">\u26a0 Doctors demoralised: sick leave +2%</div>';
-      if (GS.activeStates.citAvoid) stateLines += '<div class="mfx" style="color:var(--m-red)">\u26a0 Citizens avoiding care: faster decline</div>';
-      if (GS.trustP < 35) stateLines += '<div class="mfx" style="color:var(--m-red)">\u26a0 Parliament withholding co-funding</div>';
+      if (GS.activeStates.docWTR) stateLines += '<div class="mfx" style="color:var(--m-red)">⚠ Doctors demoralised: sick leave +2%</div>';
+      if (GS.activeStates.citAvoid) stateLines += '<div class="mfx" style="color:var(--m-red)">⚠ Citizens avoiding care: faster decline</div>';
+      if (GS.activeStates.struck) stateLines += '<div class="mfx" style="color:var(--m-red)">🚨 Doctor strike active: practices skeleton staffed' + (GS._strikeUnresolvedQ > 0 ? ' (' + GS._strikeUnresolvedQ + 'Q unresolved)' : '') + '</div>';
+      if ((GS._relocatedHouseholds || []).length > 0) stateLines += '<div class="mfx" style="color:var(--m-red)">🚗 ' + GS._relocatedHouseholds.length + ' household(s) relocated - population declining</div>';
+      if ((GS._lowTrustCQ || 0) >= 1) stateLines += '<div class="mfx" style="color:var(--m-red)">⚠ Citizen trust below 30 for ' + GS._lowTrustCQ + ' quarter(s) - relocation risk</div>';
+      if (GS.trustP < 35) stateLines += '<div class="mfx" style="color:var(--m-red)">⚠ Parliament withholding co-funding</div>';
     }
     const spd = GS._speed === undefined ? 1 : GS._speed;
     el.innerHTML = '<div class="mhead"><h4 style="margin:0">\ud83c\udfdb THE MINISTRY</h4>'
@@ -14744,7 +14917,8 @@ async function initLLMSubsystem() {
       + '<button id="moc-mute" title="Sound on/off" class="' + (Audio5.isMuted() ? '' : 'on') + '">' + (Audio5.isMuted() ? '\ud83d\udd07' : '\ud83d\udd0a') + '</button>'
       + '<button id="moc-spd0" class="' + (MoC.paused ? 'on' : '') + '">\u23f8</button>'
       + '<button id="moc-spd1" class="' + (!MoC.paused && spd === 1 ? 'on' : '') + '">1\u00d7</button>'
-      + '<button id="moc-spd2" class="' + (!MoC.paused && spd === 2 ? 'on' : '') + '">2\u00d7</button>'
+      + '<button id="moc-spd2" class="' + (!MoC.paused && spd === 2 ? 'on' : '') + '">2×</button>'
+      + '<button id="moc-spd4" class="' + (!MoC.paused && spd === 4 ? 'on' : '') + '">4×</button>'
       + '</span></div>'
       + '<div class="mrow">' + pixIcon('coin') + ' Budget<b class="' + (GS.budget > 200000 ? 'g' : GS.budget > 50000 ? 'y' : 'r') + '">' + fmtK(GS.budget) + '</b></div>'
       + trustBarRow('people', 'Citizens', GS.trustC)
@@ -14766,10 +14940,11 @@ async function initLLMSubsystem() {
       + (fxLines ? '<div style="margin-top:4px">' + fxLines + '</div>' : '')
       + (stateLines ? '<div style="margin-top:2px">' + stateLines + '</div>' : '')
       + '<div class="mnext">\ud83d\uddd3 Next council: Q' + Math.min(MoC.TOTAL_QUARTERS, GS.quarter + 1) + ' \u00b7 ~' + secsToCouncil + 's</div>';
-    const b0 = el.querySelector('#moc-spd0'), b1 = el.querySelector('#moc-spd1'), b2 = el.querySelector('#moc-spd2');
+    const b0 = el.querySelector('#moc-spd0'), b1 = el.querySelector('#moc-spd1'), b2 = el.querySelector('#moc-spd2'), b4 = el.querySelector('#moc-spd4');
     if (b0) b0.onclick = function(){ speedSet(0); };
     if (b1) b1.onclick = function(){ speedSet(1); };
     if (b2) b2.onclick = function(){ speedSet(2); };
+    if (b4) b4.onclick = function(){ speedSet(4); };
     const bm = el.querySelector('#moc-mute');
     if (bm) bm.onclick = function(){ Audio5.setMuted(!Audio5.isMuted()); renderMinistry(); };
   }
@@ -14825,7 +15000,10 @@ async function initLLMSubsystem() {
       const streak = loadJSON('moc_streak', { count: 0, lastDay: 0 });
       const picker = document.createElement('div');
       picker.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;max-width:700px;width:92%;margin-top:6px';
-      Object.keys(MoC.SCENARIOS).forEach(function(k){
+      const orderedScenarios = ['cabinetcrisis','campaign','sprint','zeeland','codeblack','sandbox']
+        .filter(function(k){ return !!MoC.SCENARIOS[k]; })
+        .concat(Object.keys(MoC.SCENARIOS).filter(function(k){ return ['cabinetcrisis','campaign','sprint','zeeland','codeblack','sandbox'].indexOf(k) < 0; }));
+      orderedScenarios.forEach(function(k){
         const sc = MoC.SCENARIOS[k];
         const card = document.createElement('button');
         card.style.cssText = 'background:linear-gradient(180deg,#1c2874,#101a54);border:2px solid #f0f0e4;outline:2px solid #0a0a14;border-radius:4px;padding:0 0 10px;color:#dde2ff;cursor:pointer;text-align:left;font:12px Inter,sans-serif;transition:transform .12s;overflow:hidden';
@@ -14836,7 +15014,7 @@ async function initLLMSubsystem() {
         th.width = 60; th.height = 22;
         th.style.cssText = 'width:100%;height:44px;image-rendering:pixelated;display:block;border-bottom:2px solid #f0f0e4';
         const tc = th.getContext('2d');
-        const skyColors = { campaign:'#78c8f0', sprint:'#e8a030', zeeland:'#5888c0', codeblack:'#28203a', sandbox:'#98d878' };
+        const skyColors = { cabinetcrisis:'#8c1c1c', campaign:'#78c8f0', sprint:'#e8a030', zeeland:'#5888c0', codeblack:'#28203a', sandbox:'#98d878' };
         tc.fillStyle = skyColors[sc.id] || '#78c8f0'; tc.fillRect(0, 0, 60, 22);
         // town silhouette
         tc.fillStyle = sc.id === 'codeblack' ? '#0a0a18' : '#3a3a52';
@@ -14848,6 +15026,7 @@ async function initLLMSubsystem() {
         if (sc.id === 'zeeland') { tc.fillStyle = '#a8d8f0'; tc.fillRect(0, 20, 60, 2); tc.fillRect(4, 19, 6, 1); tc.fillRect(24, 19, 8, 1); tc.fillRect(46, 19, 6, 1); }
         if (sc.id === 'codeblack') { tc.fillStyle = '#e05858'; tc.fillRect(14, 3, 6, 6); tc.fillStyle = '#28203a'; tc.fillRect(16, 5, 2, 2); }
         if (sc.id === 'sandbox') { tc.fillStyle = '#ffd54f'; tc.fillRect(50, 2, 5, 5); }
+        if (sc.id === 'cabinetcrisis') { tc.fillStyle = '#ffd54f'; tc.fillRect(10, 2, 2, 6); tc.fillRect(8, 6, 6, 2); tc.fillStyle = '#f0f0e4'; tc.fillRect(44, 3, 8, 2); tc.fillRect(46, 1, 4, 2); }
         card.appendChild(th);
         const daily = sc.daily ? ' \u00b7 <span style="color:#ffd54f">today: #' + MoC.dailySeed + (streak.count > 1 && streak.lastDay >= MoC.dailySeed - 1 ? ' \u00b7 \ud83d\udd25' + streak.count : '') + '</span>' : '';
         const body = document.createElement('div');
@@ -15001,7 +15180,7 @@ async function initLLMSubsystem() {
     }
     function confidenceVote(){
       // Near-death experience instead of instant game over (fires once per slump)
-      if (GS.trustP > 25 || GS._voteHeld) return false;
+      if (GS.trustP > 22 || GS._voteHeld) return false;
       GS._voteHeld = true;
       pauseSim();
       const ov = document.createElement('div');
@@ -15061,13 +15240,14 @@ async function initLLMSubsystem() {
       GS.promises = [];
       const ov = document.createElement('div');
       ov.className = 'moc-overlay'; ov.id = 'moc-manifesto';
-      let html = '<div class="moc-box" style="max-width:540px"><h2>\ud83d\udcdc YOUR MANIFESTO</h2>'
-        + '<div class="moc-sub">Pick TWO promises. The town will hold you to them at the <b>Year ' + Math.ceil(MoC.TOTAL_QUARTERS / 8) + ' election</b>. Choose what you can deliver \u2014 or what wins hearts.</div>'
-        + '<div class="moc-dilemma"><div class="ec-head">\ud83d\udcdc CAMPAIGN PROMISES (pick 2)</div>';
+      const promiseCount = MoC.TOTAL_QUARTERS >= 16 ? 3 : 2;
+      let html = '<div class="moc-box" style="max-width:540px"><h2>📜 YOUR MANIFESTO</h2>'
+        + '<div class="moc-sub">Pick <b>' + promiseCount + ' promises</b>. The town will hold you to all of them at the <b>Year ' + Math.ceil(MoC.TOTAL_QUARTERS / 8) + ' election</b>. Victory requires keeping at least 2, with all trust >=45 and deaths below cap. Keeping all ' + promiseCount + ' with healthy trust wins a full mandate. Choose what you can deliver.</div>'
+        + '<div class="moc-dilemma"><div class="ec-head">📜 CAMPAIGN PROMISES (pick ' + promiseCount + ')</div>';
       PROMISES.forEach(function(p, i){
         html += '<button class="moc-opt" data-promise="' + i + '">' + p.text + '</button>';
       });
-      html += '</div><button class="moc-continue" id="moc-manifesto-done" disabled>SIGN THE MANIFESTO \u25b6</button></div>';
+      html += '</div><button class="moc-continue" id="moc-manifesto-done" disabled>SIGN THE MANIFESTO ▶</button></div>';
       ov.innerHTML = html;
       document.body.appendChild(ov);
       MoC.paused = true;
@@ -15076,68 +15256,127 @@ async function initLLMSubsystem() {
           const i = parseInt(b.getAttribute('data-promise'), 10);
           const idx = GS.promises.indexOf(i);
           if (idx >= 0) { GS.promises.splice(idx, 1); b.style.borderColor = ''; b.style.background = ''; }
-          else if (GS.promises.length < 2) { GS.promises.push(i); b.style.borderColor = 'var(--m-amber)'; b.style.background = '#232f80'; }
-          document.getElementById('moc-manifesto-done').disabled = GS.promises.length !== 2;
+          else if (GS.promises.length < promiseCount) { GS.promises.push(i); b.style.borderColor = 'var(--m-amber)'; b.style.background = '#232f80'; }
+          document.getElementById('moc-manifesto-done').disabled = GS.promises.length !== promiseCount;
         });
       });
       document.getElementById('moc-manifesto-done').addEventListener('click', function(){
         ov.remove();
         MoC.paused = false;
         say('MINISTRY', 'Manifesto signed: ' + GS.promises.map(function(i){ return PROMISES[i].text; }).join(' + '), 'sys');
-        launchSimulation(); // walkthrough → manifesto → game: simulation starts here
+        launchSimulation();
       });
     }
     window._mocShowManifesto = showManifesto;
-    // Debug hook for automated tests (only with ?debug in the URL)
-    if (location.search.indexOf('debug') >= 0) window._mocDebug = { GS: GS, M: M, applyFx: applyFx, endTerm: endTerm, PROMISES: PROMISES, stepCascades: function(q){ return stepCascades(q); } };
+    function evaluateElection(opts){
+      opts = opts || {};
+      const _promises = GS.PROMISES || [];
+      const picked = GS.promises || [];
+      const promisesKept = picked.filter(function(i){ return _promises[i] && _promises[i].check(); });
+      const keptCount = promisesKept.length;
+      const totalPicked = picked.length;
+      const minPromises = opts.minPromisesKept === undefined ? (totalPicked > 0 ? Math.min(2, totalPicked) : 0) : opts.minPromisesKept;
+      const sd = systemDeaths();
+      const deathCap = opts.deathCap === undefined ? (MoC.TOTAL_QUARTERS <= 8 ? 4 : 8) : opts.deathCap;
+      const cascadeStage3 = GS.cascades && (
+        (GS.cascades.exodus && GS.cascades.exodus.stage >= 3) ||
+        (GS.cascades.rot && GS.cascades.rot.stage >= 3)
+      );
+      const trustFloor = opts.trustFloor === undefined ? 45 : opts.trustFloor;
+      const strongTrustFloor = opts.strongTrustFloor === undefined ? 60 : opts.strongTrustFloor;
+      const allTrustPass = GS.trustC >= trustFloor && GS.trustD >= trustFloor && GS.trustP >= trustFloor;
+      const allTrustStrong = GS.trustC >= strongTrustFloor && GS.trustD >= strongTrustFloor && GS.trustP >= strongTrustFloor;
+      const reasons = [];
+      if (minPromises > 0 && keptCount < minPromises) reasons.push('fewer than ' + minPromises + ' promises kept (' + keptCount + '/' + totalPicked + ')');
+      if (!allTrustPass) reasons.push('trust too low (need all >=' + trustFloor + ': citizens ' + GS.trustC + ', doctors ' + GS.trustD + ', parliament ' + GS.trustP + ')');
+      if (sd > deathCap) reasons.push('too many preventable deaths (' + sd + ', cap is ' + deathCap + ')');
+      if (cascadeStage3) reasons.push('stage-3 cascade active (doctor exodus or digital rot)');
+      const passes = reasons.length === 0;
+      const strong = passes && keptCount >= totalPicked && allTrustStrong && sd === 0;
+      const narrow = passes && !strong;
+      return { passes: passes, strong: strong, narrow: narrow, keptCount: keptCount, totalPicked: totalPicked, reasons: reasons, sd: sd, deathCap: deathCap, trustFloor: trustFloor, strongTrustFloor: strongTrustFloor, allTrustPass: allTrustPass, allTrustStrong: allTrustStrong };
+    }
+    window._mocEvaluateElection = evaluateElection;
+    function resolveCabinetCrisis(){
+      if (GS.scenario !== 'cabinetcrisis') return null;
+      const ev = evaluateElection({ minPromisesKept: 0, trustFloor: 40, strongTrustFloor: 60, deathCap: 4 });
+      GS._cabinetReasons = ev.reasons.slice();
+      GS._cabinetResult = ev.strong ? 'strong' : ev.passes ? 'narrow' : 'failed';
+      if (ev.strong && !GS._cabinetBonusApplied) {
+        GS._cabinetBonusApplied = true;
+        adjustStakeholders(8, 4, 10);
+        GS.liveScore += 100;
+      }
+      return ev;
+    }
+    if (location.search.indexOf('debug') >= 0) window._mocDebug = {
+      GS: GS, M: M, applyFx: applyFx, endTerm: endTerm, PROMISES: PROMISES,
+      stepCascades: function(q){ return stepCascades(q); },
+      evaluateElection: evaluateElection,
+      showPolicyConsequences: showPolicyConsequences,
+      testDoctorStrike: function(){ GS.trustD = 18; },
+      testDoctorFire: function(){ GS.trustD = 14; },
+      testCitizenRelocate: function(){ GS.trustC = 25; GS._lowTrustCQ = 2; },
+      testProtestFiring: function(){ GS._lowTrustCQ = 2; for(var i=0;i<4;i++) { var a = agents.find(function(a){ return (a.type==='citizen'||a.type==='patient') && a.state!=='dead' && !a.moved; }); if (a) { a.moved=true; a.state='moved'; GS._relocatedHouseholds=(GS._relocatedHouseholds||[]); GS._relocatedHouseholds.push(a.name||'Test'); } } },
+      testElection0: function(){ GS.trustC=20; GS.trustD=20; GS.trustP=20; },
+      testElection2passes: function(){ if(GS.promises){ GS.trustC=47; GS.trustD=60; GS.trustP=47; M.IST.tree=8; M.IST.admin=0.14; GS.owned.scribes1=1; GS.owned.a2a=1; } },
+      testCabinetCrisisFail: function(){ GS.trustC=20; GS.trustD=20; GS.trustP=20; },
+      testCabinetCrisisPass: function(){ GS.trustC=55; GS.trustD=55; GS.trustP=55; }
+    };
     window._mocForceCouncil = function(q){ councilOpen = false; openCouncil(q || MoC.S.quarter || 2); };
     function electionCheck(q){
+      if (GS.scenario === 'cabinetcrisis') return null;
       const eq = Math.round(MoC.TOTAL_QUARTERS / 2);
       if (MoC.TOTAL_QUARTERS < 16 || q !== eq || GS._electionHeld || !GS.promises) return null;
       GS._electionHeld = true;
-      const met = GS.promises.filter(function(i){ return PROMISES[i].check(); });
-      const kept = met.length;
-      const keptLabels = met.map(function(i){ return '"' + PROMISES[i].text + '"'; });
-      const brokenIdxs = GS.promises.filter(function(i){ return !PROMISES[i].check(); });
-      const brokenLabels = brokenIdxs.map(function(i){ return '"' + PROMISES[i].text + '"'; });
-      if (kept === 0) {
-        // Voted out mid-term
+      const _promises = GS.PROMISES || [];
+      const met = GS.promises.filter(function(i){ return _promises[i] && _promises[i].check(); });
+      const keptLabels = met.map(function(i){ return '"' + _promises[i].text + '"'; });
+      const brokenIdxs = GS.promises.filter(function(i){ return !(_promises[i] && _promises[i].check()); });
+      const brokenLabels = brokenIdxs.map(function(i){ return '"' + _promises[i].text + '"'; });
+      const ev = evaluateElection();
+      if (!ev.passes) {
+        GS._electionResult = 'failed';
         setTimeout(function(){ endTerm('election'); }, 400);
+        const failReasons = ev.reasons.map(function(r){ return '• ' + r; }).join('<br>');
         return {
-          head:'\u23f3 ELECTION NIGHT: DEFEAT',
-          body:'<div style="text-align:center;font-size:22px;margin:8px 0">\ud83d\udc94</div>'
+          head:'⏳ ELECTION NIGHT: DEFEAT',
+          body:'<div style="text-align:center;font-size:22px;margin:8px 0">💔</div>'
             + '<b>The voters have spoken. You are out.</b><br><br>'
-            + 'You broke both promises: ' + GS.promises.map(function(i){ return '"' + PROMISES[i].text + '"'; }).join(' and ') + '.'
-            + ' Turnout was historic. Your opponent won 61% of the vote.<br><br>'
-            + '<i style="color:#a0a0d8">"Cammelot deserved better," the outgoing chairperson said at the handover."</i>',
+            + 'You failed the election gates:<br>' + failReasons + '<br><br>'
+            + (brokenLabels.length ? 'Broken promises: ' + brokenLabels.join(', ') : '')
+            + '<br><i style="color:#a0a0d8">"Cammelot deserved better," the outgoing chairperson said at the handover.</i>',
           election: true, electionWon: false
         };
       }
-      if (kept === 1) {
-        GS._bruisedMandate = 6; // buy-cap reduced to 1 for 6 quarters
+      if (ev.narrow) {
+        GS._electionResult = 'narrow';
+        GS._bruisedMandate = 6;
         adjustStakeholders(-4, 0, -6);
         return {
-          head:'\u23f3 ELECTION NIGHT: A NARROW ESCAPE',
-          body:'<div style="text-align:center;font-size:22px;margin:8px 0">\ud83d\ude13</div>'
-            + '<b>You survived \u2014 barely.</b><br><br>'
-            + '\u2705 Kept: ' + keptLabels.join(', ') + '<br>'
-            + '\u274c Broken: ' + brokenLabels.join(', ') + '<br><br>'
+          head:'⏳ ELECTION NIGHT: A NARROW ESCAPE',
+          body:'<div style="text-align:center;font-size:22px;margin:8px 0">😓</div>'
+            + '<b>You survived - barely.</b><br><br>'
+            + (keptLabels.length ? '✅ Kept: ' + keptLabels.join(', ') + '<br>' : '')
+            + (brokenLabels.length ? '❌ Broken: ' + brokenLabels.join(', ') + '<br><br>' : '')
             + 'Your margin was 3 seats. Coalition partners are demanding concessions. '
-            + '<b style="color:#ff7043">For the next 6 quarters, parliament will only approve 1 intervention per council.</b>',
+            + '<b style="color:#ff7043">For the next 6 quarters, parliament will only approve 1 intervention per council.</b><br><br>'
+            + '<i>You must keep all ' + ev.totalPicked + ' promises and keep trust above 45 for a true mandate.</i>',
           election: true, electionWon: 'narrow'
         };
       }
+      GS._electionResult = 'strong';
       adjustStakeholders(8, 4, 10);
       GS.liveScore += 150;
       FX.pop('+150 RE-ELECTED!', '#58c858');
       Audio5.jingle();
       return {
-        head:'\u23f3 ELECTION NIGHT: TRIUMPH!',
-        body:'<div style="text-align:center;font-size:22px;margin:8px 0">\ud83c\udf89</div>'
-          + '<b>Both promises kept. The town speaks clearly.</b><br><br>'
-          + '\u2705 ' + keptLabels.join('<br>\u2705 ') + '<br><br>'
-          + 'Your coalition grows by 11 seats. Even opposition papers call it "a well-earned mandate." '
-          + '+150 pts added. Trust across the board rises.',
+        head:'⏳ ELECTION NIGHT: MANDATE RENEWED!',
+        body:'<div style="text-align:center;font-size:22px;margin:8px 0">🎉</div>'
+          + '<b>All promises kept. All trust pillars healthy. The town speaks clearly.</b><br><br>'
+          + '✅ ' + keptLabels.join('<br>✅ ') + '<br><br>'
+          + 'Citizens: ' + GS.trustC + ' · Doctors: ' + GS.trustD + ' · Parliament: ' + GS.trustP + '<br>'
+          + 'Your coalition grows by 11 seats. +150 pts added. Trust across the board rises.',
         election: true, electionWon: true
       };
     }
@@ -15333,7 +15572,13 @@ async function initLLMSubsystem() {
       if (c % 5 === 0) renderMinistry();
       if (c % 10 === 0) updateObjectiveBar();
     };
-    MoC.onTermEnd = function(){ endTerm('served'); };
+    MoC.onTermEnd = function(){
+      if (GS.scenario === 'cabinetcrisis') {
+        resolveCabinetCrisis();
+        return endTerm(GS._cabinetResult === 'failed' ? 'election' : 'served');
+      }
+      endTerm('served');
+    };
 
     // Add fragility HUD cell next to Trust
     document.addEventListener('DOMContentLoaded', function(){
