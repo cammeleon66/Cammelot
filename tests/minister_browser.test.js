@@ -806,6 +806,13 @@ test('Desktop play uses one uncluttered Ministry panel and explains immediate re
     await banner.waitFor();
     assert.match(await banner.innerText(), /COUNCIL READY/);
     assert.equal(await page.evaluate(() => MoC.paused), true);
+    await banner.getByRole('button', { name:'OPEN COUNCIL' }).click();
+    const newspaper = page.locator('.moc-gazette').first();
+    assert.equal(await newspaper.evaluate(element => getComputedStyle(element, '::before').content), '"CAMMELOT QUARTERLY"');
+    const newspaperText = await newspaper.innerText();
+    assert.match(newspaperText, /Average specialist wait:/);
+    assert.match(newspaperText, /Treatment starts:/);
+    assert.doesNotMatch(newspaperText, /STUDYING THE DOSSIER|WHAT IS THE MINISTER WAITING FOR|YOU HAVE BEEN WARNED|WHITE COATS WALK OUT/);
   } finally { await browser.close(); await new Promise(resolve => server.close(resolve)); }
 });
 

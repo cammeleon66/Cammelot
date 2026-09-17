@@ -36,7 +36,7 @@ This is the canonical status list. Older plans describe how the current release 
 
 These improve evidence and quality; they do not mean the currently deployed game or leaderboard is offline.
 
-- [ ] Finish the systematic active-copy pass, especially council newspaper copy, banners and any remaining canned or moralizing lines.
+- [x] Complete the active-copy pass: council newspaper, escalation banners, aging/flu updates and confidence-vote choices now report actual mechanics without invented testimonials or moralizing verdicts.
 - [ ] Complete the balance study: separate purchase and response policies, run at least twenty development seeds, report distributions and paired care differences, then validate on holdout seeds.
 - [ ] Audit the legacy emergency-care bypass against the routine staffed-capacity model.
 
@@ -59,4 +59,4 @@ These require people or physical devices and cannot be honestly checked by autom
 
 ## Next action
 
-Complete the active-copy pass, then run the twenty-seed benchmark while physical-device and human playtests proceed in parallel.
+Run the twenty-seed benchmark while physical-device and human playtests proceed in parallel.
