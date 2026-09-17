@@ -1,7 +1,7 @@
 # Minister of Cammelot — checklist voor morgen
 
 Datum bijgewerkt: 2026-09-17
-Status: werkende lokale preview, niet gedeployed
+Status: statische game gedeployed op 2026-09-17; leaderboard-backend nog niet gehost
 Preview: `http://127.0.0.1:4318/minister.html`
 Model: `minister-care-3-paired`
 Geluid: tijdens ontwikkelen en testen uit laten
@@ -162,9 +162,9 @@ De huidige smoke-test staat in [MINISTER_STRATEGY_BENCHMARK.md](MINISTER_STRATEG
 
 **Klaar wanneer:** de post exact beschrijft wat een speler werkelijk kan doen en zien.
 
-### 8. Releasebeslissing
+### 8. Backend/full-launch beslissing
 
-Niet deployen voordat:
+Leaderboard-backend en volledige launch niet afronden voordat:
 
 - [ ] Docker/backend-route is getest.
 - [ ] Leaderboardmoderatie en back-up zijn geregeld.
@@ -173,7 +173,9 @@ Niet deployen voordat:
 - [ ] Echte iPhone- en Android-tests slagen.
 - [ ] Menselijke playtestblokkades zijn opgelost.
 - [ ] Alle tests groen zijn.
-- [ ] Simone expliciet akkoord geeft op deployment.
+- [x] Simone expliciet akkoord geeft op deployment.
+
+Deploymentnotitie 2026-09-17: Simone gaf expliciet akkoord. De statische game is gepubliceerd via commit `f1b3725` op de door GitHub Pages toegestane branch `feature/agentic-overhaul`. `personal/master` bevat releasecommit `abe5109`, maar de Pages-environment protection weigerde deployment vanaf `master`. De Node leaderboard-route is op GitHub Pages niet beschikbaar en wordt in de UI eerlijk als unavailable getoond. De Docker/Node-backend mag pas als live worden aangemerkt nadat een persistente containerhost is gekozen en gevalideerd.
 
 ## Bekende open punten
 
