@@ -33,14 +33,20 @@ Removal creates a timestamped backup beside the JSON file before changing it. In
 
 ## Persistence and deployment
 
-The Node service writes atomically to `/data/leaderboard.json`, bounded to 5,000 entries. Docker Compose mounts a named persistent volume. Nginx exposes only `/api/leaderboard`; the leaderboard container has no host port.
+The Node service writes atomically to its configured JSON file, bounded to 5,000 entries. Docker Compose mounts `/data` for local/container deployments.
+
+Production uses Azure App Service Linux at `app-cammelot-leaderboard-a8f605fa.azurewebsites.net`. The app reads/writes `/home/data/leaderboard.json`; App Service storage keeps `/home` across image updates and restarts. The container image is pulled from Azure Container Registry through the Web App's managed identity. HTTPS is mandatory.
+
+The GitHub Pages game calls the Azure HTTPS endpoint directly. The service allows browser requests only from `https://cammelot.org` and `https://www.cammelot.org`; disallowed origins receive 403. It does not allow credentialed CORS. Local/container clients keep the same-origin `/api/leaderboard` route.
 
 Run locally with `npm run leaderboard`. The static Python preview does not proxy the API, so it displays a graceful unavailable message. The complete container stack runs at port 8080 with `docker compose up --build`.
 
 ## Operations
 
-- Health: `GET /healthz` inside the leaderboard container
-- Back up the `leaderboard-data` volume before replacing/removing the stack
-- Do not expose port 3015 publicly without a trusted proxy; `X-Real-IP` is trusted for rate limiting
+- Health: `GET https://app-cammelot-leaderboard-a8f605fa.azurewebsites.net/healthz`
+- Back up `/home/data/leaderboard.json` through Entra-authenticated App Service/Kudu access before moderation or migration
+- App Service terminates HTTPS and forwards to port 3015; do not expose the container port separately
 - Retain only the current model board in the default UI; old model entries stay version-filtered
 - Scores are de-duplicated by result content, excluding display name
+
+The first production persistence check submitted a labeled score, restarted App Service, verified that it survived, then backed up and removed it. The final release-check board was empty. Failed Azure Container Apps/Azure Files experiments must not be treated as production storage.

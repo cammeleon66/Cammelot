@@ -14473,6 +14473,9 @@ async function initLLMSubsystem() {
         + '\nTry the same town: https://cammelot.org/minister.html#scn=' + GS.scenario + '&seed=' + MoC.seed + '&v='+MoC.MODEL_VERSION;
     }
     const shareText = buildShareText(r, reason);
+    const publicLeaderboard = 'https://app-cammelot-leaderboard-a8f605fa.azurewebsites.net/api/leaderboard';
+    const communityApi = window.CAMMELOT_LEADERBOARD_URL
+      || (/^(www\.)?cammelot\.org$/i.test(location.hostname) ? publicLeaderboard : '/api/leaderboard');
     const leaderboardPayload=function(username){
       const summary=GS._finalSnapshot;
       return {username,scenario:GS.scenario,seed:MoC.seed,modelVersion:MoC.MODEL_VERSION,endTick:summary.tick,
@@ -14654,7 +14657,7 @@ async function initLLMSubsystem() {
       const list=document.getElementById('moc-community-list');
       const status=document.getElementById('moc-community-status');
       try {
-        const response=await fetch('/api/leaderboard?scenario='+encodeURIComponent(GS.scenario)+'&modelVersion='+encodeURIComponent(MoC.MODEL_VERSION)+'&seed='+MoC.seed+'&limit=10');
+        const response=await fetch(communityApi+'?scenario='+encodeURIComponent(GS.scenario)+'&modelVersion='+encodeURIComponent(MoC.MODEL_VERSION)+'&seed='+MoC.seed+'&limit=10');
         if(!response.ok) throw new Error('unavailable');
         const data=await response.json();
         list.replaceChildren();
@@ -14672,7 +14675,7 @@ async function initLLMSubsystem() {
       const button=this,status=document.getElementById('moc-community-status');
       button.disabled=true;status.textContent='Publishing…';
       try {
-        const response=await fetch('/api/leaderboard',{method:'POST',headers:{'content-type':'application/json'},
+        const response=await fetch(communityApi,{method:'POST',headers:{'content-type':'application/json'},
           body:JSON.stringify(leaderboardPayload(document.getElementById('moc-community-name').value))});
         const data=await response.json();
         if(!response.ok) throw new Error(data.error||'submission failed');
