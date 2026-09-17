@@ -1,8 +1,9 @@
 # Sound Effects — Minister of Cammelot
 
-Drop MP3 files in THIS folder with EXACTLY these names.
-The game auto-detects them and replaces the built-in chiptune bleeps.
-No code changes needed — just add the file and refresh.
+Drop MP3 files in THIS folder with EXACTLY these names, then add each installed
+basename to the `effects` array in `manifest.json`. The game loads listed files and replaces the
+built-in chiptune bleeps. Unlisted effects use their built-in fallback without
+generating missing-file requests.
 
 Keep every clip SHORT (0.5–2 seconds, except win/lose: max 4s). Mono is fine.
 
@@ -18,8 +19,13 @@ Keep every clip SHORT (0.5–2 seconds, except win/lose: max 4s). Mono is fine.
 | stamp.mp3     | Verdict stamp hits the end screen    | "Foley only: heavy rubber stamp slammed on paper, single thud with slight paper slap" |
 | coin.mp3      | Buying an intervention               | "Classic 8-bit coin pickup blip, single bright note, very short" |
 
-Also in use, one level up (site/assets/):
-- minister-theme.mp3  -> title/menu music (already installed ✓)
+Optional, one level up (`site/assets/`):
+- `minister-theme.mp3` -> title/menu music; set `"title": true` in the manifest when installed
+
+The included title track is enabled at 14% volume. It starts on the first gesture
+and stops when play begins. If it cannot play, a quiet eight-second synth phrase
+is used instead. The sound control stops both file playback and scheduled synth
+notes; unmuting during play does not restart the title music.
 
 Tip: in Suno, generate as instrumental, then trim in any editor
 (or ask Suno for "sound effect, one shot"). MP3, 128kbps is plenty.

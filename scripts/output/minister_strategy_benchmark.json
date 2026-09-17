@@ -1,0 +1,1233 @@
+{
+  "generatedAt": "2026-09-16T14:57:26.926Z",
+  "scenario": "cabinetcrisis",
+  "seeds": [
+    2468,
+    1357,
+    7777
+  ],
+  "results": [
+    {
+      "strategy": "no-action",
+      "modelVersion": "minister-care-3-paired",
+      "seed": 2468,
+      "score": 343,
+      "politicalOutcome": "election",
+      "cabinetResult": "failed",
+      "care": {
+        "modelVersion": "minister-care-3-paired",
+        "seed": 2468,
+        "scenario": "cabinetcrisis",
+        "tick": 416,
+        "waiting": 0,
+        "meanWait": 0,
+        "longestWait": 0,
+        "overdue": 0,
+        "treatments": 10,
+        "deathsWaiting": 6,
+        "relocated": 0,
+        "otherExits": 0,
+        "referrals": 16,
+        "systemDeaths": 7,
+        "totalDeaths": 8,
+        "capacity": 1.5,
+        "admin": 0.3,
+        "budget": 321000,
+        "staffBurnout": [
+          {
+            "id": "gp1",
+            "burnout": 0
+          },
+          {
+            "id": "gp2",
+            "burnout": 17.499999999999968
+          }
+        ]
+      },
+      "trust": {
+        "citizens": 20,
+        "doctors": 39,
+        "parliament": 24
+      },
+      "dependence": 2,
+      "fragmentation": 2,
+      "budget": 321000,
+      "purchases": [],
+      "external": [
+        {
+          "id": "external-2",
+          "kind": "flu",
+          "tick": 52,
+          "endTick": 104,
+          "severity": 0.83
+        },
+        {
+          "id": "external-3",
+          "kind": "flu",
+          "tick": 104,
+          "endTick": 156,
+          "severity": 0.87
+        },
+        {
+          "id": "external-6",
+          "kind": "flu",
+          "tick": 260,
+          "endTick": 312,
+          "severity": 0.77
+        }
+      ]
+    },
+    {
+      "strategy": "staffing",
+      "modelVersion": "minister-care-3-paired",
+      "seed": 2468,
+      "score": 74,
+      "politicalOutcome": "election",
+      "cabinetResult": "failed",
+      "care": {
+        "modelVersion": "minister-care-3-paired",
+        "seed": 2468,
+        "scenario": "cabinetcrisis",
+        "tick": 416,
+        "waiting": 1,
+        "meanWait": 18.5,
+        "longestWait": 18.5,
+        "overdue": 1,
+        "treatments": 7,
+        "deathsWaiting": 6,
+        "relocated": 0,
+        "otherExits": 0,
+        "referrals": 14,
+        "systemDeaths": 7,
+        "totalDeaths": 8,
+        "capacity": 2.5,
+        "admin": 0.3,
+        "budget": 87250,
+        "staffBurnout": [
+          {
+            "id": "gp1",
+            "burnout": 9.99999999999995
+          },
+          {
+            "id": "gp2",
+            "burnout": 24.699999999999985
+          }
+        ]
+      },
+      "trust": {
+        "citizens": 25,
+        "doctors": 59,
+        "parliament": 25
+      },
+      "dependence": 2,
+      "fragmentation": 2,
+      "budget": 87250,
+      "purchases": [
+        "Recruit specialists",
+        "GP Retention Fund",
+        "More Time for the Patient",
+        "Change Management Programme",
+        "Carer Support Programme"
+      ],
+      "external": [
+        {
+          "id": "external-2",
+          "kind": "flu",
+          "tick": 52,
+          "endTick": 104,
+          "severity": 0.83
+        },
+        {
+          "id": "external-3",
+          "kind": "flu",
+          "tick": 104,
+          "endTick": 156,
+          "severity": 0.87
+        },
+        {
+          "id": "external-6",
+          "kind": "flu",
+          "tick": 260,
+          "endTick": 312,
+          "severity": 0.77
+        }
+      ]
+    },
+    {
+      "strategy": "digital-fast",
+      "modelVersion": "minister-care-3-paired",
+      "seed": 2468,
+      "score": 0,
+      "politicalOutcome": "election",
+      "cabinetResult": "failed",
+      "care": {
+        "modelVersion": "minister-care-3-paired",
+        "seed": 2468,
+        "scenario": "cabinetcrisis",
+        "tick": 416,
+        "waiting": 1,
+        "meanWait": 21,
+        "longestWait": 21,
+        "overdue": 1,
+        "treatments": 13,
+        "deathsWaiting": 6,
+        "relocated": 0,
+        "otherExits": 0,
+        "referrals": 20,
+        "systemDeaths": 6,
+        "totalDeaths": 7,
+        "capacity": 0.5499999999999998,
+        "admin": 0.34,
+        "budget": -70000,
+        "staffBurnout": [
+          {
+            "id": "gp1",
+            "burnout": 0
+          },
+          {
+            "id": "gp2",
+            "burnout": 21.500000000000018
+          }
+        ]
+      },
+      "trust": {
+        "citizens": 18,
+        "doctors": 38,
+        "parliament": 5
+      },
+      "dependence": 11,
+      "fragmentation": 2,
+      "budget": -70000,
+      "purchases": [
+        "EchoScribe pilot",
+        "EchoScribe full rollout",
+        "Referral mesh",
+        "Mirrorware digital twins"
+      ],
+      "external": [
+        {
+          "id": "external-2",
+          "kind": "flu",
+          "tick": 52,
+          "endTick": 104,
+          "severity": 0.83
+        },
+        {
+          "id": "external-3",
+          "kind": "flu",
+          "tick": 104,
+          "endTick": 156,
+          "severity": 0.87
+        },
+        {
+          "id": "external-6",
+          "kind": "flu",
+          "tick": 260,
+          "endTick": 312,
+          "severity": 0.77
+        }
+      ]
+    },
+    {
+      "strategy": "resilient",
+      "modelVersion": "minister-care-3-paired",
+      "seed": 2468,
+      "score": 160,
+      "politicalOutcome": "election",
+      "cabinetResult": "failed",
+      "care": {
+        "modelVersion": "minister-care-3-paired",
+        "seed": 2468,
+        "scenario": "cabinetcrisis",
+        "tick": 416,
+        "waiting": 1,
+        "meanWait": 12.5,
+        "longestWait": 12.5,
+        "overdue": 1,
+        "treatments": 12,
+        "deathsWaiting": 7,
+        "relocated": 0,
+        "otherExits": 0,
+        "referrals": 20,
+        "systemDeaths": 7,
+        "totalDeaths": 8,
+        "capacity": 2.5,
+        "admin": 0.3,
+        "budget": -7500,
+        "staffBurnout": [
+          {
+            "id": "gp1",
+            "burnout": 17.199999999999967
+          },
+          {
+            "id": "gp2",
+            "burnout": 17.199999999999967
+          }
+        ]
+      },
+      "trust": {
+        "citizens": 32,
+        "doctors": 47,
+        "parliament": 25
+      },
+      "dependence": 0,
+      "fragmentation": 2,
+      "budget": -7500,
+      "purchases": [
+        "Resilience pack",
+        "Security hardening",
+        "Recruit specialists",
+        "More Time for the Patient",
+        "Prevention programme"
+      ],
+      "external": [
+        {
+          "id": "external-2",
+          "kind": "flu",
+          "tick": 52,
+          "endTick": 104,
+          "severity": 0.83
+        },
+        {
+          "id": "external-3",
+          "kind": "flu",
+          "tick": 104,
+          "endTick": 156,
+          "severity": 0.87
+        },
+        {
+          "id": "external-6",
+          "kind": "flu",
+          "tick": 260,
+          "endTick": 312,
+          "severity": 0.77
+        }
+      ]
+    },
+    {
+      "strategy": "foundation",
+      "modelVersion": "minister-care-3-paired",
+      "seed": 2468,
+      "score": 430,
+      "politicalOutcome": "protest",
+      "care": {
+        "modelVersion": "minister-care-3-paired",
+        "seed": 2468,
+        "scenario": "cabinetcrisis",
+        "tick": 364,
+        "waiting": 0,
+        "meanWait": 0,
+        "longestWait": 0,
+        "overdue": 0,
+        "treatments": 13,
+        "deathsWaiting": 9,
+        "relocated": 0,
+        "otherExits": 0,
+        "referrals": 22,
+        "systemDeaths": 9,
+        "totalDeaths": 10,
+        "capacity": 1.5,
+        "admin": 0.03,
+        "budget": 20000,
+        "staffBurnout": [
+          {
+            "id": "gp1",
+            "burnout": 0
+          },
+          {
+            "id": "gp2",
+            "burnout": 0
+          }
+        ]
+      },
+      "trust": {
+        "citizens": 14,
+        "doctors": 52,
+        "parliament": 23
+      },
+      "dependence": 4,
+      "fragmentation": 2,
+      "budget": 20000,
+      "purchases": [
+        "EchoScribe pilot",
+        "Change Management Programme",
+        "Health Data Platform",
+        "Platform AI Applications"
+      ],
+      "external": [
+        {
+          "id": "external-2",
+          "kind": "flu",
+          "tick": 52,
+          "endTick": 104,
+          "severity": 0.83
+        },
+        {
+          "id": "external-3",
+          "kind": "flu",
+          "tick": 104,
+          "endTick": 156,
+          "severity": 0.87
+        },
+        {
+          "id": "external-6",
+          "kind": "flu",
+          "tick": 260,
+          "endTick": 312,
+          "severity": 0.77
+        }
+      ]
+    },
+    {
+      "strategy": "no-action",
+      "modelVersion": "minister-care-3-paired",
+      "seed": 1357,
+      "score": 337,
+      "politicalOutcome": "election",
+      "cabinetResult": "failed",
+      "care": {
+        "modelVersion": "minister-care-3-paired",
+        "seed": 1357,
+        "scenario": "cabinetcrisis",
+        "tick": 416,
+        "waiting": 0,
+        "meanWait": 0,
+        "longestWait": 0,
+        "overdue": 0,
+        "treatments": 14,
+        "deathsWaiting": 5,
+        "relocated": 0,
+        "otherExits": 0,
+        "referrals": 19,
+        "systemDeaths": 5,
+        "totalDeaths": 6,
+        "capacity": 1.5,
+        "admin": 0.3,
+        "budget": 391000,
+        "staffBurnout": [
+          {
+            "id": "gp1",
+            "burnout": 21.399999999999977
+          },
+          {
+            "id": "gp2",
+            "burnout": 26.49999999999999
+          }
+        ]
+      },
+      "trust": {
+        "citizens": 23,
+        "doctors": 34,
+        "parliament": 18
+      },
+      "dependence": 2,
+      "fragmentation": 2,
+      "budget": 391000,
+      "purchases": [],
+      "external": [
+        {
+          "id": "external-2",
+          "kind": "grid",
+          "tick": 52,
+          "endTick": 104,
+          "severity": 0.66
+        },
+        {
+          "id": "external-3",
+          "kind": "shortage",
+          "tick": 104,
+          "endTick": 156,
+          "severity": 0.94
+        },
+        {
+          "id": "external-4",
+          "kind": "flu",
+          "tick": 156,
+          "endTick": 208,
+          "severity": 0.66
+        },
+        {
+          "id": "external-6",
+          "kind": "grid",
+          "tick": 260,
+          "endTick": 312,
+          "severity": 0.52
+        },
+        {
+          "id": "external-8",
+          "kind": "shortage",
+          "tick": 364,
+          "endTick": 416,
+          "severity": 0.59
+        }
+      ]
+    },
+    {
+      "strategy": "staffing",
+      "modelVersion": "minister-care-3-paired",
+      "seed": 1357,
+      "score": 324,
+      "politicalOutcome": "election",
+      "cabinetResult": "failed",
+      "care": {
+        "modelVersion": "minister-care-3-paired",
+        "seed": 1357,
+        "scenario": "cabinetcrisis",
+        "tick": 416,
+        "waiting": 0,
+        "meanWait": 0,
+        "longestWait": 0,
+        "overdue": 0,
+        "treatments": 10,
+        "deathsWaiting": 5,
+        "relocated": 0,
+        "otherExits": 0,
+        "referrals": 15,
+        "systemDeaths": 6,
+        "totalDeaths": 7,
+        "capacity": 3.5,
+        "admin": 0.3,
+        "budget": 12250,
+        "staffBurnout": [
+          {
+            "id": "gp1",
+            "burnout": 0
+          },
+          {
+            "id": "gp2",
+            "burnout": 8.499999999999947
+          }
+        ]
+      },
+      "trust": {
+        "citizens": 21,
+        "doctors": 54,
+        "parliament": 22
+      },
+      "dependence": 2,
+      "fragmentation": 0,
+      "budget": 12250,
+      "purchases": [
+        "Recruit specialists",
+        "GP Retention Fund",
+        "More Time for the Patient",
+        "Change Management Programme",
+        "Carer Support Programme",
+        "Recruit specialists"
+      ],
+      "external": [
+        {
+          "id": "external-2",
+          "kind": "grid",
+          "tick": 52,
+          "endTick": 104,
+          "severity": 0.66
+        },
+        {
+          "id": "external-3",
+          "kind": "shortage",
+          "tick": 104,
+          "endTick": 156,
+          "severity": 0.94
+        },
+        {
+          "id": "external-4",
+          "kind": "flu",
+          "tick": 156,
+          "endTick": 208,
+          "severity": 0.66
+        },
+        {
+          "id": "external-6",
+          "kind": "grid",
+          "tick": 260,
+          "endTick": 312,
+          "severity": 0.52
+        },
+        {
+          "id": "external-8",
+          "kind": "shortage",
+          "tick": 364,
+          "endTick": 416,
+          "severity": 0.59
+        }
+      ]
+    },
+    {
+      "strategy": "digital-fast",
+      "modelVersion": "minister-care-3-paired",
+      "seed": 1357,
+      "score": 341,
+      "politicalOutcome": "election",
+      "cabinetResult": "failed",
+      "care": {
+        "modelVersion": "minister-care-3-paired",
+        "seed": 1357,
+        "scenario": "cabinetcrisis",
+        "tick": 416,
+        "waiting": 0,
+        "meanWait": 0,
+        "longestWait": 0,
+        "overdue": 0,
+        "treatments": 9,
+        "deathsWaiting": 3,
+        "relocated": 0,
+        "otherExits": 0,
+        "referrals": 12,
+        "systemDeaths": 5,
+        "totalDeaths": 7,
+        "capacity": 1.5,
+        "admin": 0.12,
+        "budget": 132000,
+        "staffBurnout": [
+          {
+            "id": "gp1",
+            "burnout": 2.1999999999999886
+          },
+          {
+            "id": "gp2",
+            "burnout": 0
+          }
+        ]
+      },
+      "trust": {
+        "citizens": 26,
+        "doctors": 40,
+        "parliament": 22
+      },
+      "dependence": 4,
+      "fragmentation": 4,
+      "budget": 132000,
+      "purchases": [
+        "EchoScribe pilot",
+        "EchoScribe full rollout",
+        "AI Pilot Grant",
+        "Security hardening"
+      ],
+      "external": [
+        {
+          "id": "external-2",
+          "kind": "grid",
+          "tick": 52,
+          "endTick": 104,
+          "severity": 0.66
+        },
+        {
+          "id": "external-3",
+          "kind": "shortage",
+          "tick": 104,
+          "endTick": 156,
+          "severity": 0.94
+        },
+        {
+          "id": "external-4",
+          "kind": "flu",
+          "tick": 156,
+          "endTick": 208,
+          "severity": 0.66
+        },
+        {
+          "id": "external-6",
+          "kind": "grid",
+          "tick": 260,
+          "endTick": 312,
+          "severity": 0.52
+        },
+        {
+          "id": "external-8",
+          "kind": "shortage",
+          "tick": 364,
+          "endTick": 416,
+          "severity": 0.59
+        }
+      ]
+    },
+    {
+      "strategy": "resilient",
+      "modelVersion": "minister-care-3-paired",
+      "seed": 1357,
+      "score": 378,
+      "politicalOutcome": "election",
+      "cabinetResult": "failed",
+      "care": {
+        "modelVersion": "minister-care-3-paired",
+        "seed": 1357,
+        "scenario": "cabinetcrisis",
+        "tick": 416,
+        "waiting": 0,
+        "meanWait": 0,
+        "longestWait": 0,
+        "overdue": 0,
+        "treatments": 10,
+        "deathsWaiting": 4,
+        "relocated": 0,
+        "otherExits": 0,
+        "referrals": 14,
+        "systemDeaths": 5,
+        "totalDeaths": 6,
+        "capacity": 2.5,
+        "admin": 0.3,
+        "budget": 16000,
+        "staffBurnout": [
+          {
+            "id": "gp1",
+            "burnout": 0
+          },
+          {
+            "id": "gp2",
+            "burnout": 0
+          }
+        ]
+      },
+      "trust": {
+        "citizens": 33,
+        "doctors": 64,
+        "parliament": 22
+      },
+      "dependence": 0,
+      "fragmentation": 2,
+      "budget": 16000,
+      "purchases": [
+        "Resilience pack",
+        "Security hardening",
+        "Recruit specialists",
+        "More Time for the Patient",
+        "Prevention programme",
+        "GP Retention Fund"
+      ],
+      "external": [
+        {
+          "id": "external-2",
+          "kind": "grid",
+          "tick": 52,
+          "endTick": 104,
+          "severity": 0.66
+        },
+        {
+          "id": "external-3",
+          "kind": "shortage",
+          "tick": 104,
+          "endTick": 156,
+          "severity": 0.94
+        },
+        {
+          "id": "external-4",
+          "kind": "flu",
+          "tick": 156,
+          "endTick": 208,
+          "severity": 0.66
+        },
+        {
+          "id": "external-6",
+          "kind": "grid",
+          "tick": 260,
+          "endTick": 312,
+          "severity": 0.52
+        },
+        {
+          "id": "external-8",
+          "kind": "shortage",
+          "tick": 364,
+          "endTick": 416,
+          "severity": 0.59
+        }
+      ]
+    },
+    {
+      "strategy": "foundation",
+      "modelVersion": "minister-care-3-paired",
+      "seed": 1357,
+      "score": 378,
+      "politicalOutcome": "noconfidence",
+      "care": {
+        "modelVersion": "minister-care-3-paired",
+        "seed": 1357,
+        "scenario": "cabinetcrisis",
+        "tick": 364,
+        "waiting": 0,
+        "meanWait": 0,
+        "longestWait": 0,
+        "overdue": 0,
+        "treatments": 9,
+        "deathsWaiting": 4,
+        "relocated": 0,
+        "otherExits": 0,
+        "referrals": 13,
+        "systemDeaths": 7,
+        "totalDeaths": 8,
+        "capacity": 1.205,
+        "admin": 0.12,
+        "budget": -43750,
+        "staffBurnout": [
+          {
+            "id": "gp1",
+            "burnout": 0
+          },
+          {
+            "id": "gp2",
+            "burnout": 0
+          }
+        ]
+      },
+      "trust": {
+        "citizens": 18,
+        "doctors": 41,
+        "parliament": 13
+      },
+      "dependence": 1,
+      "fragmentation": 0,
+      "budget": -43750,
+      "purchases": [
+        "EchoScribe pilot",
+        "Change Management Programme",
+        "Health Data Platform",
+        "Resilience pack",
+        "Security hardening"
+      ],
+      "external": [
+        {
+          "id": "external-2",
+          "kind": "grid",
+          "tick": 52,
+          "endTick": 104,
+          "severity": 0.66
+        },
+        {
+          "id": "external-3",
+          "kind": "shortage",
+          "tick": 104,
+          "endTick": 156,
+          "severity": 0.94
+        },
+        {
+          "id": "external-4",
+          "kind": "flu",
+          "tick": 156,
+          "endTick": 208,
+          "severity": 0.66
+        },
+        {
+          "id": "external-6",
+          "kind": "grid",
+          "tick": 260,
+          "endTick": 312,
+          "severity": 0.52
+        },
+        {
+          "id": "external-8",
+          "kind": "shortage",
+          "tick": 364,
+          "endTick": 416,
+          "severity": 0.59
+        }
+      ]
+    },
+    {
+      "strategy": "no-action",
+      "modelVersion": "minister-care-3-paired",
+      "seed": 7777,
+      "score": 348,
+      "politicalOutcome": "served",
+      "cabinetResult": "narrow",
+      "care": {
+        "modelVersion": "minister-care-3-paired",
+        "seed": 7777,
+        "scenario": "cabinetcrisis",
+        "tick": 416,
+        "waiting": 1,
+        "meanWait": 5.5,
+        "longestWait": 5.5,
+        "overdue": 0,
+        "treatments": 26,
+        "deathsWaiting": 0,
+        "relocated": 0,
+        "otherExits": 0,
+        "referrals": 27,
+        "systemDeaths": 2,
+        "totalDeaths": 2,
+        "capacity": 2,
+        "admin": 0.3,
+        "budget": 352000,
+        "staffBurnout": [
+          {
+            "id": "gp1",
+            "burnout": 25.599999999999987
+          },
+          {
+            "id": "gp2",
+            "burnout": 14.19999999999996
+          }
+        ]
+      },
+      "trust": {
+        "citizens": 52,
+        "doctors": 51,
+        "parliament": 40
+      },
+      "dependence": 2,
+      "fragmentation": 0,
+      "budget": 352000,
+      "purchases": [],
+      "external": [
+        {
+          "id": "external-3",
+          "kind": "grid",
+          "tick": 104,
+          "endTick": 156,
+          "severity": 0.58
+        },
+        {
+          "id": "external-6",
+          "kind": "grid",
+          "tick": 260,
+          "endTick": 312,
+          "severity": 0.78
+        },
+        {
+          "id": "external-7",
+          "kind": "shortage",
+          "tick": 312,
+          "endTick": 364,
+          "severity": 0.64
+        },
+        {
+          "id": "external-8",
+          "kind": "grid",
+          "tick": 364,
+          "endTick": 416,
+          "severity": 0.57
+        }
+      ]
+    },
+    {
+      "strategy": "staffing",
+      "modelVersion": "minister-care-3-paired",
+      "seed": 7777,
+      "score": 478,
+      "politicalOutcome": "election",
+      "cabinetResult": "failed",
+      "care": {
+        "modelVersion": "minister-care-3-paired",
+        "seed": 7777,
+        "scenario": "cabinetcrisis",
+        "tick": 416,
+        "waiting": 1,
+        "meanWait": 13,
+        "longestWait": 13,
+        "overdue": 1,
+        "treatments": 23,
+        "deathsWaiting": 0,
+        "relocated": 0,
+        "otherExits": 0,
+        "referrals": 24,
+        "systemDeaths": 1,
+        "totalDeaths": 1,
+        "capacity": 4,
+        "admin": 0.3,
+        "budget": 60000,
+        "staffBurnout": [
+          {
+            "id": "gp1",
+            "burnout": 16.599999999999966
+          },
+          {
+            "id": "gp2",
+            "burnout": 25.800000000000008
+          }
+        ]
+      },
+      "trust": {
+        "citizens": 52,
+        "doctors": 71,
+        "parliament": 35
+      },
+      "dependence": 2,
+      "fragmentation": 2,
+      "budget": 60000,
+      "purchases": [
+        "Recruit specialists",
+        "GP Retention Fund",
+        "More Time for the Patient",
+        "Change Management Programme",
+        "Carer Support Programme",
+        "Recruit specialists"
+      ],
+      "external": [
+        {
+          "id": "external-3",
+          "kind": "grid",
+          "tick": 104,
+          "endTick": 156,
+          "severity": 0.58
+        },
+        {
+          "id": "external-6",
+          "kind": "grid",
+          "tick": 260,
+          "endTick": 312,
+          "severity": 0.78
+        },
+        {
+          "id": "external-7",
+          "kind": "shortage",
+          "tick": 312,
+          "endTick": 364,
+          "severity": 0.64
+        },
+        {
+          "id": "external-8",
+          "kind": "grid",
+          "tick": 364,
+          "endTick": 416,
+          "severity": 0.57
+        }
+      ]
+    },
+    {
+      "strategy": "digital-fast",
+      "modelVersion": "minister-care-3-paired",
+      "seed": 7777,
+      "score": 204,
+      "politicalOutcome": "noconfidence",
+      "care": {
+        "modelVersion": "minister-care-3-paired",
+        "seed": 7777,
+        "scenario": "cabinetcrisis",
+        "tick": 364,
+        "waiting": 0,
+        "meanWait": 0,
+        "longestWait": 0,
+        "overdue": 0,
+        "treatments": 20,
+        "deathsWaiting": 1,
+        "relocated": 0,
+        "otherExits": 0,
+        "referrals": 21,
+        "systemDeaths": 2,
+        "totalDeaths": 2,
+        "capacity": 0.4229999999999998,
+        "admin": 0.16,
+        "budget": -90000,
+        "staffBurnout": [
+          {
+            "id": "gp1",
+            "burnout": 0
+          },
+          {
+            "id": "gp2",
+            "burnout": 6.199999999999977
+          }
+        ]
+      },
+      "trust": {
+        "citizens": 41,
+        "doctors": 37,
+        "parliament": 10
+      },
+      "dependence": 12,
+      "fragmentation": 0,
+      "budget": -90000,
+      "purchases": [
+        "EchoScribe pilot",
+        "EchoScribe full rollout",
+        "Referral mesh",
+        "Mirrorware digital twins"
+      ],
+      "external": [
+        {
+          "id": "external-3",
+          "kind": "grid",
+          "tick": 104,
+          "endTick": 156,
+          "severity": 0.58
+        },
+        {
+          "id": "external-6",
+          "kind": "grid",
+          "tick": 260,
+          "endTick": 312,
+          "severity": 0.78
+        },
+        {
+          "id": "external-7",
+          "kind": "shortage",
+          "tick": 312,
+          "endTick": 364,
+          "severity": 0.64
+        },
+        {
+          "id": "external-8",
+          "kind": "grid",
+          "tick": 364,
+          "endTick": 416,
+          "severity": 0.57
+        }
+      ]
+    },
+    {
+      "strategy": "resilient",
+      "modelVersion": "minister-care-3-paired",
+      "seed": 7777,
+      "score": 695,
+      "politicalOutcome": "served",
+      "cabinetResult": "narrow",
+      "care": {
+        "modelVersion": "minister-care-3-paired",
+        "seed": 7777,
+        "scenario": "cabinetcrisis",
+        "tick": 416,
+        "waiting": 0,
+        "meanWait": 0,
+        "longestWait": 0,
+        "overdue": 0,
+        "treatments": 24,
+        "deathsWaiting": 0,
+        "relocated": 0,
+        "otherExits": 0,
+        "referrals": 24,
+        "systemDeaths": 1,
+        "totalDeaths": 1,
+        "capacity": 3,
+        "admin": 0.3,
+        "budget": 12000,
+        "staffBurnout": [
+          {
+            "id": "gp1",
+            "burnout": 6.299999999999967
+          },
+          {
+            "id": "gp2",
+            "burnout": 31.3
+          }
+        ]
+      },
+      "trust": {
+        "citizens": 60,
+        "doctors": 67,
+        "parliament": 44
+      },
+      "dependence": 0,
+      "fragmentation": 0,
+      "budget": 12000,
+      "purchases": [
+        "Resilience pack",
+        "Security hardening",
+        "Recruit specialists",
+        "More Time for the Patient",
+        "Prevention programme"
+      ],
+      "external": [
+        {
+          "id": "external-3",
+          "kind": "grid",
+          "tick": 104,
+          "endTick": 156,
+          "severity": 0.58
+        },
+        {
+          "id": "external-6",
+          "kind": "grid",
+          "tick": 260,
+          "endTick": 312,
+          "severity": 0.78
+        },
+        {
+          "id": "external-7",
+          "kind": "shortage",
+          "tick": 312,
+          "endTick": 364,
+          "severity": 0.64
+        },
+        {
+          "id": "external-8",
+          "kind": "grid",
+          "tick": 364,
+          "endTick": 416,
+          "severity": 0.57
+        }
+      ]
+    },
+    {
+      "strategy": "foundation",
+      "modelVersion": "minister-care-3-paired",
+      "seed": 7777,
+      "score": 535,
+      "politicalOutcome": "election",
+      "cabinetResult": "failed",
+      "care": {
+        "modelVersion": "minister-care-3-paired",
+        "seed": 7777,
+        "scenario": "cabinetcrisis",
+        "tick": 416,
+        "waiting": 0,
+        "meanWait": 0,
+        "longestWait": 0,
+        "overdue": 0,
+        "treatments": 18,
+        "deathsWaiting": 0,
+        "relocated": 0,
+        "otherExits": 0,
+        "referrals": 18,
+        "systemDeaths": 2,
+        "totalDeaths": 2,
+        "capacity": 2,
+        "admin": 0.03,
+        "budget": 55000,
+        "staffBurnout": [
+          {
+            "id": "gp1",
+            "burnout": 0
+          },
+          {
+            "id": "gp2",
+            "burnout": 0
+          }
+        ]
+      },
+      "trust": {
+        "citizens": 46,
+        "doctors": 67,
+        "parliament": 33
+      },
+      "dependence": 4,
+      "fragmentation": 2,
+      "budget": 55000,
+      "purchases": [
+        "EchoScribe pilot",
+        "Change Management Programme",
+        "Health Data Platform",
+        "Platform AI Applications"
+      ],
+      "external": [
+        {
+          "id": "external-3",
+          "kind": "grid",
+          "tick": 104,
+          "endTick": 156,
+          "severity": 0.58
+        },
+        {
+          "id": "external-6",
+          "kind": "grid",
+          "tick": 260,
+          "endTick": 312,
+          "severity": 0.78
+        },
+        {
+          "id": "external-7",
+          "kind": "shortage",
+          "tick": 312,
+          "endTick": 364,
+          "severity": 0.64
+        },
+        {
+          "id": "external-8",
+          "kind": "grid",
+          "tick": 364,
+          "endTick": 416,
+          "severity": 0.57
+        }
+      ]
+    }
+  ]
+}

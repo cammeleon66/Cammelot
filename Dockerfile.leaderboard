@@ -1,0 +1,10 @@
+FROM node:22-alpine
+WORKDIR /app
+COPY src/leaderboard/server.js ./src/leaderboard/server.js
+COPY scripts/moderate_leaderboard.mjs ./scripts/moderate_leaderboard.mjs
+ENV PORT=3015
+ENV LEADERBOARD_FILE=/data/leaderboard.json
+VOLUME ["/data"]
+EXPOSE 3015
+HEALTHCHECK --interval=30s --timeout=3s CMD wget -q --spider http://localhost:3015/healthz || exit 1
+CMD ["node", "src/leaderboard/server.js"]
