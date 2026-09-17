@@ -1,9 +1,11 @@
 # Minister of Cammelot — Trustworthy Simulation, Playable Consequences
 
 Date: 2026-09-16
-Status: Approved; first implementation checkpoint built on 2026-09-16. Not release-ready.
+Status: Historical implementation plan; the production release is live. Do not count unchecked planning boxes here as current TODOs.
 Scope: the two public modes in [site/minister.html](../site/minister.html).
 Owner: Simone Cammel; implementation and automated verification by the coding agent.
+
+Current completion state and remaining release evidence are tracked only in [MINISTER_RELEASE_STATUS.md](MINISTER_RELEASE_STATUS.md).
 
 ## Implementation checkpoint — 2026-09-16
 
@@ -291,16 +293,14 @@ The critical path is **0 → 1 → 2 → 3 → 4 → 5**. Copy inventory can run
 
 ## 8. Release checklist and stop rules
 
-- [ ] Full repository tests and dedicated Minister invariants pass; previous pause/audio regressions remain covered.
-- [ ] No runtime errors or broken required assets; backgrounding and resizing cannot alter clinical results or restart blocked play.
-- [ ] All previews, goals, narrative numbers and final comparisons have the same source definitions.
-- [ ] No negative outcomes hidden; no manufactured lesson; no baseline extrapolation presented as observation.
-- [ ] Both modes have a verified path from first action to outcome and replay; legacy links remain supported.
-- [ ] Real iPhone/Android smoke tests completed; note device/browser versions and limitations.
-- [ ] Audio defaults/preferences respected, no audible agent previews during calls.
-- [ ] Existing research outputs are preserved and labeled separately; repaired-model scores are versioned.
-- [ ] LinkedIn assets match actual choices, timing, limitations and evidence. Do not claim statistically proven real-world benefits from a game run.
-- [ ] Deployment/rollback is separately authorized; retain the previous deployable version and do not mix model versions in comparisons.
+Historical checkpoint outcome:
+
+- Automated repository and Minister invariants pass, including pause, audio, resize and deterministic-comparison regressions.
+- Required assets load; negative outcomes remain signed; previews and committed effects share calculations.
+- Both public modes, replay, model-version separation and deployment rollback history are present.
+- Audio preference and muted automation are covered.
+- Research outputs remain separate from the participatory game and community submissions remain labeled unverified.
+- Physical-device, human-playtest, domain-review and final publication-evidence work remains in [MINISTER_RELEASE_STATUS.md](MINISTER_RELEASE_STATUS.md); it is intentionally not duplicated here.
 
 If the hiring pilot is still confusing, stop adding content and simplify it. If deterministic comparison fails, stop making paired-outcome claims. If a domain assumption remains unsupported, label it explicitly or remove the claim rather than inventing precision.
 
