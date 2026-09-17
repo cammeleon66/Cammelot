@@ -243,7 +243,7 @@ test('Shared conditions and no-action reference agree at the same dates', { time
   } finally { await browser.close(); await new Promise(resolve=>server.close(resolve)); }
 });
 
-test('Minister music uses the theme and stops cleanly', { timeout: 30000 }, async () => {
+test('Minister music continues through gameplay pauses and stops cleanly when muted', { timeout: 30000 }, async () => {
   const server = await startSiteServer();
   const browser = await launchBrowser();
   const page = await browser.newPage();
@@ -281,12 +281,13 @@ test('Minister music uses the theme and stops cleanly', { timeout: 30000 }, asyn
     await page.getByRole('button', { name: /TAKE OFFICE/ }).click();
     await page.waitForFunction(() => MoC.audio.state().musicVoices > 0);
     for (let step = 0; step < 3; step++) await page.locator('#wc-next').click();
-    const launched = await page.evaluate(() => {
-      MoC.audio.setMuted(true); MoC.audio.setMuted(false);
-      return MoC.audio.state();
-    });
-    assert.equal(launched.musicVoices, 0, 'launch must cancel even future scheduled music notes');
-    assert.equal(launched.theme, 'stopped', 'unmuting gameplay must not restart menu music');
+    await page.evaluate(() => { MoC.audio.setMuted(true); MoC.audio.setMuted(false); });
+    await page.waitForFunction(() => MoC.audio.state().theme === 'fallback' && MoC.audio.state().musicVoices > 0);
+    const launched = await page.evaluate(() => MoC.audio.state());
+    assert.ok(launched.musicVoices > 0, 'unmuting gameplay should restart the soundtrack');
+    assert.equal(launched.theme, 'fallback', 'gameplay pauses should keep the soundtrack active');
+    const councilTheme = await page.evaluate(() => { window._mocForceCouncil(2); return MoC.audio.state().theme; });
+    assert.equal(councilTheme, 'fallback', 'council-ready pause must not stop the soundtrack');
 
     // Stop while the manifest is unresolved; its eventual response must stay silent.
     await page.unroute('**/assets/sfx/manifest.json');
@@ -482,6 +483,9 @@ test('Town requests pause without a countdown', { timeout: 30000 }, async () => 
     assert.equal(await page.locator('.moc-flash').isVisible(),true,'request must remain until the player answers');
     assert.equal(await page.evaluate(()=>cycle),before);
     await page.locator('.moc-flash button').first().click();
+    assert.equal(await page.locator('.moc-flash').count(),1,'request should show the applied effect before closing');
+    assert.match(await page.locator('.moc-flash').innerText(),/Decision applied/);
+    await page.getByRole('button',{name:/Continue to town/}).click();
     assert.equal(await page.locator('.moc-flash').count(),0);
   } finally {await browser.close();await new Promise(resolve=>server.close(resolve));}
 });
@@ -690,4 +694,83 @@ test('Minister cabinet crisis starts after phone walkthrough and reaches council
     await browser.close();
     await new Promise((resolve) => server.close(resolve));
   }
+});
+
+test('Town routes never enter blocked map geometry', { timeout: 30000 }, async () => {
+  const server = await startSiteServer();
+  const browser = await launchBrowser();
+  const page = await browser.newPage();
+  try {
+    await page.goto(`http://127.0.0.1:${server.address().port}/minister.html#scn=cabinetcrisis&seed=2468`, { waitUntil:'domcontentloaded' });
+    const routeAudit = await page.evaluate(() => {
+      const blockedNodes = ROAD_WAYPOINTS.filter(point => isInWater(point.x, point.y)).length;
+      let blockedEdges = 0;
+      WAYPOINT_ADJ.forEach((edges, from) => edges.forEach(to => {
+        const a = ROAD_WAYPOINTS[from], b = ROAD_WAYPOINTS[to];
+        for (let sample = 0; sample <= 20; sample++) {
+          const progress = sample / 20;
+          if (isInWater(a.x + (b.x - a.x) * progress, a.y + (b.y - a.y) * progress)) {
+            blockedEdges++; break;
+          }
+        }
+      }));
+      let blockedPositions = 0, maxJump = 0;
+      for (let step = 0; step < 250; step++) {
+        cycle++;
+        const before = new Map(agents.map(agent => [agent.id, { x:agent.x, y:agent.y }]));
+        advanceTownMovement();
+        agents.filter(agent => !agent.insideBuilding && agent.hp > 0 && agent.type !== 'gp' && agent.type !== 'specialist').forEach(agent => {
+          const previous = before.get(agent.id);
+          maxJump = Math.max(maxJump, Math.hypot(agent.x - previous.x, agent.y - previous.y));
+          if (isInWater(agent.x, agent.y)) blockedPositions++;
+        });
+      }
+      return { blockedNodes, blockedEdges, blockedPositions, maxJump };
+    });
+    assert.equal(routeAudit.blockedNodes, 0);
+    assert.equal(routeAudit.blockedEdges, 0);
+    assert.equal(routeAudit.blockedPositions, 0);
+    assert.ok(routeAudit.maxJump < 0.015, `movement jump ${routeAudit.maxJump} should stay within one walking step`);
+  } finally { await browser.close(); await new Promise(resolve => server.close(resolve)); }
+});
+
+test('Desktop play prioritizes the town feed and explains immediate request effects', { timeout: 30000 }, async () => {
+  const server = await startSiteServer();
+  const browser = await launchBrowser();
+  const page = await browser.newPage({ viewport:{ width:1440, height:900 } });
+  await page.addInitScript(() => localStorage.setItem('moc_muted','true'));
+  try {
+    await page.goto(`http://127.0.0.1:${server.address().port}/minister.html?desktop-regression=1#scn=cabinetcrisis&seed=2468`, { waitUntil:'domcontentloaded' });
+    const name = page.locator('#moc-player-name');
+    assert.equal(await name.count(), 1, 'the first game screen should ask for a public player name');
+    assert.match(await name.inputValue(), /^Minister /);
+    const initialName = await name.inputValue();
+    await page.locator('#moc-generate-name').click();
+    assert.match(await name.inputValue(), /^Minister /);
+    assert.notEqual(await name.inputValue(), initialName);
+    await page.locator('#moc-takeoffice').click();
+    for (let step = 0; step < 3; step++) await page.locator('#wc-next').click();
+    await page.waitForFunction(() => window._mocGameStarted && document.getElementById('moc-town-watch'));
+
+    const layout = await page.evaluate(() => ({
+      view:document.getElementById('panel').dataset.mocView,
+      panel:document.getElementById('panel').getBoundingClientRect().width,
+      feed:document.getElementById('agent-detail').getBoundingClientRect().height,
+    }));
+    assert.equal(layout.view, 'town');
+    assert.ok(layout.panel >= 360, 'desktop panel should have room for readable feed text');
+    assert.ok(layout.feed >= 400, 'town feed should retain a useful visible reading area');
+
+    await page.evaluate(() => window._mocForceFlash(1));
+    await page.getByRole('button', { name:'Continue digitally' }).click();
+    assert.equal(await page.locator('.moc-flash').count(), 1, 'the request should remain open after the decision');
+    assert.match(await page.locator('.moc-flash').innerText(), /Decision applied|No immediate modeled change/);
+    await page.getByRole('button', { name:/Continue to town/ }).click();
+
+    await page.evaluate(() => window._mocForceCouncilReady(2));
+    const banner = page.locator('#moc-council-ready-banner');
+    await banner.waitFor();
+    assert.match(await banner.innerText(), /COUNCIL READY/);
+    assert.equal(await page.evaluate(() => MoC.paused), true);
+  } finally { await browser.close(); await new Promise(resolve => server.close(resolve)); }
 });
