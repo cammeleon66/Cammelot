@@ -15416,7 +15416,6 @@ async function initLLMSubsystem() {
     el.innerHTML = '<div class="mhead"><h4 style="margin:0">\ud83c\udfdb THE MINISTRY</h4>'
       + '<span class="spd">'
       + '<button id="moc-mute" title="' + (Audio5.isMuted() ? 'Turn sound on' : 'Mute sound') + '" aria-label="' + (Audio5.isMuted() ? 'Turn sound on' : 'Mute sound') + '" aria-pressed="' + !Audio5.isMuted() + '" class="' + (Audio5.isMuted() ? '' : 'on') + '">' + (Audio5.isMuted() ? '\ud83d\udd07' : '\ud83d\udd0a') + '</button>'
-      + '<button id="moc-spd0" class="' + (MoC.paused ? 'on' : '') + '">\u23f8</button>'
       + '<button id="moc-spd1" class="' + (!MoC.paused && spd === 1 ? 'on' : '') + '">1\u00d7</button>'
       + '<button id="moc-spd2" class="' + (!MoC.paused && spd === 2 ? 'on' : '') + '">2×</button>'
       + '<button id="moc-spd4" class="' + (!MoC.paused && spd === 4 ? 'on' : '') + '">4×</button>'
@@ -15444,8 +15443,7 @@ async function initLLMSubsystem() {
       + (stateLines ? '<div style="margin-top:2px">' + stateLines + '</div>' : '')
       + '</details>'
       + '<div class="mnext">' + (GS._councilDue || councilOpen ? 'Paused for council' : MoC.paused ? 'Paused' : 'Next pause in ~' + secsToCouncil + 's') + '</div>';
-    const b0 = el.querySelector('#moc-spd0'), b1 = el.querySelector('#moc-spd1'), b2 = el.querySelector('#moc-spd2'), b4 = el.querySelector('#moc-spd4');
-    if (b0) b0.onclick = function(){ speedSet(0); };
+    const b1 = el.querySelector('#moc-spd1'), b2 = el.querySelector('#moc-spd2'), b4 = el.querySelector('#moc-spd4');
     if (b1) b1.onclick = function(){ speedSet(1); };
     if (b2) b2.onclick = function(){ speedSet(2); };
     if (b4) b4.onclick = function(){ speedSet(4); };
