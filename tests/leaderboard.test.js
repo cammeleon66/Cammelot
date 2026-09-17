@@ -15,10 +15,10 @@ function validRun(overrides = {}) {
   };
 }
 
-async function fixture(now) {
+async function fixture(now, allowedOrigins = []) {
   const dir = await mkdtemp(join(tmpdir(), 'cammelot-leaderboard-'));
   const filePath = join(dir, 'leaderboard.json');
-  const server = createLeaderboardServer({ filePath, now });
+  const server = createLeaderboardServer({ filePath, now, allowedOrigins });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   const base = `http://127.0.0.1:${server.address().port}`;
   return { filePath, base, close: () => new Promise(resolve => server.close(resolve)) };
@@ -89,5 +89,52 @@ test('leaderboard moderation removes an entry without a public admin route', asy
     assert.equal((await store.remove(created.entry.id)).username, 'Remove Me');
     assert.deepEqual(await store.list({}, 20), []);
     assert.equal((await fetch(`${app.base}/api/leaderboard/${created.entry.id}`, { method: 'DELETE' })).status, 404);
+  } finally { await app.close(); }
+});
+
+test('leaderboard allows only configured browser origins', async () => {
+  const app = await fixture(undefined, ['https://cammelot.org']);
+  try {
+    const preflight = await fetch(`${app.base}/api/leaderboard`, {
+      method: 'OPTIONS', headers: { Origin: 'https://cammelot.org', 'Access-Control-Request-Method': 'POST' },
+    });
+    assert.equal(preflight.status, 204);
+    assert.equal(preflight.headers.get('access-control-allow-origin'), 'https://cammelot.org');
+    assert.equal(preflight.headers.get('access-control-allow-credentials'), null);
+    const allowed = await fetch(`${app.base}/api/leaderboard`, { headers: { Origin: 'https://cammelot.org' } });
+    assert.equal(allowed.status, 200);
+    assert.equal(allowed.headers.get('access-control-allow-origin'), 'https://cammelot.org');
+    const validation = await fetch(`${app.base}/api/leaderboard`, {
+      method: 'POST', headers: { Origin: 'https://cammelot.org', 'content-type': 'application/json' },
+      body: JSON.stringify(validRun({ username: '<script>' })),
+    });
+    assert.equal(validation.status, 400);
+    assert.equal(validation.headers.get('access-control-allow-origin'), 'https://cammelot.org');
+    assert.equal((await fetch(`${app.base}/api/leaderboard`, { headers: { Origin: 'https://evil.example' } })).status, 403);
+    assert.equal((await fetch(`${app.base}/api/leaderboard`, { method: 'OPTIONS' })).status, 403);
+  } finally { await app.close(); }
+});
+
+test('rate limits separate clients behind a reverse proxy', async () => {
+  const app = await fixture(() => 1000, ['https://cammelot.org']);
+  try {
+    for (let index = 0; index < 10; index++) {
+      const response = await fetch(`${app.base}/api/leaderboard`, {
+        method: 'POST', headers: { Origin:'https://cammelot.org', 'content-type':'application/json',
+          'x-forwarded-for':`10.0.0.4, 203.0.113.10` },
+        body: JSON.stringify(validRun({ seed:5000 + index })),
+      });
+      assert.equal(response.status, 201);
+    }
+    const limited = await fetch(`${app.base}/api/leaderboard`, {
+      method:'POST', headers:{Origin:'https://cammelot.org','content-type':'application/json','x-forwarded-for':'10.0.0.4, 203.0.113.10'},
+      body:JSON.stringify(validRun({seed:6000})),
+    });
+    assert.equal(limited.status,429);
+    const otherClient = await fetch(`${app.base}/api/leaderboard`, {
+      method:'POST', headers:{Origin:'https://cammelot.org','content-type':'application/json','x-forwarded-for':'10.0.0.4, 203.0.113.11'},
+      body:JSON.stringify(validRun({seed:6001})),
+    });
+    assert.equal(otherClient.status,201);
   } finally { await app.close(); }
 });

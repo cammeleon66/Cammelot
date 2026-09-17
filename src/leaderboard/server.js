@@ -9,12 +9,13 @@ const OUTCOMES = new Set(['served', 'election', 'noconfidence', 'strike', 'prote
 const ADJECTIVES = ['Amber', 'Brave', 'Calm', 'Copper', 'Green', 'Kind', 'Silver', 'Steady', 'Swift', 'Wise'];
 const ANIMALS = ['Badger', 'Falcon', 'Fox', 'Heron', 'Hedgehog', 'Otter', 'Owl', 'Stag', 'Swan', 'Wolf'];
 
-function json(res, status, body) {
+function json(res, status, body, headers = {}) {
   const data = JSON.stringify(body);
   res.writeHead(status, {
     'Content-Type': 'application/json; charset=utf-8',
     'Cache-Control': 'no-store',
     'X-Content-Type-Options': 'nosniff',
+    ...headers,
   });
   res.end(data);
 }
@@ -145,45 +146,64 @@ export function createLeaderboardStore(filePath) {
   };
 }
 
-export function createLeaderboardServer({ filePath = resolve('data', 'leaderboard.json'), now = () => Date.now() } = {}) {
+export function createLeaderboardServer({ filePath = resolve('data', 'leaderboard.json'), now = () => Date.now(),
+  allowedOrigins = String(process.env.ALLOWED_ORIGINS || '').split(',').map(value => value.trim()).filter(Boolean) } = {}) {
   const store = createLeaderboardStore(filePath);
   const rates = new Map();
   return createServer(async (req, res) => {
     try {
       const url = new URL(req.url, 'http://localhost');
+      const origin = String(req.headers.origin || '');
+      const cors = origin && allowedOrigins.includes(origin) ? {
+        'Access-Control-Allow-Origin': origin,
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Max-Age': '600',
+        'Vary': 'Origin',
+      } : {};
+      const reply = (status, body) => json(res, status, body, cors);
       if (url.pathname === '/healthz') return json(res, 200, { ok: true });
       if (url.pathname !== '/api/leaderboard') return json(res, 404, { error: 'not found' });
+      if (req.method === 'OPTIONS') {
+        if (!origin || !allowedOrigins.includes(origin)) return json(res, 403, { error: 'origin not allowed' });
+        res.writeHead(204, cors); res.end(); return;
+      }
+      if (origin && !allowedOrigins.includes(origin)) return json(res, 403, { error: 'origin not allowed' });
       if (req.method === 'GET') {
-        if (url.search.length > 512) return json(res, 414, { error: 'query too long' });
+        if (url.search.length > 512) return reply(414, { error: 'query too long' });
         const scenario = url.searchParams.get('scenario') || '';
         const modelVersion = url.searchParams.get('modelVersion') || '';
         const seed = url.searchParams.has('seed') ? Number.parseInt(url.searchParams.get('seed'), 10) : 0;
-        if (scenario && !SCENARIOS.has(scenario)) return json(res, 400, { error: 'scenario is invalid' });
-        if (modelVersion && !/^minister-care-\d+-[a-z0-9-]{2,32}$/.test(modelVersion)) return json(res, 400, { error: 'modelVersion is invalid' });
-        if (seed && (!Number.isInteger(seed) || seed < 1 || seed > 0xffffffff)) return json(res, 400, { error: 'seed is invalid' });
+        if (scenario && !SCENARIOS.has(scenario)) return reply(400, { error: 'scenario is invalid' });
+        if (modelVersion && !/^minister-care-\d+-[a-z0-9-]{2,32}$/.test(modelVersion)) return reply(400, { error: 'modelVersion is invalid' });
+        if (seed && (!Number.isInteger(seed) || seed < 1 || seed > 0xffffffff)) return reply(400, { error: 'seed is invalid' });
         const limit = Number.parseInt(url.searchParams.get('limit') || '20', 10);
-        return json(res, 200, { entries: await store.list({ scenario, modelVersion, seed }, Number.isFinite(limit) ? limit : 20) });
+        return reply(200, { entries: await store.list({ scenario, modelVersion, seed }, Number.isFinite(limit) ? limit : 20) });
       }
-      if (req.method !== 'POST') return json(res, 405, { error: 'method not allowed' });
-      const key = String(req.headers['x-real-ip'] || req.socket.remoteAddress || 'unknown').slice(0, 64);
+      if (req.method !== 'POST') return reply(405, { error: 'method not allowed' });
+      const forwarded = String(req.headers['x-forwarded-for'] || '').split(',').map(value => value.trim()).filter(Boolean);
+      const key = String(req.headers['x-client-ip'] || req.headers['x-real-ip'] || forwarded.at(-1)
+        || req.socket.remoteAddress || 'unknown').slice(0, 64);
       const time = now();
       const recent = (rates.get(key) || []).filter(value => time - value < 60_000);
-      if (recent.length >= 10) return json(res, 429, { error: 'too many submissions' });
+      if (recent.length >= 10) return reply(429, { error: 'too many submissions' });
       recent.push(time); rates.set(key, recent);
       let size = 0;
       const chunks = [];
       for await (const chunk of req) {
         size += chunk.length;
-        if (size > 16_384) return json(res, 413, { error: 'request too large' });
+        if (size > 16_384) return reply(413, { error: 'request too large' });
         chunks.push(chunk);
       }
       let body;
       try { body = JSON.parse(Buffer.concat(chunks).toString('utf8')); }
-      catch { return json(res, 400, { error: 'invalid JSON' }); }
+      catch { return reply(400, { error: 'invalid JSON' }); }
       const result = await store.submit(body);
-      return json(res, result.duplicate ? 200 : 201, result);
+      return reply(result.duplicate ? 200 : 201, result);
     } catch (error) {
-      return json(res, 400, { error: error.message || 'invalid request' });
+      const origin = String(req.headers.origin || '');
+      const headers = origin && allowedOrigins.includes(origin) ? { 'Access-Control-Allow-Origin': origin, 'Vary': 'Origin' } : {};
+      return json(res, 400, { error: error.message || 'invalid request' }, headers);
     }
   });
 }

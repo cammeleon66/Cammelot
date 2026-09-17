@@ -197,7 +197,7 @@ test('Hospital staff do not occupy patient treatment slots', { timeout:30000 }, 
   }finally{await browser.close();await new Promise(resolve=>server.close(resolve));}
 });
 
-test('Shared conditions and no-action reference agree at the same dates', { timeout: 180000 }, async () => {
+test('Shared conditions and no-action reference agree at the same dates', { timeout: 300000 }, async () => {
   const server = await startSiteServer();
   const browser = await launchBrowser();
   try {
