@@ -15551,12 +15551,22 @@ async function initLLMSubsystem() {
       }, { once: true });
     });
 
+    let playerNameStyle = Math.floor(Math._random() * 5);
     function randomPlayerName(previous){
       const adjectives = ['Amber','Brave','Calm','Copper','Green','Kind','Silver','Steady','Swift','Wise'];
       const animals = ['Badger','Falcon','Fox','Heron','Hedgehog','Otter','Owl','Stag','Swan','Wolf'];
+      const firstNames = ['Amara','Ingrid','Joris','Kofi','Mei','Noor','Ravi','Sanne','Tycho','Zainab'];
+      const callSigns = ['Night Shift','Queue Tamer','Open Books','Long View','Calm Hands','Last Bed','Grid Watch','Care Keeper','Bridge Builder','Paper Slayer'];
       const pick = function(list){ return list[Math.floor(Math._random() * list.length)]; };
       let generated;
-      do { generated = 'Minister ' + pick(adjectives) + ' ' + pick(animals); } while (generated === previous);
+      do {
+        const style = playerNameStyle++ % 5;
+        if (style === 0) generated = 'Minister ' + pick(adjectives) + ' ' + pick(animals);
+        else if (style === 1) generated = pick(firstNames) + ' of Cammelot';
+        else if (style === 2) generated = pick(firstNames) + ' ' + pick(callSigns);
+        else if (style === 3) generated = 'The ' + pick(callSigns);
+        else generated = 'Minister ' + pick(callSigns);
+      } while (generated === previous || generated.length > 24);
       return generated;
     }
     function validPlayerName(value){ return /^[\p{L}\p{N} ._'-]{2,24}$/u.test(String(value || '').trim()); }

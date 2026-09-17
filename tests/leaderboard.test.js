@@ -51,6 +51,16 @@ test('leaderboard generates a stable public name and persists a ranked run', asy
   } finally { await app.close(); }
 });
 
+test('generated public names vary in style while remaining valid', () => {
+  const names = Array.from({ length:100 }, (_, index) => generatedName(index + 1));
+  names.forEach(name => assert.match(name, /^[\p{L}\p{N} ._'-]{2,24}$/u));
+  assert.ok(new Set(names).size >= 35, 'seed-generated names should have useful variety');
+  assert.ok(names.some(name => name.startsWith('The ')));
+  assert.ok(names.some(name => name.endsWith(' of Cammelot')));
+  assert.ok(names.some(name => name.startsWith('Minister ')));
+  assert.ok(names.some(name => !name.startsWith('Minister ') && !name.startsWith('The ') && !name.endsWith(' of Cammelot')));
+});
+
 test('leaderboard rejects unsafe input, excessive requests and duplicate runs', async () => {
   let time = 1000;
   const app = await fixture(() => time);

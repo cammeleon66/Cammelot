@@ -8,6 +8,8 @@ const SCENARIOS = new Set(['cabinetcrisis', 'campaign', 'sprint', 'zeeland', 'co
 const OUTCOMES = new Set(['served', 'election', 'noconfidence', 'strike', 'protest', 'scandal', 'bankrupt']);
 const ADJECTIVES = ['Amber', 'Brave', 'Calm', 'Copper', 'Green', 'Kind', 'Silver', 'Steady', 'Swift', 'Wise'];
 const ANIMALS = ['Badger', 'Falcon', 'Fox', 'Heron', 'Hedgehog', 'Otter', 'Owl', 'Stag', 'Swan', 'Wolf'];
+const FIRST_NAMES = ['Amara', 'Ingrid', 'Joris', 'Kofi', 'Mei', 'Noor', 'Ravi', 'Sanne', 'Tycho', 'Zainab'];
+const CALL_SIGNS = ['Night Shift', 'Queue Tamer', 'Open Books', 'Long View', 'Calm Hands', 'Last Bed', 'Grid Watch', 'Care Keeper', 'Bridge Builder', 'Paper Slayer'];
 
 function json(res, status, body, headers = {}) {
   const data = JSON.stringify(body);
@@ -29,7 +31,15 @@ function number(value, name, min, max, integer = false) {
 
 export function generatedName(seed) {
   const hash = createHash('sha256').update(String(seed)).digest();
-  return `Minister ${ADJECTIVES[hash[0] % ADJECTIVES.length]} ${ANIMALS[hash[1] % ANIMALS.length]} ${String(seed).slice(-3)}`;
+  const first = FIRST_NAMES[hash[1] % FIRST_NAMES.length];
+  const callSign = CALL_SIGNS[hash[2] % CALL_SIGNS.length];
+  switch (hash[0] % 5) {
+    case 0: return `Minister ${ADJECTIVES[hash[1] % ADJECTIVES.length]} ${ANIMALS[hash[2] % ANIMALS.length]}`;
+    case 1: return `${first} of Cammelot`;
+    case 2: return `${first} ${callSign}`;
+    case 3: return `The ${callSign}`;
+    default: return `Minister ${callSign}`;
+  }
 }
 
 function publicName(value, seed) {
