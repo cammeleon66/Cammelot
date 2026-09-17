@@ -5,9 +5,10 @@ import { after, before, describe, it } from "node:test";
 import assert from "node:assert";
 import { once } from "node:events";
 import { createServer, request as httpRequest } from "node:http";
+import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 
-const proxyModulePath = "C:\\Users\\Public\\Cammelot\\scripts\\llm-proxy.js";
+const proxyModulePath = join(process.cwd(), "scripts", "llm-proxy.js");
 
 function closeServer(server) {
   return new Promise((resolve, reject) => {
