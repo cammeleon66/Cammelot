@@ -370,7 +370,7 @@ body:has(#moc-manifesto) #moc-ministry{visibility:hidden!important;pointer-event
 .ticker-item.social{color:#42A5F5}
 /* ticker-scroll: replaced by JS-driven continuous scroll */
 
-/* ═══ SPRINT 7: Town Feed + Panel Back Button ═══ */
+/* ═══ SPRINT 7: Legacy panel drill-down styles ═══ */
 .feed-filters { display:flex; gap:4px; padding:8px 0; flex-wrap:wrap; }
 .feed-btn { font:500 10px 'JetBrains Mono',monospace; padding:4px 8px; border:1px solid rgba(107,66,38,.2); background:rgba(0,0,0,.05); color:var(--ink2); cursor:pointer; border-radius:4px; transition:.15s; }
 .feed-btn:hover { background:rgba(255,179,0,.1); }
@@ -892,6 +892,7 @@ body.embed-mode #app{display:block!important}
 #cbar .cinfo{display:none!important}
 #event-ticker{display:none!important}
 #chatlog{display:none!important}
+#sim-overview{display:none!important}
 #top .ts:has(#hC),#top .ts:has(#hP),#top .ts:has(#hW),#top .ts:has(#hE),#top .ts:has(#hBurn),#top .ts:has(#hAdmin),#top .ts:has(#hTree),#top .ts:has(#hDW),#top .ts:has(#hER),#top .ts:has(#hPA){display:none!important}
 #top .ts .n{font-family:var(--px);font-size:11px!important;padding-top:2px}
 /* ── SNES window ── */
@@ -1040,7 +1041,6 @@ body.moc-shake{animation:mocShake .5s}
 .moc-game-recommended{position:absolute;right:8px;top:8px;z-index:1;background:var(--m-amber);color:#1a0e00;border:2px solid var(--m-white);outline:2px solid var(--m-ink);padding:4px 7px;font:700 7px var(--px)}
 .moc-picker-note{color:#7f87b5;font-size:10.5px;text-align:center;max-width:620px;margin-top:12px;line-height:1.5}
 /* ── Ministry pane ── */
-#moc-panel-tabs{display:none}
 #moc-town-watch{margin:6px;padding:12px;background:var(--m-blue3);color:var(--m-white);border:2px solid var(--m-white);font:18px/1.25 var(--vt)}
 #moc-town-watch>summary{min-height:36px;display:flex;align-items:center;cursor:pointer;font:8px/1.6 var(--px);color:var(--m-gold)}
 #moc-town-watch[open]>summary{margin-bottom:6px;border-bottom:1px solid #6572ba}
@@ -1093,23 +1093,18 @@ body:has(#moc-council) #town-pulse{display:none}
 #moc-ministry details>summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font:18px var(--vt);color:var(--m-gold)}
 body:has(.moc-mandate) #moc-objective{display:none!important}
 @media(min-width:769px){
-  #panel{width:380px;overflow:hidden}
-  #moc-panel-tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;flex:0 0 auto;padding:6px;background:#160d08;border-bottom:2px solid var(--frame)}
-  #moc-panel-tabs button{min-height:40px;border:2px solid #6572ba;background:var(--m-blue3);color:#bdc5ef;cursor:pointer;font:8px/1.3 var(--px)}
-  #moc-panel-tabs button[aria-selected="true"]{border-color:var(--m-gold);color:var(--m-gold);background:var(--m-blue)}
-  #panel[data-moc-view="town"] #moc-ministry{flex:0 0 auto;padding:7px 10px}
-  #panel[data-moc-view="town"] #moc-ministry .moc-mandate,
-  #panel[data-moc-view="town"] #moc-ministry details,
-  #panel[data-moc-view="town"] #moc-ministry .mnext{display:none}
-  #panel[data-moc-view="town"] #moc-town-watch{flex:0 0 auto;font-size:16px;padding:5px 10px}
-  #panel[data-moc-view="town"] #moc-town-person{margin:5px 0}
-  #panel[data-moc-view="town"] #moc-town-change{margin:5px 0;max-height:72px;overflow-y:auto}
-  #panel[data-moc-view="town"] #agent-detail{display:block;min-height:240px;padding:14px;flex:1;overflow-y:auto}
-  #panel[data-moc-view="ministry"] #moc-town-watch,
-  #panel[data-moc-view="ministry"] .panel-header,
-  #panel[data-moc-view="ministry"] #agent-detail{display:none}
-  #panel[data-moc-view="ministry"] #moc-ministry{display:block;flex:1;overflow-y:auto;margin:8px;padding:12px}
+  #panel{width:360px;overflow-y:auto}
+  #moc-ministry{flex:0 0 auto}
+  #moc-town-watch{flex:0 0 auto;font-size:16px;padding:5px 10px}
+  #moc-town-person{margin:5px 0}
+  #moc-town-change{margin:5px 0;max-height:72px;overflow-y:auto}
 }
+#panel[data-moc-detail="false"] .panel-header,
+#panel[data-moc-detail="false"] #agent-detail{display:none}
+#panel[data-moc-detail="true"] #moc-ministry,
+#panel[data-moc-detail="true"] #moc-town-watch{display:none}
+#panel[data-moc-detail="true"] .panel-header{display:block}
+#panel[data-moc-detail="true"] #agent-detail{display:block}
 @media(max-width:768px){
   #play-overlay{justify-content:flex-start!important;overflow-y:auto;padding:calc(18px + env(safe-area-inset-top)) 0 calc(18px + env(safe-area-inset-bottom));box-sizing:border-box}
   #play-overlay>img{max-width:170px!important;margin-bottom:10px!important}
@@ -1909,6 +1904,7 @@ function toggleSound() {
 // ═══ SPRINT 15: Panel Fade Transition ═══
 function setPanelContent(htmlOrFn) {
   var d = document.getElementById('agent-detail');
+  document.getElementById('panel').dataset.mocDetail = 'true';
   d.classList.add('panel-fade');
   setTimeout(function() {
     if (typeof htmlOrFn === 'function') htmlOrFn();
@@ -6308,10 +6304,11 @@ cv.addEventListener('touchend', function(e) {
 function showMemorial(grave) {
   selectedAgent = null;
   panelIsTownFeed=false;
+  document.getElementById('panel').dataset.mocDetail = 'true';
   const d = document.getElementById('agent-detail');
   document.querySelector('.panel-header').textContent = 'MEMORIAL';
   const isSystem = grave.cause === 'system_failure';
-  let html = `<div class="panel-back" data-action="showTownFeed">← Town Feed</div>`;
+  let html = `<div class="panel-back" data-action="showTownFeed">← Ministry</div>`;
   html += `<div class="agent-card">
     <div class="ac-name" style="color:${isSystem ? 'var(--red)' : 'var(--ink2)'}">In Memory of ${grave.name}</div>
     <div class="ac-role">Age ${grave.age}</div>
@@ -6374,6 +6371,7 @@ function updateAgentLive(a) {
 
 function selectAgent(a){
   panelIsTownFeed=false;
+  document.getElementById('panel').dataset.mocDetail = 'true';
   // Walkthrough: auto-advance when user clicks a citizen during "Meet a Citizen" step
   if (window._wtAwaitClick) {
     window._wtAwaitClick = false;
@@ -6431,7 +6429,7 @@ function selectAgent(a){
   // Get agent events from EVENT_LOG
   const agentEvents=EVENT_LOG.filter(e=>e.agentId===a.id);
 
-  let html=`<div class="panel-back" data-action="showTownFeed">← Town Feed</div>`;
+  let html=`<div class="panel-back" data-action="showTownFeed">← Ministry</div>`;
   html+=`<div class="agent-card">
     <div class="portrait-wrap">
       <canvas class="portrait-canvas" id="portrait-cv" width="64" height="64" ${a.hp<=0?'style="filter:grayscale(100%)"':''}></canvas>
@@ -6762,81 +6760,9 @@ function formatEventText(e) {
 function showTownFeed() {
   selectedAgent = null;
   panelIsTownFeed=true;
-  const d = document.getElementById('agent-detail');
-  document.querySelector('.panel-header').textContent = 'TOWN FEED';
-
-  const significant = EVENT_LOG.filter(function(e) {
-    return e && e.type && ['died','natural_death','admitted','referred','treated','discharged','recovered','worsened','social_chat','feeling_sick','visited_gp','gp_treated','checkup','insight','sick_leave'].indexOf(e.type) !== -1;
-  }).slice(-50).reverse();
-
-  let html = '';
-
-  if (significant.length === 0) {
-    html = '<div class="ad-empty"><div class="hint">🏘</div>Welcome to Cammelot!<br>Run the simulation to see<br>events appear here.</div>';
-    setPanelContent(html);
-    return;
-  }
-
-  html += '<div style="display:flex;gap:4px;margin-bottom:6px;flex-wrap:wrap">';
-  html += '<button class="feed-btn" onclick="showGazette()" style="font-size:10px">📰 Gazette</button>';
-  html += '<button class="feed-btn" onclick="showInsightsPanel()" style="font-size:10px">💡 Insights</button>';
-  html += '<button class="feed-btn" onclick="showWeeklyReport()" style="font-size:10px">📋 Reports</button>';
-  html += '<button class="feed-btn" onclick="showMomentsGallery()" style="font-size:10px">🃏 Moments</button>';
-  html += '</div>';
-
-  html += '<div class="feed-filters">';
-  html += '<button class="feed-btn active" data-filter="all">All</button>';
-  html += '<button class="feed-btn" data-filter="died,natural_death">💀 Deaths</button>';
-  html += '<button class="feed-btn" data-filter="admitted,treated,discharged">🏥 Hospital</button>';
-  html += '<button class="feed-btn" data-filter="referred,visited_gp,gp_treated,checkup">⚕ GP</button>';
-  html += '<button class="feed-btn" data-filter="social_chat">💬 Social</button>';
-  html += '</div>';
-
-  html += '<div class="feed-list" id="feed-list">';
-  significant.forEach(function(e) {
-    if (!e || !e.type) return; // guard against sparse EVENT_LOG entries
-    var icons = {died:'💀',natural_death:'🕊',admitted:'🏥',referred:'🔄',treated:'💊',discharged:'🏠',recovered:'✅',worsened:'⚠',social_chat:'💬',feeling_sick:'🤒',visited_gp:'⚕',gp_treated:'💊',checkup:'📋'};
-    var icon = icons[e.type] || '📝';
-    var colorClass = ['died','natural_death'].indexOf(e.type) !== -1 ? 'feed-death' :
-                     ['admitted','treated','discharged'].indexOf(e.type) !== -1 ? 'feed-hospital' :
-                     ['referred','visited_gp','gp_treated','checkup'].indexOf(e.type) !== -1 ? 'feed-gp' :
-                     e.type === 'social_chat' ? 'feed-social' : 'feed-warn';
-
-    html += '<div class="feed-entry ' + colorClass + '" data-type="' + e.type + '" data-agent="' + (e.agentId||'') + '">';
-    html += '<span class="fe-icon">' + icon + '</span>';
-    html += '<span class="fe-name">' + (e.agentName||'Unknown') + '</span>';
-    html += '<span class="fe-text">' + formatEventText(e) + '</span>';
-    html += '<span class="fe-cycle">C' + e.cycle + '</span>';
-    html += '</div>';
-  });
-  html += '</div>';
-
-  // Sprint 15: Fade transition
-  setPanelContent(function() {
-    d.innerHTML = html;
-
-    // Wire up filter buttons
-    d.querySelectorAll('.feed-btn').forEach(function(btn) {
-      btn.addEventListener('click', function() {
-        d.querySelectorAll('.feed-btn').forEach(function(b) { b.classList.remove('active'); });
-        this.classList.add('active');
-        var filter = this.dataset.filter;
-        d.querySelectorAll('.feed-entry').forEach(function(entry) {
-          if (filter === 'all') { entry.style.display = ''; }
-          else { entry.style.display = filter.split(',').indexOf(entry.dataset.type) !== -1 ? '' : 'none'; }
-        });
-      });
-    });
-
-    // Wire up clicking agent names
-    d.querySelectorAll('.feed-entry').forEach(function(entry) {
-      entry.addEventListener('click', function() {
-        var agId = this.dataset.agent;
-        var a = agents.find(function(ag) { return ag.id === agId; });
-        if (a) selectAgent(a);
-      });
-    });
-  });
+  const panel = document.getElementById('panel');
+  panel.dataset.mocDetail = 'false';
+  document.getElementById('agent-detail').replaceChildren();
 }
 
 // ── Sprint S2: C_eff Capacity Bar Chart ──
@@ -6900,6 +6826,7 @@ function buildCapacityChart() {
 function selectBuilding(building){
   selectedAgent=null;
   panelIsTownFeed=false;
+  document.getElementById('panel').dataset.mocDetail = 'true';
   const d=document.getElementById('agent-detail');
   const ph=document.querySelector('.panel-header');
   ph.textContent='BUILDING REPORT';
@@ -6931,7 +6858,7 @@ function selectBuilding(building){
     const thought=gp.thoughts[(gp.currentThought||0)%gp.thoughts.length];
     gp.currentThought=(gp.currentThought||0)+1;
 
-    let html=`<div class="panel-back" data-action="showTownFeed">← Town Feed</div>`;
+    let html=`<div class="panel-back" data-action="showTownFeed">← Ministry</div>`;
     html+=`<div class="agent-card">
       <div class="ac-name">${building.label}</div>
       <div class="ac-role">${gp.name} — General Practitioner</div>
@@ -6985,7 +6912,7 @@ function selectBuilding(building){
     const treeViolated=waitList.some(a=>a.waitWeeks>treeWeeks)||inHospital.some(a=>a.waitWeeks>treeWeeks);
     const specialists=agents.filter(a=>a.type==='specialist');
 
-    let html=`<div class="panel-back" data-action="showTownFeed">← Town Feed</div>`;
+    let html=`<div class="panel-back" data-action="showTownFeed">← Ministry</div>`;
     html+=`<div class="agent-card">
       <div class="ac-name">${building.label}</div>
       <div class="ac-role">Regional Hospital</div>
@@ -9003,7 +8930,7 @@ function showGazette() {
   }
 
   var dateInfo = getSeasonAndDay(cycle);
-  var html = '<div class="panel-back" data-action="showTownFeed">← Town Feed</div>';
+  var html = '<div class="panel-back" data-action="showTownFeed">← Ministry</div>';
 
   // Main gazette header
   html += '<div class="gazette-header">';
@@ -10770,7 +10697,7 @@ if (MoC.IS_BASELINE) document.getElementById('play-overlay').style.display = 'no
 // Initialize the world but do NOT start tick loop yet
 try { startNewGame(); } catch(e) { console.error('startNewGame error:', e); }
 // render() and loop() are started inside startNewGame. Agents are placed but tick doesn't run.
-// Show the town feed while walkthrough is active
+// Return the side panel to its Ministry overview while walkthrough is active
 try { showTownFeed(); } catch(e) {}
 
 // Do NOT start autoTimer here — wait for walkthrough → manifesto → launchSimulation chain.
@@ -11055,7 +10982,7 @@ function showMomentsGallery() {
   selectedAgent = null;
   panelIsTownFeed=false;
   var items = MOMENTS.items.slice().reverse();
-  var html = '<div class="panel-back" data-action="showTownFeed">← Town Feed</div>';
+  var html = '<div class="panel-back" data-action="showTownFeed">← Ministry</div>';
   html += '<div class="moments-gallery">';
   html += '<h3>🃏 DRAMATIC MOMENTS</h3>';
   if (items.length === 0) {
@@ -11237,7 +11164,7 @@ function showInsightsPanel() {
   selectedAgent = null;
   document.querySelector('.panel-header').textContent = '💡 INSIGHTS';
   var insights = INSIGHT_LOG.slice().reverse();
-  var html = '<div class="panel-back" data-action="showTownFeed">← Town Feed</div>';
+  var html = '<div class="panel-back" data-action="showTownFeed">← Ministry</div>';
   html += '<div style="padding:8px">';
   html += '<h3 style="color:var(--gold);margin:4px 0 8px">💡 Insight Engine</h3>';
   html += '<div style="font-size:11px;color:var(--parchment);opacity:0.7;margin-bottom:10px">';
@@ -11402,7 +11329,7 @@ function showWeeklyReport() {
   panelIsTownFeed=false;
   selectedAgent = null;
   document.querySelector('.panel-header').textContent = '📋 WEEKLY REPORTS';
-  var html = '<div class="panel-back" data-action="showTownFeed">← Town Feed</div>';
+  var html = '<div class="panel-back" data-action="showTownFeed">← Ministry</div>';
   html += '<div style="padding:8px">';
   html += '<h3 style="color:var(--gold);margin:4px 0 8px">📋 Weekly Report Center</h3>';
 
@@ -13539,26 +13466,6 @@ async function initLLMSubsystem() {
     return 'Age ' + a.age + ' · health ' + Math.round(a.hp) + '/100\n' + (states[a.behaviorState] || 'In town')
       + (pendingReferral(a) ? ' · waiting ' + (a.waitWeeks || 0).toFixed(1) + ' weeks' : '');
   }
-  function ensurePanelTabs(){
-    const panel = document.getElementById('panel');
-    if (!panel) return null;
-    if (!panel.dataset.mocView) panel.dataset.mocView = 'town';
-    let tabs = document.getElementById('moc-panel-tabs');
-    if (!tabs) {
-      tabs = document.createElement('nav'); tabs.id = 'moc-panel-tabs'; tabs.setAttribute('aria-label', 'Game information');
-      tabs.innerHTML = '<button data-moc-view="town">Town feed</button><button data-moc-view="ministry">Ministry</button>';
-      panel.prepend(tabs);
-      tabs.querySelectorAll('button').forEach(function(button){
-        button.onclick = function(){
-          panel.dataset.mocView = button.dataset.mocView;
-          tabs.querySelectorAll('button').forEach(function(item){ item.setAttribute('aria-selected', String(item === button)); });
-          if (button.dataset.mocView === 'town') document.getElementById('agent-detail')?.scrollTo(0, 0);
-        };
-      });
-    }
-    tabs.querySelectorAll('button').forEach(function(button){ button.setAttribute('aria-selected', String(button.dataset.mocView === panel.dataset.mocView)); });
-    return tabs;
-  }
   function openPendingCouncil(){
     document.getElementById('moc-council-ready-banner')?.remove();
     const council = document.getElementById('moc-council');
@@ -13589,7 +13496,7 @@ async function initLLMSubsystem() {
         + '<div class="moc-town-people"></div><div id="moc-town-person"></div><div id="moc-town-change"></div>'
         + '<div class="moc-town-actions"><button id="moc-town-toggle">Pause &amp; look</button><button id="moc-town-council" hidden>Council ready</button></div>';
       const panel = document.getElementById('panel');
-      ensurePanelTabs();
+      panel.dataset.mocDetail = 'false';
       panel.insertBefore(el, panel.querySelector('.panel-header'));
       panel.scrollTop = 0;
       const residents = agents.filter(a => a.type === 'patient' || a.type === 'citizen');
@@ -13641,7 +13548,7 @@ async function initLLMSubsystem() {
   MoC.refreshTown = renderTownWatch;
   function councilReady(q){
     pauseSim(); GS._councilDue = q;
-    document.getElementById('panel').dataset.mocView = 'town';
+    document.getElementById('panel').dataset.mocDetail = 'false';
     renderMinistry(); renderTownWatch(); renderCouncilReadyBanner(q);
   }
   // ── Gazette front page: pixel-art scene + big headline ──
@@ -15367,7 +15274,7 @@ async function initLLMSubsystem() {
     if (!el) {
       const panel = document.getElementById('panel');
       if (!panel) return;
-      ensurePanelTabs();
+      if (!panel.dataset.mocDetail) panel.dataset.mocDetail = 'false';
       el = document.createElement('div');
       el.id = 'moc-ministry';
       panel.insertBefore(el, panel.querySelector('.panel-header'));

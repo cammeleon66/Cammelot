@@ -655,6 +655,7 @@ test('Minister cabinet crisis starts after phone walkthrough and reaches council
     assert.equal(await page.locator('[data-town-person]').count(), 3);
     await page.locator('[data-town-person]').first().click();
     assert.ok(await page.locator('#moc-town-person').innerText());
+    await page.getByText('← Ministry').click();
     await page.locator('#moc-town-council').click();
     await openCouncilActions(page);
     assert.ok(await page.locator('#moc-laws [data-law]').count(), 'action stage should offer legislation');
@@ -690,7 +691,7 @@ test('Minister cabinet crisis starts after phone walkthrough and reaches council
       }
       if (viewport.width <= 768) {
         const mandateBox = await page.locator('.moc-mandate').boundingBox();
-        assert.ok(mandateBox && mandateBox.height <= 270, 'mobile target dashboard must leave room for the town feed');
+        assert.ok(mandateBox && mandateBox.height <= 270, 'mobile target dashboard must leave room for gameplay controls');
       }
     }
     assert.deepEqual(pageErrors, []);
@@ -740,7 +741,7 @@ test('Town routes never enter blocked map geometry', { timeout: 30000 }, async (
   } finally { await browser.close(); await new Promise(resolve => server.close(resolve)); }
 });
 
-test('Desktop play prioritizes the town feed and explains immediate request effects', { timeout: 30000 }, async () => {
+test('Desktop play uses one uncluttered Ministry panel and explains immediate request effects', { timeout: 30000 }, async () => {
   const server = await startSiteServer();
   const browser = await launchBrowser();
   const page = await browser.newPage({ viewport:{ width:1440, height:900 } });
@@ -759,13 +760,29 @@ test('Desktop play prioritizes the town feed and explains immediate request effe
     await page.waitForFunction(() => window._mocGameStarted && document.getElementById('moc-town-watch'));
 
     const layout = await page.evaluate(() => ({
-      view:document.getElementById('panel').dataset.mocView,
+      detail:document.getElementById('panel').dataset.mocDetail,
       panel:document.getElementById('panel').getBoundingClientRect().width,
-      feed:document.getElementById('agent-detail').getBoundingClientRect().height,
+      tabs:document.getElementById('moc-panel-tabs'),
+      detailVisible:getComputedStyle(document.getElementById('agent-detail')).display !== 'none',
+      headerVisible:getComputedStyle(document.querySelector('.panel-header')).display !== 'none',
+      ministryVisible:getComputedStyle(document.getElementById('moc-ministry')).display !== 'none',
+      legacyOverviewVisible:getComputedStyle(document.getElementById('sim-overview')).display !== 'none',
     }));
-    assert.equal(layout.view, 'town');
-    assert.ok(layout.panel >= 360, 'desktop panel should have room for readable feed text');
-    assert.ok(layout.feed >= 400, 'town feed should retain a useful visible reading area');
+    assert.equal(layout.detail, 'false');
+    assert.equal(layout.tabs, null, 'the redundant Town Feed/Ministry tabs should be removed');
+    assert.equal(layout.detailVisible, false, 'the legacy event stream should not occupy the default panel');
+    assert.equal(layout.headerVisible, false);
+    assert.equal(layout.ministryVisible, true);
+    assert.equal(layout.legacyOverviewVisible, false, 'duplicate legacy overview should not crowd the Ministry');
+    assert.ok(layout.panel >= 340, 'desktop Ministry panel should remain readable');
+
+    await page.locator('#moc-town-watch summary').click();
+    await page.locator('[data-town-person]').first().click();
+    assert.equal(await page.locator('#panel').getAttribute('data-moc-detail'), 'true');
+    assert.equal(await page.locator('.panel-header').isVisible(), true, 'citizen dossier should replace the Ministry temporarily');
+    await page.getByText('← Ministry').click();
+    assert.equal(await page.locator('#panel').getAttribute('data-moc-detail'), 'false');
+    assert.equal(await page.locator('#moc-ministry').isVisible(), true);
 
     await page.evaluate(() => window._mocForceFlash(1));
     await page.getByRole('button', { name:'Continue digitally' }).click();
