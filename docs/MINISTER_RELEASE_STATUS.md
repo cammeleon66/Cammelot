@@ -1,8 +1,8 @@
 # Minister of Cammelot — release status
 
-Updated: 2026-09-17  
-Public game: https://cammelot.org/minister.html  
-Model: `minister-care-3-paired`  
+Updated: 2026-09-17
+Public game: https://cammelot.org/minister.html
+Model: `minister-care-3-paired`
 Reference protocol: `no-discretionary-action-v1`
 
 This is the canonical status list. Older plans describe how the current release was built; their unchecked boxes are not active tasks.
