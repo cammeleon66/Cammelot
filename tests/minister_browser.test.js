@@ -685,6 +685,11 @@ test('Minister cabinet crisis starts after phone walkthrough and reaches council
       for (const card of await page.locator('.moc-kpi:visible').all()) {
         const box = await card.boundingBox();
         assert.ok(box && box.x >= 0 && box.x + box.width <= viewport.width + 1, 'target cards must fit without horizontal scrolling');
+        if (viewport.width <= 768) assert.ok(box.height <= 60, 'mobile target cards must stay compact');
+      }
+      if (viewport.width <= 768) {
+        const mandateBox = await page.locator('.moc-mandate').boundingBox();
+        assert.ok(mandateBox && mandateBox.height <= 270, 'mobile target dashboard must leave room for the town feed');
       }
     }
     assert.deepEqual(pageErrors, []);
