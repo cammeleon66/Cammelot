@@ -14879,7 +14879,7 @@ async function initLLMSubsystem() {
     // gazette.mp3 (newspaper rustle), council.mp3, law.mp3 (gavel), klaxon.mp3 (alarm),
     // bell.mp3 (death toll), win.mp3, lose.mp3, stamp.mp3, coin.mp3
     const sfxCache = {};   // name -> HTMLAudioElement | 'missing'
-    let titleFileAvailable = false;
+    let titleFileAvailable = false, manifestLoaded = false;
     const manifestReady = fetch('assets/sfx/manifest.json', { cache:'no-store' })
       .then(function(response){ return response.ok ? response.json() : []; })
       .then(function(manifest){
@@ -14895,7 +14895,8 @@ async function initLLMSubsystem() {
           a2.load();
         });
       })
-      .catch(function(){});
+      .catch(function(){})
+      .finally(function(){ manifestLoaded = true; });
     function sfx(name, fallback){
       if (MoC.IS_BASELINE || muted) return;
       const f = sfxCache[name];
@@ -14904,7 +14905,7 @@ async function initLLMSubsystem() {
     }
     return {
       unlock: unlock,
-      state: function(){ return { muted:muted, voices:voices.size, musicVoices:musicVoices.size, titleFileAvailable:titleFileAvailable, theme:this.title.state() }; },
+      state: function(){ return { muted:muted, voices:voices.size, musicVoices:musicVoices.size, titleFileAvailable:titleFileAvailable, manifestLoaded:manifestLoaded, theme:this.title.state() }; },
       blip: function(f){ tone(f || 660, 0.09); },
       sting: function(){ sfx('council', function(){ [392, 523, 659].forEach(function(f, i){ tone(f, 0.14, 'square', 0.05, i * 0.09); }); }); },
       gazette: function(){ sfx('gazette', null); }, // silent unless the paper-rustle file exists
@@ -14931,15 +14932,16 @@ async function initLLMSubsystem() {
             unlock();
             stopped = false;
             const run = ++generation;
-            manifestReady.then(function(){
-              if (stopped || muted || run !== generation) return;
-              if (!titleFileAvailable) { chipMotif(); return; }
-              const track = new window.Audio('assets/minister-theme.mp3');
-              audio = track; track.volume = 0.14; track.loop = true;
-              track.play().catch(function(){
-                if (run !== generation || stopped || muted) return;
-                track.pause(); audio = null; chipMotif();
-              });
+            if (manifestLoaded && !titleFileAvailable) { chipMotif(); return; }
+            // Keep play() in the tap/click call stack. Android Chrome can reject media
+            // created later in a promise even though the promise began from a user gesture.
+            const track = new window.Audio('assets/minister-theme.mp3');
+            audio = track; track.preload = 'auto'; track.volume = 0.14; track.loop = true;
+            track.setAttribute('playsinline', '');
+            const played = track.play();
+            if (played && played.catch) played.catch(function(){
+              if (run !== generation || stopped || muted) return;
+              track.pause(); audio = null; chipMotif();
             });
           },
           stop: function(){

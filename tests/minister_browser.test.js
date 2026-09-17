@@ -277,6 +277,7 @@ test('Minister music continues through gameplay pauses and stops cleanly when mu
     // Exercise missing-file fallback without requesting a nonexistent MP3.
     await page.route('**/assets/sfx/manifest.json', route => route.fulfill({ json:{ effects:[], title:false } }));
     await page.goto(url.replace('.html#', '.html?audio=fallback#'), { waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => MoC.audio.state().manifestLoaded);
     await page.evaluate(() => MoC.audio.setMuted(false));
     await page.getByRole('button', { name: /TAKE OFFICE/ }).click();
     await page.waitForFunction(() => MoC.audio.state().musicVoices > 0);
@@ -300,7 +301,7 @@ test('Minister music continues through gameplay pauses and stops cleanly when mu
     release();
     await page.waitForFunction(() => MoC.audio.state().titleFileAvailable);
     assert.equal(await page.evaluate(() => MoC.audio.state().theme), 'stopped');
-    assert.equal(await page.evaluate(() => window.testTracks.length), 0, 'late manifest cannot create a music player after mute');
+    assert.equal(await page.evaluate(() => window.testTracks.every(track => track.paused)), true, 'late manifest cannot restart music after mute');
     assert.deepEqual(errors, []);
   } finally {
     await browser.close();
@@ -777,5 +778,38 @@ test('Desktop play prioritizes the town feed and explains immediate request effe
     await banner.waitFor();
     assert.match(await banner.innerText(), /COUNCIL READY/);
     assert.equal(await page.evaluate(() => MoC.paused), true);
+  } finally { await browser.close(); await new Promise(resolve => server.close(resolve)); }
+});
+
+test('Android unmute starts media inside the user gesture', { timeout: 30000 }, async () => {
+  const server = await startSiteServer();
+  const browser = await launchBrowser();
+  const page = await browser.newPage({ viewport:{ width:412, height:915 }, isMobile:true, hasTouch:true });
+  await page.addInitScript(() => {
+    localStorage.setItem('moc_muted', 'true');
+    window.testPlayCalls = [];
+    window.testGestureActive = false;
+    const markGesture = () => {
+      window.testGestureActive = true;
+      setTimeout(() => { window.testGestureActive = false; }, 0);
+    };
+    document.addEventListener('pointerdown', markGesture, true);
+    document.addEventListener('click', markGesture, true);
+    const originalPlay = HTMLMediaElement.prototype.play;
+    HTMLMediaElement.prototype.play = function() {
+      window.testPlayCalls.push({ src:this.src, insideGesture:window.testGestureActive });
+      return originalPlay.call(this);
+    };
+  });
+  try {
+    await page.goto(`http://127.0.0.1:${server.address().port}/minister.html?android-audio=1#scn=cabinetcrisis&seed=2468`, { waitUntil:'domcontentloaded' });
+    await page.waitForFunction(() => MoC.audio.state().manifestLoaded);
+    await page.locator('#moc-takeoffice').tap();
+    for (let step = 0; step < 3; step++) await page.locator('#wc-next').tap();
+    await page.locator('#moc-mute').tap();
+    await page.waitForFunction(() => window.testPlayCalls.some(call => call.src.includes('minister-theme')));
+    const call = await page.evaluate(() => window.testPlayCalls.find(call => call.src.includes('minister-theme')));
+    assert.equal(call.insideGesture, true, 'Android media playback must be called synchronously from the unmute tap');
+    assert.equal(await page.evaluate(() => MoC.audio.isMuted()), false);
   } finally { await browser.close(); await new Promise(resolve => server.close(resolve)); }
 });
