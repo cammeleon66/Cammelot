@@ -1047,11 +1047,21 @@ body.moc-shake{animation:mocShake .5s}
 #moc-town-watch button,#moc-inspect-town{min-height:44px;padding:8px;border:2px solid var(--m-white);background:var(--m-blue);color:var(--m-white);cursor:pointer;font:18px/1.15 var(--vt);border-radius:3px}
 #moc-town-watch button:focus-visible,#moc-inspect-town:focus-visible{outline:3px solid var(--m-gold);outline-offset:2px}
 .moc-town-people{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:8px 0}
-.moc-town-people button{overflow-wrap:anywhere}
+.moc-town-people button{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:15px!important;padding:6px!important}
 .moc-town-people button[aria-pressed="true"]{border-color:var(--m-gold)!important}
 .moc-town-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
 .moc-town-actions button{flex:1}
-#moc-town-person,#moc-town-change{margin:8px 0;white-space:pre-line}
+.moc-follow-card{margin:7px 0;padding:8px;background:#080d29;border:1px solid #6572ba;border-left:3px solid var(--m-gold)}
+.moc-follow-head{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.moc-follow-name{color:var(--m-white);font:19px/1 var(--vt)}
+.moc-follow-role{color:#8f99d0;font:13px/1 var(--vt);text-align:right}
+.moc-follow-tags{display:flex;gap:4px;flex-wrap:wrap;margin:5px 0}
+.moc-follow-tag{padding:2px 5px;border:1px solid #5360a8;color:#bdc5ef;font:12px/1.1 var(--vt)}
+.moc-follow-thought{position:relative;margin:7px 0 5px;padding:7px 8px 7px 25px;background:#f4ead6;color:#302416;border:2px solid #302416;border-radius:8px;font:15px/1.2 var(--vt)}
+.moc-follow-thought::before{content:'💭';position:absolute;left:5px;top:6px;font-size:13px}
+.moc-follow-now{color:var(--m-white);font:14px/1.2 var(--vt)}
+.moc-follow-history{margin-top:5px;padding-top:5px;border-top:1px dashed #5360a8;color:#9fa8d8;font:13px/1.2 var(--vt)}
+#moc-town-person,#moc-town-change{margin:8px 0;white-space:normal}
 #moc-town-change:empty{display:none}
 #moc-town-status{color:var(--m-gold)}
 #moc-policy-receipt{padding:8px;border-left:3px solid var(--m-green);font:18px/1.25 var(--vt);white-space:pre-line}
@@ -13466,6 +13476,60 @@ async function initLLMSubsystem() {
     return 'Age ' + a.age + ' · health ' + Math.round(a.hp) + '/100\n' + (states[a.behaviorState] || 'In town')
       + (pendingReferral(a) ? ' · waiting ' + (a.waitWeeks || 0).toFixed(1) + ' weeks' : '');
   }
+  function followThought(a){
+    if (!a) return '';
+    if (a.moved) return 'I left Cammelot. The care situation became part of the decision.';
+    if (a.state === 'dead' || a.behaviorState === 'dead') return a.causeOfDeath === 'natural'
+      ? 'My story ended here.' : 'I did not reach treatment in time.';
+    const memory = getMemoryDialogue(a);
+    if (memory) return memory;
+    if (a.type === 'gp' || a.type === 'specialist') {
+      const burnout = Math.round(a.burnoutLevel || 0);
+      const queueKey = a.type === 'specialist' ? 'hospital' : a.id === 'gp2' ? 'gp2_bldg' : 'gp1_bldg';
+      const queueSize = QUEUES[queueKey]?.agents.length || 0;
+      if (a.sickLeaveTimer > 0) return 'I am off sick. My patients are being redistributed.';
+      if (burnout >= 70) return 'I am getting through the list, but I cannot keep this pace.';
+      if (queueSize >= 6) return 'The waiting room is full again. Every delayed file belongs to someone.';
+      if (M.IST.admin >= 0.25) return 'Paperwork still takes ' + Math.round(M.IST.admin * 100) + '% of my working time.';
+      return 'Today is manageable: ' + queueSize + ' people are waiting here.';
+    }
+    if (a.behaviorState === 'going_to_hospital') return 'The referral is in. Now I wait to reach the specialist.';
+    if (a.behaviorState === 'queuing') return 'I am in the queue. I do not know when my turn comes.';
+    if (a.behaviorState === 'at_hospital') return 'I reached the hospital. Treatment has finally started.';
+    if (a.behaviorState === 'recovering') return 'Treatment has started. I am watching whether my health returns.';
+    if (a.persona) {
+      const situation = deriveSituation({hp:a.hp,conditions:a.conditions || [],waitWeeks:a.waitWeeks || 0,
+        recentDeathNearby:(a.grievingTimer || 0) > 0,treekNorm:M.IST.tree});
+      const thought = personaThought(a.persona, situation, {seed:Math.floor(cycle / MoC.QUARTER_TICKS)});
+      if (thought) return thought;
+    }
+    return (a.thoughts && a.thoughts[(GS.quarter || 1) % a.thoughts.length]) || 'I am getting on with my day.';
+  }
+  function followCardHtml(a, events){
+    if (!a) return '';
+    const clinician = a.type === 'gp' || a.type === 'specialist';
+    const role = clinician ? (a.role || (a.type === 'gp' ? 'GP' : 'Specialist')) : 'Resident · age ' + a.age;
+    const tags = [];
+    if (clinician) {
+      const queueKey = a.type === 'specialist' ? 'hospital' : a.id === 'gp2' ? 'gp2_bldg' : 'gp1_bldg';
+      const queueSize = QUEUES[queueKey]?.agents.length || 0;
+      tags.push('Burnout ' + Math.round(a.burnoutLevel || 0) + '%');
+      tags.push(queueSize + ' waiting here');
+      tags.push('Paperwork ' + Math.round(M.IST.admin * 100) + '%');
+      tags.push(a.sickLeaveTimer > 0 ? 'Off sick' : 'On duty');
+    } else {
+      (a.conditions || []).slice(0, 2).forEach(function(condition){ tags.push((condition.name || condition.code) + ' · ' + condition.severity); });
+      tags.push('Health ' + Math.round(a.hp) + '/100');
+      if (pendingReferral(a)) tags.push((a.waitWeeks || 0).toFixed(1) + ' weeks waiting');
+    }
+    const latest = events.length ? events[events.length - 1] : null;
+    return '<article class="moc-follow-card"><div class="moc-follow-head"><strong class="moc-follow-name">' + sanitizeText(a.name)
+      + '</strong><span class="moc-follow-role">' + sanitizeText(role) + '</span></div>'
+      + '<div class="moc-follow-tags">' + tags.map(function(tag){ return '<span class="moc-follow-tag">' + sanitizeText(tag) + '</span>'; }).join('') + '</div>'
+      + '<div class="moc-follow-thought">' + sanitizeText(followThought(a)) + '</div>'
+      + '<div class="moc-follow-now"><b>Now:</b> ' + sanitizeText(personStatus(a).replace(/\n/g, ' · ')) + '</div>'
+      + '<div class="moc-follow-history"><b>Last care event:</b> ' + (latest ? 'tick ' + latest.cycle + ' · ' + sanitizeText(latest.text || latest.type) : 'none recorded yet') + '</div></article>';
+  }
   function openPendingCouncil(){
     document.getElementById('moc-council-ready-banner')?.remove();
     const council = document.getElementById('moc-council');
@@ -13508,10 +13572,10 @@ async function initLLMSubsystem() {
       GS._followPeople.forEach(function(id){
         const a = agents.find(a => a.id === id);
         const btn = document.createElement('button'); btn.dataset.townPerson = id;
-        btn.textContent = a.name; btn.title = 'Find ' + a.name;
+        btn.textContent = a.type === 'gp' ? '🩺 ' + a.name.replace(/^Dr\.\s*/,'') : '👤 ' + a.name.split(' ')[0];
+        btn.title = 'Follow ' + a.name;
         btn.onclick = function(){
           pauseSim(); GS._followPerson = id;
-          selectAgent(a);
           if (!a.moved) {
             userZoomed = true;
             camX = a.x * mapImgW - cv.width / (2 * zoom);
@@ -13529,8 +13593,7 @@ async function initLLMSubsystem() {
     el.querySelector('#moc-town-status').textContent = GS.over ? 'Term ended.' : pending ? 'Paused · council ready. Take your time.' : MoC.paused ? 'Paused · look around.' : 'Town running · pauses at quarter end.';
     const a = agents.find(a => a.id === GS._followPerson);
     const events = a ? (a.actionHistory || []).filter(e => ['referred','entered_hospital','treated','discharged','gp_treated','died','feeling_sick'].includes(e.type)).slice(-2) : [];
-    el.querySelector('#moc-town-person').textContent = a ? a.name + '\n' + personStatus(a)
-      + '\n' + (events.length ? events.map(e => 'Tick ' + e.cycle + ': ' + (e.text || e.type)).join('\n') : 'No new care event recorded.') : '';
+    el.querySelector('#moc-town-person').innerHTML = followCardHtml(a, events);
     el.querySelectorAll('[data-town-person]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.townPerson === GS._followPerson)));
     const observation = GS._observation;
     const current = MoC.care.snapshot();
