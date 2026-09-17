@@ -751,11 +751,19 @@ test('Desktop play uses one uncluttered Ministry panel and explains immediate re
     await page.goto(`http://127.0.0.1:${server.address().port}/minister.html?desktop-regression=1#scn=cabinetcrisis&seed=2468`, { waitUntil:'domcontentloaded' });
     const name = page.locator('#moc-player-name');
     assert.equal(await name.count(), 1, 'the first game screen should ask for a public player name');
-    assert.match(await name.inputValue(), /^Minister /);
-    const initialName = await name.inputValue();
-    await page.locator('#moc-generate-name').click();
-    assert.match(await name.inputValue(), /^Minister /);
-    assert.notEqual(await name.inputValue(), initialName);
+    const generatedNames = [await name.inputValue()];
+    for (let index = 0; index < 5; index++) {
+      await page.locator('#moc-generate-name').click();
+      generatedNames.push(await name.inputValue());
+    }
+    generatedNames.forEach(generated => {
+      assert.match(generated, /^[\p{L}\p{N} ._'-]{2,24}$/u);
+      assert.ok(generated.length <= 24);
+    });
+    assert.equal(new Set(generatedNames).size, generatedNames.length, 'successive random names should be distinct');
+    assert.ok(generatedNames.some(generated => generated.startsWith('The ')));
+    assert.ok(generatedNames.some(generated => generated.endsWith(' of Cammelot')));
+    assert.ok(generatedNames.some(generated => generated.startsWith('Minister ')));
     await page.locator('#moc-takeoffice').click();
     for (let step = 0; step < 3; step++) await page.locator('#wc-next').click();
     await page.waitForFunction(() => window._mocGameStarted && document.getElementById('moc-town-watch'));
