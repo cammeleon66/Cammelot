@@ -1005,6 +1005,19 @@ body:has(#moc-council) .moc-pop{display:none}
 .moc-flash .fbar>div{height:100%;background:var(--m-amber);width:100%;transition:width .2s linear}
 .moc-flash button{display:block;width:100%;text-align:left;background:#50141c;border:2px solid #a05860;color:#f4d8d8;border-radius:3px;padding:7px 10px;margin:4px 0;cursor:pointer;font:600 11px 'Inter',sans-serif}
 .moc-flash button:hover{border-color:var(--m-amber)}
+.moc-flash-result{margin:10px 0;padding:9px;background:#26090e;border-left:3px solid var(--m-gold);font:15px/1.35 var(--vt);color:var(--m-white)}
+.moc-flash-result div{padding:2px 0}
+.moc-name-entry{margin:12px 0;padding:12px;background:var(--m-blue3);border:2px solid #6572ba;text-align:left}
+.moc-name-entry label{display:block;color:var(--m-gold);font:8px/1.5 var(--px);margin-bottom:7px}
+.moc-name-row{display:flex;gap:8px}
+.moc-name-row input{min-width:0;flex:1;min-height:44px;box-sizing:border-box;background:#080d29;border:2px solid #6572ba;color:var(--m-white);padding:8px 10px;font:18px var(--vt)}
+.moc-name-row button{flex:0 0 auto;min-height:44px;margin:0;padding:8px 10px;font-size:8px}
+.moc-name-error{min-height:18px;margin:5px 0 0;color:var(--m-red);font:14px/1.2 var(--vt)}
+#moc-council-ready-banner{position:absolute;left:50%;top:18px;transform:translateX(-50%);z-index:40;width:min(520px,calc(100% - 36px));box-sizing:border-box;background:linear-gradient(180deg,#283894,#101a54);border:3px solid var(--m-gold);outline:3px solid var(--m-ink);box-shadow:0 8px 30px rgba(0,0,0,.65),0 0 0 5px rgba(255,213,79,.18);padding:12px 16px;text-align:center;color:var(--m-white);animation:mocCouncilReady 1.2s ease-in-out infinite alternate}
+#moc-council-ready-banner strong{display:block;font:11px/1.5 var(--px);color:var(--m-gold)}
+#moc-council-ready-banner span{display:block;margin:4px 0 8px;font:16px/1.2 var(--vt)}
+#moc-council-ready-banner button{min-height:44px;background:var(--m-gold);color:#171024;border:2px solid var(--m-white);padding:8px 16px;cursor:pointer;font:8px/1.4 var(--px)}
+@keyframes mocCouncilReady{from{box-shadow:0 8px 30px rgba(0,0,0,.65),0 0 0 3px rgba(255,213,79,.12)}to{box-shadow:0 8px 30px rgba(0,0,0,.65),0 0 0 8px rgba(255,213,79,.28)}}
 /* ── Portrait / glitch / CRT ── */
 #moc-portrait{position:fixed;left:14px;bottom:14px;z-index:1500;width:92px;background:linear-gradient(180deg,var(--m-blue),var(--m-blue2));border:3px solid var(--m-white);outline:3px solid var(--m-ink);border-radius:4px;text-align:center;font-family:var(--px);box-shadow:0 4px 16px rgba(0,0,0,.5);padding-bottom:5px}
 #moc-portrait canvas{image-rendering:pixelated;margin-top:6px;border:1px solid rgba(255,255,255,.2)}
@@ -1027,8 +1040,10 @@ body.moc-shake{animation:mocShake .5s}
 .moc-game-recommended{position:absolute;right:8px;top:8px;z-index:1;background:var(--m-amber);color:#1a0e00;border:2px solid var(--m-white);outline:2px solid var(--m-ink);padding:4px 7px;font:700 7px var(--px)}
 .moc-picker-note{color:#7f87b5;font-size:10.5px;text-align:center;max-width:620px;margin-top:12px;line-height:1.5}
 /* ── Ministry pane ── */
+#moc-panel-tabs{display:none}
 #moc-town-watch{margin:6px;padding:12px;background:var(--m-blue3);color:var(--m-white);border:2px solid var(--m-white);font:18px/1.25 var(--vt)}
-#moc-town-watch h4{font:9px/1.6 var(--px);color:var(--m-gold);margin:0 0 8px}
+#moc-town-watch>summary{min-height:36px;display:flex;align-items:center;cursor:pointer;font:8px/1.6 var(--px);color:var(--m-gold)}
+#moc-town-watch[open]>summary{margin-bottom:6px;border-bottom:1px solid #6572ba}
 #moc-town-watch button,#moc-inspect-town{min-height:44px;padding:8px;border:2px solid var(--m-white);background:var(--m-blue);color:var(--m-white);cursor:pointer;font:18px/1.15 var(--vt);border-radius:3px}
 #moc-town-watch button:focus-visible,#moc-inspect-town:focus-visible{outline:3px solid var(--m-gold);outline-offset:2px}
 .moc-town-people{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:8px 0}
@@ -1044,6 +1059,7 @@ body.moc-shake{animation:mocShake .5s}
 #moc-ministry .spd button{min-height:44px;min-width:32px}
 body:has(#moc-council) #town-pulse{display:none}
 @media(max-width:768px){#moc-town-watch{padding:10px}#moc-town-watch h4{font-size:8px}}
+@media(max-width:768px){#moc-town-watch{padding:10px}#moc-town-watch>summary{font-size:8px}}
 #moc-ministry{background:linear-gradient(180deg,var(--m-blue) 0%,var(--m-blue2) 100%);border:2px solid var(--m-white);outline:2px solid var(--m-ink);border-radius:3px;margin:6px;padding:10px 12px;font-family:'Inter',sans-serif;color:#dde2ff}
 #moc-ministry h4{margin:0;color:var(--m-white);font-family:var(--px);font-size:9px;letter-spacing:1px;text-shadow:1px 1px 0 var(--m-ink)}
 #moc-ministry .mrow{display:flex;justify-content:space-between;align-items:center;font-size:11px;padding:2.5px 0;color:#aab4e8}
@@ -1076,6 +1092,24 @@ body:has(#moc-council) #town-pulse{display:none}
 #moc-ministry .mhead{flex-wrap:wrap;gap:8px}
 #moc-ministry details>summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font:18px var(--vt);color:var(--m-gold)}
 body:has(.moc-mandate) #moc-objective{display:none!important}
+@media(min-width:769px){
+  #panel{width:380px;overflow:hidden}
+  #moc-panel-tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;flex:0 0 auto;padding:6px;background:#160d08;border-bottom:2px solid var(--frame)}
+  #moc-panel-tabs button{min-height:40px;border:2px solid #6572ba;background:var(--m-blue3);color:#bdc5ef;cursor:pointer;font:8px/1.3 var(--px)}
+  #moc-panel-tabs button[aria-selected="true"]{border-color:var(--m-gold);color:var(--m-gold);background:var(--m-blue)}
+  #panel[data-moc-view="town"] #moc-ministry{flex:0 0 auto;padding:7px 10px}
+  #panel[data-moc-view="town"] #moc-ministry .moc-mandate,
+  #panel[data-moc-view="town"] #moc-ministry details,
+  #panel[data-moc-view="town"] #moc-ministry .mnext{display:none}
+  #panel[data-moc-view="town"] #moc-town-watch{flex:0 0 auto;font-size:16px;padding:5px 10px}
+  #panel[data-moc-view="town"] #moc-town-person{margin:5px 0}
+  #panel[data-moc-view="town"] #moc-town-change{margin:5px 0;max-height:72px;overflow-y:auto}
+  #panel[data-moc-view="town"] #agent-detail{display:block;min-height:240px;padding:14px;flex:1;overflow-y:auto}
+  #panel[data-moc-view="ministry"] #moc-town-watch,
+  #panel[data-moc-view="ministry"] .panel-header,
+  #panel[data-moc-view="ministry"] #agent-detail{display:none}
+  #panel[data-moc-view="ministry"] #moc-ministry{display:block;flex:1;overflow-y:auto;margin:8px;padding:12px}
+}
 @media(max-width:768px){
   #play-overlay{justify-content:flex-start!important;overflow-y:auto;padding:calc(18px + env(safe-area-inset-top)) 0 calc(18px + env(safe-area-inset-bottom));box-sizing:border-box}
   #play-overlay>img{max-width:170px!important;margin-bottom:10px!important}
@@ -1093,6 +1127,9 @@ body:has(.moc-mandate) #moc-objective{display:none!important}
     max-height:calc(100dvh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
     padding:14px 12px 10px
   }
+  .moc-name-row{display:grid;grid-template-columns:1fr}
+  .moc-name-row button{width:100%}
+  #moc-council-ready-banner{top:10px;width:calc(100% - 20px);padding:10px}
   .moc-box h2{font-size:10px;line-height:1.55}
   .moc-box h3{font-size:8px;margin-top:12px}
   .moc-sub,.moc-gazette,.moc-dilemma .dq{font-size:12px;line-height:1.5}
@@ -1573,35 +1610,30 @@ gameWrap.addEventListener('drop', e => {
 // Zones where agents should NOT walk (water + buildings + forest)
 // These must match the actual map2 image layout
 const NO_WALK_ZONES = [
-  // Rivers — matched to actual map2.jpeg water positions
-  { x1:.00, y1:.22, x2:.20, y2:.35 },  // river upper-left
-  { x1:.15, y1:.48, x2:.25, y2:.58 },  // river mid-left
-  { x1:.48, y1:.28, x2:.55, y2:.38 },  // river upper-center
-  { x1:.60, y1:.38, x2:.70, y2:.48 },  // river center-right
-  { x1:.65, y1:.55, x2:.75, y2:.65 },  // river lower-right
-  { x1:.30, y1:.65, x2:.55, y2:.72 },  // river bottom-center
-  // Forest/dense areas
-  { x1:.30, y1:.42, x2:.48, y2:.55 },  // park/forest center
-  // Buildings (don't walk through them)
-  { x1:.25, y1:.01, x2:.46, y2:.20 },  // hospital
-  { x1:.55, y1:.12, x2:.69, y2:.25 },  // GP de Jong
-  { x1:.03, y1:.59, x2:.15, y2:.71 },  // GP Bakker
-  { x1:.72, y1:.26, x2:.96, y2:.50 },  // farm fields right
-  { x1:.38, y1:.45, x2:.58, y2:.58 },  // park/cemetery center
+  // Water outside the visible bridges.
+  { x1:.165, y1:.00, x2:.215, y2:.292 },
+  { x1:.175, y1:.342, x2:.300, y2:.745 },
+  { x1:.735, y1:.00, x2:.910, y2:.292 },
+  { x1:.725, y1:.342, x2:.810, y2:.575 },
+  { x1:.520, y1:.805, x2:.670, y2:1.00 },
+  // Buildings and dense scenery outside the road network.
+  { x1:.245, y1:.115, x2:.430, y2:.285 },
+  { x1:.515, y1:.175, x2:.585, y2:.295 },
+  { x1:.165, y1:.645, x2:.235, y2:.755 },
 ];
 
 // Building zones — agents inside are hidden on map
 const BUILDINGS = [
-  { id:'hospital', x1:.22, y1:.10, x2:.44, y2:.34, label:'Cammelot Hospital' },
-  { id:'gp1_bldg', x1:.56, y1:.13, x2:.68, y2:.25, label:'GP de Jong' },
-  { id:'gp2_bldg', x1:.13, y1:.59, x2:.22, y2:.71, label:'GP Bakker' },
+  { id:'hospital', x1:.245, y1:.115, x2:.430, y2:.285, label:'Cammelot Hospital' },
+  { id:'gp1_bldg', x1:.515, y1:.175, x2:.585, y2:.295, label:'GP de Jong' },
+  { id:'gp2_bldg', x1:.165, y1:.645, x2:.235, y2:.755, label:'GP Bakker' },
 ];
 
 // Key destinations for agent pathfinding
 const DESTINATIONS = {
-  gp_collins:  { entrance:{x:.62,y:.26}, building:'gp1_bldg' },
-  gp_bennett:  { entrance:{x:.17,y:.71}, building:'gp2_bldg' },
-  hospital:    { entrance:{x:.33,y:.34}, building:'hospital' },
+  gp_collins:  { entrance:{x:.55,y:.315}, building:'gp1_bldg' },
+  gp_bennett:  { entrance:{x:.20,y:.775}, building:'gp2_bldg' },
+  hospital:    { entrance:{x:.33,y:.315}, building:'hospital' },
 };
 function getGPDest(gpName){
   if(gpName && gpName.includes('Bakker')) return DESTINATIONS.gp_bennett;
@@ -1620,33 +1652,28 @@ function isInBuilding(fx, fy) {
 // Safe walkable positions — ONLY on visible roads/paths in the map2 image
 // Roads form a grid pattern with bridges over rivers
 const ROAD_WAYPOINTS = [
-  // === Horizontal road TOP (y ≈ 0.28) ===
-  {x:.22,y:.27},{x:.28,y:.27},{x:.35,y:.27},{x:.50,y:.27},{x:.56,y:.27},{x:.72,y:.27},
-  // === Horizontal road MIDDLE (y ≈ 0.55) ===
-  {x:.22,y:.54},{x:.30,y:.54},{x:.42,y:.54},{x:.50,y:.54},{x:.60,y:.54},{x:.72,y:.54},{x:.80,y:.54},
-  // === Horizontal road BOTTOM (y ≈ 0.80) ===
-  {x:.12,y:.80},{x:.22,y:.80},{x:.35,y:.80},{x:.50,y:.80},{x:.60,y:.80},{x:.72,y:.80},{x:.85,y:.80},
-  // === Vertical road LEFT (x ≈ 0.22) ===
-  {x:.22,y:.08},{x:.22,y:.15},{x:.22,y:.22},{x:.22,y:.35},{x:.22,y:.42},{x:.22,y:.50},{x:.22,y:.65},{x:.22,y:.72},{x:.22,y:.88},
-  // === Vertical road CENTER (x ≈ 0.50) ===
-  {x:.50,y:.08},{x:.50,y:.15},{x:.50,y:.22},{x:.50,y:.35},{x:.50,y:.42},{x:.50,y:.50},{x:.50,y:.65},{x:.50,y:.72},{x:.50,y:.88},
-  // === Vertical road RIGHT (x ≈ 0.72) ===
-  {x:.72,y:.08},{x:.72,y:.15},{x:.72,y:.22},{x:.72,y:.35},{x:.72,y:.42},{x:.72,y:.50},{x:.72,y:.65},{x:.72,y:.72},{x:.72,y:.88},
-  // Near hospital entrance
-  {x:.35,y:.21},{x:.38,y:.21},{x:.42,y:.21},
-  // Near GP de Jong entrance 
-  {x:.58,y:.26},{x:.62,y:.26},
-  // Near GP Bakker entrance
-  {x:.09,y:.71},{x:.09,y:.72},{x:.15,y:.72},
-  // Side streets
-  {x:.08,y:.27},{x:.12,y:.27},{x:.70,y:.27},
-  {x:.08,y:.54},{x:.12,y:.54},{x:.88,y:.54},
-  // Bottom area
-  {x:.08,y:.90},{x:.35,y:.90},{x:.50,y:.90},{x:.72,y:.90},{x:.90,y:.90},
+  // Main east-west roads, including the drawn bridge crossings.
+  ...[.04,.10,.16,.22,.28,.33,.40,.46,.51,.58,.64,.70,.76,.82,.88,.94,.97].map(x => ({x,y:.315})),
+  ...[.32,.38,.44,.51,.57,.63,.68,.74,.80,.86,.92,.97].map(x => ({x,y:.605})),
+  ...[.04,.10,.16,.20,.26,.32,.38,.44,.51].map(x => ({x,y:.775})),
+  // North-south roads. Repeated intersections connect the route graph.
+  ...[.05,.11,.17,.23,.315,.38,.44,.50,.56,.605,.67,.72,.775,.84,.91,.97].map(y => ({x:.16,y})),
+  ...[.315,.38,.44,.50,.56,.605,.67,.72,.775].map(y => ({x:.32,y})),
+  ...[.05,.11,.17,.23,.315,.38,.44,.50,.56,.605,.67,.72,.775,.84,.91,.97].map(y => ({x:.51,y})),
+  ...[.315,.38,.44,.50,.56,.605].map(y => ({x:.68,y})),
+  ...[.315,.38,.44,.50,.56,.605,.67,.72,.775].map(y => ({x:.86,y})),
 ];
 
 function randomRoadPoint() {
   return ROAD_WAYPOINTS[Math.floor(Math.random() * ROAD_WAYPOINTS.length)];
+}
+
+function segmentIsWalkable(ax, ay, bx, by) {
+  for(let sample = 0; sample <= 20; sample++) {
+    const t = sample / 20;
+    if(isInWater(ax + (bx - ax) * t, ay + (by - ay) * t)) return false;
+  }
+  return true;
 }
 
 // Waypoint adjacency graph — only connect waypoints on the SAME road axis
@@ -1666,9 +1693,7 @@ function buildWaypointGraph() {
       const sameRow = ady < AXIS_SNAP;
       const sameCol = adx < AXIS_SNAP;
       if(!sameRow && !sameCol) continue;
-      // Check midpoint isn't in a no-walk zone
-      const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
-      if(!isInWater(mx, my)) WAYPOINT_ADJ[i].push(j);
+      if(segmentIsWalkable(a.x, a.y, b.x, b.y)) WAYPOINT_ADJ[i].push(j);
     }
   }
 }
@@ -1681,6 +1706,17 @@ function nearestWaypointIdx(fx, fy) {
     if(d < bestD) { bestD = d; best = i; }
   }
   return best;
+}
+
+function nearestReachableWaypointIdx(fx, fy) {
+  let best = -1, bestD = Infinity;
+  for(let i = 0; i < ROAD_WAYPOINTS.length; i++) {
+    const point = ROAD_WAYPOINTS[i];
+    if(!segmentIsWalkable(fx, fy, point.x, point.y)) continue;
+    const d = (point.x - fx) ** 2 + (point.y - fy) ** 2;
+    if(d < bestD) { bestD = d; best = i; }
+  }
+  return best >= 0 ? best : nearestWaypointIdx(fx, fy);
 }
 
 function findWaypointPath(fromIdx, toIdx) {
@@ -4355,6 +4391,10 @@ const INFRASTRUCTURE_AGENTS = [
 const agents = [...INFRASTRUCTURE_AGENTS, ...spawnPopulation(45)];
 
 agents.forEach(e=>{
+  if (!e.insideBuilding && (e.type === 'patient' || e.type === 'citizen') && isInWater(e.x, e.y)) {
+    const spawnRoad = ROAD_WAYPOINTS[nearestWaypointIdx(e.x, e.y)];
+    e.x = spawnRoad.x; e.y = spawnRoad.y;
+  }
   e.tx=e.x; e.ty=e.y;
   e.frame=Math.random()*100|0;
   e.bubbleTimer=0; e.currentThought=0;
@@ -5843,7 +5883,7 @@ function advanceTownMovement(){
         if(e.behaviorState==='going_to_gp'||e.behaviorState==='going_to_hospital'||e.behaviorState==='queuing'||e.behaviorState==='protesting') return;
         // Default roaming: idle then pick new random destination
         e.idleUntil = now + 2000 + Math.random() * 6000;
-        const fromIdx = nearestWaypointIdx(e.x, e.y);
+        const fromIdx = nearestReachableWaypointIdx(e.x, e.y);
         let toIdx = Math.floor(Math.random() * ROAD_WAYPOINTS.length);
         // Sprint 26: Elderly wander radius — stay close to home
         if (e.lifeStage === 'elderly' && e.homePos) {
@@ -5858,7 +5898,7 @@ function advanceTownMovement(){
           const p = findWaypointPath(fromIdx, toIdx);
           if(p && p.length > 1) {
             e.path = p; e.pathIdx = 1; e.pathComplete = false;
-            const wp = ROAD_WAYPOINTS[p[1]];
+            const wp = ROAD_WAYPOINTS[p[0]];
             e.tx = wp.x; e.ty = wp.y;
           }
         }
@@ -7043,19 +7083,16 @@ function addHistory(agent, type, text){
 }
 
 function sendAgentTo(agent, target){
-  const fromIdx=nearestWaypointIdx(agent.x, agent.y);
+  const fromIdx=nearestReachableWaypointIdx(agent.x, agent.y);
   const toIdx=nearestWaypointIdx(target.x, target.y);
   if(fromIdx!==toIdx){
     const p=findWaypointPath(fromIdx, toIdx);
     if(p && p.length>1){
       agent.path=p; agent.pathIdx=1; agent.pathComplete=false;
-      const wp=ROAD_WAYPOINTS[p[1]];
+      const wp=ROAD_WAYPOINTS[p[0]];
       agent.tx=wp.x; agent.ty=wp.y;
     } else {
-      // Pathfinding failed — snap to nearest valid waypoint instead of raw target
-      const safeIdx = nearestWaypointIdx(target.x, target.y);
-      agent.x = ROAD_WAYPOINTS[safeIdx].x;
-      agent.y = ROAD_WAYPOINTS[safeIdx].y;
+      // A disconnected destination should not make a citizen jump across the map.
       agent.tx = agent.x; agent.ty = agent.y;
       agent.pathComplete=true;
     }
@@ -7079,13 +7116,13 @@ function initAgentBehaviors(){
     } else if(!e.insideBuilding && ROAD_WAYPOINTS && ROAD_WAYPOINTS.length > 1){
       // Give roaming agents an initial walking destination so they move immediately
       e.behaviorState='roaming';
-      var fromIdx = nearestWaypointIdx(e.x, e.y);
+      var fromIdx = nearestReachableWaypointIdx(e.x, e.y);
       var toIdx = Math.floor(Math.random() * ROAD_WAYPOINTS.length);
       if(fromIdx !== toIdx){
         var p = findWaypointPath(fromIdx, toIdx);
         if(p && p.length > 1){
           e.path = p; e.pathIdx = 1; e.pathComplete = false;
-          var wp = ROAD_WAYPOINTS[p[1]];
+          var wp = ROAD_WAYPOINTS[p[0]];
           e.tx = wp.x; e.ty = wp.y;
         }
       }
@@ -13502,16 +13539,58 @@ async function initLLMSubsystem() {
     return 'Age ' + a.age + ' · health ' + Math.round(a.hp) + '/100\n' + (states[a.behaviorState] || 'In town')
       + (pendingReferral(a) ? ' · waiting ' + (a.waitWeeks || 0).toFixed(1) + ' weeks' : '');
   }
+  function ensurePanelTabs(){
+    const panel = document.getElementById('panel');
+    if (!panel) return null;
+    if (!panel.dataset.mocView) panel.dataset.mocView = 'town';
+    let tabs = document.getElementById('moc-panel-tabs');
+    if (!tabs) {
+      tabs = document.createElement('nav'); tabs.id = 'moc-panel-tabs'; tabs.setAttribute('aria-label', 'Game information');
+      tabs.innerHTML = '<button data-moc-view="town">Town feed</button><button data-moc-view="ministry">Ministry</button>';
+      panel.prepend(tabs);
+      tabs.querySelectorAll('button').forEach(function(button){
+        button.onclick = function(){
+          panel.dataset.mocView = button.dataset.mocView;
+          tabs.querySelectorAll('button').forEach(function(item){ item.setAttribute('aria-selected', String(item === button)); });
+          if (button.dataset.mocView === 'town') document.getElementById('agent-detail')?.scrollTo(0, 0);
+        };
+      });
+    }
+    tabs.querySelectorAll('button').forEach(function(button){ button.setAttribute('aria-selected', String(button.dataset.mocView === panel.dataset.mocView)); });
+    return tabs;
+  }
+  function openPendingCouncil(){
+    document.getElementById('moc-council-ready-banner')?.remove();
+    const council = document.getElementById('moc-council');
+    if (council) { council.style.display = ''; document.getElementById('moc-inspect-town')?.focus(); }
+    else if (GS._councilDue) {
+      const q = GS._councilDue; GS._councilDue = null;
+      openCouncil(q);
+    }
+    renderTownWatch();
+  }
+  function renderCouncilReadyBanner(q){
+    let banner = document.getElementById('moc-council-ready-banner');
+    if (!GS._councilDue || GS.over) { banner?.remove(); return; }
+    if (!banner) {
+      banner = document.createElement('div'); banner.id = 'moc-council-ready-banner'; banner.setAttribute('role', 'status');
+      document.getElementById('game-wrap')?.appendChild(banner);
+    }
+    banner.innerHTML = '<strong>COUNCIL READY</strong><span>Quarter ' + q + ' is complete. The town is paused.</span><button>OPEN COUNCIL</button>';
+    banner.querySelector('button').onclick = openPendingCouncil;
+  }
   function renderTownWatch(){
     if (MoC.IS_BASELINE || !window._mocGameStarted) return;
     let el = document.getElementById('moc-town-watch');
     if (!el) {
-      el = document.createElement('section'); el.id = 'moc-town-watch'; el.setAttribute('aria-label', 'Watch the town');
-      el.innerHTML = '<h4>PEOPLE TO FOLLOW</h4><div id="moc-town-status" role="status"></div>'
+      el = document.createElement('details'); el.id = 'moc-town-watch'; el.setAttribute('aria-label', 'Watch the town');
+      el.open = window.matchMedia('(max-width:768px)').matches;
+      el.innerHTML = '<summary>PEOPLE TO FOLLOW</summary><div id="moc-town-status" role="status"></div>'
         + '<div class="moc-town-people"></div><div id="moc-town-person"></div><div id="moc-town-change"></div>'
         + '<div class="moc-town-actions"><button id="moc-town-toggle">Pause &amp; look</button><button id="moc-town-council" hidden>Council ready</button></div>';
       const panel = document.getElementById('panel');
-      panel.prepend(el);
+      ensurePanelTabs();
+      panel.insertBefore(el, panel.querySelector('.panel-header'));
       panel.scrollTop = 0;
       const residents = agents.filter(a => a.type === 'patient' || a.type === 'citizen');
       const patient = residents.find(pendingReferral) || residents.find(a => a.waitWeeks > 0) || residents[0];
@@ -13537,15 +13616,7 @@ async function initLLMSubsystem() {
         el.querySelector('.moc-town-people').appendChild(btn);
       });
       el.querySelector('#moc-town-toggle').onclick = function(){ if (MoC.paused) resumeSim(); else pauseSim(); renderTownWatch(); renderMinistry(); };
-      el.querySelector('#moc-town-council').onclick = function(){
-        const council = document.getElementById('moc-council');
-        if (council) { council.style.display = ''; document.getElementById('moc-inspect-town')?.focus(); }
-        else if (GS._councilDue) {
-          const q = GS._councilDue; GS._councilDue = null;
-          openCouncil(q);
-        }
-        renderTownWatch();
-      };
+      el.querySelector('#moc-town-council').onclick = openPendingCouncil;
     }
     const pending = GS._councilDue || councilOpen;
     el.querySelector('#moc-town-status').textContent = GS.over ? 'Term ended.' : pending ? 'Paused · council ready. Take your time.' : MoC.paused ? 'Paused · look around.' : 'Town running · pauses at quarter end.';
@@ -13570,7 +13641,8 @@ async function initLLMSubsystem() {
   MoC.refreshTown = renderTownWatch;
   function councilReady(q){
     pauseSim(); GS._councilDue = q;
-    renderMinistry(); renderTownWatch();
+    document.getElementById('panel').dataset.mocView = 'town';
+    renderMinistry(); renderTownWatch(); renderCouncilReadyBanner(q);
   }
   // ── Gazette front page: pixel-art scene + big headline ──
   function gazetteArt(kind){
@@ -13833,6 +13905,7 @@ async function initLLMSubsystem() {
   }
   function openCouncil(q){
     if (councilOpen || GS.over) return;
+    document.getElementById('moc-council-ready-banner')?.remove();
     Math.random=MoC.mulberry32((MoC.seed ^ Math.imul(q,0x504f4c))>>>0);
     councilOpen = true;
     window._councilWizardMode = true;
@@ -14632,6 +14705,7 @@ async function initLLMSubsystem() {
     html += '<button class="moc-buy" id="moc-again" style="padding:9px 20px;font-size:12.5px">Try another approach</button><p id="moc-replay-status" role="status"></p></div></div>';
     ov.innerHTML = html;
     document.body.appendChild(ov);
+    document.getElementById('moc-community-name').value = GS.playerName || loadJSON('moc_player_name', '');
     // Put the actual care comparison before the lengthy legacy/score narrative.
     const box=ov.querySelector('.moc-box');
     const comparison=document.getElementById('moc-care-comparison');
@@ -14853,12 +14927,12 @@ async function initLLMSubsystem() {
         return {
           state: function(){ return stopped ? 'stopped' : audio ? 'file' : chipTimer ? 'fallback' : 'loading'; },
           start: function(){
-            if (MoC.IS_BASELINE || muted || !stopped || window._mocGameStarted) return;
+            if (MoC.IS_BASELINE || muted || !stopped) return;
             unlock();
             stopped = false;
             const run = ++generation;
             manifestReady.then(function(){
-              if (stopped || muted || run !== generation || window._mocGameStarted) return;
+              if (stopped || muted || run !== generation) return;
               if (!titleFileAvailable) { chipMotif(); return; }
               const track = new window.Audio('assets/minister-theme.mp3');
               audio = track; track.volume = 0.14; track.loop = true;
@@ -14883,7 +14957,7 @@ async function initLLMSubsystem() {
           Object.values(sfxCache).forEach(function(file){ if (file !== 'missing') file.pause(); });
         } else {
           unlock();
-          if (!window._mocGameStarted) this.title.start();
+          this.title.start();
         }
       },
       isMuted: function(){ return muted; }
@@ -15078,14 +15152,39 @@ async function initLLMSubsystem() {
   ];
   let flashActive = false;
   GS.flashSeen = [];
-  function maybeFlash(){
-    if (MoC.IS_BASELINE || flashActive || councilOpen || GS.over || MoC.paused) return;
+  function flashSnapshot(face){
+    return { budget:GS.budget, citizen:GS.trustC, doctor:GS.trustD, parliament:GS.trustP,
+      health:Number(face.hp || 0), score:GS.liveScore || 0, carers:GS.mantelzorg || 0,
+      admin:M.IST.admin, sick:M.IST.sick };
+  }
+  function flashChanges(before, after){
+    const lines = [];
+    function add(label, value, suffix){
+      if (Math.abs(value) < 0.0001) return;
+      const shown = Number.isInteger(value) ? value : Math.round(value * 100) / 100;
+      lines.push(label + ' ' + (shown > 0 ? '+' : '') + shown + (suffix || ''));
+    }
+    add('Budget', (after.budget - before.budget) / 1000, 'K');
+    add('Citizen trust', after.citizen - before.citizen);
+    add('Doctor trust', after.doctor - before.doctor);
+    add('Parliament trust', after.parliament - before.parliament);
+    add('Citizen health', after.health - before.health);
+    add('Term score', after.score - before.score);
+    add('Carer pressure', after.carers - before.carers);
+    add('Admin burden', Math.round((after.admin - before.admin) * 100), ' points');
+    add('Staff absence', Math.round((after.sick - before.sick) * 100), ' points');
+    return lines;
+  }
+  function maybeFlash(forcedIndex){
+    const forced = Number.isInteger(forcedIndex);
+    if (MoC.IS_BASELINE || flashActive || councilOpen || GS.over || (MoC.paused && !forced)) return;
     const inQuarter = cycle % MoC.QUARTER_TICKS;
-    if (inQuarter !== Math.floor(MoC.QUARTER_TICKS / 2)) return;
-    if ((MoC.seed + GS.quarter) % 3 !== 0) return; // roughly every 3rd quarter
+    if (!forced && inQuarter !== Math.floor(MoC.QUARTER_TICKS / 2)) return;
+    if (!forced && (MoC.seed + GS.quarter) % 3 !== 0) return; // roughly every 3rd quarter
     const pool = FLASH_POOL.filter(function(f, i){ return GS.flashSeen.indexOf(i) < 0 && (!f.cond || f.cond()); });
     if (!pool.length) { GS.flashSeen = []; return; }
-    const flash = pool[(MoC.seed + GS.quarter * 5) % pool.length];
+    const flash = forced ? FLASH_POOL[forcedIndex] : pool[(MoC.seed + GS.quarter * 5) % pool.length];
+    if (!flash || (flash.cond && !flash.cond())) return;
     GS.flashSeen.push(FLASH_POOL.indexOf(flash));
     const face = agents.find(function(a){ return (a.type === 'patient' || a.type === 'citizen') && a.state !== 'dead' && !a.moved; }) || { name:'A citizen', age:'?' };
     flashActive = true;
@@ -15098,9 +15197,24 @@ async function initLLMSubsystem() {
       + '<button id="moc-fa">' + flash.a.l + '</button><button id="moc-fb">' + flash.b.l + '</button>';
     document.body.appendChild(el);
     function cleanup(){ el.remove(); flashActive = false; if (!councilOpen && !GS.over) resumeSim(); }
-    el.querySelector('#moc-fa').addEventListener('click', function(){ flash.a.run(face); refreshMeters(); cleanup(); });
-    el.querySelector('#moc-fb').addEventListener('click', function(){ flash.b.run(face); refreshMeters(); cleanup(); });
+    function decide(option){
+      const before = flashSnapshot(face);
+      option.run(face); refreshMeters(); renderMinistry(); renderTownWatch();
+      const changes = flashChanges(before, flashSnapshot(face));
+      el.innerHTML = '<h4>' + flash.t + '</h4><div class="moc-sub">Decision applied</div>'
+        + '<div class="ft">' + option.l + '</div><div class="moc-flash-result">'
+        + (changes.length ? changes.map(function(change){ return '<div>' + change + '</div>'; }).join('') : '<div>No immediate modeled change this time.</div>')
+        + '</div><button id="moc-flash-continue">Continue to town</button>';
+      el.querySelector('#moc-flash-continue').focus();
+      el.querySelector('#moc-flash-continue').onclick = cleanup;
+    }
+    el.querySelector('#moc-fa').addEventListener('click', function(){ decide(flash.a); });
+    el.querySelector('#moc-fb').addEventListener('click', function(){ decide(flash.b); });
   }
+  window._mocForceFlash = function(index){
+    if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
+    flashActive = false; MoC.paused = false; maybeFlash(index);
+  };
 
   // ═══ G5c: MINISTER PORTRAIT + WORLD EFFECTS ═══
   // ═══ G5c: MINISTER PORTRAIT (seed-derived appearance, clickable) ═══
@@ -15251,9 +15365,10 @@ async function initLLMSubsystem() {
     if (!el) {
       const panel = document.getElementById('panel');
       if (!panel) return;
+      ensurePanelTabs();
       el = document.createElement('div');
       el.id = 'moc-ministry';
-      panel.insertBefore(el, panel.firstChild);
+      panel.insertBefore(el, panel.querySelector('.panel-header'));
     }
     const figuresOpen = !!el.querySelector('#moc-ministry-figures[open]');
     const safetyOpen = !!el.querySelector('#moc-mandate-safety[open]');
@@ -15453,9 +15568,8 @@ async function initLLMSubsystem() {
       overlay.appendChild(note);
     });
 
-    // G8 audio: title theme across the whole menu flow (picker → briefing → tour).
-    // Starts on the first user gesture anywhere (browser autoplay rules);
-    // fades out only when the simulation actually starts running.
+    // G8 audio: quiet soundtrack across menus, town observation and councils.
+    // Starts on the first user gesture anywhere (browser autoplay rules).
     document.addEventListener('DOMContentLoaded', function(){
       if (MoC.IS_BASELINE) return;
       // Try to start the theme immediately (works when the browser already trusts this origin);
@@ -15463,19 +15577,21 @@ async function initLLMSubsystem() {
       document.addEventListener('pointerdown', function once(){
         document.removeEventListener('pointerdown', once);
         Audio5.unlock();
-        if (!Audio5.isMuted() && !window._mocGameStarted) Audio5.title.start();
+        if (!Audio5.isMuted()) Audio5.title.start();
       }, { once: true });
-      // Stop the theme the moment the real game launches
-      if (typeof window.launchSimulation === 'function') {
-        const _origLaunch = window.launchSimulation;
-        window.launchSimulation = function(){
-          Audio5.title.stop();
-          return _origLaunch.apply(this, arguments);
-        };
-      }
     });
 
-    // G7: Situation Report briefing → assumption (once) → game tour (once) → play
+    function randomPlayerName(previous){
+      const adjectives = ['Amber','Brave','Calm','Copper','Green','Kind','Silver','Steady','Swift','Wise'];
+      const animals = ['Badger','Falcon','Fox','Heron','Hedgehog','Otter','Owl','Stag','Swan','Wolf'];
+      const pick = function(list){ return list[Math.floor(Math._random() * list.length)]; };
+      let generated;
+      do { generated = 'Minister ' + pick(adjectives) + ' ' + pick(animals); } while (generated === previous);
+      return generated;
+    }
+    function validPlayerName(value){ return /^[\p{L}\p{N} ._'-]{2,24}$/u.test(String(value || '').trim()); }
+
+    // G7: Player name → Situation Report → game tour → play
     document.addEventListener('DOMContentLoaded', function(){
       if (!MoC.scenario || MoC.IS_BASELINE) return;
       MoC.paused = true;
@@ -15496,11 +15612,25 @@ async function initLLMSubsystem() {
         + '<p class="moc-sub"><b>' + (sc.id === 'cabinetcrisis'
           ? 'Finish with all three trust scores at 40 or above, fewer than 5 preventable deaths, and no stage-3 cascade.'
           : b.win) + '</b></p>'
+        + '<div class="moc-name-entry"><label for="moc-player-name">YOUR PUBLIC PLAYER NAME</label><div class="moc-name-row">'
+        + '<input id="moc-player-name" maxlength="24" autocomplete="nickname" aria-describedby="moc-name-error">'
+        + '<button class="moc-buy" id="moc-generate-name" type="button">RANDOM NAME</button></div>'
+        + '<p class="moc-name-error" id="moc-name-error"></p></div>'
         + '<details style="text-align:left"><summary>Why this game? Model &amp; limits</summary>'
         + '<p class="moc-sub">How do you improve healthcare while keeping it running? Test staffing, technology and resilience against the same town without your interventions. More technology is not the goal.</p>'
         + '<p class="moc-sub">Simulated people, not clinical predictions. Results depend on model assumptions. Annual targets earn bonus points; they are not the whole goal. <a href="about.html" target="_blank" rel="noopener">Research context</a>.</p></details>'
         + '<button class="moc-continue" id="moc-takeoffice">TAKE OFFICE</button></div>';
+      const nameInput = document.getElementById('moc-player-name');
+      const nameError = document.getElementById('moc-name-error');
+      const savedName = loadJSON('moc_player_name', '');
+      nameInput.value = validPlayerName(savedName) ? savedName : randomPlayerName();
+      document.getElementById('moc-generate-name').addEventListener('click', function(){
+        nameInput.value = randomPlayerName(nameInput.value); nameError.textContent = ''; nameInput.focus(); nameInput.select();
+      });
       document.getElementById('moc-takeoffice').addEventListener('click', function(){
+        if (!validPlayerName(nameInput.value)) { nameError.textContent = 'Use 2–24 letters or numbers.'; nameInput.focus(); return; }
+        GS.playerName = nameInput.value.trim().replace(/\s+/g, ' ');
+        saveJSON('moc_player_name', GS.playerName);
         ov.remove();
         window._mocBriefed = true;
         Audio5.sting();
@@ -15738,6 +15868,7 @@ async function initLLMSubsystem() {
       testCabinetCrisisPass: function(){ GS.trustC=55; GS.trustD=55; GS.trustP=55; }
     };
     window._mocForceCouncil = function(q){ councilOpen = false; openCouncil(q || MoC.S.quarter || 2); };
+    window._mocForceCouncilReady = function(q){ councilOpen = false; councilReady(q || MoC.S.quarter || 2); };
     function electionCheck(q){
       if (GS.scenario === 'cabinetcrisis') return null;
       const eq = Math.round(MoC.TOTAL_QUARTERS / 2);
