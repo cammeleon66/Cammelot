@@ -655,7 +655,8 @@ test('Minister cabinet crisis starts after phone walkthrough and reaches council
     assert.equal(await page.locator('[data-town-person]').count(), 3);
     await page.locator('[data-town-person]').first().click();
     assert.ok(await page.locator('#moc-town-person').innerText());
-    await page.getByText('← Ministry').click();
+    assert.equal(await page.locator('.moc-follow-thought').isVisible(), true, 'followed resident should show a thought prominently');
+    assert.ok(await page.locator('.moc-follow-tag').count(), 'followed resident should show health context');
     await page.locator('#moc-town-council').click();
     await openCouncilActions(page);
     assert.ok(await page.locator('#moc-laws [data-law]').count(), 'action stage should offer legislation');
@@ -778,11 +779,13 @@ test('Desktop play uses one uncluttered Ministry panel and explains immediate re
 
     await page.locator('#moc-town-watch summary').click();
     await page.locator('[data-town-person]').first().click();
-    assert.equal(await page.locator('#panel').getAttribute('data-moc-detail'), 'true');
-    assert.equal(await page.locator('.panel-header').isVisible(), true, 'citizen dossier should replace the Ministry temporarily');
-    await page.getByText('← Ministry').click();
     assert.equal(await page.locator('#panel').getAttribute('data-moc-detail'), 'false');
     assert.equal(await page.locator('#moc-ministry').isVisible(), true);
+    assert.equal(await page.locator('.moc-follow-thought').isVisible(), true);
+    assert.match(await page.locator('.moc-follow-now').innerText(), /Now:/);
+    await page.locator('[data-town-person]').nth(1).click();
+    assert.match(await page.locator('.moc-follow-role').innerText(), /Practitioner|Doctor|GP/i);
+    assert.match(await page.locator('.moc-follow-card').innerText(), /Burnout|waiting here|On duty|Off sick/);
 
     await page.evaluate(() => window._mocForceFlash(1));
     await page.getByRole('button', { name:'Continue digitally' }).click();
