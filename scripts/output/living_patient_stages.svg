@@ -1,0 +1,130 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1060 470" font-family="'Space Grotesk',Segoe UI,Helvetica,Arial,sans-serif">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#3a4668"/>
+    </marker>
+    <marker id="arrG" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1f8a5b"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1060" height="470" fill="#f7f8fb"/>
+  <text x="530" y="30" text-anchor="middle" font-size="19" font-weight="700" fill="#1b2440">From a system of record to a system of action</text>
+  <text x="530" y="50" text-anchor="middle" font-size="13" fill="#5b6480">Three stages of the same health record. Only the third one acts.</text>
+
+  <!-- ============ STAGE 1 ============ -->
+  <g>
+    <rect x="20" y="70" width="320" height="370" rx="12" fill="#ffffff" stroke="#d7dceb"/>
+    <text x="44" y="100" font-size="14" font-weight="700" fill="#b33b3b">1 · Today (IST)</text>
+    <text x="44" y="120" font-size="13" font-weight="600" fill="#1b2440">Digitized, but fragmented</text>
+
+    <!-- scattered silos, mismatched -->
+    <g>
+      <!-- silo a -->
+      <ellipse cx="80" cy="160" rx="22" ry="7" fill="#e06666"/>
+      <rect x="58" y="160" width="44" height="34" fill="#e06666"/>
+      <ellipse cx="80" cy="194" rx="22" ry="7" fill="#c0504d"/>
+      <!-- silo b -->
+      <ellipse cx="160" cy="148" rx="22" ry="7" fill="#f6b26b"/>
+      <rect x="138" y="148" width="44" height="40" fill="#f6b26b"/>
+      <ellipse cx="160" cy="188" rx="22" ry="7" fill="#dd9a52"/>
+      <!-- silo c -->
+      <ellipse cx="245" cy="168" rx="22" ry="7" fill="#6fa8dc"/>
+      <rect x="223" y="168" width="44" height="30" fill="#6fa8dc"/>
+      <ellipse cx="245" cy="198" rx="22" ry="7" fill="#5a90c0"/>
+      <!-- silo d -->
+      <ellipse cx="300" cy="150" rx="20" ry="6" fill="#93c47d"/>
+      <rect x="280" y="150" width="40" height="30" fill="#93c47d"/>
+      <ellipse cx="300" cy="180" rx="20" ry="6" fill="#7aa867"/>
+    </g>
+    <text x="120" y="223" font-size="12" fill="#8a93ad">different systems &#183; formats &#183; quality</text>
+
+    <!-- clinician switching between mismatched digital systems (admin burden, not paper) -->
+    <circle cx="78" cy="300" r="13" fill="#3a4668"/>
+    <rect x="66" y="315" width="24" height="30" rx="6" fill="#3a4668"/>
+    <rect x="104" y="295" width="30" height="22" rx="2" fill="#dfe4f1" stroke="#9aa3c4"/>
+    <rect x="116" y="306" width="30" height="22" rx="2" fill="#cfd6e8" stroke="#9aa3c4"/>
+    <text x="152" y="304" font-size="12" fill="#1b2440">30% admin: re-keying</text>
+    <text x="152" y="320" font-size="12" fill="#8a93ad">across siloed systems</text>
+    <g fill="#b33b3b">
+      <circle cx="150" cy="349" r="6"/><circle cx="170" cy="349" r="6"/><circle cx="190" cy="349" r="6"/>
+      <circle cx="210" cy="349" r="6"/><circle cx="230" cy="349" r="6"/>
+    </g>
+    <text x="248" y="353" font-size="12" fill="#8a93ad">waiting queue</text>
+
+    <line x1="44" y1="378" x2="316" y2="378" stroke="#eef0f6"/>
+    <text x="44" y="400" font-size="12" fill="#5b6480">Data is digital but siloed; only</text>
+    <text x="44" y="418" font-size="12" fill="#5b6480">~11% interoperable. Care is <tspan font-weight="700" fill="#b33b3b">reactive</tspan>:</text>
+    <text x="44" y="436" font-size="12" fill="#5b6480">you seek help, then you wait.</text>
+  </g>
+
+  <!-- ============ STAGE 2 ============ -->
+  <g>
+    <rect x="370" y="70" width="320" height="370" rx="12" fill="#ffffff" stroke="#d7dceb"/>
+    <text x="394" y="100" font-size="14" font-weight="700" fill="#3a66c4">2 · Data flows</text>
+    <text x="394" y="120" font-size="13" font-weight="600" fill="#1b2440">One coherent record</text>
+
+    <!-- small silos feeding into one record -->
+    <g fill="#aeb9d6">
+      <rect x="396" y="150" width="26" height="22" rx="3"/>
+      <rect x="396" y="180" width="26" height="22" rx="3"/>
+      <rect x="396" y="210" width="26" height="22" rx="3"/>
+    </g>
+    <line x1="424" y1="161" x2="470" y2="190" stroke="#3a4668" stroke-width="1.6" marker-end="url(#arr)"/>
+    <line x1="424" y1="191" x2="470" y2="191" stroke="#3a4668" stroke-width="1.6" marker-end="url(#arr)"/>
+    <line x1="424" y1="221" x2="470" y2="192" stroke="#3a4668" stroke-width="1.6" marker-end="url(#arr)"/>
+
+    <ellipse cx="510" cy="172" rx="36" ry="10" fill="#5b8cff"/>
+    <rect x="474" y="172" width="72" height="44" fill="#5b8cff"/>
+    <ellipse cx="510" cy="216" rx="36" ry="10" fill="#3a66c4"/>
+    <text x="510" y="240" text-anchor="middle" font-size="11" fill="#3a66c4">unified record (FHIR)</text>
+
+    <!-- to dashboard + human watching -->
+    <line x1="546" y1="194" x2="588" y2="194" stroke="#3a4668" stroke-width="1.6" marker-end="url(#arr)"/>
+    <rect x="590" y="170" width="58" height="44" rx="5" fill="#eef2fb" stroke="#9aa3c4"/>
+    <polyline points="598,205 608,192 618,199 628,182 640,190" fill="none" stroke="#3a66c4" stroke-width="2"/>
+    <circle cx="619" cy="250" r="11" fill="#3a4668"/>
+    <rect x="608" y="263" width="22" height="22" rx="6" fill="#3a4668"/>
+    <text x="619" y="300" text-anchor="middle" font-size="11" fill="#8a93ad">a human must look</text>
+
+    <line x1="394" y1="378" x2="666" y2="378" stroke="#eef0f6"/>
+    <text x="394" y="400" font-size="12" fill="#5b6480">~66% interoperable. Agentic data</text>
+    <text x="394" y="418" font-size="12" fill="#5b6480">engineering keeps it coherent. Necessary,</text>
+    <text x="394" y="436" font-size="12" fill="#5b6480">but a dashboard still <tspan font-weight="700" fill="#3a66c4">waits</tspan>.</text>
+  </g>
+
+  <!-- ============ STAGE 3 ============ -->
+  <g>
+    <rect x="720" y="70" width="320" height="370" rx="12" fill="#ffffff" stroke="#cfe6da"/>
+    <text x="744" y="100" font-size="14" font-weight="700" fill="#1f8a5b">3 · A brain on top (SOLL)</text>
+    <text x="744" y="120" font-size="13" font-weight="600" fill="#1b2440">The Living Patient</text>
+
+    <!-- record at bottom -->
+    <ellipse cx="800" cy="250" rx="34" ry="9" fill="#5b8cff"/>
+    <rect x="766" y="250" width="68" height="36" fill="#5b8cff"/>
+    <ellipse cx="800" cy="286" rx="34" ry="9" fill="#3a66c4"/>
+    <text x="800" y="306" text-anchor="middle" font-size="10" fill="#3a66c4">record</text>
+
+    <!-- agent node above with monitoring loop -->
+    <circle cx="800" cy="170" r="30" fill="#e8f6ee" stroke="#1f8a5b" stroke-width="2"/>
+    <text x="800" y="167" text-anchor="middle" font-size="11" font-weight="700" fill="#1f8a5b">agent</text>
+    <text x="800" y="182" text-anchor="middle" font-size="9" fill="#1f8a5b">digital twin</text>
+    <!-- observe loop -->
+    <path d="M800,205 C770,205 770,250 790,250" fill="none" stroke="#1f8a5b" stroke-width="1.6" marker-end="url(#arrG)"/>
+    <text x="752" y="232" font-size="10" fill="#1f8a5b">observe</text>
+    <path d="M812,250 C835,250 835,205 808,202" fill="none" stroke="#1f8a5b" stroke-width="1.6" marker-end="url(#arrG)"/>
+    <text x="838" y="232" font-size="10" fill="#1f8a5b">predict</text>
+
+    <!-- outbound action to person -->
+    <line x1="830" y1="160" x2="905" y2="150" stroke="#1f8a5b" stroke-width="2" marker-end="url(#arrG)"/>
+    <circle cx="945" cy="150" r="13" fill="#3a4668"/>
+    <rect x="933" y="165" width="24" height="30" rx="6" fill="#3a4668"/>
+    <rect x="905" y="108" width="118" height="30" rx="8" fill="#1f8a5b"/>
+    <text x="964" y="128" text-anchor="middle" font-size="11" fill="#ffffff">"Time to see your GP"</text>
+
+    <line x1="744" y1="378" x2="1016" y2="378" stroke="#eef0f6"/>
+    <text x="744" y="400" font-size="12" fill="#5b6480">An agent reasons over the record and</text>
+    <text x="744" y="418" font-size="12" fill="#5b6480">reaches out before deterioration. Care</text>
+    <text x="744" y="436" font-size="12" fill="#5b6480">becomes <tspan font-weight="700" fill="#1f8a5b">proactive</tspan>: a system of action.</text>
+  </g>
+</svg>

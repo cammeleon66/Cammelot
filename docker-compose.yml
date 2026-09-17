@@ -5,3 +5,16 @@ services:
     ports:
       - "8080:80"
     restart: unless-stopped
+    depends_on:
+      leaderboard:
+        condition: service_healthy
+  leaderboard:
+    build:
+      context: .
+      dockerfile: Dockerfile.leaderboard
+    restart: unless-stopped
+    volumes:
+      - leaderboard-data:/data
+
+volumes:
+  leaderboard-data:

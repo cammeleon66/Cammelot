@@ -8,8 +8,24 @@
     "start": "node src/orchestrator/team_lead.js",
     "sim": "node src/orchestrator/simulation_loop.js",
     "frontend": "node src/frontend/server.js",
-    "test": "node --test tests/fhir_store.test.js tests/cognitive_loop.test.js tests/a2a_protocol.test.js tests/disease_engine.test.js tests/tile_map.test.js"
+    "leaderboard": "node src/leaderboard/server.js",
+    "leaderboard:moderate": "node scripts/moderate_leaderboard.mjs",
+    "benchmark:minister": "node scripts/benchmark_minister_strategies.cjs",
+    "test": "node --test tests/fhir_store.test.js tests/cognitive_loop.test.js tests/a2a_protocol.test.js tests/disease_engine.test.js tests/tile_map.test.js tests/llm_proxy.test.js tests/persona.test.js tests/leaderboard.test.js tests/minister_browser.test.js"
   },
-  "keywords": ["multi-agent", "healthcare", "simulation", "FHIR", "A2A"],
-  "license": "MIT"
+  "keywords": [
+    "multi-agent",
+    "healthcare",
+    "simulation",
+    "FHIR",
+    "A2A"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "acorn": "^8.18.0",
+    "playwright-chromium": "^1.62.1"
+  },
+  "dependencies": {
+    "pptxgenjs": "^4.0.1"
+  }
 }

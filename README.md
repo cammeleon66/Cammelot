@@ -3,7 +3,7 @@
 > **Watch a Dutch town of 5,000 souls navigate a healthcare system that's breaking.**
 > Real medical data. Real consequences. Real crisis.
 
-[![CI](https://img.shields.io/badge/tests-115%20passing-brightgreen)](.) [![Docker](https://img.shields.io/badge/docker-ready-blue)](.) [![License](https://img.shields.io/badge/license-MIT-yellow)](.)
+[![CI](https://img.shields.io/badge/tests-151%20passing-brightgreen)](.) [![License](https://img.shields.io/badge/license-MIT-yellow)](.)
 
 ## What Is This?
 
@@ -15,7 +15,9 @@ It's built as an **Applied Research tool** for:
 - 💡 **Advocacy**: Demonstrate why AI-native healthcare transformation matters
 - 🗣 **LinkedIn/Social**: Generate data-driven posts with real simulation evidence
 
-**→ [Enter the Simulation](https://cammelot.health)** | **→ [Read the Methodology](#methodology)**
+**→ [Enter the Simulation](https://cammelot.org/world.html)** | **→ [Read the Methodology](#methodology)**
+
+The participatory policy game is available at **[cammelot.org/minister.html](https://cammelot.org/minister.html)**. It compares the player's town with a same-seed, same-date no-discretionary-action reference. Community scores are an optional Node sidecar and are not available on static-only deployments.
 
 ---
 
@@ -96,10 +98,11 @@ When HP reaches 0, the citizen becomes a ghost — a preventable death caused by
 - **Data Export**: JSON/CSV download of full simulation state for academic analysis
 - **Timeline Scrubber**: Rewind through simulation history
 
-### 📱 Deployment-Ready
+### 📱 Deployment
 - Mobile responsive (desktop, tablet, phone)
 - Touch support (tap, pan, pinch-to-zoom)
-- Docker + nginx with CSP security headers
+- Static GitHub Pages deployment for the game
+- Optional Docker/Nginx + Node leaderboard sidecar
 - GitHub Actions CI/CD pipeline
 - Social sharing meta tags (Open Graph, Twitter Card)
 
@@ -111,7 +114,7 @@ When HP reaches 0, the citizen becomes a ghost — a preventable death caused by
 ```bash
 cd Cammelot
 python -m http.server 4200
-# Open http://localhost:4200/src/frontend/index.html
+# Open http://localhost:4200/site/minister.html
 ```
 
 ### Run with Docker
@@ -123,7 +126,9 @@ docker run -p 80:80 cammelot
 
 ### Run Tests
 ```bash
-node --test  # 115 tests, ~300ms
+npm ci
+npx playwright install chromium
+npm test
 ```
 
 ---
@@ -131,11 +136,11 @@ node --test  # 115 tests, ~300ms
 ## Architecture
 
 ```
-Zero backend. Zero framework. Zero npm dependencies.
-One HTML file. One map image. Infinite healthcare crisis.
+No frontend framework or build step.
+The game runs from one HTML file; shared community scores are optional.
 ```
 
-Cammelot is a **single-page application** (`v4.html`, ~4600 lines) that runs entirely in the browser. No server needed. No API calls. Everything — the disease engine, cognitive agents, FHIR store, A2A protocol — runs in one inline JavaScript file.
+Cammelot's simulation pages run entirely in the browser. `site/world.html` is the research simulation; `site/minister.html` is the policy game. The optional leaderboard calls a small same-origin Node service.
 
 **Why?** Because:
 - Free hosting (static files on any CDN)
@@ -146,7 +151,7 @@ Cammelot is a **single-page application** (`v4.html`, ~4600 lines) that runs ent
 ### Key Architecture Decisions
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
-| Runtime | Frontend-only (v4.html) | Zero backend = free hosting |
+| Runtime | Static game + optional score sidecar | Gameplay works without the service; shared scores require persistence |
 | Memory | EVENT_LOG + FHIR store | Simple + semantically structured |
 | Persistence | localStorage | No server, instant save/load |
 | Hosting | Docker + nginx | Static files, CDN-friendly |
@@ -232,7 +237,7 @@ Cammelot/
 ├── .github/workflows/ci.yml   ← CI/CD pipeline
 ├── src/
 │   ├── frontend/
-│   │   ├── v4.html            ← THE app (~4600 lines, everything inline)
+│   │   ├── world.html            ← THE app (~4600 lines, everything inline)
 │   │   └── index.html         ← Landing page
 │   ├── agents/                ← Backend reference implementations
 │   ├── clinical_logic/        ← Disease engine, Markov models

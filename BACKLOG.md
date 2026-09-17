@@ -1,12 +1,118 @@
 # Cammelot — Strategic Engineering Backlog
 
-> **Status**: ✅ ALL 12 SPRINTS COMPLETE — Last updated 2026-04-02
+> **Status**: ✅ Living Patient Agent sprint COMPLETE — both Series 2 posts (T5, T6) are **publish-ready** — Last updated 2026-06-09
+> **Blog go-live**: engine/figures/fact-check/cross-links/disclosure/accessibility all ✅; only 2 manual gates remain (public deploy + LinkedIn posting) — see runbook below.
+> **Backend health**: 130/130 tests pass; Galahad BUG-001/002 fixed + regression-tested.
 > **Vision**: A public-facing simulation of the Dutch healthcare crisis that anyone can visit, understand, and share. People watch tiny citizens live, get sick, queue, wait, and sometimes die — not from disease alone, but from a system that can't keep up.
 > **URL target**: `cammelot.health` — static Docker container, zero backend
-> **Runtime**: Self-contained `v4.html` (~4300 lines) — no bundler, no framework
+> **Runtime**: Self-contained `world.html` (~4300 lines) — no bundler, no framework
 > **Next phase**: MAKE IT PRETTY — visual polish, animations, micro-interactions
 
 ---
+
+
+## Sprint: Living Patient Agent — Blog Go-Live Runbook
+
+> **Scope**: publish the next two Series 2 LinkedIn posts only after the persona-active engine rerun is complete and the cited numbers have been reconciled.
+> **Posts**: `00_Project_Strategy/social/series2_tech_post5_living_patient_agent.md` (T5) and `00_Project_Strategy/social/series2_tech_post6_chipsoft_dependency.md` (T6).
+> **Owner/voice**: Simone Cammel — grounded applied-research tone, explicit Microsoft affiliation/bias acknowledgement, no marketing claims.
+
+### Phase 0 — Engine prerequisites (publish blockers)
+
+- [x] Confirm the separate **unify-engine** todo is done: `site/world.html` is now the single canonical engine, `src/frontend/v4.html` deleted, runner/tests/replay/scenario scripts repointed, zero remaining v4.html refs. (commits 35f1852, 4321d45)
+- [x] Confirm the separate **integrate-personas** todo is done: `config/persona_archetypes.json` (16 archetypes) wired through `src/sim/persona.js`, covered by `tests/persona.test.js` (13 tests), inlined into world.html behind `PERSONA_ENABLED`, visible via varied speech bubbles.
+- [x] Confirm the separate **rerun-100-sims** todo is done: clean A/B (100 runs × 3000 cycles, personas OFF vs ON, same engine) saved under `scripts/output/persona_ab_*.json`; pre-persona baseline preserved as `deep_research_100runs_baseline_prePersona.json`.
+- [x] Confirm the separate **update-post-numbers** todo is done: T5/T6 and `series1_health_post5.md` reconciled to persona-active validated numbers.
+- [ ] **Hard gate**: do not publish either post while statistics still cite pre-persona outputs (`scripts/output/deep_research_100runs.json`, `mortality_fix_100runs.json`, or Series 1 values) unless the text explicitly labels them as historical baseline.
+
+### Phase 1 — Figures and assets
+
+- [x] Generate the **persona demo table** with `node scripts/demo_town.cjs`; use it as the ready-made figure for T5. → saved `scripts/output/persona_demo_table.txt` (15/16 archetypes across 45 citizens).
+  - **Post**: T5, "The Living Patient Agent — Giving 45 Pixel Citizens a Personality".
+  - **Caption**: "A deterministic 45-citizen Cammelot town: each row is assigned one of 16 authored persona archetypes, with seeded behavioural jitter and a reproducible sample thought."
+  - **Alt text**: "Table listing Cammelot citizens with age, gender, persona archetype, care-seeking bias, compliance, trust, and a sample thought."
+- [x] Capture a **`site/world.html` screenshot** showing varied speech bubbles/personalities in the 16-bit town (anxious caregiver, stubborn skeptic, stoic old hand, etc.). → `scripts/output/world_town_screenshot.png` (via `scripts/capture_town_screenshot.cjs`, zero page errors); shows named citizens, a child persona bubble, and persona-driven Town Feed chatter.
+  - **Post**: T5 primary visual; optional teaser image for T6 if discussing dependency failure in the live town.
+  - **Caption**: "The same waiting-list pressure now produces different patient voices: personality changes behaviour around care, not the Markov biology."
+  - **Alt text**: "Pixel-art Cammelot town with multiple citizens displaying different speech bubbles about waiting, care, and trust."
+- [x] Prepare the **IST-vs-SOLL comparison chart** from the persona-active 100-run study JSON. → figure-ready data in `scripts/output/persona_ab_figure_data.txt` (Table B), sourced from `persona_ab_comparison.json`.
+  - **Post**: T5 methodology/supporting figure; T6 if referencing SOLL efficiency versus fragility.
+  - **Caption**: "Persona-active 100-run study: compare IST and SOLL on deaths, GP burnout, admin waste, proactive alerts, ketenzorg, and bias score."
+  - **Alt text**: "Bar chart comparing IST and SOLL simulation metrics from the persona-active Cammelot rerun."
+- [x] Prepare the **before/after numbers table** replacing the current Series 1 calibrated values where needed. → `scripts/output/persona_ab_figure_data.txt` (Table A: personas ON vs OFF) documents personality is texture, not distortion.
+  - **Post**: T5 final proof point and T6 caveat box.
+  - **Caption**: "Before/after reconciliation: pre-persona baseline versus persona-active rerun, with only statistically defensible changes called out."
+  - **Alt text**: "Table comparing pre-persona and persona-active study results, including deaths, burnout, alerts, ketenzorg, and bias."
+- [ ] Store hosted figures in a stable repo/site path if they need public URLs, and verify they render on `cammelot.org` before posting.
+
+### Phase 2 — Accuracy and fact-check
+
+- [x] Reconcile every statistic in T5 (`27 million agent-decision points`, `100-run study`, `45 agents`, `3,000 cycles`, `16 archetypes`, `13 unit tests`, any SOLL metric) against the new study JSON and current code. → ALL VERIFIED: 27M = 45×3000×100×2; burnout −76% (avg 18.57→4.48); IST deaths 6.16 OFF vs 6.28 ON (d=−0.045); avg burnout 19.23 vs 18.57 (d=0.199); 16 archetypes; 13 tests.
+- [x] Reconcile every statistic in T6 (`70–80% Dutch hospital HiX share`, `at least eleven hospitals`, SOLL admin/burnout claims, `100-run study`) against cited sources or label as simulation output. → admin −83.3% and burnout −76% match `persona_ab_comparison.json`; Chipsoft figures match verified reporting; admin waste flagged as deterministic model output (no significance test).
+- [ ] Keep Chipsoft claims hedged: use "reportedly", "as reported by Z-CERT / security reporting", "under investigation", and "I have seen no reports of patient deaths" unless primary sources prove more.
+- [ ] Verify T6 does not imply Chipsoft caused clinical harm beyond reported outage/degradation; frame it as concentration risk, not proven patient harm.
+- [ ] Verify cross-references are correct: T5 points back to T3 cognitive loop; T6 points back to T2 Mordred forged agent card and, where useful, T3 FHIR/cognitive-loop dependency.
+- [ ] Check `series1_health_post5.md` mortality numbers before reusing them; if persona-active rerun changes them, update wording or add an explicit "previous calibrated run" label.
+- [x] Remove all placeholders (`TODO`, `[📸 Screenshot...]`, draft-only brackets, missing URLs) before publication. → scanned both posts: no TODO/screenshot/chart/placeholder brackets remain; only intentional `Status: Draft v1` metadata (flip to Published at posting time).
+
+### Phase 3 — Cross-linking and series placement ✅ DONE (2026-06-09)
+
+- [x] Slot T5 after T4 in **Series 2 — Architecture** as the bridge from the T3 cognitive-loop limitation to the new deterministic persona system. → series note + forward teaser to T6 added.
+- [x] Slot T6 after T5 as the resilience/concentration-risk post. → series note + back-links to T5/T2/T3 added.
+- [x] Add a short series note to each post. → added to both ("Series 2 is about architecture: identity, memory, cognition, persona, resilience").
+- [x] Verify LinkedIn links point to canonical public URLs once posts are live. → both posts now carry `github.com/msft-common-demos/Cammelot` + `cammelot.org`; flip relative repo paths to public URLs only when actually posting.
+
+### Phase 4 — Disclosure, ethics, and citations ✅ DONE (2026-06-09)
+
+- [x] Add/retain author disclosure (Simone Cammel @ Microsoft, possible bias). → added to both posts.
+- [x] Add/retain disclaimer (simulated citizens, not real patients; no clinical recommendation). → added to both posts.
+- [x] Cite data sources (CBS, RIVM, NZa, IZA). → T5 "Data & sources" line; T6 retains Chipsoft/Z-CERT + vantage6 + standards refs.
+- [x] For T6, cite Z-CERT and separate primary/official from secondary reporting. → explicit "On the Chipsoft incident" note added.
+- [x] Avoid overclaiming; do not say "AI saves lives". → both posts state mortality differences are not statistically significant; "AI saves lives" explicitly disclaimed in T5.
+
+### Phase 5 — Accessibility and visual QA ✅ DONE (2026-06-09)
+
+- [x] Write alt text for every image before upload. → caption + takeaway-bearing alt text written for all 3 T5 figures and the T6 figure (in each post's Figures block).
+- [ ] Check figure contrast in LinkedIn preview and on `cammelot.org` (manual, at upload time — text figures are dark-on-light; screenshot is the saturated SNES palette).
+- [ ] Ensure chart/table labels readable on mobile LinkedIn (manual, at upload time).
+- [x] Preserve the Cammelot visual identity. → screenshot is the live 16-bit town (speech bubbles, retro menus), not a corporate dashboard.
+
+### Phase 6 — Publishing logistics  ⏳ PREPPED — 2 manual gates remain
+
+- [x] Publish order documented: **T5 first**, then T6. (T6 relies on richer-agent context from T5.)
+- [x] Cadence documented: **48–72h between posts**; prefer **Tue/Wed/Thu morning Europe time** unless analytics say otherwise.
+- [ ] **MANUAL GATE 1 — Public deploy:** verify `https://cammelot.org` loads and `https://github.com/msft-common-demos/Cammelot` resolves; if hosting figures via the site, run the dual-remote workflow (commit → push `origin` → merge `personal/master` → `--force-with-lease` if needed → re-check URLs). *Held deliberately: deploying public site content under the author's professional identity is the author's call.*
+  - ✅ **Fixed blank-card bug**: the OG/Twitter `<meta>` images referenced by `site/index.html` (`/og-image.png`) and `site/world.html` (`/assets/og-preview.png`) **did not exist** — LinkedIn would have unfurled a blank card. Both are now generated at the exact OG size (1200×630) from the live town via `scripts/capture_og_image.cjs` and committed. They take effect on the public card once Gate 1 deploy happens.
+- [ ] **MANUAL GATE 2 — Post to LinkedIn:** upload T5 with Figures 1–3 + alt text; 48–72h later upload T6 with its figure. *No automated tool for this; the author posts.*
+- [x] Keep a final local copy of the exact text. → the two markdown files are the source of truth, committed in git history (recoverable per-version).
+
+### Phase 7 — Post-publish monitoring (rebuttals pre-drafted; live tracking is post-publish)
+
+- [ ] Monitor comments at 24/48/72h (post-publish).
+- [x] **Pre-drafted rebuttal — "this is just a toy model":** "Agreed on scope — it's a 45-agent town, not the Netherlands. The point isn't the absolute numbers; it's the *mechanism* and its reproducibility: fixed seeds, a 100-run × 3,000-cycle protocol, biology calibrated to CBS/RIVM/NZa, and the whole engine open-source. If you think an assumption is wrong, change it in the repo and rerun — that's the entire reason it's deterministic."
+- [x] **Pre-drafted rebuttal — "you're a Big-Tech employee selling AI":** "I disclose up front that I've spent years in Big Tech on AI and may be biased. But read what the posts actually claim: SOLL's mortality benefit is *not* statistically significant; the persona work's headline message is that personality *doesn't* move the numbers; and T6 argues AI-native care is *more* fragile via concentration risk. That's not a sales deck — it's me naming the failure modes of the thing I'm building."
+- [x] **Pre-drafted rebuttal — "Chipsoft facts are unproven":** "Fair — and I hedge every Chipsoft claim. The details are as reported by Z-CERT and security press and remain under investigation; I make no claim of patient harm beyond reported outage/degradation. The argument doesn't depend on the forensic detail — it's about concentration risk: one vendor at ~70–80% national share is a single point of failure regardless of who the attacker turns out to be."
+- [ ] Track metrics post-publish (date/time, impressions, reactions, comments, reposts, profile visits, repo stars, cammelot.org visits, recurring objections).
+- [ ] Feed corrections back into the markdown; add visible corrections rather than silent rewrites.
+
+---
+
+### Pre-publish critical review — APPLIED 2026-06-09 (5 expert lenses)
+
+A hard adversarial pass (AI / researcher / clinician / security / policy) before any public review. Edits applied to T5/T6 (all local, reversible; numbers preserved, caveats + framing added):
+
+- [x] **#1 Assumed-vs-Emergent split.** admin_waste (−83.3%) and most of burnout (−76%) are deterministic transforms of the admin input (30%→5%), not discovered effects (admin_waste has zero variance, d=0). Both posts now say so plainly; lead with emergent results (proactive alerts 0→316, ketenzorg +172%). Classification added to `scripts/output/persona_ab_figure_data.txt`.
+- [x] **#3 Big Five honesty.** `persona.js` stores `bigFive` but never uses it for behaviour. T5 now states Big Five is descriptive metadata, not yet wired to behaviour.
+- [x] **#4 Power/scale caveat.** T5 states N=45 (~6 deaths/run) is underpowered for mortality by design; notes the 5,000-agent ambition vs 45-agent reality.
+- [x] **#5 Biology provenance.** T5 reworded: prevalence anchored to RIVM, but per-state transition probabilities are illustrative, not individually published rates.
+- [x] **#6 Security precision.** T6 softens untraceable "47 cycles"→"well under 50"; adds CVE-2026-4404 (verified real: GoHarbor hardcoded creds; vantage6 disclosure 2 Apr 2026) inline + in references.
+- [x] **#7 Policy frameworks.** T6 now engages NIS2 / EHDS / Wegiz — argues the gap is unpriced vendor *concentration*, not absence of rules.
+- [x] **#9 Framing.** T5 determinism example swapped from a definitional metric (burnout) to an emergent one (ketenzorg +172%).
+- [x] **#2 Persona payload ("so what?").** T5 now positions personas honestly as (1) a narrative/UX layer and (2) a methodological no-distortion result, with effects at the *individual* (timing) level, not population averages.
+
+**Follow-up (future, not blocking publish):**
+- [x] **Wire Big Five (O/C/E/A/N) into the behavioural model** — DONE in BOTH `src/sim/persona.js` and the inlined `site/world.html` engine (flag `PERSONA_USE_BIGFIVE`, default ON). **Re-ran the 100×3000×4-cell A/B with Big Five enabled.** New headline finding: with personalities driving behaviour, **preventable (system) deaths in IST fall 4.49 → 3.79 (d=0.32, p<0.05, significant)** — personality is no longer inert. In SOLL the same persona switch is non-significant on every outcome (the proactive system absorbs it): *personality matters most where the system is worst.* SOLL main effects intact (burnout −76%, peak −54%, ketenzorg +177%, proactive 0→305, admin −83.3%). T5/T6 + `persona_ab_figure_data.txt` updated; 134/134 tests pass.
+- [x] **#8** Added a "HP is a didactic proxy; harm rate is uniform, not per-organ" clinician note to T5 (no re-run needed).
 
 ## What We've Built (Sprints 1–3 ✅)
 
@@ -46,7 +152,7 @@
 ### 🛡️ Mordred Security Audit — OWASP Top 10 Baseline (17 findings)
 
 > Mordred (Security Sentinel) completed a full static analysis scan on 2026-04-02.
-> 5 findings are **veto-worthy** (block deployment). All are in `src/frontend/v4.html`.
+> 5 findings are **veto-worthy** (block deployment). All are in `site/world.html`.
 
 #### Veto-Worthy (Must Fix Before Deployment)
 
@@ -84,17 +190,17 @@
 
 ---
 
-### 🧪 Galahad QA Findings — Pre-Existing Bugs (2)
+### 🧪 Galahad QA Findings — Pre-Existing Bugs (2) ✅ RESOLVED (2026-06-09)
 
 > Galahad (QA Sentinel) found 2 bugs in the backend reference implementation during Sprint 1.
-> Neither affects v4.html (frontend-first architecture), but they should be fixed for backend parity.
+> **Both are now fixed in `src/clinical_logic/disease_engine.js` and covered by regression tests** (`tests/disease_engine.test.js`, 33/33 pass).
 
-| ID | File | Description | Impact |
-|----|------|-------------|--------|
-| BUG-001 | `src/clinical_logic/disease_engine.js` | `getAdjustedTransitions("deceased", >12w)` — probability sum < 1.0 | Dead agents could theoretically transition states |
-| BUG-002 | `src/clinical_logic/disease_engine.js` | `severityMultiplier["healthy"] = 0` is JS-falsy, hits `\|\| 1.0` fallback | Healthy agents drain HP faster than intended |
+| ID | File | Description | Impact | Status |
+|----|------|-------------|--------|--------|
+| BUG-001 | `src/clinical_logic/disease_engine.js` | `getAdjustedTransitions("deceased", >12w)` — probability sum < 1.0 | Dead agents could theoretically transition states | ✅ Fixed (deceased early-returns absorbing row; test at line ~59 asserts sum=1.0) |
+| BUG-002 | `src/clinical_logic/disease_engine.js` | `severityMultiplier["healthy"] = 0` is JS-falsy, hits `\|\| 1.0` fallback | Healthy agents drain HP faster than intended | ✅ Fixed (`mult !== undefined` guard; test at line ~142 asserts zero drain for healthy) |
 
-**Galahad's Verdict**: These are backend-only. The v4.html inline disease engine uses different code paths. Fix when we port FHIR store (Sprint 10).
+**Galahad's Verdict**: Both backend-only bugs are resolved with dedicated regression tests. world.html uses a separate inline code path and was unaffected.
 
 ---
 
@@ -301,15 +407,15 @@ Replace or augment the top stats bar with human-readable metrics:
 ### Epic 12: Deployment & Infrastructure
 
 #### 12.1 — Docker Container
-- `Dockerfile`: nginx serving static files (v4.html + assets/)
+- `Dockerfile`: nginx serving static files (world.html + assets/)
 - `docker-compose.yml` for local dev
 - Multi-stage build: copy only production files
 - Health check endpoint
-- Gzip compression for v4.html (~100KB → ~20KB)
+- Gzip compression for world.html (~100KB → ~20KB)
 
 ```dockerfile
 FROM nginx:alpine
-COPY src/frontend/v4.html /usr/share/nginx/html/index.html
+COPY site/world.html /usr/share/nginx/html/index.html
 COPY assets/ /usr/share/nginx/html/assets/
 EXPOSE 80
 ```
@@ -353,7 +459,7 @@ Before entering the simulation, show a brief context page:
 ### Epic 13: Cognitive Architecture
 
 #### 13.1 — Inline FHIR Memory Store
-Port lightweight FHIR store into v4.html:
+Port lightweight FHIR store into world.html:
 - Every agent action creates a FHIR-like resource (Patient, Condition, Encounter, Observation)
 - Resources queryable by patient ID for history panel
 - Memory stream = chronological log per agent
@@ -447,8 +553,8 @@ Track systematic inequities across 1000+ cycles:
 **Acceptance**: After 1000 cycles, bias report shows whether the system discriminates. Feeds LinkedIn Applied Research posts.
 
 #### 14.5 — Frontend Test Suite
-Add browser-testable assertions for v4.html:
-- Playwright or Puppeteer tests that load v4.html and verify:
+Add browser-testable assertions for world.html:
+- Playwright or Puppeteer tests that load world.html and verify:
   - Agents spawn correctly
   - Click detection works (agents + buildings)
   - IST/SOLL toggle changes parameters
@@ -564,7 +670,7 @@ Side-by-side view:
 
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
-| Runtime | **Frontend-only (v4.html)** | Zero backend = free hosting, no server costs, instant load |
+| Runtime | **Frontend-only (world.html)** | Zero backend = free hosting, no server costs, instant load |
 | Persistence | **localStorage (done) → IndexedDB (future)** | Supports larger datasets than localStorage's 5MB limit |
 | Hosting | **Docker + nginx** | Static files, CDN-friendly, scales infinitely |
 | Memory system | **EVENT_LOG (done) → FHIR store (Phase 4)** | EVENT_LOG is simple and fast; FHIR adds semantic structure for research |
@@ -801,7 +907,7 @@ A feature is "done" when:
 
 #### 21.4 — PWA Support
 - manifest.json: installable as desktop/mobile app
-- Service worker: offline support (cache v4.html + assets)
+- Service worker: offline support (cache world.html + assets)
 - App icon: 192px and 512px Cammelot castle
 - Splash screen matching loading screen design
 

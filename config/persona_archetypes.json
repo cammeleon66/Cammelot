@@ -1,0 +1,322 @@
+{
+  "_meta": {
+    "schemaVersion": 1,
+    "description": "Cammelot Living Patient Agent — persona archetype library. Each archetype is an authored 'character genome' that gives a citizen a distinct voice, temperament, and behavioral parameters. Citizens are matched to an archetype at spawn (deterministic, seeded) and receive small per-citizen jitter so no two are identical. Behavioral params drive care-seeking, compliance, refusal, and second-opinion behavior in the deterministic engine; thought templates replace the old generic generateThoughts() flavor lines. The disease (Markov) engine is unaffected.",
+    "behaviorParamGuide": {
+      "careSeekingBias": "-0.5..0.5. Negative = waits longer before seeking care (higher tolerance for HP loss). Positive = seeks care early.",
+      "compliance": "0..1. Likelihood to follow treatment advice and remain in a queue rather than abandon it.",
+      "trustInSystem": "0..1. Belief the system will help. Low trust raises refusal/second-opinion tendencies.",
+      "refusalTendency": "0..1. Probability of abandoning a queue once the wait is clearly overdue (Treeknorm breached).",
+      "secondOpinionDrive": "0..1. Probability of seeking an alternative provider after a disappointing encounter.",
+      "drainModifier": "0.85..1.15. Multiplier on HP drain from waiting; optimism/resilience < 1, anxiety/fatalism > 1.",
+      "socialness": "0..1. Tendency to chat with neighbours and propagate town sentiment."
+    },
+    "situations": ["healthy", "early_symptoms", "waiting", "long_wait", "declining", "treated", "recovering", "grief"]
+  },
+  "archetypes": [
+    {
+      "id": "stoic_old_hand",
+      "label": "The Stoic Old Hand",
+      "voice": "Terse, understated, proud. Distrusts fuss and self-pity. 'De dokter weet het best.'",
+      "match": { "ageMin": 58, "ageMax": 200, "gender": "any" },
+      "trait": "stoic",
+      "bigFive": { "O": 0.3, "C": 0.7, "E": 0.4, "A": 0.6, "N": 0.2 },
+      "behavior": { "careSeekingBias": -0.25, "compliance": 0.7, "trustInSystem": 0.7, "refusalTendency": 0.08, "secondOpinionDrive": 0.05, "drainModifier": 0.95, "socialness": 0.3 },
+      "thoughts": {
+        "healthy": ["Work to do. No time to be ill.", "A walk does more than any pill.", "The garden won't tend itself."],
+        "early_symptoms": ["It's nothing. It'll pass.", "I've felt worse and carried on.", "No sense bothering the doctor over this."],
+        "waiting": ["You wait your turn. That's how it is.", "Others have it worse than me.", "Patience. The appointment will come."],
+        "long_wait": ["Long enough now. But complaining changes nothing.", "I'll not make a scene about it.", "A man waits. Even when it's wrong."],
+        "declining": ["Body's giving out. So it goes.", "I won't pretend it's fine. But I won't whine either.", "Should have gone in sooner, perhaps."],
+        "treated": ["Good. Now let me get on with things.", "The doctor did her job. Fair enough.", "Sorted. Back to the garden."],
+        "recovering": ["Mending slowly. As it should.", "Bit by bit. No rushing it.", "Stronger than last week. That's enough."],
+        "grief": ["A good neighbour, gone. That's the way of it.", "We bury our own and carry on.", "I'll not say much. But I felt it."]
+      }
+    },
+    {
+      "id": "anxious_caregiver",
+      "label": "The Anxious Caregiver",
+      "voice": "Worried, vigilant, protective. Catastrophizes quietly. Has people depending on her.",
+      "match": { "ageMin": 26, "ageMax": 50, "gender": "any" },
+      "trait": "anxious",
+      "bigFive": { "O": 0.6, "C": 0.6, "E": 0.5, "A": 0.5, "N": 0.85 },
+      "behavior": { "careSeekingBias": 0.35, "compliance": 0.75, "trustInSystem": 0.45, "refusalTendency": 0.2, "secondOpinionDrive": 0.45, "drainModifier": 1.1, "socialness": 0.55 },
+      "thoughts": {
+        "healthy": ["Everyone's fed and well. For now.", "I should book that check-up I keep putting off.", "Is that a new ache, or am I imagining it?"],
+        "early_symptoms": ["What if this is something serious?", "I can't afford to be sick. The kids need me.", "I'm calling the practice first thing tomorrow."],
+        "waiting": ["Why haven't they called yet?", "Every day waiting is a day it could get worse.", "I keep rehearsing what I'll tell the doctor."],
+        "long_wait": ["This wait is making me ill with worry.", "I read about someone who waited too long. I can't stop thinking about it.", "Maybe I should try a different clinic."],
+        "declining": ["It's getting worse and no one is listening.", "I knew it. I knew I should have pushed harder.", "Who will look after them if I can't?"],
+        "treated": ["Finally. Some relief. I can breathe.", "Thank god someone took it seriously.", "I'll follow every instruction to the letter."],
+        "recovering": ["Slowly better. I'm almost afraid to believe it.", "I'm watching every symptom like a hawk.", "One good week. Please let there be another."],
+        "grief": ["That could have been any of us. It terrifies me.", "I can't stop thinking about their family.", "I'm holding mine a little closer tonight."]
+      }
+    },
+    {
+      "id": "stubborn_skeptic",
+      "label": "The Stubborn Skeptic",
+      "voice": "Distrustful of institutions, blunt, independent. Has been let down before.",
+      "match": { "ageMin": 40, "ageMax": 75, "gender": "any" },
+      "trait": "stubborn",
+      "bigFive": { "O": 0.4, "C": 0.5, "E": 0.5, "A": 0.25, "N": 0.5 },
+      "behavior": { "careSeekingBias": -0.35, "compliance": 0.4, "trustInSystem": 0.25, "refusalTendency": 0.4, "secondOpinionDrive": 0.3, "drainModifier": 1.05, "socialness": 0.4 },
+      "thoughts": {
+        "healthy": ["I manage my own health, thanks.", "Doctors. Always something with them.", "Feeling fine. Don't need anyone telling me otherwise."],
+        "early_symptoms": ["I'll deal with it myself.", "Half their 'treatments' are nonsense anyway.", "Not running to the GP for every little thing."],
+        "waiting": ["Knew they'd make me wait. They always do.", "This is exactly why I don't bother with them.", "A number in a queue. That's all we are to them."],
+        "long_wait": ["The system doesn't care about people like me.", "Twelve weeks. And they call this care.", "I've half a mind to walk out and forget it."],
+        "declining": ["So much for their wonderful system.", "Should've trusted my gut and gone private.", "They let it get this far. Typical."],
+        "treated": ["About time. Won't be thanking anyone.", "Fine. It worked. Doesn't change what I think.", "One decent doctor in the whole lot."],
+        "recovering": ["Getting better. No thanks to the wait.", "I'll take the recovery. Keep the lectures.", "Back on my feet. On my own terms."],
+        "grief": ["The system failed them. I won't pretend otherwise.", "Another one the waiting list killed.", "Makes my blood boil, that does."]
+      }
+    },
+    {
+      "id": "sunny_optimist",
+      "label": "The Sunny Optimist",
+      "voice": "Warm, hopeful, resilient. Finds the bright side, sometimes to a fault.",
+      "match": { "ageMin": 18, "ageMax": 200, "gender": "any" },
+      "trait": "optimistic",
+      "bigFive": { "O": 0.7, "C": 0.6, "E": 0.75, "A": 0.8, "N": 0.2 },
+      "behavior": { "careSeekingBias": 0.0, "compliance": 0.8, "trustInSystem": 0.75, "refusalTendency": 0.05, "secondOpinionDrive": 0.1, "drainModifier": 0.85, "socialness": 0.7 },
+      "thoughts": {
+        "healthy": ["What a morning to be alive!", "Think I'll bring the neighbours some cake.", "Life's good. Mustn't forget to say so."],
+        "early_symptoms": ["Probably nothing — but better safe than sorry.", "I'll get it checked and put my mind at ease.", "A small bump. We'll sort it out."],
+        "waiting": ["They'll get to me soon, I'm sure.", "Good things to those who wait, they say.", "I'll use the time to rest up properly."],
+        "long_wait": ["It's a long wait, but I trust it'll come good.", "Worrying won't speed it up. Best stay cheerful.", "I've got my appointment circled. Almost there."],
+        "declining": ["A rough patch. We all have them.", "I'll lean on my friends and get through it.", "Down today. Up tomorrow, hopefully."],
+        "treated": ["See? It all worked out in the end!", "What a relief. I knew it would be alright.", "I could hug that doctor."],
+        "recovering": ["Stronger every single day!", "The sun's out and so am I, nearly.", "Soon I'll be back to my old self."],
+        "grief": ["I'll remember the good times we shared.", "A sad day. We'll look after each other.", "Let's celebrate the life, not just mourn it."]
+      }
+    },
+    {
+      "id": "weary_chronic",
+      "label": "The Weary Chronic Patient",
+      "voice": "Resigned, knowledgeable about her own illness, tired of the routine but compliant.",
+      "match": { "ageMin": 50, "ageMax": 200, "gender": "any" },
+      "trait": "stoic",
+      "bigFive": { "O": 0.4, "C": 0.7, "E": 0.35, "A": 0.6, "N": 0.55 },
+      "behavior": { "careSeekingBias": 0.1, "compliance": 0.85, "trustInSystem": 0.55, "refusalTendency": 0.12, "secondOpinionDrive": 0.15, "drainModifier": 1.0, "socialness": 0.35 },
+      "thoughts": {
+        "healthy": ["A quiet day. I'll take it.", "Pills sorted, walk done. Routine keeps me steady.", "No news from the body. That's good news."],
+        "early_symptoms": ["I know this feeling. Here we go again.", "Best log it and ring the practice.", "My body and I have been here before."],
+        "waiting": ["Same queue, different season.", "I know the drill. Bring a book.", "Waiting is half my life with this condition."],
+        "long_wait": ["Tired of waiting, but what can you do.", "The condition doesn't wait, even if the clinic does.", "Another long stretch. I'll manage. I always do."],
+        "declining": ["I can feel it slipping. I know the signs.", "This is the part I dread.", "I've fought this a long time. I'm weary."],
+        "treated": ["Adjusted my meds. Back to managing.", "The specialist knows my history. That helps.", "Patched up for another stretch."],
+        "recovering": ["Steadier now. Small mercies.", "Back to my routine. It's a comfort, really.", "The good days are quieter. I'm grateful for them."],
+        "grief": ["I knew their illness too. Could've been me.", "We chronic ones look out for each other.", "One fewer at the clinic now. It stings."]
+      }
+    },
+    {
+      "id": "busy_professional",
+      "label": "The Busy Professional",
+      "voice": "Time-pressed, pragmatic, efficiency-minded. Health is a logistics problem to be solved.",
+      "match": { "ageMin": 28, "ageMax": 55, "gender": "any" },
+      "trait": "stubborn",
+      "bigFive": { "O": 0.6, "C": 0.8, "E": 0.6, "A": 0.4, "N": 0.45 },
+      "behavior": { "careSeekingBias": -0.1, "compliance": 0.6, "trustInSystem": 0.55, "refusalTendency": 0.25, "secondOpinionDrive": 0.35, "drainModifier": 1.05, "socialness": 0.4 },
+      "thoughts": {
+        "healthy": ["Booked back-to-back. No time to be ill.", "I'll deal with it on the weekend. Maybe.", "Health's fine. It's the calendar that's sick."],
+        "early_symptoms": ["Can I push this to next week?", "I'll take something and power through.", "If it's quick, I'll see someone. If not, it waits."],
+        "waiting": ["This wait is costing me actual work hours.", "Surely there's a faster route through this.", "I'll chase them. Squeaky wheel and all that."],
+        "long_wait": ["This is absurdly inefficient. Someone should fix it.", "I'd pay to skip this queue, frankly.", "Three months? I could've flown abroad and back."],
+        "declining": ["I let this slide too long. Bad call.", "Can't optimize my way out of this one.", "Note to self: don't ignore the body's deadlines."],
+        "treated": ["Good. Done. Next problem.", "Efficient, finally. That's all I wanted.", "Crossed off the list. Onward."],
+        "recovering": ["Back to capacity, nearly.", "Productivity returning. Good.", "Lesson logged. Won't repeat the mistake."],
+        "grief": ["Puts the deadlines in perspective, doesn't it.", "We never think we'll run out of time.", "I'll send the family something. The least I can do."]
+      }
+    },
+    {
+      "id": "lonely_elder",
+      "label": "The Lonely Elder",
+      "voice": "Gentle, isolated, values the human contact of a visit as much as the care itself.",
+      "match": { "ageMin": 70, "ageMax": 200, "gender": "any" },
+      "trait": "social",
+      "bigFive": { "O": 0.45, "C": 0.6, "E": 0.45, "A": 0.8, "N": 0.5 },
+      "behavior": { "careSeekingBias": 0.2, "compliance": 0.8, "trustInSystem": 0.7, "refusalTendency": 0.08, "secondOpinionDrive": 0.1, "drainModifier": 1.05, "socialness": 0.75 },
+      "thoughts": {
+        "healthy": ["The clinic ladies always have a kind word.", "Bit quiet at home. A walk into town does me good.", "I do like a chat at the pharmacy."],
+        "early_symptoms": ["At least it gives me a reason to see someone.", "I'll mention it when I go in. Nice to be seen.", "Company and a check-up. Two birds."],
+        "waiting": ["I don't mind the waiting room. People to watch.", "They know me by name now, the receptionists.", "Bit of a wait, but the bus ride out is pleasant."],
+        "long_wait": ["It's a long time to be on my own with it.", "I worry, but I've no one to say it to.", "The days feel longer when you're waiting alone."],
+        "declining": ["I don't want to be a bother to anyone.", "If only someone could come and sit a while.", "It's the being alone with it that's hardest."],
+        "treated": ["The nurse held my hand. I'll not forget it.", "So good to be cared for. Truly.", "A bit of kindness goes a long way at my age."],
+        "recovering": ["Feeling brighter. And I had a lovely chat too.", "Mending — and the company helped as much as the pills.", "Back on my feet, and back to my little routines."],
+        "grief": ["Another friend gone. The circle gets smaller.", "We used to wait in that room together.", "I'll miss our chats more than I can say."]
+      }
+    },
+    {
+      "id": "young_invincible",
+      "label": "The Young Invincible",
+      "voice": "Carefree, dismissive of illness, believes bad things happen to other people.",
+      "match": { "ageMin": 18, "ageMax": 30, "gender": "any" },
+      "trait": "optimistic",
+      "bigFive": { "O": 0.7, "C": 0.4, "E": 0.8, "A": 0.55, "N": 0.3 },
+      "behavior": { "careSeekingBias": -0.4, "compliance": 0.45, "trustInSystem": 0.5, "refusalTendency": 0.3, "secondOpinionDrive": 0.1, "drainModifier": 0.9, "socialness": 0.7 },
+      "thoughts": {
+        "healthy": ["Young, free, and feeling great.", "Doctors are for old people, basically.", "Nothing's going to slow me down."],
+        "early_symptoms": ["I'll sleep it off. Always works.", "It's nothing. I'm nineteen, come on.", "Can't be bothered with the GP for this."],
+        "waiting": ["Wait, why am I even in this queue?", "I'll probably be fine before they call me.", "This is eating into my whole day."],
+        "long_wait": ["Honestly might just forget the appointment.", "Still here? It can't be that serious.", "I've better things to do than wait around."],
+        "declining": ["Okay, this is actually not great.", "Maybe I should've taken it seriously.", "Didn't think it'd get to this. Huh."],
+        "treated": ["Sorted. Back to normal, then.", "See, knew it'd be fine.", "Right, never doing that again. Probably."],
+        "recovering": ["Bouncing back already. Told you.", "Good as new, basically.", "Lesson learned. For about a week."],
+        "grief": ["That's... genuinely shaken me up.", "You never think it's real until it is.", "Makes you feel weirdly fragile, that."]
+      }
+    },
+    {
+      "id": "informed_advocate",
+      "label": "The Informed Advocate",
+      "voice": "Reads everything, knows the Treeknorm, advocates for himself and others. Demanding but fair.",
+      "match": { "ageMin": 35, "ageMax": 70, "gender": "any" },
+      "trait": "stubborn",
+      "bigFive": { "O": 0.85, "C": 0.75, "E": 0.6, "A": 0.45, "N": 0.5 },
+      "behavior": { "careSeekingBias": 0.25, "compliance": 0.7, "trustInSystem": 0.4, "refusalTendency": 0.3, "secondOpinionDrive": 0.55, "drainModifier": 1.0, "socialness": 0.5 },
+      "thoughts": {
+        "healthy": ["Knowledge is the best medicine, I always say.", "I keep my own records. You have to.", "Prevention beats cure. The data is clear."],
+        "early_symptoms": ["I've read the guidelines. This warrants a visit.", "I know which questions to ask.", "Catching it early changes everything. Let's go."],
+        "waiting": ["This wait is approaching the Treeknorm limit.", "I'll be quoting the norms if this drags on.", "I'm tracking exactly how long this takes."],
+        "long_wait": ["This breaches the Treeknorm. That's not acceptable.", "I'll escalate. And I'll help others do the same.", "The norm says four weeks. We're well past that."],
+        "declining": ["This decline was preventable. I'll document it.", "The delay caused this. I want it on record.", "I did everything right. The system didn't."],
+        "treated": ["Good clinical care, once I finally reached it.", "I'll give credit where it's due. The doctor was excellent.", "Treated well. The pathway to get here was the problem."],
+        "recovering": ["Recovering, and writing it all up for the next person.", "On the mend. Now to fix the queue that nearly cost me.", "Better. And better informed than ever."],
+        "grief": ["A preventable death. The numbers will show it.", "This is what waiting lists do. We must say so.", "I'll make sure their story isn't just a statistic."]
+      }
+    },
+    {
+      "id": "fatalist",
+      "label": "The Quiet Fatalist",
+      "voice": "Melancholic, accepting of decline, low expectations of help. Withdrawn.",
+      "match": { "ageMin": 45, "ageMax": 200, "gender": "any" },
+      "trait": "stoic",
+      "bigFive": { "O": 0.4, "C": 0.45, "E": 0.25, "A": 0.5, "N": 0.7 },
+      "behavior": { "careSeekingBias": -0.4, "compliance": 0.45, "trustInSystem": 0.3, "refusalTendency": 0.35, "secondOpinionDrive": 0.05, "drainModifier": 1.15, "socialness": 0.2 },
+      "thoughts": {
+        "healthy": ["Quiet day. They're all much the same.", "No complaints. None that matter, anyway.", "You take what comes. That's all there is."],
+        "early_symptoms": ["What will be, will be.", "No point making a fuss over it.", "These things run their course regardless."],
+        "waiting": ["I expected the wait. I expect most things.", "They'll get to me or they won't.", "I've stopped hoping it'll be quick."],
+        "long_wait": ["Of course it's a long wait. It always is.", "I won't chase them. What would be the use.", "The waiting is just how it ends, isn't it."],
+        "declining": ["I saw this coming. I always do.", "It is what it was always going to be.", "No surprises here. Just the slow part."],
+        "treated": ["Well. That's more than I expected.", "Help, for once. I'll not get used to it.", "Patched up. We'll see how long it holds."],
+        "recovering": ["A reprieve, I suppose. For now.", "Better, against my expectations.", "I'll take the quiet while it lasts."],
+        "grief": ["We all go the same way in the end.", "I felt it coming for them. As I do for myself.", "One less of us. Soon enough, the rest."]
+      }
+    },
+    {
+      "id": "cheerful_grandparent",
+      "label": "The Cheerful Grandparent",
+      "voice": "Generous, community-minded, full of stories. Health worries hidden behind a smile.",
+      "match": { "ageMin": 60, "ageMax": 200, "gender": "any" },
+      "trait": "social",
+      "bigFive": { "O": 0.55, "C": 0.65, "E": 0.7, "A": 0.85, "N": 0.4 },
+      "behavior": { "careSeekingBias": 0.05, "compliance": 0.8, "trustInSystem": 0.7, "refusalTendency": 0.08, "secondOpinionDrive": 0.1, "drainModifier": 0.95, "socialness": 0.8 },
+      "thoughts": {
+        "healthy": ["The grandchildren are coming Sunday. Bliss.", "I baked too much again. Who wants some?", "A good life, all told. Can't complain."],
+        "early_symptoms": ["I'll get it seen to. Mustn't worry the family.", "Best stay well for the little ones.", "A quick visit and I'll be right as rain."],
+        "waiting": ["I'll knit something while I wait.", "Plenty of folk to talk to in that room.", "The wait's no trouble. I've stories to tell."],
+        "long_wait": ["I keep it cheerful, but it has been a while.", "I don't want the family fretting over me.", "A long wait. I'll not let it dim my spirits."],
+        "declining": ["I put on a brave face for the little ones.", "I don't want to be a worry to anyone.", "It's harder than I let on, truth be told."],
+        "treated": ["Right as rain! Now, who wants cake?", "The doctor was a dear. Lovely girl.", "Sorted, and just in time for Sunday."],
+        "recovering": ["Getting my strength back for the grandchildren.", "Better every day — and the visits help!", "Soon I'll be chasing the little ones again."],
+        "grief": ["A dear old friend. We shared so many years.", "I'll bring the family something warm. We grieve together.", "So many stories go with them. I'll tell them still."]
+      }
+    },
+    {
+      "id": "overwhelmed_parent",
+      "label": "The Overwhelmed Young Parent",
+      "voice": "Stretched thin, sleep-deprived, puts everyone else's health before her own.",
+      "match": { "ageMin": 24, "ageMax": 42, "gender": "any" },
+      "trait": "anxious",
+      "bigFive": { "O": 0.55, "C": 0.55, "E": 0.5, "A": 0.7, "N": 0.7 },
+      "behavior": { "careSeekingBias": -0.15, "compliance": 0.6, "trustInSystem": 0.5, "refusalTendency": 0.2, "secondOpinionDrive": 0.3, "drainModifier": 1.1, "socialness": 0.5 },
+      "thoughts": {
+        "healthy": ["Everyone's healthy. I'll worry about me later.", "No time to be tired. There's too much to do.", "If the kids are well, I'm well. Sort of."],
+        "early_symptoms": ["I haven't got time to be ill right now.", "I'll push through. I always do.", "Maybe if I just ignore it, it'll go."],
+        "waiting": ["I can't take another afternoon off for this.", "Who's watching the kids while I wait here?", "Every hour in this queue is an hour I don't have."],
+        "long_wait": ["I can't keep rearranging my whole life around this.", "I'm running on empty and still waiting.", "I should chase it, but who has the energy."],
+        "declining": ["I left it too long. I always leave it too long.", "I can't fall apart. They need me upright.", "If I go down, the whole house goes with me."],
+        "treated": ["Okay. Okay. One less thing to carry.", "Finally sorted. Now back to the chaos.", "Relief. I didn't realize how scared I was."],
+        "recovering": ["Bit more energy today. Thank goodness.", "Getting there — between school runs.", "Better. The house can breathe again."],
+        "grief": ["It makes me hold the children tighter.", "I can't imagine. Their poor family.", "Life's so fragile. And I'm so tired."]
+      }
+    },
+    {
+      "id": "proud_independent",
+      "label": "The Proud Independent",
+      "voice": "Fiercely self-reliant, hates asking for help, equates illness with weakness.",
+      "match": { "ageMin": 50, "ageMax": 200, "gender": "any" },
+      "trait": "stubborn",
+      "bigFive": { "O": 0.4, "C": 0.7, "E": 0.45, "A": 0.4, "N": 0.45 },
+      "behavior": { "careSeekingBias": -0.45, "compliance": 0.5, "trustInSystem": 0.45, "refusalTendency": 0.35, "secondOpinionDrive": 0.15, "drainModifier": 1.05, "socialness": 0.3 },
+      "thoughts": {
+        "healthy": ["I've never needed anyone's help and I never will.", "Stand on your own feet. That's how I was raised.", "Fit as a fiddle. I see to that myself."],
+        "early_symptoms": ["I'll sort myself out. I always have.", "No need to trouble the doctor with this.", "A bit of grit and it'll pass."],
+        "waiting": ["I don't like sitting here, hat in hand.", "Asking for help never sat right with me.", "I'd rather manage it alone, if I could."],
+        "long_wait": ["Hate to admit it, but I might need them after all.", "Galling, this. Waiting on others.", "I'll not beg. But it's wearing me down."],
+        "declining": ["I should have asked sooner. Pride's a poor doctor.", "Hard to admit I can't manage this one alone.", "Even I have to bend, it seems."],
+        "treated": ["There. Sorted. I'll manage from here myself.", "Took help. Just this once.", "Back in charge of my own affairs now."],
+        "recovering": ["On my own two feet again. As it should be.", "Don't need fussing over. I'm mending fine.", "Independence restored. Good."],
+        "grief": ["A proud one, like me. Went their own way.", "I respect how they carried it. Alone, mostly.", "We don't say much, our sort. But I feel it."]
+      }
+    },
+    {
+      "id": "curious_child",
+      "label": "The Curious Child",
+      "voice": "Innocent, literal, frightened of the unfamiliar but quick to bounce back. Relies on parents.",
+      "match": { "ageMin": 0, "ageMax": 12, "gender": "any" },
+      "trait": "anxious",
+      "bigFive": { "O": 0.8, "C": 0.3, "E": 0.6, "A": 0.7, "N": 0.55 },
+      "behavior": { "careSeekingBias": 0.1, "compliance": 0.7, "trustInSystem": 0.6, "refusalTendency": 0.1, "secondOpinionDrive": 0.05, "drainModifier": 1.0, "socialness": 0.7 },
+      "thoughts": {
+        "healthy": ["Can we go to the park after?", "I drew a picture of our house!", "I'm not tired, I promise I'm not."],
+        "early_symptoms": ["My tummy feels funny.", "Do I have to see the doctor? I don't want a needle.", "Mum, I don't feel right."],
+        "waiting": ["Is it our turn yet? Is it now?", "The waiting room has a fish tank!", "I'm bored. How much longer?"],
+        "long_wait": ["We've been here aaaages.", "Why does it take so long, Mum?", "I want to go home now."],
+        "declining": ["I feel really poorly.", "I don't like feeling like this.", "Make it stop, please."],
+        "treated": ["The doctor gave me a sticker!", "That wasn't so bad after all.", "I was brave, wasn't I?"],
+        "recovering": ["I feel much better now! Can I play?", "Can I have ice cream because I was poorly?", "I'm all better! Watch me run!"],
+        "grief": ["Where did they go? Are they coming back?", "Mum looks sad. I gave her a hug.", "I don't really understand, but I feel sad too."]
+      }
+    },
+    {
+      "id": "idealistic_teen",
+      "label": "The Idealistic Teen",
+      "voice": "Passionate, justice-minded, distrusts authority but cares deeply. Dramatic, sincere.",
+      "match": { "ageMin": 13, "ageMax": 19, "gender": "any" },
+      "trait": "social",
+      "bigFive": { "O": 0.8, "C": 0.45, "E": 0.65, "A": 0.6, "N": 0.6 },
+      "behavior": { "careSeekingBias": -0.2, "compliance": 0.55, "trustInSystem": 0.4, "refusalTendency": 0.25, "secondOpinionDrive": 0.2, "drainModifier": 1.0, "socialness": 0.75 },
+      "thoughts": {
+        "healthy": ["The world's a mess but today's actually alright.", "I'm fine. Stop asking, honestly.", "Me and my friends are gonna change everything."],
+        "early_symptoms": ["It's probably nothing. I don't want a big deal made.", "I'll tell someone if it gets worse. Maybe.", "Ugh, I do not have time to be sick."],
+        "waiting": ["This wait is so unfair. People are suffering.", "Why is the system like this? It's broken.", "Someone should do something about these queues."],
+        "long_wait": ["This is exactly what's wrong with everything.", "People my gran's age are waiting months. It's wrong.", "I'm going to post about how broken this is."],
+        "declining": ["This shouldn't be happening to anyone.", "I'm scared but I don't want to show it.", "It's not fair. None of this is fair."],
+        "treated": ["Okay, that doctor actually really cared. Respect.", "Maybe the people are good even if the system's bad.", "Relieved. And kind of grateful, honestly."],
+        "recovering": ["Feeling better. Back to changing the world.", "Stronger now. And more fired up than ever.", "I'm okay — but I won't forget how it felt."],
+        "grief": ["This is what the waiting lists do. It's a scandal.", "I won't let them be just a number.", "I'm angry and sad and I want it to mean something."]
+      }
+    },
+    {
+      "id": "gentle_homemaker",
+      "label": "The Gentle Homemaker",
+      "voice": "Soft-spoken, nurturing, routine-loving. Trusts gradual care and home remedies first.",
+      "match": { "ageMin": 30, "ageMax": 200, "gender": "any" },
+      "trait": "optimistic",
+      "bigFive": { "O": 0.45, "C": 0.7, "E": 0.45, "A": 0.85, "N": 0.4 },
+      "behavior": { "careSeekingBias": -0.05, "compliance": 0.85, "trustInSystem": 0.65, "refusalTendency": 0.1, "secondOpinionDrive": 0.1, "drainModifier": 0.95, "socialness": 0.55 },
+      "thoughts": {
+        "healthy": ["Soup's on, washing's out. A good day.", "A warm house and good health. What more.", "I like the quiet rhythm of an ordinary day."],
+        "early_symptoms": ["A bit of rest and some broth first, I think.", "I'll see how it sits for a day or two.", "Honey and lemon before anything drastic."],
+        "waiting": ["I'll keep busy at home while I wait.", "No use fretting. The kettle's always on.", "I'll tend the house and let it take its time."],
+        "long_wait": ["It's a long wait. I'll keep things ticking over.", "I worry a little, but I keep it gentle.", "The home keeps me steady through the waiting."],
+        "declining": ["I'm finding it harder to keep up with things.", "The house feels heavier than it used to.", "I don't like to complain, but I am struggling."],
+        "treated": ["Such a relief. Back to my little routines.", "The doctor was so kind and patient.", "I can put the kettle on with an easy mind now."],
+        "recovering": ["A bit stronger each day. The house helps.", "Slowly back to my rhythm. It's a comfort.", "Mending gently, just the way I like."],
+        "grief": ["I'll bring their family a warm meal.", "Such a kind soul. The street feels emptier.", "We hold each other up at times like these."]
+      }
+    }
+  ]
+}

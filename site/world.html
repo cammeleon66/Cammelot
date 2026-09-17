@@ -1207,6 +1207,13 @@ const GRAVE_MARKERS = []; // {x, y, name, age, cause, waitWeeks, cycle, conditio
 // Sprint 26.3: Embed mode detection from URL parameters (?embed=true)
 const EMBED_MODE = new URLSearchParams(window.location.search).get('embed') === 'true';
 let cycle=0,mode='IST',autoTimer=null;
+// Persona A/B toggle — runner can prepend `var PERSONA_ENABLED=false;` before eval
+var PERSONA_ENABLED = (typeof PERSONA_ENABLED !== 'undefined') ? PERSONA_ENABLED : true;
+    // Big Five -> behaviour modulation (O/C/E/A/N nudges the 7 params). Default ON; runner can prepend `var PERSONA_USE_BIGFIVE=false;`.
+    var PERSONA_USE_BIGFIVE = (typeof PERSONA_USE_BIGFIVE !== 'undefined') ? PERSONA_USE_BIGFIVE : true;
+// ═══ Sprint 30: Citizen Agent PoC — LLM Integration ═══
+let llmProxyAvailable = false;
+let llmProxyUrl = 'http://localhost:3001';
 const M={IST:{admin:.3,sick:.08,tree:12,ai:1,drain:1},SOLL:{admin:.05,sick:.05,tree:4,ai:1.34,drain:.3}};
 const M_ORIG={IST:{admin:.3,sick:.08,tree:12,ai:1,drain:1},SOLL:{admin:.05,sick:.05,tree:4,ai:1.34,drain:.3}};
 // NZa 2025 tariffs and simulation cost estimates
@@ -1243,6 +1250,11 @@ let ketenzorgCostEur = 0;
 
 // ── Blog-Ready Sprint: Fairness Guardrail ──
 let fairnessGuardrailActive = false;
+
+// ── T7 Living Patient: outward action, consent, audit, outreach-fairness ──
+let outreachOptOutCount = 0;
+let gpPreBriefCount = 0;
+let outreachReach = { '0-44': 0, '45-64': 0, '65-79': 0, '80+': 0 };
 
 // ── Research & Benchmark Agents (Post-T4) ──
 let researchQueriesCompleted = 0;
@@ -2251,6 +2263,136 @@ function seededRandom(seed) {
   return () => { s = (s * 16807 + 0) % 2147483647; return s / 2147483647; };
 }
 
+
+// ═══ Living Patient Agent — Persona System ═══════════════════════════════════
+// Inlined from src/sim/persona.js + config/persona_archetypes.json.
+// hashCode() and seededRandom() are already declared above — reused here.
+// Disease engine (Markov matrices) is NOT touched.
+
+const PERSONA_ARCHETYPES = { archetypes: [{"id":"stoic_old_hand","label":"The Stoic Old Hand","voice":"Terse, understated, proud. Distrusts fuss and self-pity. 'De dokter weet het best.'","match":{"ageMin":58,"ageMax":200,"gender":"any"},"trait":"stoic","bigFive":{"O":0.3,"C":0.7,"E":0.4,"A":0.6,"N":0.2},"behavior":{"careSeekingBias":-0.25,"compliance":0.7,"trustInSystem":0.7,"refusalTendency":0.08,"secondOpinionDrive":0.05,"drainModifier":0.95,"socialness":0.3},"thoughts":{"healthy":["Work to do. No time to be ill.","A walk does more than any pill.","The garden won't tend itself."],"early_symptoms":["It's nothing. It'll pass.","I've felt worse and carried on.","No sense bothering the doctor over this."],"waiting":["You wait your turn. That's how it is.","Others have it worse than me.","Patience. The appointment will come."],"long_wait":["Long enough now. But complaining changes nothing.","I'll not make a scene about it.","A man waits. Even when it's wrong."],"declining":["Body's giving out. So it goes.","I won't pretend it's fine. But I won't whine either.","Should have gone in sooner, perhaps."],"treated":["Good. Now let me get on with things.","The doctor did her job. Fair enough.","Sorted. Back to the garden."],"recovering":["Mending slowly. As it should.","Bit by bit. No rushing it.","Stronger than last week. That's enough."],"grief":["A good neighbour, gone. That's the way of it.","We bury our own and carry on.","I'll not say much. But I felt it."]}},{"id":"anxious_caregiver","label":"The Anxious Caregiver","voice":"Worried, vigilant, protective. Catastrophizes quietly. Has people depending on her.","match":{"ageMin":26,"ageMax":50,"gender":"any"},"trait":"anxious","bigFive":{"O":0.6,"C":0.6,"E":0.5,"A":0.5,"N":0.85},"behavior":{"careSeekingBias":0.35,"compliance":0.75,"trustInSystem":0.45,"refusalTendency":0.2,"secondOpinionDrive":0.45,"drainModifier":1.1,"socialness":0.55},"thoughts":{"healthy":["Everyone's fed and well. For now.","I should book that check-up I keep putting off.","Is that a new ache, or am I imagining it?"],"early_symptoms":["What if this is something serious?","I can't afford to be sick. The kids need me.","I'm calling the practice first thing tomorrow."],"waiting":["Why haven't they called yet?","Every day waiting is a day it could get worse.","I keep rehearsing what I'll tell the doctor."],"long_wait":["This wait is making me ill with worry.","I read about someone who waited too long. I can't stop thinking about it.","Maybe I should try a different clinic."],"declining":["It's getting worse and no one is listening.","I knew it. I knew I should have pushed harder.","Who will look after them if I can't?"],"treated":["Finally. Some relief. I can breathe.","Thank god someone took it seriously.","I'll follow every instruction to the letter."],"recovering":["Slowly better. I'm almost afraid to believe it.","I'm watching every symptom like a hawk.","One good week. Please let there be another."],"grief":["That could have been any of us. It terrifies me.","I can't stop thinking about their family.","I'm holding mine a little closer tonight."]}},{"id":"stubborn_skeptic","label":"The Stubborn Skeptic","voice":"Distrustful of institutions, blunt, independent. Has been let down before.","match":{"ageMin":40,"ageMax":75,"gender":"any"},"trait":"stubborn","bigFive":{"O":0.4,"C":0.5,"E":0.5,"A":0.25,"N":0.5},"behavior":{"careSeekingBias":-0.35,"compliance":0.4,"trustInSystem":0.25,"refusalTendency":0.4,"secondOpinionDrive":0.3,"drainModifier":1.05,"socialness":0.4},"thoughts":{"healthy":["I manage my own health, thanks.","Doctors. Always something with them.","Feeling fine. Don't need anyone telling me otherwise."],"early_symptoms":["I'll deal with it myself.","Half their 'treatments' are nonsense anyway.","Not running to the GP for every little thing."],"waiting":["Knew they'd make me wait. They always do.","This is exactly why I don't bother with them.","A number in a queue. That's all we are to them."],"long_wait":["The system doesn't care about people like me.","Twelve weeks. And they call this care.","I've half a mind to walk out and forget it."],"declining":["So much for their wonderful system.","Should've trusted my gut and gone private.","They let it get this far. Typical."],"treated":["About time. Won't be thanking anyone.","Fine. It worked. Doesn't change what I think.","One decent doctor in the whole lot."],"recovering":["Getting better. No thanks to the wait.","I'll take the recovery. Keep the lectures.","Back on my feet. On my own terms."],"grief":["The system failed them. I won't pretend otherwise.","Another one the waiting list killed.","Makes my blood boil, that does."]}},{"id":"sunny_optimist","label":"The Sunny Optimist","voice":"Warm, hopeful, resilient. Finds the bright side, sometimes to a fault.","match":{"ageMin":18,"ageMax":200,"gender":"any"},"trait":"optimistic","bigFive":{"O":0.7,"C":0.6,"E":0.75,"A":0.8,"N":0.2},"behavior":{"careSeekingBias":0.0,"compliance":0.8,"trustInSystem":0.75,"refusalTendency":0.05,"secondOpinionDrive":0.1,"drainModifier":0.85,"socialness":0.7},"thoughts":{"healthy":["What a morning to be alive!","Think I'll bring the neighbours some cake.","Life's good. Mustn't forget to say so."],"early_symptoms":["Probably nothing \u2014 but better safe than sorry.","I'll get it checked and put my mind at ease.","A small bump. We'll sort it out."],"waiting":["They'll get to me soon, I'm sure.","Good things to those who wait, they say.","I'll use the time to rest up properly."],"long_wait":["It's a long wait, but I trust it'll come good.","Worrying won't speed it up. Best stay cheerful.","I've got my appointment circled. Almost there."],"declining":["A rough patch. We all have them.","I'll lean on my friends and get through it.","Down today. Up tomorrow, hopefully."],"treated":["See? It all worked out in the end!","What a relief. I knew it would be alright.","I could hug that doctor."],"recovering":["Stronger every single day!","The sun's out and so am I, nearly.","Soon I'll be back to my old self."],"grief":["I'll remember the good times we shared.","A sad day. We'll look after each other.","Let's celebrate the life, not just mourn it."]}},{"id":"weary_chronic","label":"The Weary Chronic Patient","voice":"Resigned, knowledgeable about her own illness, tired of the routine but compliant.","match":{"ageMin":50,"ageMax":200,"gender":"any"},"trait":"stoic","bigFive":{"O":0.4,"C":0.7,"E":0.35,"A":0.6,"N":0.55},"behavior":{"careSeekingBias":0.1,"compliance":0.85,"trustInSystem":0.55,"refusalTendency":0.12,"secondOpinionDrive":0.15,"drainModifier":1.0,"socialness":0.35},"thoughts":{"healthy":["A quiet day. I'll take it.","Pills sorted, walk done. Routine keeps me steady.","No news from the body. That's good news."],"early_symptoms":["I know this feeling. Here we go again.","Best log it and ring the practice.","My body and I have been here before."],"waiting":["Same queue, different season.","I know the drill. Bring a book.","Waiting is half my life with this condition."],"long_wait":["Tired of waiting, but what can you do.","The condition doesn't wait, even if the clinic does.","Another long stretch. I'll manage. I always do."],"declining":["I can feel it slipping. I know the signs.","This is the part I dread.","I've fought this a long time. I'm weary."],"treated":["Adjusted my meds. Back to managing.","The specialist knows my history. That helps.","Patched up for another stretch."],"recovering":["Steadier now. Small mercies.","Back to my routine. It's a comfort, really.","The good days are quieter. I'm grateful for them."],"grief":["I knew their illness too. Could've been me.","We chronic ones look out for each other.","One fewer at the clinic now. It stings."]}},{"id":"busy_professional","label":"The Busy Professional","voice":"Time-pressed, pragmatic, efficiency-minded. Health is a logistics problem to be solved.","match":{"ageMin":28,"ageMax":55,"gender":"any"},"trait":"stubborn","bigFive":{"O":0.6,"C":0.8,"E":0.6,"A":0.4,"N":0.45},"behavior":{"careSeekingBias":-0.1,"compliance":0.6,"trustInSystem":0.55,"refusalTendency":0.25,"secondOpinionDrive":0.35,"drainModifier":1.05,"socialness":0.4},"thoughts":{"healthy":["Booked back-to-back. No time to be ill.","I'll deal with it on the weekend. Maybe.","Health's fine. It's the calendar that's sick."],"early_symptoms":["Can I push this to next week?","I'll take something and power through.","If it's quick, I'll see someone. If not, it waits."],"waiting":["This wait is costing me actual work hours.","Surely there's a faster route through this.","I'll chase them. Squeaky wheel and all that."],"long_wait":["This is absurdly inefficient. Someone should fix it.","I'd pay to skip this queue, frankly.","Three months? I could've flown abroad and back."],"declining":["I let this slide too long. Bad call.","Can't optimize my way out of this one.","Note to self: don't ignore the body's deadlines."],"treated":["Good. Done. Next problem.","Efficient, finally. That's all I wanted.","Crossed off the list. Onward."],"recovering":["Back to capacity, nearly.","Productivity returning. Good.","Lesson logged. Won't repeat the mistake."],"grief":["Puts the deadlines in perspective, doesn't it.","We never think we'll run out of time.","I'll send the family something. The least I can do."]}},{"id":"lonely_elder","label":"The Lonely Elder","voice":"Gentle, isolated, values the human contact of a visit as much as the care itself.","match":{"ageMin":70,"ageMax":200,"gender":"any"},"trait":"social","bigFive":{"O":0.45,"C":0.6,"E":0.45,"A":0.8,"N":0.5},"behavior":{"careSeekingBias":0.2,"compliance":0.8,"trustInSystem":0.7,"refusalTendency":0.08,"secondOpinionDrive":0.1,"drainModifier":1.05,"socialness":0.75},"thoughts":{"healthy":["The clinic ladies always have a kind word.","Bit quiet at home. A walk into town does me good.","I do like a chat at the pharmacy."],"early_symptoms":["At least it gives me a reason to see someone.","I'll mention it when I go in. Nice to be seen.","Company and a check-up. Two birds."],"waiting":["I don't mind the waiting room. People to watch.","They know me by name now, the receptionists.","Bit of a wait, but the bus ride out is pleasant."],"long_wait":["It's a long time to be on my own with it.","I worry, but I've no one to say it to.","The days feel longer when you're waiting alone."],"declining":["I don't want to be a bother to anyone.","If only someone could come and sit a while.","It's the being alone with it that's hardest."],"treated":["The nurse held my hand. I'll not forget it.","So good to be cared for. Truly.","A bit of kindness goes a long way at my age."],"recovering":["Feeling brighter. And I had a lovely chat too.","Mending \u2014 and the company helped as much as the pills.","Back on my feet, and back to my little routines."],"grief":["Another friend gone. The circle gets smaller.","We used to wait in that room together.","I'll miss our chats more than I can say."]}},{"id":"young_invincible","label":"The Young Invincible","voice":"Carefree, dismissive of illness, believes bad things happen to other people.","match":{"ageMin":18,"ageMax":30,"gender":"any"},"trait":"optimistic","bigFive":{"O":0.7,"C":0.4,"E":0.8,"A":0.55,"N":0.3},"behavior":{"careSeekingBias":-0.4,"compliance":0.45,"trustInSystem":0.5,"refusalTendency":0.3,"secondOpinionDrive":0.1,"drainModifier":0.9,"socialness":0.7},"thoughts":{"healthy":["Young, free, and feeling great.","Doctors are for old people, basically.","Nothing's going to slow me down."],"early_symptoms":["I'll sleep it off. Always works.","It's nothing. I'm nineteen, come on.","Can't be bothered with the GP for this."],"waiting":["Wait, why am I even in this queue?","I'll probably be fine before they call me.","This is eating into my whole day."],"long_wait":["Honestly might just forget the appointment.","Still here? It can't be that serious.","I've better things to do than wait around."],"declining":["Okay, this is actually not great.","Maybe I should've taken it seriously.","Didn't think it'd get to this. Huh."],"treated":["Sorted. Back to normal, then.","See, knew it'd be fine.","Right, never doing that again. Probably."],"recovering":["Bouncing back already. Told you.","Good as new, basically.","Lesson learned. For about a week."],"grief":["That's... genuinely shaken me up.","You never think it's real until it is.","Makes you feel weirdly fragile, that."]}},{"id":"informed_advocate","label":"The Informed Advocate","voice":"Reads everything, knows the Treeknorm, advocates for himself and others. Demanding but fair.","match":{"ageMin":35,"ageMax":70,"gender":"any"},"trait":"stubborn","bigFive":{"O":0.85,"C":0.75,"E":0.6,"A":0.45,"N":0.5},"behavior":{"careSeekingBias":0.25,"compliance":0.7,"trustInSystem":0.4,"refusalTendency":0.3,"secondOpinionDrive":0.55,"drainModifier":1.0,"socialness":0.5},"thoughts":{"healthy":["Knowledge is the best medicine, I always say.","I keep my own records. You have to.","Prevention beats cure. The data is clear."],"early_symptoms":["I've read the guidelines. This warrants a visit.","I know which questions to ask.","Catching it early changes everything. Let's go."],"waiting":["This wait is approaching the Treeknorm limit.","I'll be quoting the norms if this drags on.","I'm tracking exactly how long this takes."],"long_wait":["This breaches the Treeknorm. That's not acceptable.","I'll escalate. And I'll help others do the same.","The norm says four weeks. We're well past that."],"declining":["This decline was preventable. I'll document it.","The delay caused this. I want it on record.","I did everything right. The system didn't."],"treated":["Good clinical care, once I finally reached it.","I'll give credit where it's due. The doctor was excellent.","Treated well. The pathway to get here was the problem."],"recovering":["Recovering, and writing it all up for the next person.","On the mend. Now to fix the queue that nearly cost me.","Better. And better informed than ever."],"grief":["A preventable death. The numbers will show it.","This is what waiting lists do. We must say so.","I'll make sure their story isn't just a statistic."]}},{"id":"fatalist","label":"The Quiet Fatalist","voice":"Melancholic, accepting of decline, low expectations of help. Withdrawn.","match":{"ageMin":45,"ageMax":200,"gender":"any"},"trait":"stoic","bigFive":{"O":0.4,"C":0.45,"E":0.25,"A":0.5,"N":0.7},"behavior":{"careSeekingBias":-0.4,"compliance":0.45,"trustInSystem":0.3,"refusalTendency":0.35,"secondOpinionDrive":0.05,"drainModifier":1.15,"socialness":0.2},"thoughts":{"healthy":["Quiet day. They're all much the same.","No complaints. None that matter, anyway.","You take what comes. That's all there is."],"early_symptoms":["What will be, will be.","No point making a fuss over it.","These things run their course regardless."],"waiting":["I expected the wait. I expect most things.","They'll get to me or they won't.","I've stopped hoping it'll be quick."],"long_wait":["Of course it's a long wait. It always is.","I won't chase them. What would be the use.","The waiting is just how it ends, isn't it."],"declining":["I saw this coming. I always do.","It is what it was always going to be.","No surprises here. Just the slow part."],"treated":["Well. That's more than I expected.","Help, for once. I'll not get used to it.","Patched up. We'll see how long it holds."],"recovering":["A reprieve, I suppose. For now.","Better, against my expectations.","I'll take the quiet while it lasts."],"grief":["We all go the same way in the end.","I felt it coming for them. As I do for myself.","One less of us. Soon enough, the rest."]}},{"id":"cheerful_grandparent","label":"The Cheerful Grandparent","voice":"Generous, community-minded, full of stories. Health worries hidden behind a smile.","match":{"ageMin":60,"ageMax":200,"gender":"any"},"trait":"social","bigFive":{"O":0.55,"C":0.65,"E":0.7,"A":0.85,"N":0.4},"behavior":{"careSeekingBias":0.05,"compliance":0.8,"trustInSystem":0.7,"refusalTendency":0.08,"secondOpinionDrive":0.1,"drainModifier":0.95,"socialness":0.8},"thoughts":{"healthy":["The grandchildren are coming Sunday. Bliss.","I baked too much again. Who wants some?","A good life, all told. Can't complain."],"early_symptoms":["I'll get it seen to. Mustn't worry the family.","Best stay well for the little ones.","A quick visit and I'll be right as rain."],"waiting":["I'll knit something while I wait.","Plenty of folk to talk to in that room.","The wait's no trouble. I've stories to tell."],"long_wait":["I keep it cheerful, but it has been a while.","I don't want the family fretting over me.","A long wait. I'll not let it dim my spirits."],"declining":["I put on a brave face for the little ones.","I don't want to be a worry to anyone.","It's harder than I let on, truth be told."],"treated":["Right as rain! Now, who wants cake?","The doctor was a dear. Lovely girl.","Sorted, and just in time for Sunday."],"recovering":["Getting my strength back for the grandchildren.","Better every day \u2014 and the visits help!","Soon I'll be chasing the little ones again."],"grief":["A dear old friend. We shared so many years.","I'll bring the family something warm. We grieve together.","So many stories go with them. I'll tell them still."]}},{"id":"overwhelmed_parent","label":"The Overwhelmed Young Parent","voice":"Stretched thin, sleep-deprived, puts everyone else's health before her own.","match":{"ageMin":24,"ageMax":42,"gender":"any"},"trait":"anxious","bigFive":{"O":0.55,"C":0.55,"E":0.5,"A":0.7,"N":0.7},"behavior":{"careSeekingBias":-0.15,"compliance":0.6,"trustInSystem":0.5,"refusalTendency":0.2,"secondOpinionDrive":0.3,"drainModifier":1.1,"socialness":0.5},"thoughts":{"healthy":["Everyone's healthy. I'll worry about me later.","No time to be tired. There's too much to do.","If the kids are well, I'm well. Sort of."],"early_symptoms":["I haven't got time to be ill right now.","I'll push through. I always do.","Maybe if I just ignore it, it'll go."],"waiting":["I can't take another afternoon off for this.","Who's watching the kids while I wait here?","Every hour in this queue is an hour I don't have."],"long_wait":["I can't keep rearranging my whole life around this.","I'm running on empty and still waiting.","I should chase it, but who has the energy."],"declining":["I left it too long. I always leave it too long.","I can't fall apart. They need me upright.","If I go down, the whole house goes with me."],"treated":["Okay. Okay. One less thing to carry.","Finally sorted. Now back to the chaos.","Relief. I didn't realize how scared I was."],"recovering":["Bit more energy today. Thank goodness.","Getting there \u2014 between school runs.","Better. The house can breathe again."],"grief":["It makes me hold the children tighter.","I can't imagine. Their poor family.","Life's so fragile. And I'm so tired."]}},{"id":"proud_independent","label":"The Proud Independent","voice":"Fiercely self-reliant, hates asking for help, equates illness with weakness.","match":{"ageMin":50,"ageMax":200,"gender":"any"},"trait":"stubborn","bigFive":{"O":0.4,"C":0.7,"E":0.45,"A":0.4,"N":0.45},"behavior":{"careSeekingBias":-0.45,"compliance":0.5,"trustInSystem":0.45,"refusalTendency":0.35,"secondOpinionDrive":0.15,"drainModifier":1.05,"socialness":0.3},"thoughts":{"healthy":["I've never needed anyone's help and I never will.","Stand on your own feet. That's how I was raised.","Fit as a fiddle. I see to that myself."],"early_symptoms":["I'll sort myself out. I always have.","No need to trouble the doctor with this.","A bit of grit and it'll pass."],"waiting":["I don't like sitting here, hat in hand.","Asking for help never sat right with me.","I'd rather manage it alone, if I could."],"long_wait":["Hate to admit it, but I might need them after all.","Galling, this. Waiting on others.","I'll not beg. But it's wearing me down."],"declining":["I should have asked sooner. Pride's a poor doctor.","Hard to admit I can't manage this one alone.","Even I have to bend, it seems."],"treated":["There. Sorted. I'll manage from here myself.","Took help. Just this once.","Back in charge of my own affairs now."],"recovering":["On my own two feet again. As it should be.","Don't need fussing over. I'm mending fine.","Independence restored. Good."],"grief":["A proud one, like me. Went their own way.","I respect how they carried it. Alone, mostly.","We don't say much, our sort. But I feel it."]}},{"id":"curious_child","label":"The Curious Child","voice":"Innocent, literal, frightened of the unfamiliar but quick to bounce back. Relies on parents.","match":{"ageMin":0,"ageMax":12,"gender":"any"},"trait":"anxious","bigFive":{"O":0.8,"C":0.3,"E":0.6,"A":0.7,"N":0.55},"behavior":{"careSeekingBias":0.1,"compliance":0.7,"trustInSystem":0.6,"refusalTendency":0.1,"secondOpinionDrive":0.05,"drainModifier":1.0,"socialness":0.7},"thoughts":{"healthy":["Can we go to the park after?","I drew a picture of our house!","I'm not tired, I promise I'm not."],"early_symptoms":["My tummy feels funny.","Do I have to see the doctor? I don't want a needle.","Mum, I don't feel right."],"waiting":["Is it our turn yet? Is it now?","The waiting room has a fish tank!","I'm bored. How much longer?"],"long_wait":["We've been here aaaages.","Why does it take so long, Mum?","I want to go home now."],"declining":["I feel really poorly.","I don't like feeling like this.","Make it stop, please."],"treated":["The doctor gave me a sticker!","That wasn't so bad after all.","I was brave, wasn't I?"],"recovering":["I feel much better now! Can I play?","Can I have ice cream because I was poorly?","I'm all better! Watch me run!"],"grief":["Where did they go? Are they coming back?","Mum looks sad. I gave her a hug.","I don't really understand, but I feel sad too."]}},{"id":"idealistic_teen","label":"The Idealistic Teen","voice":"Passionate, justice-minded, distrusts authority but cares deeply. Dramatic, sincere.","match":{"ageMin":13,"ageMax":19,"gender":"any"},"trait":"social","bigFive":{"O":0.8,"C":0.45,"E":0.65,"A":0.6,"N":0.6},"behavior":{"careSeekingBias":-0.2,"compliance":0.55,"trustInSystem":0.4,"refusalTendency":0.25,"secondOpinionDrive":0.2,"drainModifier":1.0,"socialness":0.75},"thoughts":{"healthy":["The world's a mess but today's actually alright.","I'm fine. Stop asking, honestly.","Me and my friends are gonna change everything."],"early_symptoms":["It's probably nothing. I don't want a big deal made.","I'll tell someone if it gets worse. Maybe.","Ugh, I do not have time to be sick."],"waiting":["This wait is so unfair. People are suffering.","Why is the system like this? It's broken.","Someone should do something about these queues."],"long_wait":["This is exactly what's wrong with everything.","People my gran's age are waiting months. It's wrong.","I'm going to post about how broken this is."],"declining":["This shouldn't be happening to anyone.","I'm scared but I don't want to show it.","It's not fair. None of this is fair."],"treated":["Okay, that doctor actually really cared. Respect.","Maybe the people are good even if the system's bad.","Relieved. And kind of grateful, honestly."],"recovering":["Feeling better. Back to changing the world.","Stronger now. And more fired up than ever.","I'm okay \u2014 but I won't forget how it felt."],"grief":["This is what the waiting lists do. It's a scandal.","I won't let them be just a number.","I'm angry and sad and I want it to mean something."]}},{"id":"gentle_homemaker","label":"The Gentle Homemaker","voice":"Soft-spoken, nurturing, routine-loving. Trusts gradual care and home remedies first.","match":{"ageMin":30,"ageMax":200,"gender":"any"},"trait":"optimistic","bigFive":{"O":0.45,"C":0.7,"E":0.45,"A":0.85,"N":0.4},"behavior":{"careSeekingBias":-0.05,"compliance":0.85,"trustInSystem":0.65,"refusalTendency":0.1,"secondOpinionDrive":0.1,"drainModifier":0.95,"socialness":0.55},"thoughts":{"healthy":["Soup's on, washing's out. A good day.","A warm house and good health. What more.","I like the quiet rhythm of an ordinary day."],"early_symptoms":["A bit of rest and some broth first, I think.","I'll see how it sits for a day or two.","Honey and lemon before anything drastic."],"waiting":["I'll keep busy at home while I wait.","No use fretting. The kettle's always on.","I'll tend the house and let it take its time."],"long_wait":["It's a long wait. I'll keep things ticking over.","I worry a little, but I keep it gentle.","The home keeps me steady through the waiting."],"declining":["I'm finding it harder to keep up with things.","The house feels heavier than it used to.","I don't like to complain, but I am struggling."],"treated":["Such a relief. Back to my little routines.","The doctor was so kind and patient.","I can put the kettle on with an easy mind now."],"recovering":["A bit stronger each day. The house helps.","Slowly back to my rhythm. It's a comfort.","Mending gently, just the way I like."],"grief":["I'll bring their family a warm meal.","Such a kind soul. The street feels emptier.","We hold each other up at times like these."]}}] };
+const _P_BOUNDS = {
+  careSeekingBias: [-0.5, 0.5], compliance: [0, 1], trustInSystem: [0, 1],
+  refusalTendency: [0, 1], secondOpinionDrive: [0, 1],
+  drainModifier: [0.85, 1.15], socialness: [0, 1]
+};
+function _pClamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+function _pJitter(behavior, rng, amount) {
+  const out = {};
+  for (const key of Object.keys(_P_BOUNDS)) {
+    const base = typeof behavior[key] === 'number' ? behavior[key] : 0;
+    const delta = (rng() - 0.5) * 2 * amount;
+    const [lo, hi] = _P_BOUNDS[key];
+    out[key] = Math.round(_pClamp(base + delta, lo, hi) * 1000) / 1000;
+  }
+  return out;
+}
+function matchPersonaArchetypes(agent, archetypes) {
+  const list = Array.isArray(archetypes) ? archetypes : ((archetypes && archetypes.archetypes) || []);
+  const age = typeof agent.age === 'number' ? agent.age : 40;
+  const gender = (agent.gender || 'any').toLowerCase();
+  const fits = list.filter(function(a) {
+    const m = a.match || {};
+    const lo = typeof m.ageMin === 'number' ? m.ageMin : 0;
+    const hi = typeof m.ageMax === 'number' ? m.ageMax : 200;
+    if (age < lo || age > hi) return false;
+    const g = (m.gender || 'any').toLowerCase();
+    if (g !== 'any' && gender !== 'any' && g !== gender) return false;
+    return true;
+  });
+  return fits.length > 0 ? fits : list.slice();
+}
+// Big Five (O/C/E/A/N, each 0..1, 0.5=neutral) -> additive nudges for the 7
+// behavioural params. Health-psychology-grounded coefficients. Mirrors
+// src/sim/persona.js bigFiveBehaviorDelta(). Bounded so a citizen stays
+// recognizably their archetype.
+function _bigFiveBehaviorDelta(bf) {
+  bf = bf || {};
+  const O = (typeof bf.O === 'number' ? bf.O : 0.5) - 0.5;
+  const C = (typeof bf.C === 'number' ? bf.C : 0.5) - 0.5;
+  const E = (typeof bf.E === 'number' ? bf.E : 0.5) - 0.5;
+  const A = (typeof bf.A === 'number' ? bf.A : 0.5) - 0.5;
+  const N = (typeof bf.N === 'number' ? bf.N : 0.5) - 0.5;
+  return {
+    careSeekingBias:    0.30 * N + 0.10 * E,
+    compliance:         0.30 * C - 0.10 * N,
+    trustInSystem:      0.25 * A - 0.15 * N,
+    refusalTendency:   -0.20 * A + 0.15 * O,
+    secondOpinionDrive: 0.25 * O + 0.15 * N,
+    drainModifier:      0.10 * N - 0.05 * C,
+    socialness:         0.35 * E + 0.10 * A
+  };
+}
+function assignPersona(agent, archetypes, opts) {
+  opts = opts || {};
+  const seedSalt = opts.seed || 0;
+  const jitter  = typeof opts.jitter === 'number' ? opts.jitter : 0.06;
+  const arcs = archetypes || PERSONA_ARCHETYPES;
+  const candidates = matchPersonaArchetypes(agent, arcs);
+  const rng = seededRandom(hashCode(String(agent.id || 'anon')) + 13 + seedSalt);
+  rng(); rng(); rng(); // warm-up: decorrelate sequential ids
+  const idx = Math.floor(rng() * candidates.length) % candidates.length;
+  const arch = candidates[idx];
+  let _baseBehavior = arch.behavior || {};
+  const _useBigFive = (opts.useBigFive === false) ? false
+    : (opts.useBigFive === true ? true
+       : (typeof PERSONA_USE_BIGFIVE !== 'undefined' ? PERSONA_USE_BIGFIVE : true));
+  if (_useBigFive) {
+    const _d = _bigFiveBehaviorDelta(arch.bigFive || {});
+    const _merged = Object.assign({}, _baseBehavior);
+    for (const _k of Object.keys(_P_BOUNDS)) {
+      const _b = typeof _merged[_k] === 'number' ? _merged[_k] : 0;
+      const _bd = _P_BOUNDS[_k];
+      _merged[_k] = _pClamp(_b + (_d[_k] || 0), _bd[0], _bd[1]);
+    }
+    _baseBehavior = _merged;
+  }
+  const behavior = _pJitter(_baseBehavior, rng, jitter);
+  return {
+    archetypeId: arch.id,
+    label:  arch.label,
+    voice:  arch.voice,
+    trait:  arch.trait || 'stoic',
+    bigFive: Object.assign({}, arch.bigFive || {}),
+    behavior: behavior,
+    _thoughts: arch.thoughts || {}
+  };
+}
+function deriveSituation(snapshot) {
+  const hp         = (snapshot && typeof snapshot.hp === 'number') ? snapshot.hp : 100;
+  const conditions = (snapshot && Array.isArray(snapshot.conditions)) ? snapshot.conditions : [];
+  const waitWeeks  = (snapshot && typeof snapshot.waitWeeks === 'number') ? snapshot.waitWeeks : 0;
+  const state      = String((snapshot && snapshot.state) || '').toLowerCase();
+  const grief      = !!(snapshot && snapshot.recentDeathNearby);
+  const treekNorm  = (snapshot && typeof snapshot.treekNorm === 'number') ? snapshot.treekNorm : 12;
+  if (grief) return 'grief';
+  if (state.includes('recover')) return 'recovering';
+  if (state.includes('treat') || state.includes('at_gp') || state.includes('at_hospital')) return 'treated';
+  const hasCond  = conditions.length > 0;
+  const severe   = hasCond && conditions.some(function(c) { return c && (c.severity === 'severe' || c.severity === 'critical'); });
+  if (hp < 40 || severe) return 'declining';
+  if (waitWeeks > treekNorm) return 'long_wait';
+  if (waitWeeks > 0) return 'waiting';
+  if (hasCond) return 'early_symptoms';
+  return 'healthy';
+}
+function personaThought(persona, situation, opts) {
+  opts = opts || {};
+  const thoughts = (persona && persona._thoughts) || {};
+  const key = typeof situation === 'string' ? situation : deriveSituation(situation);
+  let pool = thoughts[key];
+  if (!pool || pool.length === 0) pool = thoughts.healthy || [];
+  if (!pool || pool.length === 0) return null;
+  const r = (typeof opts.seed === 'number')
+    ? seededRandom(opts.seed + (key.length || 1))()
+    : Math.random();
+  return pool[Math.floor(r * pool.length) % pool.length];
+}
+function personaThoughtSet(persona, situation) {
+  const thoughts = (persona && persona._thoughts) || {};
+  const key = typeof situation === 'string' ? situation : deriveSituation(situation);
+  return (thoughts[key] || thoughts.healthy || []).slice();
+}
+// ═══ END Persona System ══════════════════════════════════════════════════════
 // ═══ SPRINT 4: VIVID CHARACTERS — Bio, Portraits, Social, Emotional ═══
 
 // ── Agent Biography Data ──
@@ -2885,7 +3027,24 @@ function assignConditions(age) {
 }
 
 // ── Thought generator ──
-function generateThoughts(conditions, hp, age, waitWeeks) {
+function generateThoughts(conditions, hp, age, waitWeeks, personaOrAgent) {
+  // personaOrAgent: either a full agent object (has .persona) or a bare persona object (has .archetypeId).
+  var _persona = null;
+  if (personaOrAgent) {
+    _persona = personaOrAgent.archetypeId ? personaOrAgent          // bare persona
+             : (personaOrAgent.persona || null);                     // agent.persona
+  }
+  if (_persona) {
+    var _snap = {
+      hp: hp, conditions: conditions, waitWeeks: waitWeeks,
+      state: (personaOrAgent && personaOrAgent.behaviorState) || '',
+      recentDeathNearby: !!(personaOrAgent && (personaOrAgent.grievingTimer || 0) > 0),
+      treekNorm: 12
+    };
+    var _pool = personaThoughtSet(_persona, deriveSituation(_snap));
+    if (_pool && _pool.length > 0) return _pool;
+  }
+  // Generic fallback (original Sprint 4 behaviour)
   if (conditions.length === 0) return ['Beautiful day in Cammelot.','Life is good.','Heading to the shops.'];
   if (hp < 40) return ['I feel terrible...','How much longer must I wait?','The system is failing me.'];
   if (waitWeeks > 10) return ['The wait is unbearable.','I called the clinic but no answer.','Every week I feel worse.'];
@@ -3065,6 +3224,9 @@ function spawnAgent(index, age, gender, surname) {
   }
   // School position for children/teens
   const schoolPos = (lifeStage === 'child' || lifeStage === 'teen') ? { x: 0.42, y: 0.18 } : null;
+  // ── Living Patient Agent: persona assignment (deterministic per id+age+gender) ──
+  var _agentPersona = null;
+  try { _agentPersona = assignPersona({id: id, age: age, gender: gender === 'M' ? 'male' : 'female'}, PERSONA_ARCHETYPES); } catch(_pe) {}
   return {
     id, name: firstName + ' ' + surname, age, gender,
     type: conditions.length > 0 ? 'patient' : 'citizen',
@@ -3073,7 +3235,7 @@ function spawnAgent(index, age, gender, surname) {
     state, gpName,
     insideBuilding: referredToHospital ? 'hospital' : null,
     referredToHospital,
-    thoughts: generateThoughts(conditions, hp, age, waitWeeks),
+    thoughts: generateThoughts(conditions, hp, age, waitWeeks, _agentPersona),
     color: '#808080',
     hpHistory: [hp],
     bio: generateBio(id, age, gender),
@@ -3088,15 +3250,19 @@ function spawnAgent(index, age, gender, surname) {
     partnerId: null, familyId: null, childrenIds: [], friendIds: [],
     // Sprint S4: Digital literacy attribute
     digitalLiteracy: age < 45 ? 0.7 + Math.random() * 0.3 : age < 65 ? 0.4 + Math.random() * 0.4 : age < 80 ? 0.15 + Math.random() * 0.35 : 0.05 + Math.random() * 0.15,
-    // Sprint 28.1: Personality & Memory
-    personality: getPersonalityTrait(id),
+    // Sprint 28.1 + Living Patient Agent: Personality & Memory
+    persona: _agentPersona,
+    personality: (_agentPersona ? (_agentPersona.trait || getPersonalityTrait(id)) : getPersonalityTrait(id)),
+    bigFive: (_agentPersona ? Object.assign({}, _agentPersona.bigFive) : null), // PoC overrides still applied below
+    llmEnabled: false, // Set to true for PoC agents in SOLL mode
     memory: [],
     // Sprint 28.2: Emergent social dynamics
     grievingFor: null,
     isProtesting: false,
     heardExperiences: [],
     systemAnxiety: 0,
-    researchConsent: Math.random() >= 0.05
+    researchConsent: Math.random() >= 0.05,
+    outreachConsent: Math.random() >= 0.10
   };
 }
 
@@ -3121,6 +3287,46 @@ function assignFriendships(allAgents) {
       a.friendIds.push(friend.id);
       if (!friend.friendIds) friend.friendIds = [];
       friend.friendIds.push(a.id); // bidirectional
+    }
+  });
+}
+
+// ═══ Sprint 30: Assign PoC LLM agent profiles ═══
+function assignPoCAgentProfiles(allAgents) {
+  // Find suitable agents for the 3 PoC profiles
+  const pocProfiles = [
+    {
+      label: 'Maria Bakker — Responsible Retiree',
+      filter: a => a.age >= 60 && a.age <= 75 && a.conditions.length > 0 && a.gender === 'F',
+      bigFive: { O: 0.5, C: 0.8, E: 0.4, A: 0.6, N: 0.5 },
+      llmPersona: 'You are Maria, a 68-year-old retired teacher with COPD. You are responsible, conscientious, and follow medical advice carefully. You believe in the system but worry quietly about long waits.'
+    },
+    {
+      label: 'Pieter de Vries — Stoic Worker',
+      filter: a => a.age >= 35 && a.age <= 50 && a.gender === 'M',
+      bigFive: { O: 0.3, C: 0.6, E: 0.5, A: 0.9, N: 0.2 },
+      llmPersona: 'You are Pieter, a 42-year-old factory worker with mild hypertension. You are stoic, agreeable, and tend to minimize health concerns. "De dokter weet het best" — you trust the system and wait patiently.'
+    },
+    {
+      label: 'Fatima El-Amrani — Anxious Parent',
+      filter: a => a.age >= 28 && a.age <= 42 && a.gender === 'F',
+      bigFive: { O: 0.7, C: 0.5, E: 0.6, A: 0.3, N: 0.8 },
+      llmPersona: 'You are Fatima, a 35-year-old mother with early-stage type 2 diabetes. You are anxious about your health because you have young children who depend on you. You question doctors and seek second opinions.'
+    }
+  ];
+
+  pocProfiles.forEach(profile => {
+    const candidate = allAgents.find(a =>
+      a.type !== 'gp' && a.type !== 'specialist' &&
+      !a.llmEnabled &&
+      profile.filter(a)
+    );
+    if (candidate) {
+      candidate.bigFive = profile.bigFive;
+      candidate.llmEnabled = true;
+      candidate.llmPersona = profile.llmPersona;
+      candidate.pocLabel = profile.label;
+      console.log('[PoC] Assigned LLM profile: ' + profile.label + ' → ' + candidate.name + ' (age ' + candidate.age + ')');
     }
   });
 }
@@ -3233,6 +3439,8 @@ function spawnPopulation(count) {
   });
   // Sprint 27: Assign friendships after all agents are spawned
   assignFriendships(spawned);
+  // Sprint 30: Assign LLM PoC profiles after friendships
+  assignPoCAgentProfiles(spawned);
   return spawned;
 }
 // ═══ END POPULATION SPAWNER ════════════════════════════════════════════════
@@ -3395,8 +3603,12 @@ function calculateHPDrain(condition, severity, waitWeeks, params, agent) {
     drain += (3 * overdue * sevMult * (1 + params.admin)) * 0.05; // scaled per-tick
   }
 
-  // Sprint 28.1: Optimistic personality — 0.9× drain multiplier
-  if (agent && agent.personality === 'optimistic') drain *= 0.9;
+  // Living Patient Agent: persona drainModifier (resilience<1, fatalism>1)
+  if (PERSONA_ENABLED && agent && agent.persona && agent.persona.behavior && typeof agent.persona.behavior.drainModifier === 'number') {
+    drain *= agent.persona.behavior.drainModifier;
+  } else if (agent && agent.personality === 'optimistic') {
+    drain *= 0.9; // back-compat for agents without persona
+  }
 
   return drain;
 }
@@ -3506,13 +3718,13 @@ const INFRASTRUCTURE_AGENTS = [
    conditions:[],hp:100,state:'working',waitWeeks:0,insideBuilding:'gp1_bldg',
    thoughts:['30% of my day is paperwork. I became a doctor to help people.','My waiting room is full again.','If only I had more time per patient.'],
    color:'#40a870',
-   patientsSeenToday:0,referralsMade:0,burnoutLevel:0,currentPatient:null,
+   patientsSeenToday:0,referralsMade:0,burnoutLevel:0,peakBurnout:0,burnoutSum:0,burnoutSamples:0,sickLeaveCount:0,currentPatient:null,
    queue:[],totalPatientsSeen:0,actionHistory:[],sickLeaveTimer:0,agentCard:null},
   {id:'gp2',x:.22,y:.42,type:'gp',name:'Dr. Bakker',age:47,gender:'F',role:'General Practitioner',
    conditions:[],hp:100,state:'working',waitWeeks:0,insideBuilding:null,
    thoughts:['Another referral denied. The specialist queue is 12 weeks.','I need to finish 50 FHIR logs before lunch.','My colleagues are burning out.'],
    color:'#40a870',
-   patientsSeenToday:0,referralsMade:0,burnoutLevel:0,currentPatient:null,
+   patientsSeenToday:0,referralsMade:0,burnoutLevel:0,peakBurnout:0,burnoutSum:0,burnoutSamples:0,sickLeaveCount:0,currentPatient:null,
    queue:[],totalPatientsSeen:0,actionHistory:[],sickLeaveTimer:0,agentCard:null},
   {id:'s1',x:.34,y:.12,type:'specialist',name:'Dr. Ashworth',age:55,gender:'M',role:'Cardiologist',
    specialty:'cardiology',
@@ -5450,19 +5662,43 @@ function selectAgent(a){
   document.querySelector('.panel-header').textContent=a.type==='gp'||a.type==='specialist'?'STAFF DOSSIER':'CITIZEN DOSSIER';
   const isPatient=a.type==='patient'||a.type==='citizen';
 
-  // Dynamic thought based on behavioral state
+  // Dynamic thought: Living Patient Agent persona system + fallback state overrides
   let thought=a.thoughts[(a.currentThought||0)%a.thoughts.length];
-  // Sprint 28.1: Memory-based thoughts override generic ones
   var memThought = getMemoryDialogue(a);
-  if (memThought && a.behaviorState === 'roaming') thought = memThought;
-  if(a.behaviorState==='going_to_gp') thought="I need to see my doctor. These symptoms worry me...";
-  else if(a.behaviorState==='queuing') thought="Waiting in the queue... I hope they see me soon.";
-  else if(a.behaviorState==='at_gp') thought="The doctor is examining me. I hope it's treatable.";
-  else if(a.behaviorState==='going_to_hospital') thought=`The GP referred me to a specialist. Week ${Math.round(a.waitWeeks)} of waiting...`;
-  else if(a.behaviorState==='emergency') thought="🚑 Critical emergency! Being rushed to hospital by ambulance!";
-  else if(a.behaviorState==='at_hospital') thought="The specialist is treating me. Finally getting real care.";
-  else if(a.behaviorState==='recovering') thought="The treatment is working. I feel a bit stronger each day.";
-  else if(a.behaviorState==='dead') thought=a.causeOfDeath==='natural'?`Passed away peacefully at age ${a.age}.`:"The system failed me...";
+  if(a.behaviorState==='dead'){
+    thought = a.causeOfDeath==='natural' ? `Passed away peacefully at age ${a.age}.` : "The system failed me...";
+  } else if (a.persona) {
+    // Map behaviorState → persona situation key
+    var _pSit;
+    if (a.behaviorState === 'going_to_hospital' || (a.behaviorState === 'queuing' && a.queueType === 'hospital')) {
+      _pSit = (a.waitWeeks || 0) > 12 ? 'long_wait' : 'waiting';
+    } else if (a.behaviorState === 'at_gp' || a.behaviorState === 'going_to_gp') {
+      _pSit = a.conditions && a.conditions.length > 0 ? 'early_symptoms' : 'healthy';
+    } else if (a.behaviorState === 'at_hospital') {
+      _pSit = 'treated';
+    } else if (a.behaviorState === 'emergency') {
+      _pSit = 'declining';
+    } else if (a.behaviorState === 'recovering') {
+      _pSit = 'recovering';
+    } else {
+      _pSit = deriveSituation({ hp: a.hp, conditions: a.conditions || [], waitWeeks: a.waitWeeks || 0,
+        recentDeathNearby: (a.grievingTimer || 0) > 0, treekNorm: 12 });
+    }
+    var _pt = personaThought(a.persona, _pSit, { seed: (a.currentThought || 0) });
+    if (_pt) thought = _pt;
+    // Memory dialogue overrides in roaming state
+    if (memThought && a.behaviorState === 'roaming') thought = memThought;
+  } else {
+    // Back-compat: state overrides for agents without persona
+    if (memThought && a.behaviorState === 'roaming') thought = memThought;
+    if(a.behaviorState==='going_to_gp') thought="I need to see my doctor. These symptoms worry me...";
+    else if(a.behaviorState==='queuing') thought="Waiting in the queue... I hope they see me soon.";
+    else if(a.behaviorState==='at_gp') thought="The doctor is examining me. I hope it's treatable.";
+    else if(a.behaviorState==='going_to_hospital') thought=`The GP referred me to a specialist. Week ${Math.round(a.waitWeeks)} of waiting...`;
+    else if(a.behaviorState==='emergency') thought="\uD83D\uDE91 Critical emergency! Being rushed to hospital by ambulance!";
+    else if(a.behaviorState==='at_hospital') thought="The specialist is treating me. Finally getting real care.";
+    else if(a.behaviorState==='recovering') thought="The treatment is working. I feel a bit stronger each day.";
+  }
   a.currentThought=(a.currentThought||0)+1;
 
   const stateLabels={roaming:'Walking in town',going_to_gp:'Going to GP',queuing:'Waiting in queue',at_gp:'At GP consultation',going_to_hospital:'Going to Hospital',emergency:'🚑 Emergency Transport',at_hospital:'Receiving treatment',recovering:'Recovering',dead:'Deceased'};
@@ -6177,7 +6413,11 @@ function initAgentBehaviors(){
 function shareExperience(speaker, listener) {
   if (speaker.age <= 12 || listener.age <= 12) return;
   // 30% chance the speaker shares a bad experience
-  if (Math.random() > 0.30) return;
+  // Living Patient Agent: socialness ∈ [0,1] shifts base 30% word-of-mouth rate by ±15 pp
+  var _socialRate = (PERSONA_ENABLED && speaker.persona && speaker.persona.behavior && typeof speaker.persona.behavior.socialness === 'number')
+    ? Math.max(0.10, Math.min(0.55, 0.30 + (speaker.persona.behavior.socialness - 0.5) * 0.30))
+    : 0.30;
+  if (Math.random() > _socialRate) return;
   // Speaker must have a reason to share: long wait, high waitWeeks, or heard experiences
   const hasBadExperience = speaker.waitWeeks > 6 || (speaker.conditions && speaker.conditions.length > 0 && speaker.hp < 60);
   const hasHeardBad = speaker.heardExperiences && speaker.heardExperiences.length > 0;
@@ -6315,6 +6555,9 @@ function tick(){
   if (cycle % 50 === 0) captureSnapshot();
   agents.forEach(a=>{
     if(a.type!=='patient'&&a.type!=='citizen') return;
+    // Sprint 30: Capture pre-tick state for LLM trigger detection
+    const _prevHp = a.hp;
+    const _prevState = a.state;
 
     // Track HP history for sparkline (Sprint 3)
     a.hpHistory = a.hpHistory || [];
@@ -6679,7 +6922,14 @@ function tick(){
         const gpThreshold=hasDementia?40:20;
         // Sprint 28.1: Personality affects HP threshold for seeking GP
         let hpThresholdSevere = 90, hpThresholdModerate = 75, hpThresholdBase = 60;
-        if (a.personality === 'anxious') { hpThresholdSevere = 95; hpThresholdModerate = 85; hpThresholdBase = 70; }
+        // Living Patient Agent: careSeekingBias in [-0.5,+0.5]; positive = seeks care earlier (higher HP threshold).
+        // Shift = bias × 20 HP points; clamped to safe range.
+        if (PERSONA_ENABLED && a.persona && a.persona.behavior && typeof a.persona.behavior.careSeekingBias === 'number') {
+          var _bias = a.persona.behavior.careSeekingBias; // [-0.5..+0.5]
+          hpThresholdSevere   = Math.max(70, Math.min(99, Math.round(90  + _bias * 20)));
+          hpThresholdModerate = Math.max(55, Math.min(95, Math.round(75  + _bias * 20)));
+          hpThresholdBase     = Math.max(40, Math.min(85, Math.round(60  + _bias * 20)));
+        } else if (a.personality === 'anxious') { hpThresholdSevere = 95; hpThresholdModerate = 85; hpThresholdBase = 70; }
         else if (a.personality === 'stoic') { hpThresholdSevere = 80; hpThresholdModerate = 65; hpThresholdBase = 50; }
         const needsGP=hasConds && timeSinceGP>gpThreshold && (
           (severe && a.hp<hpThresholdSevere) || (moderate && a.hp<hpThresholdModerate) || (a.hp<hpThresholdBase)
@@ -6767,7 +7017,11 @@ function tick(){
           const severe=a.conditions.some(c=>c.severity==='severe'||c.severity==='critical');
           const moderate=a.conditions.some(c=>c.severity==='moderate');
           // Sprint 28.1: Stubborn personality may skip referral (5% chance)
-          const stubbornSkip = a.personality === 'stubborn' && !severe && Math.random() < 0.05;
+          // Living Patient Agent: refusalTendency ∈ [0,1]; scale × 0.2 so max real probability ≈ 0.08 (avoids breaking triage)
+          var _refusal = (PERSONA_ENABLED && a.persona && a.persona.behavior && typeof a.persona.behavior.refusalTendency === 'number')
+            ? a.persona.behavior.refusalTendency
+            : (a.personality === 'stubborn' ? 0.25 : 0.0);
+          const stubbornSkip = !severe && Math.random() < _refusal * 0.20;
           if((severe || (moderate && a.hp<60)) && !stubbornSkip){
             // Refer to hospital
             a.insideBuilding=null; a.behaviorState='going_to_hospital';
@@ -6809,7 +7063,7 @@ function tick(){
               if(!gpAgent.actionHistory)gpAgent.actionHistory=[];
               gpAgent.actionHistory.push({cycle,action:'referred',patientName:a.name,detail:a.conditions.map(c=>c.code).join(',')});
               if(gpAgent.actionHistory.length>50)gpAgent.actionHistory.shift();
-              gpAgent.burnoutLevel=calculateBurnout(gpAgent, p);
+              gpAgent.burnoutLevel=calculateBurnout(gpAgent, p); gpAgent.peakBurnout=Math.max(gpAgent.peakBurnout||0, gpAgent.burnoutLevel);
               incrementBurnoutForPatient(gpAgent); // Sprint 23: per-patient burnout
             }
           } else if(a.conditions.length>0){
@@ -6827,6 +7081,21 @@ function tick(){
             say(a.gpName||'GP',`${a.name}: condition manageable. Prescribed treatment.`);
             createFHIRResource('Encounter', a.id, { class: 'gp_treatment', serviceProvider: a.gpName||'GP', outcome: 'treated' });
             a.path=[]; a.pathIdx=0; a.idleUntil=performance.now()+1500;
+            // Living Patient Agent: secondOpinionDrive gives a small, bounded chance to re-queue for another GP opinion.
+            var _secondOpinionDrive = (PERSONA_ENABLED && a.persona && a.persona.behavior && typeof a.persona.behavior.secondOpinionDrive === 'number')
+              ? a.persona.behavior.secondOpinionDrive
+              : 0.0;
+            if (a.conditions.length > 0 && (cycle - (a.lastSecondOpinionCycle || -9999)) > 120 && Math.random() < _secondOpinionDrive * 0.05) {
+              a.lastSecondOpinionCycle = cycle;
+              a.behaviorState = 'going_to_gp';
+              a.pathComplete = false;
+              a.lastGPCycle = cycle - 25;
+              logEvent('second_opinion', a, 'Seeking another GP opinion');
+              addHistory(a, 'second_opinion', 'I want one more opinion before I fully trust this plan.');
+              addMemory(a, 'second_opinion', 'Asked for a second opinion after GP treatment', 3);
+              say(a.name, 'I might ask another doctor, just to be sure.');
+              sendAgentTo(a, getGPDest(a.gpName).entrance);
+            }
             // GP tracking
             if(gpAgent){
               gpAgent.patientsSeenToday=(gpAgent.patientsSeenToday||0)+1;
@@ -6834,7 +7103,7 @@ function tick(){
               if(!gpAgent.actionHistory)gpAgent.actionHistory=[];
               gpAgent.actionHistory.push({cycle,action:'treated',patientName:a.name,detail:a.conditions.map(c=>c.code).join(',')});
               if(gpAgent.actionHistory.length>50)gpAgent.actionHistory.shift();
-              gpAgent.burnoutLevel=calculateBurnout(gpAgent, p);
+              gpAgent.burnoutLevel=calculateBurnout(gpAgent, p); gpAgent.peakBurnout=Math.max(gpAgent.peakBurnout||0, gpAgent.burnoutLevel);
               incrementBurnoutForPatient(gpAgent); // Sprint 23: per-patient burnout
             }
           } else {
@@ -7005,6 +7274,8 @@ function tick(){
     else if(a.hp<=50) a.state='waiting';
     else if(a.hp<=75) a.state='concerned';
     else a.state='managed';
+    // Sprint 30: Detect trigger events for LLM agents
+    detectTriggerEvents(a, _prevHp, _prevState);
   });
 
   // ═══ Sprint 5: QUEUE PROCESSING ═══
@@ -7107,6 +7378,10 @@ function tick(){
 
   // ── Sprint S2: GP Burnout & Sick Leave Mechanic ──
   agents.filter(g => g.type === 'gp').forEach(gp => {
+    // Burnout running time-average accumulator (once per tick per GP)
+    gp.burnoutSum = (gp.burnoutSum || 0) + (gp.burnoutLevel || 0);
+    gp.burnoutSamples = (gp.burnoutSamples || 0) + 1;
+    gp.peakBurnout = Math.max(gp.peakBurnout || 0, gp.burnoutLevel || 0);
     if (gp.sickLeaveTimer > 0) {
       // Currently on sick leave — decrement timer, reduce burnout
       gp.sickLeaveTimer--;
@@ -7124,6 +7399,7 @@ function tick(){
       if ((gp.burnoutLevel || 0) > 80 && Math.random() < 0.015) {
         gp.sickLeaveTimer = 15 + Math.floor(Math.random() * 11); // 15-25 ticks
         gp.state = 'sick_leave';
+        gp.sickLeaveCount = (gp.sickLeaveCount || 0) + 1;
         logEvent('sick_leave', gp, gp.name + ' is on sick leave due to burnout (' + gp.burnoutLevel + '%).');
         say(gp.name, 'Burnout has hit hard. I need to take sick leave. My patients will have to wait...');
       }
@@ -7152,37 +7428,82 @@ function tick(){
       if(a.hp<=0) return;
       agentReflect(a);
       agentPlan(a);
-      // Digital Twin risk assessment
+      // Digital Twin risk assessment, now with a deterioration trajectory (T7).
       a.digitalTwinRisk = calculateDigitalTwinRisk(a);
-      // Sprint S5: Lower alert threshold in SOLL mode (proactive detection)
-      const alertThreshold = mode === 'SOLL' ? 25 : 60;
-      // High risk from Digital Twin speeds up GP seeking
-      if(a.digitalTwinRisk && a.digitalTwinRisk.riskPct > alertThreshold && a.behaviorState === 'roaming' && a.conditions.length > 0){
+      if(a.digitalTwinRisk){
+        a._riskTrail = a._riskTrail || [];
+        a._riskTrail.push(a.digitalTwinRisk.riskPct);
+        if(a._riskTrail.length > 6) a._riskTrail.shift();
+        var _tr = a._riskTrail;
+        var _trend = _tr.length >= 3 ? (_tr[_tr.length - 1] - _tr[0]) : 0;
+        a.digitalTwinRisk.trend = _trend;
+        a.digitalTwinRisk.deteriorating = _trend >= 6; // rising ~6pp over the window
+      }
+      // IST: the patient only self-notices at high absolute risk (reactive, no brain).
+      // SOLL: the Living Patient brain watches the trajectory and acts earlier (proactive).
+      var _dt = a.digitalTwinRisk;
+      var _eligible = _dt && a.conditions.length > 0 && a.behaviorState === 'roaming';
+      var _fire = _eligible && (mode === 'SOLL'
+        ? (_dt.riskPct > 25 || (_dt.deteriorating && _dt.riskPct > 15))
+        : (_dt.riskPct > 60));
+      if(_fire){
         const timeSinceGP = cycle - (a.lastGPCycle || -100);
         if(timeSinceGP > 10){
-          a.behaviorState='going_to_gp'; a.pathComplete=false;
-          logEvent('feeling_sick', a, 'Digital Twin alert: ' + a.digitalTwinRisk.riskPct + '% risk');
-          addHistory(a,'feeling_sick','Digital Twin says I\'m at ' + a.digitalTwinRisk.riskPct + '% risk. Going to GP now.');
-          sendAgentTo(a, getGPDest(a.gpName).entrance);
+          var _route = true;
           if(mode === 'SOLL'){
-            proactiveAlertCount++;
-            if(proactiveAlertCount <= 5 || proactiveAlertCount % 10 === 0){
-              showToast('🔮 Digital Twin Alert: ' + a.name + ' (' + a.age + ') — ' + a.digitalTwinRisk.riskPct + '% risk detected', 3000);
-            }
-          }
-          // Ketenzorg intervention tracking
-          if(a.conditions && a.conditions.length > 0){
-            a.conditions.forEach(function(c){
-              if(KETENZORG_TARIFFS[c.code]){
-                ketenzorgInterventions++;
-                ketenzorgCostEur += KETENZORG_TARIFFS[c.code];
-                logEvent('ketenzorg', a, 'Ketenzorg intervention (' + c.code + '): €' + KETENZORG_TARIFFS[c.code].toFixed(2));
+            // Guardrail: consent gates outreach. Opted-out citizens are never contacted.
+            if(a.outreachConsent === false){
+              outreachOptOutCount++;
+              _route = false;
+            } else {
+              // ── Act outward: the brain contacts the patient (a system of action) ──
+              var _brain = { id: 'living-patient-' + a.id, name: 'Living Patient' };
+              var _reason = _dt.deteriorating
+                ? 'Risk rising (' + _dt.riskPct + '%, +' + Math.round(_dt.trend) + 'pp over 3 weeks). GP slot held.'
+                : 'Risk ' + _dt.riskPct + '%. GP slot held.';
+              a.chatBubbleText = '📲 Numbers drifting — GP slot held';
+              a.chatTimer = 120;
+              a.contactedByBrain = true;
+              // Audit: every nudge is a logged FHIR resource.
+              createFHIRResource('Communication', a.id, { code: 'CAMMELOT-ALERT', status: 'completed', riskPct: _dt.riskPct, trend: Math.round(_dt.trend || 0), reason: _reason });
+              // A2A: pre-brief the GP so the consult starts already informed.
+              var _gp = agents.find(function(g){ return g.type === 'gp' && (g.name === a.gpName || g.id === a.gpId); }) || agents.find(function(g){ return g.type === 'gp'; });
+              if(_gp){
+                sendA2AMessage(_brain, _gp, 'alert', { patient: a.id, patientName: a.name, riskPct: _dt.riskPct, reason: _reason });
+                a.gpPreBriefed = true;
+                gpPreBriefCount++;
               }
-            });
-            // Mark agent as receiving treatment — slows Markov progression (SOLL only)
-            if (mode === 'SOLL') {
-              a.receivingKetenzorg = true;
-              a.lastKetenzorgCycle = cycle;
+              // Outreach-fairness: record who the brain reaches.
+              var _ab = a.age >= 80 ? '80+' : a.age >= 65 ? '65-79' : a.age >= 45 ? '45-64' : '0-44';
+              if(outreachReach[_ab] !== undefined) outreachReach[_ab]++;
+              proactiveAlertCount++;
+              if(proactiveAlertCount <= 5 || proactiveAlertCount % 10 === 0){
+                showToast('🔮 Living Patient reached ' + a.name + ' (' + a.age + ') — ' + _dt.riskPct + '% risk, GP slot held', 3000);
+              }
+              logEvent('feeling_sick', a, 'Living Patient outreach: ' + _dt.riskPct + '% risk (' + (_dt.deteriorating ? 'rising' : 'level') + ')');
+              addHistory(a, 'feeling_sick', '📲 Living Patient: ' + _reason + ' Accepted.');
+            }
+          } else {
+            logEvent('feeling_sick', a, 'Digital Twin alert: ' + _dt.riskPct + '% risk');
+            addHistory(a, 'feeling_sick', 'I feel unwell (' + _dt.riskPct + '% risk). Going to GP.');
+          }
+          if(_route){
+            a.behaviorState='going_to_gp'; a.pathComplete=false;
+            sendAgentTo(a, getGPDest(a.gpName).entrance);
+            // Ketenzorg intervention tracking
+            if(a.conditions && a.conditions.length > 0){
+              a.conditions.forEach(function(c){
+                if(KETENZORG_TARIFFS[c.code]){
+                  ketenzorgInterventions++;
+                  ketenzorgCostEur += KETENZORG_TARIFFS[c.code];
+                  logEvent('ketenzorg', a, 'Ketenzorg intervention (' + c.code + '): €' + KETENZORG_TARIFFS[c.code].toFixed(2));
+                }
+              });
+              // Mark agent as receiving treatment — slows Markov progression (SOLL only)
+              if (mode === 'SOLL') {
+                a.receivingKetenzorg = true;
+                a.lastKetenzorgCycle = cycle;
+              }
             }
           }
         }
@@ -7338,7 +7659,8 @@ function tick(){
       processGrieving(a);
       // Word-of-mouth anxiety causes slight HP drain modifier
       if ((a.systemAnxiety || 0) > 0 && a.conditions && a.conditions.length > 0) {
-        a.hp = Math.max(1, a.hp - a.systemAnxiety * 0.02);
+        var _anxDrainMod = (PERSONA_ENABLED && a.persona && a.persona.behavior && typeof a.persona.behavior.drainModifier === 'number') ? a.persona.behavior.drainModifier : 1.0;
+        a.hp = Math.max(1, a.hp - a.systemAnxiety * 0.02 * _anxDrainMod);
       }
     }
   });
@@ -7364,6 +7686,7 @@ function resetSim(){
   erAdmissionCount=0; // Blog-Ready Sprint
   ketenzorgInterventions=0; ketenzorgCostEur=0; // Blog-Ready Sprint
   fairnessGuardrailActive=false; // Blog-Ready Sprint
+  outreachOptOutCount=0; gpPreBriefCount=0; outreachReach={ '0-44':0,'45-64':0,'65-79':0,'80+':0 }; // T7 Living Patient
   researchQueriesCompleted=0; researchOptOutRefusals=0; researchCohortTooSmall=0; benchmarkReportsGenerated=0;
   EVENT_LOG.length=0;
   HOSPITAL_DISCHARGED.length=0;
@@ -7395,6 +7718,7 @@ function resetSim(){
     a.referredToHospital=false; a.causeOfDeath=undefined;
     a.hpHistory=[Math.round(a.hp)];
     a.reflections=[]; a.plans=[]; a.digitalTwinRisk=null;
+    a._riskTrail=null; a.contactedByBrain=false; a.gpPreBriefed=false; // T7 Living Patient
     a.path=[]; a.pathIdx=0;
     a.idleUntil=performance.now()+Math.random()*5000;
     // Sprint 26: Reset life-stage properties
@@ -7460,6 +7784,11 @@ function setMode(m){
     });
   }
   // Update playground sliders if panel is open
+  // Sprint 30: Enable/disable LLM cognitive manager on mode switch
+  if (cognitiveManager) {
+    if (mode === 'SOLL' && llmProxyAvailable) cognitiveManager.enable();
+    else cognitiveManager.disable();
+  }
   updatePlaygroundSliders();
   var ci=document.querySelector('.pg-custom-indicator');
   if(ci)ci.classList.remove('active');
@@ -9737,41 +10066,43 @@ function launchSimulation() {
 }
 
 // ═══ EVENT BINDING (CSP-safe — no inline handlers) ═══
-document.getElementById('bi').addEventListener('click', () => setMode('IST'));
-document.getElementById('bs').addEventListener('click', () => setMode('SOLL'));
+// Null-safe binder: a single missing control can never cascade and kill every other button.
+function _bind(id, evt, fn){
+  var el = document.getElementById(id);
+  if (el) { el.addEventListener(evt, fn); }
+  else { try { console.warn('Cammelot: control #' + id + ' not found, skipping'); } catch(e){} }
+}
+_bind('bi','click', () => setMode('IST'));
+_bind('bs','click', () => setMode('SOLL'));
 // Sprint 29: Play/Pause toggle replaces tick/batch10/auto
-document.getElementById('btn-play').addEventListener('click', () => {
+_bind('btn-play','click', () => {
   playUIClick();
   if (autoTimer) {
     clearInterval(autoTimer); autoTimer = null;
-    document.getElementById('btn-play').textContent = '▶ Play';
+    var pb = document.getElementById('btn-play'); if (pb) pb.textContent = '▶ Play';
   } else {
-    launchSimulation(); // handles pre-ticks, cleanup, and autoTimer
+    launchSimulation();
   }
 });
-document.getElementById('btn-batch100').addEventListener('click', () => { playUIClick(); batch(100); });
-document.getElementById('btn-reset').addEventListener('click', () => {
+_bind('btn-batch100','click', () => { playUIClick(); batch(100); });
+_bind('btn-reset','click', () => {
   playUIClick();
   if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
-  document.getElementById('btn-play').textContent = '▶ Play';
+  var pb = document.getElementById('btn-play'); if (pb) pb.textContent = '▶ Play';
   resetSim();
 });
-document.getElementById('btn-stats').addEventListener('click', () => { playUIClick(); toggleStats(); });
-document.getElementById('btn-qa').addEventListener('click', () => { playUIClick(); showQAPanel(); });
-document.getElementById('btn-treeknorm-log').addEventListener('click', () => { playUIClick(); showTreeknormLog(); });
-document.getElementById('btn-methodology').addEventListener('click', () => { playUIClick(); showMethodology(); });
-document.getElementById('btn-heatmap').addEventListener('click', () => { playUIClick(); toggleHeatmap(); });
-document.getElementById('btn-timeline').addEventListener('click', () => { playUIClick(); toggleTimeline(); });
-document.getElementById('btn-gazette').addEventListener('click', () => { playUIClick(); showGazette(); });
-// Screenshot button removed for website version
-document.getElementById('btn-moments').addEventListener('click', () => { playUIClick(); showMomentsGallery(); });
-// LinkedIn button removed for website version
-// Playground button removed for website version
-// More menu removed for website version
-document.getElementById('theme-toggle').addEventListener('click', () => toggleDarkMode());
-document.getElementById('sound-toggle').addEventListener('click', () => toggleSound());
-document.getElementById('wizard-skip').addEventListener('click', () => closeWizard());
-document.getElementById('wizard-next').addEventListener('click', () => nextWizardStep());
+_bind('btn-stats','click', () => { playUIClick(); toggleStats(); });
+_bind('btn-qa','click', () => { playUIClick(); showQAPanel(); });
+_bind('btn-treeknorm-log','click', () => { playUIClick(); showTreeknormLog(); });
+_bind('btn-methodology','click', () => { playUIClick(); showMethodology(); });
+_bind('btn-heatmap','click', () => { playUIClick(); toggleHeatmap(); });
+_bind('btn-timeline','click', () => { playUIClick(); toggleTimeline(); });
+_bind('btn-gazette','click', () => { playUIClick(); showGazette(); });
+_bind('btn-moments','click', () => { playUIClick(); showMomentsGallery(); });
+_bind('theme-toggle','click', () => toggleDarkMode());
+_bind('sound-toggle','click', () => toggleSound());
+_bind('wizard-skip','click', () => closeWizard());
+_bind('wizard-next','click', () => nextWizardStep());
 
 // Sprint 16: Timeline hover interaction
 (function() {
@@ -10422,6 +10753,7 @@ function processBurnoutCascade() {
       gp.sickLeaveTimer = 45 + Math.floor(Math.random() * 11); // ~50 ticks
       gp.state = 'sick_leave';
       gp.burnoutCascadeSickLeave = true;
+      gp.sickLeaveCount = (gp.sickLeaveCount || 0) + 1;
       logEvent('sick_leave', gp, gp.name + ' collapsed — burnout cascade (' + Math.round(gp.burnoutLevel) + '%).');
       say(gp.name, '😓 I can\'t go on... burnout at ' + Math.round(gp.burnoutLevel) + '%. Taking sick leave.', 'alert');
       showToast('⚠ ' + gp.name + ' on sick leave — burnout cascade!', 4000);
@@ -10445,6 +10777,7 @@ function processBurnoutCascade() {
             // Cascade effect: receiving GP gets extra burnout
             var burnoutIncrease = mode === 'IST' ? 0.5 : 0.15;
             targetGP.burnoutLevel = Math.min(100, (targetGP.burnoutLevel || 0) + burnoutIncrease * 3);
+            targetGP.peakBurnout = Math.max(targetGP.peakBurnout || 0, targetGP.burnoutLevel);
           });
           say('SYSTEM', '⚠ ' + overflowPatients.length + ' patients redistributed from ' + gp.name + ' — cascade building!', 'alert');
         }
@@ -10465,6 +10798,7 @@ function incrementBurnoutForPatient(gpAgent) {
   if (!gpAgent) return;
   var burnoutRate = mode === 'IST' ? 0.5 : 0.15;
   gpAgent.burnoutLevel = Math.min(100, (gpAgent.burnoutLevel || 0) + burnoutRate);
+  gpAgent.peakBurnout = Math.max(gpAgent.peakBurnout || 0, gpAgent.burnoutLevel);
 }
 // ═══ END BURNOUT CASCADE ═══
 
@@ -11095,6 +11429,311 @@ document.getElementById('btn-taximeter').addEventListener('click', function() {
 
 
 // ═══ WEBSITE: Play overlay handlers moved to non-embed init block (above) ═══
+
+
+// ═══ Sprint 30: Citizen Agent PoC — LLM Integration Classes ═══
+
+// --- AgentLLMClient: Communicates with the proxy server ---
+class AgentLLMClient {
+  constructor(baseUrl) {
+    this.baseUrl = baseUrl || 'http://localhost:3001';
+    this.available = false;
+    this.totalTokens = { input: 0, output: 0 };
+    this.totalCalls = 0;
+    this.totalFallbacks = 0;
+  }
+
+  async checkHealth() {
+    try {
+      const res = await fetch(this.baseUrl + '/api/health', { signal: AbortSignal.timeout(3000) });
+      const data = await res.json();
+      this.available = data.status === 'ok' && data.ollamaAvailable;
+      return this.available;
+    } catch (e) {
+      this.available = false;
+      return false;
+    }
+  }
+
+  async think(agent, prompt) {
+    if (!this.available) return this.fallbackResponse(agent);
+    try {
+      const res = await fetch(this.baseUrl + '/api/think', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          agentId: agent.id,
+          prompt: prompt,
+          personality: agent.bigFive,
+          model: 'llama3.2:1b'
+        }),
+        signal: AbortSignal.timeout(60000)
+      });
+      if (!res.ok) {
+        if (res.status === 429) console.warn('[LLM] Rate limited for ' + agent.id);
+        return this.fallbackResponse(agent);
+      }
+      const data = await res.json();
+      this.totalCalls++;
+      if (data.tokens) {
+        this.totalTokens.input += data.tokens.input || 0;
+        this.totalTokens.output += data.tokens.output || 0;
+      }
+      if (data.error) return this.fallbackResponse(agent);
+      return data;
+    } catch (e) {
+      console.warn('[LLM] Request failed for ' + agent.id + ':', e.message);
+      return this.fallbackResponse(agent);
+    }
+  }
+
+  fallbackResponse(agent) {
+    this.totalFallbacks++;
+    // Fall back to deterministic behavior
+    return {
+      action: 'fallback',
+      reflection: null,
+      confidence: 0,
+      error: true
+    };
+  }
+
+  getStats() {
+    return {
+      calls: this.totalCalls,
+      fallbacks: this.totalFallbacks,
+      tokens: { ...this.totalTokens },
+      available: this.available
+    };
+  }
+}
+
+// --- CognitiveManager: Queues and processes LLM cognitive cycles ---
+class CognitiveManager {
+  constructor(llmClient) {
+    this.llmClient = llmClient;
+    this.queue = [];
+    this.inFlight = 0;
+    this.maxConcurrent = 3;
+    this.cooldowns = new Map(); // agentId → lastProcessedTime
+    this.cooldownMs = 30000; // 30 seconds per agent
+    this.enabled = false;
+  }
+
+  enable() { this.enabled = true; }
+  disable() { this.enabled = false; }
+
+  enqueue(agent, trigger) {
+    if (!this.enabled || !agent.llmEnabled) return;
+
+    // Check agent cooldown
+    const lastTime = this.cooldowns.get(agent.id) || 0;
+    if (Date.now() - lastTime < this.cooldownMs) return;
+
+    // Don't double-queue
+    if (this.queue.some(item => item.agent.id === agent.id)) return;
+
+    const priority = TRIGGER_PRIORITY[trigger.type] || 10;
+    this.queue.push({ agent, trigger, priority, enqueueTime: Date.now() });
+    this.queue.sort((a, b) => b.priority - a.priority);
+    this.processQueue();
+  }
+
+  async processQueue() {
+    while (this.queue.length > 0 && this.inFlight < this.maxConcurrent) {
+      const item = this.queue.shift();
+      this.inFlight++;
+      this.cooldowns.set(item.agent.id, Date.now());
+
+      try {
+        const prompt = buildCognitivePrompt(item.agent, item.trigger);
+        const response = await this.llmClient.think(item.agent, prompt);
+        executeLLMAction(item.agent, response, item.trigger);
+      } catch (err) {
+        console.error('[Cognitive] Error for ' + item.agent.id + ':', err);
+        // Fallback to automaton
+        agentReflect(item.agent);
+        agentPlan(item.agent);
+      } finally {
+        this.inFlight--;
+      }
+    }
+  }
+}
+
+// Trigger priority constants
+const TRIGGER_PRIORITY = {
+  'hp_threshold_crossed': 100,
+  'health_state_change': 80,
+  'treeknorm_violation': 70,
+  'digital_twin_alert': 60,
+  'queue_entered': 40,
+  'treatment_received': 30,
+  'queue_milestone': 20,
+  'social_observation': 10
+};
+
+// --- Prompt Builder ---
+function buildCognitivePrompt(agent, trigger) {
+  const memories = (agent.memory || []).slice(-5).map(m => '- ' + m.text).join('\n');
+  const conditions = (agent.conditions || []).map(c => c.name + ' (' + c.severity + ')').join(', ');
+
+  return `You are a citizen in Cammelot, a small Dutch town.
+
+IDENTITY: ${agent.llmPersona || 'A citizen of Cammelot.'}
+
+CURRENT STATE:
+- Health Points: ${Math.round(agent.hp)}/100
+- Conditions: ${conditions || 'None'}
+- Wait time: ${Math.round(agent.waitWeeks || 0)} weeks
+- Current state: ${agent.state}
+- Age: ${agent.age}
+
+RECENT MEMORIES:
+${memories || '- No significant memories yet.'}
+
+TRIGGER EVENT: ${trigger.type} — ${trigger.detail || 'Something changed.'}
+
+Based on your personality and situation, choose exactly ONE action from this list:
+- seek_care (go to the doctor)
+- wait (stay patient, do nothing)
+- comply (follow treatment)
+- refuse (refuse to wait longer)
+- complain (express frustration)
+
+Respond ONLY with this exact JSON format, no other text:
+{"action": "wait", "reflection": "I should be patient.", "confidence": 0.7}
+
+Replace the values with your chosen action, a short first-person thought (max 80 chars), and your confidence (0.0-1.0).`;
+}
+
+// --- Action Executor ---
+function executeLLMAction(agent, response, trigger) {
+  if (!response || response.error) {
+    // Fallback to automaton
+    agentReflect(agent);
+    agentPlan(agent);
+    return;
+  }
+
+  // Show reflection as speech bubble
+  if (response.reflection) {
+    agent.chatBubbleText = response.reflection;
+    agent.chatTimer = 180; // 3 seconds at 60fps
+    addMemory(agent, 'llm_reflection', response.reflection, 7);
+  }
+
+  // Log the cognitive cycle
+  console.log('[LLM] ' + agent.name + ' (' + (agent.pocLabel || agent.id) + '): ' +
+    response.action + ' — "' + (response.reflection || '') + '" [confidence: ' + (response.confidence || '?') + ']');
+
+  logEvent('llm_action', agent, response.action + ': ' + (response.reflection || ''));
+
+  // Execute the chosen action
+  switch (response.action) {
+    case 'seek_care':
+      // Add a plan to seek GP
+      agent.plans = [{ action: 'seek_gp', urgency: 'high', reason: 'LLM decision: ' + (response.reflection || '') }];
+      break;
+    case 'wait':
+      // Do nothing — patient continues current behavior
+      break;
+    case 'comply':
+      // Follow current treatment plan
+      break;
+    case 'refuse':
+      // Refuse treatment — could leave queue
+      if (agent.behaviorState === 'in_queue') {
+        agent.chatBubbleText = 'I cannot wait any longer!';
+        agent.chatTimer = 180;
+      }
+      break;
+    case 'seek_second_opinion':
+      // Try a different GP
+      agent.plans = [{ action: 'seek_gp', urgency: 'medium', reason: 'Seeking second opinion' }];
+      break;
+    case 'complain':
+      agent.isProtesting = true;
+      break;
+    case 'self_medicate':
+      // Minor HP recovery, risky
+      agent.hp = Math.min(100, agent.hp + 2);
+      break;
+    default:
+      // Unknown action — fallback to automaton
+      agentReflect(agent);
+      agentPlan(agent);
+  }
+}
+
+// --- Event Detection (called from tick()) ---
+function detectTriggerEvents(agent, prevHp, prevState) {
+  if (!agent.llmEnabled || mode !== 'SOLL' || !cognitiveManager) return;
+
+  const triggers = [];
+
+  // HP threshold crossed
+  if (prevHp > 50 && agent.hp <= 50) {
+    triggers.push({ type: 'hp_threshold_crossed', detail: 'HP dropped below 50 (now ' + Math.round(agent.hp) + ')' });
+  } else if (prevHp > 20 && agent.hp <= 20) {
+    triggers.push({ type: 'hp_threshold_crossed', detail: 'HP critical — below 20 (now ' + Math.round(agent.hp) + ')' });
+  }
+
+  // Health state change
+  if (prevState !== agent.state && agent.state !== prevState) {
+    triggers.push({ type: 'health_state_change', detail: 'State changed from ' + prevState + ' to ' + agent.state });
+  }
+
+  // Treeknorm violation
+  if (agent.waitWeeks > M[mode].tree && (agent.waitWeeks - 0.5) <= M[mode].tree) {
+    triggers.push({ type: 'treeknorm_violation', detail: 'Wait time (' + Math.round(agent.waitWeeks) + 'w) exceeded Treeknorm (' + M[mode].tree + 'w)' });
+  }
+
+  // Queue milestone (every 4 weeks)
+  if (agent.waitWeeks > 0 && Math.floor(agent.waitWeeks) % 4 === 0 && Math.floor(agent.waitWeeks - 0.5) % 4 !== 0) {
+    triggers.push({ type: 'queue_milestone', detail: Math.round(agent.waitWeeks) + ' weeks in queue' });
+  }
+
+  // Enqueue highest-priority trigger
+  if (triggers.length > 0) {
+    triggers.sort((a, b) => (TRIGGER_PRIORITY[b.type] || 0) - (TRIGGER_PRIORITY[a.type] || 0));
+    cognitiveManager.enqueue(agent, triggers[0]);
+  }
+}
+
+// --- Initialize LLM subsystem ---
+let llmClient = null;
+let cognitiveManager = null;
+
+async function initLLMSubsystem() {
+  llmClient = new AgentLLMClient(llmProxyUrl);
+  cognitiveManager = new CognitiveManager(llmClient);
+
+  const available = await llmClient.checkHealth();
+  llmProxyAvailable = available;
+  if (available) {
+    console.log('[LLM] Proxy server available at ' + llmProxyUrl);
+    cognitiveManager.enable();
+  } else {
+    console.log('[LLM] Proxy server not available — running in automaton-only mode');
+  }
+
+  // Re-check periodically (every 30 seconds)
+  setInterval(async () => {
+    const wasAvailable = llmProxyAvailable;
+    llmProxyAvailable = await llmClient.checkHealth();
+    if (llmProxyAvailable && !wasAvailable) {
+      console.log('[LLM] Proxy server reconnected!');
+      cognitiveManager.enable();
+    } else if (!llmProxyAvailable && wasAvailable) {
+      console.log('[LLM] Proxy server lost — falling back to automaton mode');
+      cognitiveManager.disable();
+    }
+  }, 30000);
+}
+
+// Start LLM subsystem (non-blocking)
+initLLMSubsystem().catch(e => console.warn('[LLM] Init failed:', e));
 
 </script>
 </body>
