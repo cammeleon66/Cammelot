@@ -904,7 +904,7 @@ body.embed-mode #app{display:block!important}
 .moc-sub{color:#aab4e8;font-size:12.5px;margin-bottom:12px;line-height:1.6}
 /* ── Newspaper (Gazette) ── */
 .moc-gazette{background:var(--m-paper);color:var(--m-paperink);border:2px solid #b8a888;border-left:2px solid #b8a888;border-radius:2px;padding:10px 14px 8px;font-size:12.5px;font-style:normal;margin-bottom:14px;line-height:1.55;font-family:Georgia,serif;box-shadow:2px 2px 0 rgba(0,0,0,.4)}
-.moc-gazette::before{content:"THE CAMMELOT COURANT";display:block;text-align:center;font-family:Georgia,serif;font-weight:700;font-size:15px;letter-spacing:2px;border-bottom:3px double var(--m-paperink);padding-bottom:4px;margin-bottom:7px;color:var(--m-paperink)}
+.moc-gazette::before{content:"CAMMELOT QUARTERLY";display:block;text-align:center;font-family:Georgia,serif;font-weight:700;font-size:15px;letter-spacing:2px;border-bottom:3px double var(--m-paperink);padding-bottom:4px;margin-bottom:7px;color:var(--m-paperink)}
 /* Story/memo paper: narrative intro without the newspaper masthead */
 .moc-memo{background:var(--m-paper);color:var(--m-paperink);border:2px solid #b8a888;border-radius:2px;padding:16px 20px;margin:6px 0 14px;box-shadow:2px 2px 0 rgba(0,0,0,.4);text-align:left}
 .moc-memo .dateline{font-family:Georgia,serif;font-size:11px;letter-spacing:2.5px;color:#7a6a50;border-bottom:1px solid #c8b898;padding-bottom:6px;margin-bottom:10px;text-transform:uppercase}
@@ -12591,7 +12591,11 @@ async function initLLMSubsystem() {
         const name={flu:'Flu wave',grid:'Regional power disruption',shortage:'Regional staffing shortage'}[event.kind];
         GS.eventLog.push({q:Math.floor(tick/52)+1,name});
         GS.pendingBanners=GS.pendingBanners||[];
-        GS.pendingBanners.push({head:name,body:'Shared external event. Active until tick '+event.endTick+'. Impact depends on staffing, prevention and dependence.',soft:true});
+        const effects = [];
+        if (sickDelta) effects.push('staff absence +' + (sickDelta * 100).toFixed(1) + ' points');
+        if (impact.capacityDelta) effects.push('treatment capacity ' + impact.capacityDelta.toFixed(1) + ' starts/week');
+        if (drainFactor > 1) effects.push('waiting deterioration ×' + drainFactor.toFixed(2));
+        GS.pendingBanners.push({head:name,body:(effects.length ? effects.join(' · ') : 'No immediate modeled change') + '. Active until tick '+event.endTick+'.',soft:true});
       });
     }
   };
@@ -13675,16 +13679,16 @@ async function initLLMSubsystem() {
     const avgWait = MoC.care.snapshot().meanWait.toFixed(1);
     const lastQGraves = GRAVE_MARKERS.filter(function(g){ return g.cause === 'system_failure' && g.cycle > cycle - MoC.QUARTER_TICKS; });
     // Choose front page: strike > deaths > event > citizens-avoid > praise > calm
-    let kind = 'calm', headline = 'A quiet quarter in Cammelot';
-    if (GS._finaleActive) { kind = 'flu'; headline = 'THE GREAT FLU GRIPS CAMMELOT'; }
-    else if (GS.activeStates && GS.activeStates.struck && GS.trustD < 40) { kind = 'strike'; headline = 'WHITE COATS WALK OUT'; }
+    let kind = 'calm', headline = 'NO SIRENS, SOME PAPERWORK';
+    if (GS._finaleActive) { kind = 'flu'; headline = 'FLU WAVE FILLS THE WARDS'; }
+    else if (GS.activeStates && GS.activeStates.struck && GS.trustD < 40) { kind = 'strike'; headline = 'GP STRIKE CUTS ROUTINE CARE'; }
     else if (lastQGraves.length) { kind = 'death'; const g = lastQGraves[0]; headline = lastQGraves.length > 1 ? lastQGraves.length + ' PREVENTABLE DEATHS THIS QUARTER' : (g.name + ', ' + g.age + ', DIES WAITING').toUpperCase(); }
-    else if (evt && evt.kind === 'cyber') { kind = 'hack'; headline = (evt.group || 'HACKERS') + ' HOLD OUR RECORDS HOSTAGE'; }
-    else if (evt && (evt.id === 'lockstep' || evt.id === 'ddos' || evt.id === 'lab')) { kind = 'hack'; headline = evt.id === 'lockstep' ? 'HACKERS HOLD OUR RECORDS HOSTAGE' : evt.id === 'lab' ? 'LAB DOWN: SURGERIES POSTPONED' : 'PATIENT PORTAL KNOCKED OFFLINE'; }
-    else if (GS._electionNear) { kind = 'election'; headline = 'MIDTERM LOOMS: WILL THE MINISTER KEEP THE PROMISES?'; }
-    else if (GS.activeStates && GS.activeStates.citAvoid) { kind = 'queue'; headline = 'PATIENTS STAY HOME UNTIL IT\u2019S TOO LATE'; }
-    else if (parseFloat(avgWait) > M.IST.tree) { kind = 'queue'; headline = 'QUEUES BREACH THE NORM AGAIN'; }
-    else if (sd === 0 && q > 4) { kind = 'praise'; headline = 'STILL NO PREVENTABLE DEATHS UNDER THIS MINISTER'; }
+    else if (evt && evt.kind === 'cyber') { kind = 'hack'; headline = (evt.group || 'RANSOMWARE') + ': RECORDS OFFLINE'; }
+    else if (evt && (evt.id === 'lockstep' || evt.id === 'ddos' || evt.id === 'lab')) { kind = 'hack'; headline = evt.id === 'lockstep' ? 'RANSOMWARE: RECORDS OFFLINE' : evt.id === 'lab' ? 'LAB OUTAGE DELAYS PROCEDURES' : 'PATIENT PORTAL OFFLINE'; }
+    else if (GS._electionNear) { kind = 'election'; headline = 'VOTE NEARS; TARGETS DO NOT MOVE'; }
+    else if (GS.activeStates && GS.activeStates.citAvoid) { kind = 'queue'; headline = 'LOW TRUST DELAYS GP VISITS'; }
+    else if (parseFloat(avgWait) > M.IST.tree) { kind = 'queue'; headline = 'SPECIALIST WAIT PASSES 12 WEEKS'; }
+    else if (sd === 0 && q > 4) { kind = 'praise'; headline = 'NO SYSTEM-DELAY DEATHS RECORDED'; }
     const lines = [];
     if (lastQGraves.length) {
       const g = lastQGraves[0];
@@ -13700,27 +13704,17 @@ async function initLLMSubsystem() {
       GS._faceMourned = true;
       lines.push(face.name + ' has died. Their care history remains available in town.');
     }
-    // G11: do-nothing Gazette escalation — G15: exclude law-only players
+    // Report inactivity without assigning motives to the player.
     const nonLawInterventions = GS.interventions.filter(function(iv){ return !iv.label.startsWith('Law enacted:'); });
     if (nonLawInterventions.length === 0 && q >= 4 && kind === 'calm') {
-      const inactionMsgs = [
-        'MINISTER STILL "STUDYING THE DOSSIER" \u2014 Sources confirm no policy decisions made yet.',
-        'WHAT IS THE MINISTER WAITING FOR? \u2014 The dossier sits unopened, say sources.',
-        'SIX MONTHS, ZERO DECISIONS \u2014 Opposition tables motion of concern.',
-        'CAMMELOT HEALTH CRISIS WORSENS WHILE MINISTER HESITATES'
-      ];
       kind = 'queue';
-      headline = inactionMsgs[Math.min(3, Math.floor((q - 4) / 4))];
+      headline = 'NO DISCRETIONARY SPENDING YET';
     }
     // G17: fragmentation / platform headline overrides
-    if ((GS.fragmentation || 0) >= 6 && kind === 'calm') { kind = 'queue'; headline = 'TWELVE ALGORITHMS, ZERO PATIENTS HELPED'; }
-    if ((GS.platformMaturity || 0) >= 2 && kind === 'praise') { headline = 'CAMMELOT BUILDS THE FOUNDATION FOR TOMORROW\u2019S CARE'; }
-    // A real status, not a scripted quote claiming a treatment happened.
-    const alive = agents.filter(function(a){ return a.state !== 'dead' && !a.moved && a.name; });
-    if (alive.length) {
-      const who = alive[Math.floor(Math.random() * alive.length)];
-      lines.push(who.name + ': ' + personStatus(who));
-    }
+    if ((GS.fragmentation || 0) >= 6 && kind === 'calm') { kind = 'queue'; headline = (GS.fragmentation || 0) + ' CARE SYSTEMS, TOO FEW CONNECTIONS'; }
+    if ((GS.platformMaturity || 0) >= 2 && kind === 'praise') { headline = 'SHARED DATA PLATFORM REACHES LEVEL 2'; }
+    const care = MoC.care.snapshot();
+    lines.push('Treatment starts: ' + care.treatments + '. Currently waiting: ' + care.waiting + '.');
     return '<img class="gz-art" src="' + gazetteArt(kind) + '" alt="">'
       + '<div class="gz-head">' + headline + '</div>'
       + lines.map(function(l){ return l; }).join('<br>');
@@ -13909,7 +13903,7 @@ async function initLLMSubsystem() {
       GS._bruisedMandate--;
       if (GS._bruisedMandate === 0) {
         GS.pendingBanners = GS.pendingBanners || [];
-        GS.pendingBanners.push({ head:'MANDATE RESTORED', body:'Your coalition has stabilised. Parliament has re-granted you full implementation capacity.', soft:true });
+        GS.pendingBanners.push({ head:'IMPLEMENTATION LIMIT RESTORED', body:'Parliament trust recovered. Two changes may be funded at this council.', soft:true });
       }
     }
     // Stakeholder consequence bands
@@ -13918,7 +13912,7 @@ async function initLLMSubsystem() {
       GS.activeStates.docWTR = true;
       applyFx({sick:0.02}, 'Doctors demoralised - sick leave rising.');
       GS.pendingBanners = GS.pendingBanners || [];
-      GS.pendingBanners.push({ head:'⚕ DOCTORS: WORK-TO-RULE BEGINS', body:'GP trust has fallen below 35. Doctors now work strictly to contract - no overtime, no emergency cover swaps. Sick leave is rising. Restore doctor trust above 42 before the next council or the situation worsens.', soft:false });
+      GS.pendingBanners.push({ head:'⚕ GPS WORK TO CONTRACT', body:'Doctor trust is below 35. Overtime and cover swaps stop; staff absence rises until doctor trust recovers above 42.', soft:false });
       showPolicyConsequences('doctors demoralised', {trustD:-3}, 'doctors');
     } else if (GS.trustD >= 42 && GS.activeStates.docWTR) {
       GS.activeStates.docWTR = false;
@@ -13930,7 +13924,7 @@ async function initLLMSubsystem() {
       applyTimedFx({sick:0.06, admin:0.05}, 1, 'DOCTOR STRIKE - practices run on skeleton staff');
       Audio5.klaxon(); FX.shake();
       GS.pendingBanners = GS.pendingBanners || [];
-      GS.pendingBanners.push({ head:'🚨 DOCTOR STRIKE', body:'GP trust has collapsed below 22. Practices are running on skeleton staff. If trust does not recover above 35 by next council, or if it falls to 15, the cabinet falls. The Retention Fund is your fastest lever.', soft:false });
+      GS.pendingBanners.push({ head:'🚨 GP STRIKE', body:'Doctor trust is below 22. Routine capacity is reduced. Recover above 35 by next council; at 15 the term ends.', soft:false });
       showPolicyConsequences('doctor strike', {trustD:-5}, 'strike');
     } else if (GS.activeStates.struck) {
       if (GS.trustD >= 35) {
@@ -13977,14 +13971,14 @@ async function initLLMSubsystem() {
         GS.pendingBanners = GS.pendingBanners || [];
         GS.pendingBanners.push({
           head: '🚗 FAMILY LEAVING CAMMELOT',
-          body: 'The ' + famName + ' family is moving out. "We tried. The wait list never moved." Population loss will reduce your tax base and parliament trust. '
-            + (movedCount >= 2 ? '<b>Two households have now left. If four relocate, the cabinet collapses.</b>' : 'One more departure in consecutive low-trust quarters will follow.'),
+          body: 'The ' + famName + ' household has moved out. Budget −€5K; parliament trust −3. '
+            + movedCount + ' of 4 household departures recorded before the cabinet falls.',
           soft: false
         });
         showPolicyConsequences('family relocation', {trustC:-5}, 'citizens');
         GS._lowTrustCQ = 0;
         if (movedCount >= 4 && !GS.over) {
-          GS.pendingBanners.push({ head:'📢 PROTEST: MASS EXODUS', body:'Four families have left Cammelot. A protest march fills the town square. Parliament tables a motion of no confidence.', soft:false });
+          GS.pendingBanners.push({ head:'📢 FOURTH HOUSEHOLD LEAVES', body:'The relocation limit is reached. The term ends in public protest.', soft:false });
           setTimeout(function(){ if (!GS.over) endTerm('protest'); }, 1200);
         }
       }
@@ -15635,10 +15629,9 @@ async function initLLMSubsystem() {
       const preventDampen = GS.owned.prevention ? 0.5 : 1;
       M.IST.drain = Math.round(M.IST.drain * (1 + 0.04 * preventDampen * earlyDampen) * 100) / 100;
       M.IST.sick = Math.round((M.IST.sick + 0.003 * preventDampen * earlyDampen) * 1000) / 1000;
-      return GS.owned.prevention
-        ? 'The town grows older \u2014 but your prevention programme is softening the wave.'
-        : (year <= 2 ? 'The demographic tide is rising. Early warning: care demand is already creeping up. Prevention would dampen this.'
-          : 'The town grows older. Demand creeps up another notch. (Prevention would soften this.)');
+      const annualRise = (0.04 * preventDampen * earlyDampen * 100).toFixed(0);
+      return 'Year ' + year + ' aging update: waiting deterioration +' + annualRise + '%. '
+        + (GS.owned.prevention ? 'Prevention halves this model increase.' : 'Prevention would halve this model increase.');
     }
     function actTransition(q){
       const act = actNumber(q);
@@ -15646,7 +15639,7 @@ async function initLLMSubsystem() {
       // G15: parliament penalty if no laws enacted last Act
       if (act > 1 && (GS._lawsThisAct || 0) === 0) {
         applyFx({ trustP: -6 }, 'No legislation enacted this Act');
-        GS.pendingBanners.push({ head: 'NO LEGISLATION ENACTED', body: 'Parliament notes that four years passed without a single law enacted. Coalition partners file a motion of concern. <b style="color:var(--m-red)">Parliament \u22126</b>', soft: false });
+        GS.pendingBanners.push({ head: 'NO LAW PASSED IN THE LAST ACT', body: 'Parliament trust \u22126.', soft: false });
       }
       GS._lawsThisAct = 0; // reset counter for next Act
       GS._lastAct = act;
@@ -15661,14 +15654,16 @@ async function initLLMSubsystem() {
       if (t < 16) return null; // sprints have no finale
       if (q === t - 4) {
         GS._finaleTelegraphed = true;
-        return { head:'RIVM WARNS: HEAVY FLU SEASON AHEAD', body:'Models predict the worst flu wave in a decade, arriving in about a year. Everything you built \u2014 capacity, resilience, trust \u2014 is about to be tested. Prepare now.' };
+        return { head:'RIVM: FLU WAVE DUE IN FOUR QUARTERS', body:'The final two quarters will increase staff absence and waiting-list deterioration. Prevention and resilience reduce the modeled effect.' };
       }
       if (q === t - 1) {
         GS._finaleActive = true;
         applyTimedFx({drainMult: GS.owned.prevention ? 1.15 : 1.3, sick: GS.owned.resilience ? 0.02 : 0.04}, 2, 'THE GREAT FLU \u2014 the decade\u2019s worst wave');
         Audio5.klaxon(); FX.shake();
         townSay(EVENT_REACTIONS.flu);
-        return { head:'THE GREAT FLU IS HERE', body:'It is exactly as bad as predicted' + (GS.owned.prevention ? ' \u2014 but your prevention programme means fewer citizens are fragile.' : '.') + (GS.owned.resilience ? ' Your resilience protocols keep staff on their feet.' : ' Staff are dropping. This is the test.') };
+        return { head:'FLU WAVE ACTIVE', body:'Waiting deterioration and staff absence increased for two quarters.'
+          + (GS.owned.prevention ? ' Prevention reduced deterioration.' : '')
+          + (GS.owned.resilience ? ' Resilience reduced staff absence.' : '') };
       }
       return null;
     }
@@ -15680,12 +15675,12 @@ async function initLLMSubsystem() {
       const ov = document.createElement('div');
       ov.className = 'moc-overlay'; ov.id = 'moc-vote';
       ov.innerHTML = '<div class="moc-box" style="max-width:540px"><h2>\u2696 MOTION OF NO CONFIDENCE</h2>'
-        + '<div class="moc-sub">Parliament has had enough. The vote is tonight. You have one card left to play.</div>'
+        + '<div class="moc-sub">Parliament trust is below 22. Choose one measure to continue the term.</div>'
         + '<div class="moc-dilemma"><div class="ec-head ec-danger">\ud83c\udfdb THE VOTE</div>'
-        + '<div class="dq">The opposition smells blood. Your coalition wavers. How do you survive the night?</div>'
-        + '<button class="moc-opt" data-vote="promise">Promise the moon<span class="fx">Survive \u00b7 Parliament +10 now, \u221215 in 3 quarters when they remember</span></button>'
-        + '<button class="moc-opt" data-vote="sacrifice">Sacrifice your budget reserve<span class="fx">Survive \u00b7 hand \u20ac100K back to the treasury as a gesture</span></button>'
-        + '<button class="moc-opt" data-vote="defy">Defy them: "Vote me out if you dare"<span class="fx">50/50: heroic survival (+15 all trust) \u2014 or the end of your term</span></button>'
+        + '<div class="dq">The coalition needs a reason to keep the cabinet in office.</div>'
+        + '<button class="moc-opt" data-vote="promise">Offer a recovery plan<span class="fx">Parliament +10 now \u00b7 Parliament \u221215 in 3 quarters</span></button>'
+        + '<button class="moc-opt" data-vote="sacrifice">Return the budget reserve<span class="fx">Parliament +12 \u00b7 Budget \u2212\u20ac100K</span></button>'
+        + '<button class="moc-opt" data-vote="defy">Call the vote now<span class="fx">50/50: all trust +15 or term ends</span></button>'
         + '</div></div>';
       document.body.appendChild(ov);
       ov.querySelectorAll('[data-vote]').forEach(function(b){
@@ -15706,7 +15701,7 @@ async function initLLMSubsystem() {
               adjustStakeholders(15, 15, 15);
               FX.pop('THEY BLINKED', '#58c858');
               Audio5.jingle();
-              say('SYSTEM', 'You defied parliament \u2014 and won. Legendary.', 'sys');
+              say('SYSTEM', 'The confidence vote passed. All trust +15.', 'sys');
             } else {
               endTerm('noconfidence');
               return;
@@ -15986,16 +15981,14 @@ async function initLLMSubsystem() {
         applyFx({ trustP: -2 }, 'Deficit: parliament is losing patience with the spending crisis');
         if (GS.budget < -100000 && !GS._deficitWarned) {
           GS._deficitWarned = true;
-          GS.pendingBanners.push({ head: '\ud83d\udca8 MUNICIPALITY IN DEFICIT', body: 'The treasury is empty and then some. Parliament has frozen all new spending. Bankruptcy looms at \u2212\u20ac150K.', soft: false });
+          GS.pendingBanners.push({ head: '\ud83d\udca8 BUDGET BELOW ZERO', body: 'New spending is frozen. The term ends if the balance reaches \u2212\u20ac150K.', soft: false });
         }
       }
       // G16: dep cascade-armed banner — one-time warning when fragility hits critical
       if (GS.dependence >= 7 && !GS._depWarnFired && !GS.over) {
         GS._depWarnFired = true;
-        GS.pendingBanners.push({ head: '\ud83d\udd25 DIGITAL FRAGILITY: CRITICAL',
-          body: 'Cammelot\u2019s digital care stack now has <b>' + GS.dependence + ' interdependencies.</b> '
-            + 'The rot cascade is armed: one ransomware hit or power failure can chain through all systems simultaneously. '
-            + '<b>Resilience packs are your only remaining safety margin.</b> You have been warned.',
+        GS.pendingBanners.push({ head: '\ud83d\udd25 DIGITAL RISK: CRITICAL',
+          body: 'Dependence is <b>' + GS.dependence + '</b>. Ransomware and grid-failure effects now spread across connected systems. Resilience reduces their modeled impact.',
           soft: false });
       }
       // G18-G: mid-game platform investment confirmation signal at Q8
@@ -16024,10 +16017,8 @@ async function initLLMSubsystem() {
         }
         if ((GS.mantelzorg || 30) >= 80 && !GS._mantelzorgFired) {
           GS._mantelzorgFired = true;
-          GS.pendingBanners.push({ head: '\ud83d\udc9c INFORMAL CARER BURNOUT CRISIS',
-            body: 'The municipality counts over 14,000 informal carers. After years of overload, burnout is now cascading. '
-              + 'Home care queues are exploding. <b>Informal care is not a given \u2014 it is infrastructure, and it is breaking.</b> '
-              + 'Drain +5% this quarter. Citizens \u22123.', soft: false });
+          GS.pendingBanners.push({ head: '\ud83d\udc9c CARER PRESSURE REACHES 80',
+            body: 'Staff absence +5 points; citizen trust \u22123. Carer pressure remains visible in System State.', soft: false });
           applyFx({ sick: 0.05, trustC: -3 }, 'Carer burnout crisis: informal care network collapsing');
         }
       }
@@ -16036,10 +16027,10 @@ async function initLLMSubsystem() {
         const isHealthy = GS.trustP >= 55;
         const change = isHealthy ? 4 : -4;
         applyFx({ trustP: change }, 'Question Hour');
-        const qhTitle = isHealthy ? '\ud83c\udfdb PARLIAMENTARY QUESTIONS: CONFIDENCE' : '\ud83c\udfdb PARLIAMENTARY QUESTIONS: SCRUTINY';
+        const qhTitle = isHealthy ? '\ud83c\udfdb QUESTION HOUR: SUPPORT HOLDS' : '\ud83c\udfdb QUESTION HOUR: SUPPORT FALLS';
         const qhBody = isHealthy
-          ? 'Parliament is broadly satisfied. Your coalition holds another quarter. (+4 Parliament Trust)'
-          : 'A coalition MP tables a motion of concern: "Enough dossier study \u2014 we demand action." Parliamentary confidence wobbles. (-4 Parliament Trust)';
+          ? 'Parliament trust +4.'
+          : 'Parliament trust \u22124.';
         GS.pendingBanners.push({ head: qhTitle, body: qhBody, soft: true });
       }
       if (GS.over) return;

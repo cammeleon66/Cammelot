@@ -17,7 +17,7 @@ Boards compare only the same model version, scenario and seed. Ranking prioritiz
 
 ## Names and moderation
 
-Names are normalized and limited to 2–24 letters, numbers, spaces and a small punctuation set. HTML is never accepted as a name and the browser inserts names with `textContent`. Blank names become a stable `Minister <adjective> <animal> <seed suffix>` name.
+Names are normalized and limited to 2–24 letters, numbers, spaces and a small punctuation set. HTML is never accepted as a name and the browser inserts names with `textContent`. Blank names become a stable seed-generated name selected from several styles, including minister titles, local call signs and Cammelot bynames.
 
 This is input safety, not semantic moderation. Moderation is deliberately offline: there is no public admin endpoint.
 
