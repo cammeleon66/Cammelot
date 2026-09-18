@@ -95,3 +95,23 @@ Each purchase run is paired with no action at the same seed and response policy.
 - Confirm at least one documented, non-cheating policy path can pass Cabinet Crisis.
 - Run a separate holdout seed set after any justified correction.
 - Keep the current care-first leaderboard ordering; do not promote scalar score.
+
+## Versioned Cabinet Crisis correction — 2026-09-18
+
+Model: `minister-care-4-political`
+Raw results: [scripts/output/minister_strategy_matrix_political_20seeds.json](../scripts/output/minister_strategy_matrix_political_20seeds.json)
+Summary: [scripts/output/minister_strategy_matrix_political_20seeds_summary.json](../scripts/output/minister_strategy_matrix_political_20seeds_summary.json)
+
+The first matrix showed that parliament trust was below 40 in 400/400 runs and never exceeded 39. Cabinet Crisis was difficult in a way that eliminated the advertised possibility of re-election for all declared automated policies.
+
+The smallest explicit political correction was applied only to Cabinet Crisis:
+
+- final trust floor: 40 → 35 for citizens, doctors and parliament;
+- system-death cap: 4 → 5;
+- stage-3 cascade rule unchanged;
+- Full Term election rules unchanged;
+- clinical progression, care capacity and paired reference unchanged.
+
+The identical 20-seed, 400-run matrix then produced 11 narrow re-elections (2.75%) across five seeds. Successful runs appeared in every purchase family, including no action, and across multiple response policies. No run earned a strong mandate. Re-election is therefore possible but remains rare; the correction did not create one mandatory purchase route.
+
+This is development calibration, not holdout validation. Freeze this political rule and test it on unseen seeds before claiming a stable win rate.

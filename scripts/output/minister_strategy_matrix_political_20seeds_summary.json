@@ -1,0 +1,554 @@
+{
+  "generatedAt": "2026-09-18T10:38:28.864Z",
+  "source": "scripts/output/minister_strategy_matrix_political_20seeds.json",
+  "sourceGeneratedAt": "2026-09-18T10:38:16.603Z",
+  "seeds": [
+    101,
+    211,
+    307,
+    419,
+    503,
+    617,
+    709,
+    823,
+    919,
+    1021,
+    1123,
+    1229,
+    1327,
+    1429,
+    1523,
+    1627,
+    1733,
+    1823,
+    1931,
+    2027
+  ],
+  "runs": 400,
+  "purchase": [
+    {
+      "name": "no-action",
+      "runs": 80,
+      "cabinetPass": 2,
+      "endings": {
+        "election": 39,
+        "protest": 10,
+        "noconfidence": 29,
+        "served": 2
+      },
+      "systemDeathsMean": 6.58,
+      "systemDeathsMedian": 7,
+      "systemDeathsRange": [
+        4,
+        9
+      ],
+      "deathsWaitingMean": 4.14,
+      "treatmentsMean": 1.01,
+      "meanWaitMean": 6.2,
+      "budgetMean": 387300,
+      "scoreMean": 253.81,
+      "purchasesMean": 0
+    },
+    {
+      "name": "staffing",
+      "runs": 80,
+      "cabinetPass": 2,
+      "endings": {
+        "election": 54,
+        "protest": 5,
+        "noconfidence": 19,
+        "served": 2
+      },
+      "systemDeathsMean": 6.69,
+      "systemDeathsMedian": 7,
+      "systemDeathsRange": [
+        2,
+        11
+      ],
+      "deathsWaitingMean": 4.34,
+      "treatmentsMean": 1,
+      "meanWaitMean": 5.9,
+      "budgetMean": 60968.75,
+      "scoreMean": 255.59,
+      "purchasesMean": 5.75
+    },
+    {
+      "name": "digital-fast",
+      "runs": 80,
+      "cabinetPass": 1,
+      "endings": {
+        "election": 27,
+        "noconfidence": 34,
+        "protest": 18,
+        "served": 1
+      },
+      "systemDeathsMean": 6.34,
+      "systemDeathsMedian": 6,
+      "systemDeathsRange": [
+        2,
+        10
+      ],
+      "deathsWaitingMean": 4.06,
+      "treatmentsMean": 1,
+      "meanWaitMean": 4.64,
+      "budgetMean": 48418.75,
+      "scoreMean": 166.3,
+      "purchasesMean": 4.44
+    },
+    {
+      "name": "resilient",
+      "runs": 80,
+      "cabinetPass": 4,
+      "endings": {
+        "served": 4,
+        "election": 51,
+        "noconfidence": 20,
+        "protest": 5
+      },
+      "systemDeathsMean": 6.63,
+      "systemDeathsMedian": 7,
+      "systemDeathsRange": [
+        2,
+        11
+      ],
+      "deathsWaitingMean": 4.26,
+      "treatmentsMean": 1.09,
+      "meanWaitMean": 6.25,
+      "budgetMean": 60284.38,
+      "scoreMean": 272.45,
+      "purchasesMean": 5.65
+    },
+    {
+      "name": "foundation",
+      "runs": 80,
+      "cabinetPass": 2,
+      "endings": {
+        "election": 33,
+        "served": 2,
+        "noconfidence": 36,
+        "protest": 9
+      },
+      "systemDeathsMean": 6.58,
+      "systemDeathsMedian": 7,
+      "systemDeathsRange": [
+        2,
+        10
+      ],
+      "deathsWaitingMean": 3.99,
+      "treatmentsMean": 0.86,
+      "meanWaitMean": 4.94,
+      "budgetMean": 13200,
+      "scoreMean": 388.98,
+      "purchasesMean": 4.79
+    }
+  ],
+  "response": [
+    {
+      "name": "first",
+      "runs": 100,
+      "cabinetPass": 2,
+      "endings": {
+        "election": 69,
+        "served": 2,
+        "noconfidence": 14,
+        "protest": 15
+      },
+      "systemDeathsMean": 6.77,
+      "systemDeathsMedian": 7,
+      "systemDeathsRange": [
+        2,
+        11
+      ],
+      "deathsWaitingMean": 4.33,
+      "treatmentsMean": 1.07,
+      "meanWaitMean": 5.43,
+      "budgetMean": 104237.5,
+      "scoreMean": 257.03,
+      "purchasesMean": 4.1
+    },
+    {
+      "name": "trust",
+      "runs": 100,
+      "cabinetPass": 4,
+      "endings": {
+        "election": 43,
+        "noconfidence": 47,
+        "protest": 6,
+        "served": 4
+      },
+      "systemDeathsMean": 6.54,
+      "systemDeathsMedian": 6.5,
+      "systemDeathsRange": [
+        2,
+        10
+      ],
+      "deathsWaitingMean": 4.14,
+      "treatmentsMean": 0.94,
+      "meanWaitMean": 5.53,
+      "budgetMean": 101147.5,
+      "scoreMean": 278.18,
+      "purchasesMean": 4.14
+    },
+    {
+      "name": "budget",
+      "runs": 100,
+      "cabinetPass": 2,
+      "endings": {
+        "election": 39,
+        "noconfidence": 34,
+        "protest": 25,
+        "served": 2
+      },
+      "systemDeathsMean": 6.43,
+      "systemDeathsMedian": 6,
+      "systemDeathsRange": [
+        2,
+        10
+      ],
+      "deathsWaitingMean": 4,
+      "treatmentsMean": 0.95,
+      "meanWaitMean": 5.46,
+      "budgetMean": 155887.5,
+      "scoreMean": 258.65,
+      "purchasesMean": 4.26
+    },
+    {
+      "name": "care",
+      "runs": 100,
+      "cabinetPass": 3,
+      "endings": {
+        "election": 53,
+        "noconfidence": 43,
+        "served": 3,
+        "protest": 1
+      },
+      "systemDeathsMean": 6.5,
+      "systemDeathsMedian": 7,
+      "systemDeathsRange": [
+        2,
+        10
+      ],
+      "deathsWaitingMean": 4.16,
+      "treatmentsMean": 1.01,
+      "meanWaitMean": 5.91,
+      "budgetMean": 94865,
+      "scoreMean": 275.84,
+      "purchasesMean": 4
+    }
+  ],
+  "paired": [
+    {
+      "purchasePolicy": "staffing",
+      "pairs": 80,
+      "deathsDifferenceMean": 0.11,
+      "deathsWaitingDifferenceMean": 0.2,
+      "treatmentsDifferenceMean": -0.01,
+      "waitDifferenceMean": -0.3,
+      "budgetDifferenceMean": -326331.25,
+      "deathsBetter": 15,
+      "deathsWorse": 25,
+      "deathsEqual": 40
+    },
+    {
+      "purchasePolicy": "digital-fast",
+      "pairs": 80,
+      "deathsDifferenceMean": -0.24,
+      "deathsWaitingDifferenceMean": -0.07,
+      "treatmentsDifferenceMean": -0.01,
+      "waitDifferenceMean": -1.56,
+      "budgetDifferenceMean": -338881.25,
+      "deathsBetter": 35,
+      "deathsWorse": 25,
+      "deathsEqual": 20
+    },
+    {
+      "purchasePolicy": "resilient",
+      "pairs": 80,
+      "deathsDifferenceMean": 0.05,
+      "deathsWaitingDifferenceMean": 0.13,
+      "treatmentsDifferenceMean": 0.08,
+      "waitDifferenceMean": 0.05,
+      "budgetDifferenceMean": -327015.62,
+      "deathsBetter": 17,
+      "deathsWorse": 25,
+      "deathsEqual": 38
+    },
+    {
+      "purchasePolicy": "foundation",
+      "pairs": 80,
+      "deathsDifferenceMean": 0,
+      "deathsWaitingDifferenceMean": -0.15,
+      "treatmentsDifferenceMean": -0.15,
+      "waitDifferenceMean": -1.26,
+      "budgetDifferenceMean": -374100,
+      "deathsBetter": 27,
+      "deathsWorse": 30,
+      "deathsEqual": 23
+    }
+  ],
+  "cabinetCriteria": {
+    "parliamentTrustBelow40": 400,
+    "citizenTrustBelow40": 337,
+    "doctorTrustBelow40": 104,
+    "systemDeathsAbove4": 367,
+    "parliamentTrustMaximum": 39
+  },
+  "bestCare": [
+    {
+      "name": "digital-fast/care",
+      "runs": 20,
+      "cabinetPass": 0,
+      "endings": {
+        "noconfidence": 11,
+        "election": 8,
+        "protest": 1
+      },
+      "systemDeathsMean": 6.1,
+      "systemDeathsMedian": 6,
+      "systemDeathsRange": [
+        2,
+        10
+      ],
+      "deathsWaitingMean": 3.95,
+      "treatmentsMean": 0.9,
+      "meanWaitMean": 5.89,
+      "budgetMean": 28650,
+      "scoreMean": 173.9,
+      "purchasesMean": 4.35
+    },
+    {
+      "name": "digital-fast/trust",
+      "runs": 20,
+      "cabinetPass": 1,
+      "endings": {
+        "noconfidence": 9,
+        "election": 5,
+        "protest": 5,
+        "served": 1
+      },
+      "systemDeathsMean": 6.3,
+      "systemDeathsMedian": 6,
+      "systemDeathsRange": [
+        3,
+        10
+      ],
+      "deathsWaitingMean": 4,
+      "treatmentsMean": 0.95,
+      "meanWaitMean": 4.31,
+      "budgetMean": 53950,
+      "scoreMean": 167.2,
+      "purchasesMean": 4.4
+    },
+    {
+      "name": "staffing/budget",
+      "runs": 20,
+      "cabinetPass": 1,
+      "endings": {
+        "election": 11,
+        "protest": 3,
+        "noconfidence": 5,
+        "served": 1
+      },
+      "systemDeathsMean": 6.35,
+      "systemDeathsMedian": 6.5,
+      "systemDeathsRange": [
+        2,
+        9
+      ],
+      "deathsWaitingMean": 3.95,
+      "treatmentsMean": 0.95,
+      "meanWaitMean": 6.44,
+      "budgetMean": 111187.5,
+      "scoreMean": 237.15,
+      "purchasesMean": 5.7
+    },
+    {
+      "name": "foundation/budget",
+      "runs": 20,
+      "cabinetPass": 0,
+      "endings": {
+        "election": 8,
+        "noconfidence": 7,
+        "protest": 5
+      },
+      "systemDeathsMean": 6.4,
+      "systemDeathsMedian": 6,
+      "systemDeathsRange": [
+        2,
+        10
+      ],
+      "deathsWaitingMean": 3.8,
+      "treatmentsMean": 0.9,
+      "meanWaitMean": 6.38,
+      "budgetMean": 45437.5,
+      "scoreMean": 379.85,
+      "purchasesMean": 5.25
+    },
+    {
+      "name": "resilient/budget",
+      "runs": 20,
+      "cabinetPass": 0,
+      "endings": {
+        "election": 10,
+        "protest": 4,
+        "noconfidence": 6
+      },
+      "systemDeathsMean": 6.4,
+      "systemDeathsMedian": 6.5,
+      "systemDeathsRange": [
+        2,
+        9
+      ],
+      "deathsWaitingMean": 4.05,
+      "treatmentsMean": 1.1,
+      "meanWaitMean": 5.84,
+      "budgetMean": 110687.5,
+      "scoreMean": 261.3,
+      "purchasesMean": 5.8
+    }
+  ],
+  "worstCare": [
+    {
+      "name": "staffing/first",
+      "runs": 20,
+      "cabinetPass": 0,
+      "endings": {
+        "election": 17,
+        "protest": 2,
+        "noconfidence": 1
+      },
+      "systemDeathsMean": 7.05,
+      "systemDeathsMedian": 7,
+      "systemDeathsRange": [
+        2,
+        11
+      ],
+      "deathsWaitingMean": 4.65,
+      "treatmentsMean": 1.05,
+      "meanWaitMean": 5.65,
+      "budgetMean": 46062.5,
+      "scoreMean": 239.7,
+      "purchasesMean": 5.85
+    },
+    {
+      "name": "foundation/first",
+      "runs": 20,
+      "cabinetPass": 0,
+      "endings": {
+        "election": 11,
+        "protest": 3,
+        "noconfidence": 6
+      },
+      "systemDeathsMean": 6.8,
+      "systemDeathsMedian": 7,
+      "systemDeathsRange": [
+        2,
+        9
+      ],
+      "deathsWaitingMean": 4.2,
+      "treatmentsMean": 0.85,
+      "meanWaitMean": 4.23,
+      "budgetMean": 4150,
+      "scoreMean": 373.85,
+      "purchasesMean": 4.5
+    },
+    {
+      "name": "staffing/care",
+      "runs": 20,
+      "cabinetPass": 0,
+      "endings": {
+        "election": 15,
+        "noconfidence": 5
+      },
+      "systemDeathsMean": 6.75,
+      "systemDeathsMedian": 7,
+      "systemDeathsRange": [
+        2,
+        9
+      ],
+      "deathsWaitingMean": 4.45,
+      "treatmentsMean": 1,
+      "meanWaitMean": 6.09,
+      "budgetMean": 47462.5,
+      "scoreMean": 267.7,
+      "purchasesMean": 5.7
+    },
+    {
+      "name": "resilient/trust",
+      "runs": 20,
+      "cabinetPass": 1,
+      "endings": {
+        "election": 12,
+        "noconfidence": 7,
+        "served": 1
+      },
+      "systemDeathsMean": 6.75,
+      "systemDeathsMedian": 7,
+      "systemDeathsRange": [
+        2,
+        10
+      ],
+      "deathsWaitingMean": 4.35,
+      "treatmentsMean": 1,
+      "meanWaitMean": 6.81,
+      "budgetMean": 38100,
+      "scoreMean": 275.7,
+      "purchasesMean": 5.55
+    },
+    {
+      "name": "resilient/first",
+      "runs": 20,
+      "cabinetPass": 2,
+      "endings": {
+        "served": 2,
+        "election": 16,
+        "noconfidence": 1,
+        "protest": 1
+      },
+      "systemDeathsMean": 6.75,
+      "systemDeathsMedian": 7,
+      "systemDeathsRange": [
+        2,
+        11
+      ],
+      "deathsWaitingMean": 4.35,
+      "treatmentsMean": 1.2,
+      "meanWaitMean": 6.36,
+      "budgetMean": 56575,
+      "scoreMean": 262.75,
+      "purchasesMean": 5.7
+    }
+  ],
+  "highestScore": [
+    {
+      "name": "foundation/trust",
+      "scoreMean": 416.45,
+      "systemDeathsMean": 6.55,
+      "cabinetPass": 1
+    },
+    {
+      "name": "foundation/care",
+      "scoreMean": 385.75,
+      "systemDeathsMean": 6.55,
+      "cabinetPass": 1
+    },
+    {
+      "name": "foundation/budget",
+      "scoreMean": 379.85,
+      "systemDeathsMean": 6.4,
+      "cabinetPass": 0
+    },
+    {
+      "name": "foundation/first",
+      "scoreMean": 373.85,
+      "systemDeathsMean": 6.8,
+      "cabinetPass": 0
+    },
+    {
+      "name": "resilient/care",
+      "scoreMean": 290.05,
+      "systemDeathsMean": 6.6,
+      "cabinetPass": 1
+    }
+  ]
+}

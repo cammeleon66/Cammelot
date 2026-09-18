@@ -384,11 +384,11 @@ test('Early results match the reference date and replay preserves the prior atte
     });
     assert.equal(forged,true);
     await page.locator('#moc-again').click();
-    await page.waitForURL(/&v=minister-care-3-paired/);
+    await page.waitForURL(/&v=minister-care-4-political/);
     await page.locator('#moc-takeoffice').waitFor();
     assert.match(await page.locator('#moc-previous-attempt').innerText(),/tick 75/);
     assert.equal(await page.evaluate(()=>MoC.previousRun.final.tick),75);
-    assert.equal(await page.evaluate(()=>MoC.previousRun.modelVersion), 'minister-care-3-paired');
+    assert.equal(await page.evaluate(()=>MoC.previousRun.modelVersion), 'minister-care-4-political');
     assert.deepEqual(await page.evaluate(()=>MoC.previousRun.externalSchedule),await page.evaluate(()=>MoC.environment.schedule));
     assert.equal(await page.evaluate(()=>MoC.audio.isMuted()),true);
     // Controlled outcome fixture: political survival must not conceal worse care.
@@ -440,7 +440,7 @@ test('Player can publish a score with a public or generated name', { timeout: 60
     await page.waitForFunction(()=>document.querySelector('#moc-community-status').textContent.includes('rank 2'));
     assert.equal(submitted.username,'');
     assert.equal(submitted.seed,2468);
-    assert.equal(submitted.modelVersion,'minister-care-3-paired');
+    assert.equal(submitted.modelVersion,'minister-care-4-political');
     assert.equal(submitted.endTick,75);
     assert.equal(typeof submitted.summary.meanWait,'number');
     assert.equal(await page.locator('#moc-community-name').inputValue(),'Minister Silver Heron 468');
@@ -603,7 +603,18 @@ test('Minister cabinet crisis starts after phone walkthrough and reaches council
     assert.equal(await page.evaluate(() => MoC.S._speed), 1, 'short mode should start at normal speed');
     assert.equal(await page.locator('.moc-kpi').count(), 5, 'short mode should show its five survival targets, not unsigned promises');
     assert.equal(await page.locator('.moc-kpi[data-promise]').count(), 0);
-    assert.match(await page.locator('.moc-kpi[data-kpi="trustC"]').innerText(), /40/);
+    assert.match(await page.locator('.moc-kpi[data-kpi="trustC"]').innerText(), /35/);
+    assert.match(await page.locator('.moc-kpi[data-kpi="deaths"]').innerText(), /5 deaths/);
+    const cabinetThresholds = await page.evaluate(() => {
+      const original = {c:MoC.S.trustC,d:MoC.S.trustD,p:MoC.S.trustP};
+      MoC.S.trustC=35;MoC.S.trustD=35;MoC.S.trustP=35;
+      const atFloor=window._mocEvaluateElection({deathCap:100});
+      MoC.S.trustP=34;
+      const belowFloor=window._mocEvaluateElection({deathCap:100});
+      Object.assign(MoC.S,{trustC:original.c,trustD:original.d,trustP:original.p});
+      return {trustFloor:atFloor.trustFloor,deathCap:window._mocEvaluateElection().deathCap,atFloor:atFloor.passes,belowFloor:belowFloor.passes};
+    });
+    assert.deepEqual(cabinetThresholds,{trustFloor:35,deathCap:5,atFloor:true,belowFloor:false});
     assert.match(await page.locator('[data-town-person]').first().evaluate(el => getComputedStyle(el).fontFamily), /VT323/, 'citizen names should use the game font');
     const boundary = await page.evaluate(() => {
       clearInterval(autoTimer); autoTimer = null;

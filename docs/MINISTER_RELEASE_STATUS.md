@@ -2,7 +2,7 @@
 
 Updated: 2026-09-17
 Public game: https://cammelot.org/minister.html
-Model: `minister-care-3-paired`
+Model: `minister-care-4-political`
 Reference protocol: `no-discretionary-action-v1`
 
 This is the canonical status list. Older plans describe how the current release was built; their unchecked boxes are not active tasks.
@@ -37,7 +37,7 @@ This is the canonical status list. Older plans describe how the current release 
 These improve evidence and quality; they do not mean the currently deployed game or leaderboard is offline.
 
 - [x] Complete the active-copy pass: council newspaper, escalation banners, aging/flu updates and confidence-vote choices now report actual mechanics without invented testimonials or moralizing verdicts.
-- [ ] Complete balance validation: the 20-seed purchase × response development matrix is done; diagnose why 0/400 automated policies pass the final vote, make only justified corrections, then validate on holdout seeds.
+- [ ] Complete balance validation: the versioned Cabinet Crisis correction produced 11/400 narrow re-elections (2.75%) across five development seeds and every purchase family; freeze it and validate on unseen holdout seeds.
 - [ ] Audit the legacy emergency-care bypass against the routine staffed-capacity model.
 
 ## Human validation

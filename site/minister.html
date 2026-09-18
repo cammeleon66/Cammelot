@@ -12469,7 +12469,7 @@ async function initLLMSubsystem() {
 // ════════════════════════════════════════════════════════════
 (function(){
   const GS = MoC.S;
-  MoC.MODEL_VERSION = 'minister-care-3-paired';
+  MoC.MODEL_VERSION = 'minister-care-4-political';
   MoC.REFERENCE_PROTOCOL = 'no-discretionary-action-v1';
   MoC.referencePolicy = MoC.IS_BASELINE;
   MoC.comparisonValidated = true;
@@ -15584,7 +15584,7 @@ async function initLLMSubsystem() {
         + (MoC.versionMismatch ? '<p class="moc-sub">This link uses a different model version. The town opens under '+MoC.MODEL_VERSION+'; older outcomes are not comparable.</p>' : '')
         + (MoC.previousRun ? '<p class="moc-sub" id="moc-previous-attempt">Same town, same external conditions. Your previous attempt ended at tick '+MoC.previousRun.tick+'. Try a different approach.</p>' : '')
         + '<p class="moc-sub"><b>' + (sc.id === 'cabinetcrisis'
-          ? 'Finish with all three trust scores at 40 or above, fewer than 5 preventable deaths, and no stage-3 cascade.'
+          ? 'Finish with all three trust scores at 35 or above, 5 or fewer preventable deaths, and no stage-3 cascade.'
           : b.win) + '</b></p>'
         + '<div class="moc-name-entry"><label for="moc-player-name">YOUR PUBLIC PLAYER NAME</label><div class="moc-name-row">'
         + '<input id="moc-player-name" maxlength="24" autocomplete="nickname" aria-describedby="moc-name-error">'
@@ -15771,12 +15771,12 @@ async function initLLMSubsystem() {
       const totalPicked = picked.length;
       const minPromises = opts.minPromisesKept === undefined ? (GS.scenario === 'cabinetcrisis' ? 0 : totalPicked > 0 ? Math.min(2, totalPicked) : 0) : opts.minPromisesKept;
       const sd = systemDeaths();
-      const deathCap = opts.deathCap === undefined ? (MoC.TOTAL_QUARTERS <= 8 ? 4 : 8) : opts.deathCap;
+      const deathCap = opts.deathCap === undefined ? (MoC.TOTAL_QUARTERS <= 8 ? 5 : 8) : opts.deathCap;
       const cascadeStage3 = GS.cascades && (
         (GS.cascades.exodus && GS.cascades.exodus.stage >= 3) ||
         (GS.cascades.rot && GS.cascades.rot.stage >= 3)
       );
-      const trustFloor = opts.trustFloor === undefined ? (GS.scenario === 'cabinetcrisis' ? 40 : 45) : opts.trustFloor;
+      const trustFloor = opts.trustFloor === undefined ? (GS.scenario === 'cabinetcrisis' ? 35 : 45) : opts.trustFloor;
       const strongTrustFloor = opts.strongTrustFloor === undefined ? 60 : opts.strongTrustFloor;
       const allTrustPass = GS.trustC >= trustFloor && GS.trustD >= trustFloor && GS.trustP >= trustFloor;
       const allTrustStrong = GS.trustC >= strongTrustFloor && GS.trustD >= strongTrustFloor && GS.trustP >= strongTrustFloor;
