@@ -922,6 +922,25 @@ body.embed-mode #app{display:block!important}
 .moc-dilemma{background:var(--m-blue3);border:2px solid var(--m-white);border-radius:3px;padding:0 0 10px;margin-bottom:14px;overflow:hidden;box-shadow:3px 3px 0 var(--m-ink)}
 .moc-dilemma .dq{font-size:12.5px;line-height:1.6;margin:10px 12px;color:#dde2ff}
 .moc-dilemma .dq b,.moc-dilemma .dq i{color:var(--m-gold)}
+.moc-decision-brief{margin:10px 12px;padding:9px 10px;background:#111947;border:1px solid #6572ba;color:#bdc5ef;font:13px/1.4 var(--vt)}
+.moc-decision-brief b{color:var(--m-gold)}
+.moc-decision-view{padding:3px 0;border-bottom:1px dashed rgba(138,148,216,.25)}
+.moc-decision-view:last-child{border-bottom:0}
+.moc-quarter-trends{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;margin:8px 0}
+.moc-quarter-trend{background:#101a54;border:1px solid #6572ba;padding:5px 7px;font:12px/1.15 var(--vt);color:#aab4e8}
+.moc-quarter-trend b{display:block;color:var(--m-white);font-size:17px}
+.moc-quarter-trend .good{color:var(--m-green)}.moc-quarter-trend .bad{color:var(--m-red)}.moc-quarter-trend .flat{color:var(--m-gold)}
+.moc-priority-strip{position:sticky;top:-1px;z-index:4;background:#080d29;border:2px solid var(--m-gold);padding:8px;margin:0 0 12px;box-shadow:0 4px 10px rgba(0,0,0,.35)}
+.moc-priority-strip h4{font:8px/1.5 var(--px);color:var(--m-gold);margin:0 0 5px}
+.moc-priority-list{display:flex;gap:5px;flex-wrap:wrap}
+.moc-priority{border:1px solid #6572ba;padding:3px 6px;font:13px/1.1 var(--vt);color:#dde2ff}
+.moc-priority.bad{border-color:var(--m-red);color:#f0b8b8}.moc-priority.good{border-color:var(--m-green);color:#b8e8b8}
+.moc-opening-sound{width:100%;min-height:48px;margin:8px 0;background:#101a54;border:2px solid var(--m-gold);color:var(--m-white);font:8px/1.5 var(--px);cursor:pointer}
+.moc-opening-board{margin:8px 0;padding:8px;background:#080d29;border:1px solid #6572ba;text-align:left}
+.moc-opening-board h3{margin:0 0 5px!important;font-size:7px!important}
+.moc-opening-board ol{list-style:none;margin:0;padding:0}
+.moc-opening-board li{display:grid;grid-template-columns:20px minmax(0,1fr) auto;gap:5px;padding:2px 0;color:#bdc5ef;font:13px/1.15 var(--vt)}
+.moc-opening-board small{display:block;color:#7f87b5;font:11px/1.2 var(--vt)}
 .ec-head{display:flex;align-items:center;gap:8px;background:linear-gradient(90deg,#3a4aa0,var(--m-blue));border-bottom:2px solid var(--m-white);padding:8px 12px;font-family:var(--px);font-size:9px;color:var(--m-white);text-shadow:1px 1px 0 var(--m-ink)}
 .ec-head.ec-danger{background:linear-gradient(90deg,#8a1820,#58101a);animation:ecPulse 1.2s ease-in-out infinite}
 @keyframes ecPulse{50%{filter:brightness(1.25)}}
@@ -976,6 +995,11 @@ body.embed-mode #app{display:block!important}
 .moc-community-entry{display:grid;grid-template-columns:30px minmax(0,1fr) auto;gap:8px;padding:5px 0;border-bottom:1px dashed rgba(240,240,228,.18);font:17px/1.15 var(--vt)}
 .moc-community-entry strong{overflow-wrap:anywhere}
 .moc-community-entry span:last-child{color:var(--m-gold)}
+.moc-score-hero{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:center;margin:8px 0 10px;padding:10px 12px;background:var(--m-blue3);border:3px solid var(--m-gold)}
+.moc-score-number{font:42px/1 var(--vt);color:var(--m-gold);min-width:76px;text-align:center}
+.moc-score-label{font:8px/1.5 var(--px);color:var(--m-white)}
+.moc-score-meta{font:15px/1.2 var(--vt);color:#bdc5ef;margin-top:4px}
+.moc-publish-status{margin:8px 0;padding:8px;border-left:3px solid var(--m-gold);background:#080d29;font:16px/1.2 var(--vt);color:#bdc5ef}
 .moc-result-details{margin:10px 0;border:1px solid #6572ba;border-radius:3px;background:var(--m-blue3)}
 .moc-result-details>summary{display:flex;align-items:center;min-height:44px;box-sizing:border-box;padding:8px 10px;cursor:pointer;color:var(--m-gold);font:18px/1.1 var(--vt)}
 .moc-result-details>*:not(summary){margin-left:10px;margin-right:10px}
@@ -1006,6 +1030,8 @@ body:has(#moc-council) .moc-pop{display:none}
 .moc-flash .fbar>div{height:100%;background:var(--m-amber);width:100%;transition:width .2s linear}
 .moc-flash button{display:block;width:100%;text-align:left;background:#50141c;border:2px solid #a05860;color:#f4d8d8;border-radius:3px;padding:7px 10px;margin:4px 0;cursor:pointer;font:600 11px 'Inter',sans-serif}
 .moc-flash button:hover{border-color:var(--m-amber)}
+.moc-opt:disabled,.moc-buy:disabled{opacity:.42;cursor:not-allowed;filter:grayscale(.35)}
+.moc-unaffordable{display:block;color:var(--m-red);font:12px/1.2 var(--vt);margin-top:3px}
 .moc-flash-result{margin:10px 0;padding:9px;background:#26090e;border-left:3px solid var(--m-gold);font:15px/1.35 var(--vt);color:var(--m-white)}
 .moc-flash-result div{padding:2px 0}
 .moc-name-entry{margin:12px 0;padding:12px;background:var(--m-blue3);border:2px solid #6572ba;text-align:left}
@@ -1067,6 +1093,7 @@ body.moc-shake{animation:mocShake .5s}
 #moc-policy-receipt{padding:8px;border-left:3px solid var(--m-green);font:18px/1.25 var(--vt);white-space:pre-line}
 #moc-policy-receipt:empty{display:none}
 #moc-ministry .spd button{min-height:44px;min-width:32px}
+#moc-mute{min-width:52px!important;font-size:16px!important}
 body:has(#moc-council) #town-pulse{display:none}
 @media(max-width:768px){#moc-town-watch{padding:10px}#moc-town-watch h4{font-size:8px}}
 @media(max-width:768px){#moc-town-watch{padding:10px}#moc-town-watch>summary{font-size:8px}}
@@ -1138,6 +1165,8 @@ body:has(.moc-mandate) #moc-objective{display:none!important}
   .moc-box h2{font-size:10px;line-height:1.55}
   .moc-box h3{font-size:8px;margin-top:12px}
   .moc-sub,.moc-gazette,.moc-dilemma .dq{font-size:12px;line-height:1.5}
+  .moc-dilemma .dq{font-size:13.5px;line-height:1.6}
+  .moc-decision-brief{font-size:14px}
   .moc-memo{padding:12px}
   .moc-memo .body{font-size:13px;line-height:1.6}
   .moc-shop{grid-template-columns:1fr}
@@ -12469,7 +12498,7 @@ async function initLLMSubsystem() {
 // ════════════════════════════════════════════════════════════
 (function(){
   const GS = MoC.S;
-  MoC.MODEL_VERSION = 'minister-care-4-political';
+  MoC.MODEL_VERSION = 'minister-care-5-rollout';
   MoC.REFERENCE_PROTOCOL = 'no-discretionary-action-v1';
   MoC.referencePolicy = MoC.IS_BASELINE;
   MoC.comparisonValidated = true;
@@ -12595,7 +12624,7 @@ async function initLLMSubsystem() {
         if (sickDelta) effects.push('staff absence +' + (sickDelta * 100).toFixed(1) + ' points');
         if (impact.capacityDelta) effects.push('treatment capacity ' + impact.capacityDelta.toFixed(1) + ' starts/week');
         if (drainFactor > 1) effects.push('waiting deterioration ×' + drainFactor.toFixed(2));
-        GS.pendingBanners.push({head:name,body:(effects.length ? effects.join(' · ') : 'No immediate modeled change') + '. Active until tick '+event.endTick+'.',soft:true});
+        GS.pendingBanners.push({head:name,body:(effects.length ? effects.join(' · ') : 'No immediate modeled change') + '. Active until tick '+event.endTick+'.',soft:true,open:event.kind==='flu'});
       });
     }
   };
@@ -12607,6 +12636,7 @@ async function initLLMSubsystem() {
     function row(label,p,r,unit=''){
       return '<div class="moc-score-row"><span>'+label+'</span><b>'+p+unit+' / '+r+unit+'</b></div>';
     }
+    function waitText(snapshot){ return snapshot.waiting ? snapshot.meanWait.toFixed(1)+'w' : 'No one currently waiting'; }
     let html='<h3>Care result</h3><p class="moc-sub">Same date: tick '+player.tick+'. Values: your town / no-action reference.</p>';
     if (!diff) html+='<p class="moc-sub" role="status">Reference pending or unavailable for this date. No benefit claimed.</p>';
     else {
@@ -12616,11 +12646,11 @@ async function initLLMSubsystem() {
         +row('System deaths',player.systemDeaths,reference.systemDeaths)
         +'<div class="moc-score-row"><span>Death difference (reference − yours)</span><b id="moc-livesval">'+(diff.livesDifference>0?'+':'')+diff.livesDifference+'</b></div>'
         +row('Treatment starts',player.treatments,reference.treatments)
-        +row('Current mean wait',player.meanWait.toFixed(1),reference.meanWait.toFixed(1),'w');
+        +'<div class="moc-score-row"><span>Current referral queue</span><b>'+waitText(player)+' / '+waitText(reference)+'</b></div>'
+        +row('Deaths before treatment',player.deathsWaiting,reference.deathsWaiting);
       const mean=s=>s.staffBurnout.length?s.staffBurnout.reduce((sum,a)=>sum+a.burnout,0)/s.staffBurnout.length:0;
       html+='<details><summary>Care context</summary>'
         +row('People waiting',player.waiting,reference.waiting)
-        +row('Deaths before treatment',player.deathsWaiting,reference.deathsWaiting)
         +row('GP paperwork',Math.round(player.admin*100),Math.round(reference.admin*100),'%')
         +row('Mean GP workload score',mean(player).toFixed(1),mean(reference).toFixed(1))+'</details>';
     }
@@ -12629,7 +12659,7 @@ async function initLLMSubsystem() {
       html+='<h3>Previous attempt</h3>';
       if (prior && MoC.care.compare(player,prior)) html+='<p class="moc-sub">At the same tick '+player.tick+' (current / previous):</p>'
         +row('System deaths',player.systemDeaths,prior.systemDeaths)+row('Treatment starts',player.treatments,prior.treatments)
-        +row('Current mean wait',player.meanWait.toFixed(1),prior.meanWait.toFixed(1),'w');
+        +'<div class="moc-score-row"><span>Current referral queue</span><b>'+waitText(player)+' / '+waitText(prior)+'</b></div>';
       else html+='<p class="moc-sub">Your previous attempt ended at tick '+MoC.previousRun.tick+'. No same-date comparison is available here.</p>';
     }
     return html;
@@ -12872,12 +12902,21 @@ async function initLLMSubsystem() {
   }
   function effectivePolicy(item){
     const fx = Object.assign({}, item.fx);
+    const digitalRollout = ['scribes1','scribes2','a2a','twin','platform','platformai','pilotgrant'].includes(item.id);
     if (['scribes1','scribes2','a2a','twin','platformai'].includes(item.id)) {
       const rate = GS.adoptionRate ?? 0.7;
       if (fx.admin) fx.admin *= rate;
       if (fx.drainMult) fx.drainMult = 1 - (1 - fx.drainMult) * rate;
       if (fx.ai) fx.ai *= rate;
       if (fx.capacity) fx.capacity *= rate;
+    }
+    if (digitalRollout && (GS.adoptionRate || 0.7) < 0.85) {
+      fx.admin = (fx.admin || 0) + 0.01;
+      fx._rolloutAdmin = 0.01;
+    }
+    if ((GS.fragmentation || 0) < 3 && (GS.fragmentation || 0) + (fx.frag || 0) >= 3) {
+      fx.admin = (fx.admin || 0) + 0.02;
+      fx._siloAdmin = 0.02;
     }
     if (item.id === 'pilotgrant') fx.trustP = (GS.owned.pilotgrant || 0) >= 2 ? 0 : GS.owned.pilotgrant ? 2 : 4;
     if (item.id === 'campaign' && (GS.owned.campaign || 0) >= 2) fx.trustC = 2;
@@ -12889,6 +12928,7 @@ async function initLLMSubsystem() {
     const beforePolicy = MoC.care.snapshot();
     const dependenceBefore = GS.dependence;
     const effectiveFx = effectivePolicy(item);
+    const fragmentationBefore = GS.fragmentation || 0;
     const cost = shopCost(item);
     GS.budget -= cost;
     GS.buysThisCouncil = (GS.buysThisCouncil || 0) + 1;
@@ -12902,6 +12942,25 @@ async function initLLMSubsystem() {
     if (item.id === 'changeprog') {
       GS.adoptionRate = Math.min(1.0, (GS.adoptionRate || 0.7) + 0.15);
       FX.pop('Adoption now ' + Math.round(GS.adoptionRate * 100) + '%', '#7bc67b');
+    }
+    const digitalRollout = ['scribes1','scribes2','a2a','twin','platform','platformai','pilotgrant'].includes(item.id);
+    let rolloutNote = '';
+    if (digitalRollout) {
+      const adoption = GS.adoptionRate || 0.7;
+      const strain = Math.max(0, Math.round((1 - adoption) * 12));
+      if (strain > 0) {
+        agents.filter(function(agent){ return agent.type === 'gp'; }).forEach(function(gp){
+          gp.burnoutLevel = Math.min(100, (gp.burnoutLevel || 0) + strain);
+          gp.peakBurnout = Math.max(gp.peakBurnout || 0, gp.burnoutLevel);
+        });
+        GS.rolloutStrain = (GS.rolloutStrain || 0) + strain;
+        rolloutNote = ' · rollout strain +' + strain + ' GP burnout';
+        if (effectiveFx._rolloutAdmin) GS.timedFx.push({inverse:{admin:-effectiveFx._rolloutAdmin},untilQ:GS.quarter+1,label:'Digital rollout: training and workflow setup'});
+      }
+    }
+    if (fragmentationBefore < 3 && (GS.fragmentation || 0) >= 3) {
+      if (effectiveFx._siloAdmin) GS.timedFx.push({inverse:{admin:-effectiveFx._siloAdmin},untilQ:GS.quarter+2,label:'Silo coordination: duplicate data and workflow reconciliation'});
+      rolloutNote += ' · silo coordination +2 paperwork points for 2 quarters';
     }
     // G18-D: first pilotgrant — make fragmentation cost visible before it bites (flag prevents double-fire)
     if (item.id === 'pilotgrant' && !GS._pilotGrantWarnFired && (GS.owned.pilotgrant || 0) >= 1) {
@@ -12934,7 +12993,7 @@ async function initLLMSubsystem() {
     showPolicyConsequences(item.name, item.fx, pckind);
     GS._policyReceipt = item.name + '\nAdmin ' + Math.round(beforePolicy.admin * 100) + '% → ' + Math.round(M.IST.admin * 100)
       + '% · Treatment capacity ' + beforePolicy.capacity.toFixed(1) + ' → ' + GS.specialistCapacity.toFixed(1) + ' starts/week'
-      + '\nDependence ' + dependenceBefore + ' → ' + GS.dependence + '. Care outcomes are not guaranteed.';
+      + '\nDependence ' + dependenceBefore + ' → ' + GS.dependence + rolloutNote + '. Care outcomes are not guaranteed.';
     const receipt = document.getElementById('moc-policy-receipt');
     if (receipt) receipt.textContent = GS._policyReceipt;
     renderTownWatch();
@@ -13579,7 +13638,7 @@ async function initLLMSubsystem() {
         btn.textContent = a.type === 'gp' ? '🩺 ' + a.name.replace(/^Dr\.\s*/,'') : '👤 ' + a.name.split(' ')[0];
         btn.title = 'Follow ' + a.name;
         btn.onclick = function(){
-          pauseSim(); GS._followPerson = id;
+          GS._followPerson = id;
           if (!a.moved) {
             userZoomed = true;
             camX = a.x * mapImgW - cv.width / (2 * zoom);
@@ -13722,6 +13781,79 @@ async function initLLMSubsystem() {
   function meterHtml(label, val, color){
     return '<div class="moc-meter">' + label + ': <b>' + val + '</b><div class="bar"><div class="fill" style="width:' + Math.min(100, val) + '%;background:' + color + '"></div></div></div>';
   }
+  function captureCouncilKpis(q){
+    GS._councilKpis = GS._councilKpis || [];
+    if (GS._councilKpis.some(function(snapshot){ return snapshot.q === q; })) return;
+    const care = MoC.care.snapshot();
+    const gps = agents.filter(function(agent){ return agent.type === 'gp'; });
+    GS._councilKpis.push({q:q,trustC:GS.trustC,trustD:GS.trustD,trustP:GS.trustP,
+      deaths:care.systemDeaths,waiting:care.waiting,meanWait:care.meanWait,treatments:care.treatments,
+      admin:M.IST.admin * 100,sick:M.IST.sick * 100,dependence:GS.dependence,fragmentation:GS.fragmentation || 0,
+      burnout:gps.length ? gps.reduce(function(sum,gp){ return sum + (gp.burnoutLevel || 0); },0) / gps.length : 0});
+  }
+  function councilTrendHtml(){
+    const history = GS._councilKpis || [];
+    const current = history[history.length - 1];
+    const previous = history[history.length - 2];
+    if (!current) return '';
+    function card(label,key,unit,lowerBetter){
+      const value=current[key], diff=previous ? value-previous[key] : 0;
+      const cls=!previous||Math.abs(diff)<0.05?'flat':(lowerBetter ? diff<0 : diff>0)?'good':'bad';
+      const arrow=!previous||Math.abs(diff)<0.05?'→':diff>0?'↑':'↓';
+      const decimals=key==='meanWait'?1:0;
+      return '<div class="moc-quarter-trend"><span>'+label+'</span><b>'+Number(value).toFixed(decimals)+unit+'</b>'
+        + '<span class="'+cls+'">'+(previous ? arrow+' '+(diff>0?'+':'')+diff.toFixed(decimals)+unit+' vs Q'+previous.q : 'First council reading')+'</span></div>';
+    }
+    return '<div class="moc-quarter-trends">'
+      +card('Citizen trust','trustC','',false)+card('Doctor trust','trustD','',false)
+      +card('Parliament trust','trustP','',false)+card('Mean wait','meanWait','w',true)
+      +card('Waiting now','waiting','',true)+card('System deaths','deaths','',true)
+      +'</div>';
+  }
+  function councilStoryHtml(q){
+    const history=GS._councilKpis||[], current=history[history.length-1], previous=history[history.length-2];
+    if(!current)return '';
+    const lines=[];
+    if(previous){
+      const waitDiff=current.meanWait-previous.meanWait;
+      lines.push('The specialist list '+(Math.abs(waitDiff)<0.05?'held at ':waitDiff<0?'fell to ':'rose to ')+current.meanWait.toFixed(1)+' weeks, with '+current.waiting+' residents still waiting.');
+      const trustChanges=[['citizen',current.trustC-previous.trustC],['doctor',current.trustD-previous.trustD],['parliament',current.trustP-previous.trustP]].filter(function(entry){return Math.abs(entry[1])>=1;});
+      if(trustChanges.length)lines.push('Since the last council, '+trustChanges.map(function(entry){return entry[0]+' trust '+(entry[1]>0?'rose ':'fell ')+Math.abs(entry[1]).toFixed(0);}).join(', ')+'.');
+    } else lines.push('This is the first quarterly reading: '+current.waiting+' residents are waiting, with a mean specialist wait of '+current.meanWait.toFixed(1)+' weeks.');
+    lines.push('The town enters Q'+q+' with '+current.deaths+' model-classified system deaths, '+current.admin.toFixed(0)+'% paperwork and '+current.sick.toFixed(0)+'% staff absence.');
+    return '<p style="margin:8px 0;font-family:Georgia,serif;line-height:1.55">'+lines.join(' ')+'</p>';
+  }
+  function prioritySummaryHtml(){
+    const care=MoC.care.snapshot(), election=window._mocEvaluateElection ? window._mocEvaluateElection() : {trustFloor:35,deathCap:5};
+    const priorities=[];
+    function add(label,value,bad){priorities.push('<span class="moc-priority '+(bad?'bad':'good')+'">'+label+': '+value+'</span>');}
+    add('Citizens',GS.trustC,GS.trustC<election.trustFloor);
+    add('Doctors',GS.trustD,GS.trustD<election.trustFloor);
+    add('Parliament',GS.trustP,GS.trustP<election.trustFloor);
+    add('Deaths',care.systemDeaths+'/'+election.deathCap,care.systemDeaths>election.deathCap);
+    add('Wait',care.meanWait.toFixed(1)+'w',care.meanWait>M.IST.tree);
+    add('Digital risk',fragility()+'%',GS.dependence>=7);
+    const gps=agents.filter(function(agent){return agent.type==='gp';});
+    const burnout=gps.length?Math.round(gps.reduce(function(sum,gp){return sum+(gp.burnoutLevel||0);},0)/gps.length):0;
+    add('Adoption',Math.round((GS.adoptionRate||0.7)*100)+'%',(GS.adoptionRate||0.7)<0.85);
+    add('GP burnout',burnout+'%',burnout>=65);
+    add('Silos',GS.fragmentation||0,(GS.fragmentation||0)>=3);
+    return '<section class="moc-priority-strip"><h4>PRIORITIES BEFORE YOU SPEND</h4><div class="moc-priority-list">'+priorities.join('')+'</div></section>';
+  }
+  function optionCost(option){
+    if(option && option.fx && Number(option.fx.budget)<0)return Math.abs(Number(option.fx.budget));
+    const text=((option&&(option.label||option.l))||'')+' '+((option&&option.note)||'');
+    const match=text.replace(/[−–]/g,'-').match(/-\s*€\s*(\d+(?:\.\d+)?)K/i);
+    return match ? Number(match[1])*1000 : 0;
+  }
+  function optionAttrs(option){
+    const cost=optionCost(option),blocked=cost>GS.budget;
+    return {cost,blocked,html:blocked?' disabled aria-disabled="true"':''};
+  }
+  function unavailableHtml(option){
+    const state=optionAttrs(option);
+    return state.blocked?'<span class="moc-unaffordable">Unavailable: needs '+fmtK(state.cost)+', budget '+fmtK(GS.budget)+'</span>':'';
+  }
   // ── State of the System panel (so choices are never blind) ──
   function sysCls(v, goodLow, warnAt, badAt){
     // goodLow=true: lower is better
@@ -13730,6 +13862,8 @@ async function initLLMSubsystem() {
   }
   function systemPanelHtml(){
     const ceff = Math.round((1 - M.IST.admin - M.IST.sick) * M.IST.ai * 100);
+    const gps = agents.filter(function(agent){ return agent.type === 'gp'; });
+    const avgBurnout = gps.length ? Math.round(gps.reduce(function(sum,gp){ return sum + (gp.burnoutLevel || 0); },0) / gps.length) : 0;
     const cashflow = GS._cashflowThisQ || 0;
     const cashStr = (cashflow >= 0 ? '+' : '') + fmtK(cashflow) + ' this Q';
     const cells = [
@@ -13742,6 +13876,8 @@ async function initLLMSubsystem() {
       [pixIcon('cross') + ' Capacity', ceff + '%', sysCls(ceff, false, 70, 85)],
       [pixIcon('brheart') + ' HP drain', M.IST.drain.toFixed(2) + '\u00d7', sysCls(M.IST.drain, true, 0.7, 1.0)],
       [pixIcon('plug') + ' Dependence', GS.dependence + ' pts', sysCls(GS.dependence, true, 3, 6)],
+      ['📚 Adoption', Math.round((GS.adoptionRate || 0.7) * 100) + '%', sysCls((GS.adoptionRate || 0.7) * 100, false, 70, 85)],
+      [pixIcon('cross') + ' GP burnout', avgBurnout + '%', sysCls(avgBurnout, true, 35, 65)],
       [pixIcon('people') + ' Carer pressure', (GS.mantelzorg || 30) + '%', sysCls(GS.mantelzorg || 30, true, 50, 70)], // G23: warning earlier
       ['\ud83e\udde9 AI Silos', (GS.fragmentation || 0) + ' active', sysCls(GS.fragmentation || 0, true, 2, 5)], // G17
       ['\ud83c\udfd7 Platform', (GS.platformMaturity || 0) === 0 ? 'none' : 'level ' + (GS.platformMaturity || 0), (GS.platformMaturity || 0) >= 1 ? 'g' : 'y'] // G17
@@ -13893,6 +14029,7 @@ async function initLLMSubsystem() {
     if (GS.trustC <= 15) { councilOpen = false; window._councilWizardMode = false; return endTerm('protest'); }
     if (sdNow >= 15) { councilOpen = false; window._councilWizardMode = false; return endTerm('scandal'); }
     if (GS.budget < -150000) { councilOpen = false; window._councilWizardMode = false; return endTerm('bankrupt'); }
+    captureCouncilKpis(q);
 
     // Reset implementation capacity for this council
     GS.buysThisCouncil = 0;
@@ -14062,7 +14199,7 @@ async function initLLMSubsystem() {
       ov.style.display = 'none'; renderTownWatch(); document.getElementById('moc-town-council').focus();
     };
 
-    const STEP_LABELS = needsDecision ? ['Briefing', 'Decision', 'Action'] : ['Briefing', 'Action'];
+    const STEP_LABELS = needsDecision ? ['Briefing', 'Decision', 'Law', 'Fund'] : ['Briefing', 'Law', 'Fund'];
     let wizStep = 0;
     let decided = !needsDecision;
     let lawPassedThisCouncil = false;
@@ -14093,7 +14230,9 @@ async function initLLMSubsystem() {
         else {
           ov.remove(); councilOpen = false; window._councilWizardMode = false;
           GS._speed = 1; resumeSim(); renderMinistry();
-          document.getElementById('moc-town-watch')?.scrollIntoView({ block: 'nearest' });
+          const panel=document.getElementById('panel');
+          panel.dataset.mocDetail='false';panel.scrollTop=0;
+          document.getElementById('moc-ministry')?.scrollIntoView({block:'start'});
         }
       });
     }
@@ -14101,11 +14240,10 @@ async function initLLMSubsystem() {
     function goTo(n){
       wizStep = n;
       renderTabs();
-      switch(!needsDecision && n === 1 ? 2 : n){
-        case 0: renderStep0(); break;
-        case 1: renderStep2(); break;
-        case 2: renderStep3(); break;
-      }
+      if(n===0)return renderStep0();
+      if(needsDecision&&n===1)return renderStep2();
+      if(n===(needsDecision?2:1))return renderStep3();
+      return renderStep4();
     }
 
     function markDecided(btn){
@@ -14149,13 +14287,13 @@ async function initLLMSubsystem() {
               + '<div style="font-family:\'Press Start 2P\',monospace;font-size:13px;color:' + heroColor + ';line-height:1.7;margin-bottom:10px">\ud83c\udfdb ' + bn.head + '</div>'
               + '<div class="dq" style="text-align:left">' + bn.body + '</div></div>';
           } else {
-            html += '<details class="moc-dilemma"' + (bn.soft ? '' : ' open') + '><summary class="ec-head">' + bn.head + '</summary>'
+            html += '<details class="moc-dilemma"' + (bn.open || !bn.soft ? ' open' : '') + '><summary class="ec-head">' + bn.head + '</summary>'
               + '<div class="dq">' + bn.body + '</div></details>';
           }
         });
         GS.pendingBanners = [];
       }
-      html += '<div class="moc-gazette">' + gazetteReport(q, dueDelayed, evt) + '</div>';
+      html += '<div class="moc-gazette">' + gazetteReport(q, dueDelayed, evt) + councilTrendHtml() + councilStoryHtml(q) + '</div>';
       body.innerHTML = html;
       renderNav(false, 'Next \u2192', false);
     }
@@ -14211,6 +14349,21 @@ async function initLLMSubsystem() {
     }
 
     // === Step 2: Decision (event / beat / dilemma) ===
+    function decisionBriefHtml(options){
+      const care=MoC.care.snapshot();
+      const notes=options.filter(Boolean).map(function(option){return (option.note||option.label||'').replace(/<[^>]+>/g,'');});
+      const hasCost=notes.some(function(note){return /€|budget/i.test(note);});
+      const hasTrust=notes.some(function(note){return /trust|citizens|doctors|parliament/i.test(note);});
+      const hasCare=notes.some(function(note){return /capacity|wait|health|admin|sick|deterioration|treatment/i.test(note);});
+      const hasDigital=notes.some(function(note){return /dependence|fragment|platform|digital|AI|system/i.test(note);});
+      let html='<div class="moc-decision-brief"><b>Why this matters now</b>'
+        +'<div class="moc-decision-view">'+care.waiting+' residents are waiting; mean wait '+(care.waiting?care.meanWait.toFixed(1)+' weeks':'no active queue')+'. Budget '+fmtK(GS.budget)+'.</div>';
+      if(hasCare)html+='<div class="moc-decision-view"><b>Care teams:</b> weigh continuity, workload and treatment capacity.</div>';
+      if(hasCost)html+='<div class="moc-decision-view"><b>Treasury:</b> asks what must be delayed or unfunded to pay for this.</div>';
+      if(hasTrust)html+='<div class="moc-decision-view"><b>Stakeholders:</b> judge access, working conditions and accountability differently.</div>';
+      if(hasDigital)html+='<div class="moc-decision-view"><b>Operations:</b> faster digitization can add adoption work, silos and outage exposure.</div>';
+      return html+'</div>';
+    }
     function renderStep2(){
       const body = document.getElementById('moc-wiz-body');
       let html = '';
@@ -14223,18 +14376,19 @@ async function initLLMSubsystem() {
       }
       if (evt) {
         const ic = EVT_ICONS[evt.id] || ['scroll', false];
-        html += '<div class="moc-dilemma"><div class="ec-head' + (ic[1] ? ' ec-danger' : '') + '">' + pixIcon(ic[0]) + ' ' + evt.name.replace(/^\S+\s/, '').toUpperCase() + '</div><div class="dq">' + evt.text() + '</div>';
+        html += '<div class="moc-dilemma"><div class="ec-head' + (ic[1] ? ' ec-danger' : '') + '">' + pixIcon(ic[0]) + ' ' + evt.name.replace(/^\S+\s/, '').toUpperCase() + '</div><div class="dq">' + evt.text() + '</div>'
+          + decisionBriefHtml(evt.choices||[]);
         if (evt.choices && evt.choices.length > 0) {
           evt.choices.forEach(function(c, i){
-            html += '<button class="moc-opt" data-evtopt="' + i + '"' + (decided ? ' disabled' : '') + '>' + c.label + '<span class="fx">' + c.note + '</span></button>';
+            html += '<button class="moc-opt" data-evtopt="' + i + '"' + (decided ? ' disabled' : optionAttrs(c).html) + '>' + c.label + '<span class="fx">' + c.note + unavailableHtml(c) + '</span></button>';
           });
         }
         html += '</div>';
       }
       if (beat) {
-        html += '<div class="moc-dilemma"><div class="ec-head">' + pixIcon('people') + ' AT THE COUNTER</div><div class="dq">' + beat.text + '</div>'
-          + '<button class="moc-opt" id="moc-opt-a"' + (decided ? ' disabled' : '') + '>' + beat.a.label + '<span class="fx">' + beat.a.note + '</span></button>'
-          + '<button class="moc-opt" id="moc-opt-b"' + (decided ? ' disabled' : '') + '>' + beat.b.label + '<span class="fx">' + beat.b.note + '</span></button></div>';
+        html += '<div class="moc-dilemma"><div class="ec-head">' + pixIcon('people') + ' AT THE COUNTER</div><div class="dq">' + beat.text + '</div>'+decisionBriefHtml([beat.a,beat.b])
+          + '<button class="moc-opt" id="moc-opt-a"' + (decided ? ' disabled' : optionAttrs(beat.a).html) + '>' + beat.a.label + '<span class="fx">' + beat.a.note + unavailableHtml(beat.a) + '</span></button>'
+          + '<button class="moc-opt" id="moc-opt-b"' + (decided ? ' disabled' : optionAttrs(beat.b).html) + '>' + beat.b.label + '<span class="fx">' + beat.b.note + unavailableHtml(beat.b) + '</span></button></div>';
       }
       if (dilemma) {
         const optHtml = function(opt){
@@ -14242,10 +14396,10 @@ async function initLLMSubsystem() {
           if (opt.fxFn) return '<br><span class="delta" style="margin:2px 0 0"><span class="moc-chip risk">\ud83c\udfb2 Gamble \u2014 outcome varies</span></span>';
           return '<br><span class="delta" style="margin:2px 0 0"><span class="moc-chip" style="background:#2a2a3a;color:#8a94d8">\u2696 No immediate effect</span></span>';
         };
-        html += '<div class="moc-dilemma"><div class="ec-head">' + pixIcon('scroll') + ' DECISION REQUIRED</div><div class="dq">' + dilemma.text + '</div>'
-          + '<button class="moc-opt" id="moc-opt-a"' + (decided ? ' disabled' : '') + '>' + dilemma.a.label + '<span class="fx">' + dilemma.a.note + optHtml(dilemma.a) + '</span></button>'
-          + '<button class="moc-opt" id="moc-opt-b"' + (decided ? ' disabled' : '') + '>' + dilemma.b.label + '<span class="fx">' + dilemma.b.note + optHtml(dilemma.b) + '</span></button>'
-          + (dilemma.c ? '<button class="moc-opt" id="moc-opt-c"' + (decided ? ' disabled' : '') + '>' + dilemma.c.label + '<span class="fx">' + dilemma.c.note + optHtml(dilemma.c) + '</span></button>' : '')
+        html += '<div class="moc-dilemma"><div class="ec-head">' + pixIcon('scroll') + ' DECISION REQUIRED</div><div class="dq">' + dilemma.text + '</div>'+decisionBriefHtml([dilemma.a,dilemma.b,dilemma.c])
+          + '<button class="moc-opt" id="moc-opt-a"' + (decided ? ' disabled' : optionAttrs(dilemma.a).html) + '>' + dilemma.a.label + '<span class="fx">' + dilemma.a.note + optHtml(dilemma.a) + unavailableHtml(dilemma.a) + '</span></button>'
+          + '<button class="moc-opt" id="moc-opt-b"' + (decided ? ' disabled' : optionAttrs(dilemma.b).html) + '>' + dilemma.b.label + '<span class="fx">' + dilemma.b.note + optHtml(dilemma.b) + unavailableHtml(dilemma.b) + '</span></button>'
+          + (dilemma.c ? '<button class="moc-opt" id="moc-opt-c"' + (decided ? ' disabled' : optionAttrs(dilemma.c).html) + '>' + dilemma.c.label + '<span class="fx">' + dilemma.c.note + optHtml(dilemma.c) + unavailableHtml(dilemma.c) + '</span></button>' : '')
           + '</div>';
       }
       body.innerHTML = html;
@@ -14283,10 +14437,11 @@ async function initLLMSubsystem() {
       }
     }
 
-    // === Action: one irreversible law plus up to two funded interventions ===
+    // === Law: one irreversible law, clearly separated from funding ===
     function renderStep3(){
       const body = document.getElementById('moc-wiz-body');
-      let html = '<details><summary>Optional: pass a law</summary><div class="moc-sub">One law per quarter. Cannot be repealed.</div>'
+      let html = prioritySummaryHtml()+'<div class="moc-dilemma"><div class="ec-head">⚖ PASS A LAW</div>'
+        + '<div class="dq">Laws permanently change the rules. You may enact one this quarter, or continue without one. Funding choices come next.</div></div>'
         + '<div class="moc-shop" id="moc-laws">';
       Object.keys(LAW_TRACKS).forEach(function(tk){
         const track = LAW_TRACKS[tk];
@@ -14310,12 +14465,9 @@ async function initLLMSubsystem() {
             + '</button></div>';
         }
       });
-      html += '</div></details>'
-        + '<div class="moc-sub" style="font-size:11.5px;margin:16px 0 10px"><b>FUND</b> \u00b7 choose up to two interventions this quarter</div>'
-        + '<div class="moc-sub" id="moc-budget-line"></div><div class="moc-shop" id="moc-shop"></div>';
+      html += '</div>';
       body.innerHTML = html;
-      renderShop(true);
-      renderNav(true, 'Watch the town \u25b6', false);
+      renderNav(true, 'Funding →', false);
       if (!lawPassedThisCouncil) {
         ov.querySelectorAll('[data-law]').forEach(function(b){
           b.addEventListener('click', function(){
@@ -14347,6 +14499,17 @@ async function initLLMSubsystem() {
           });
         });
       }
+    }
+
+    // === Fund: up to two interventions, with priorities kept visible ===
+    function renderStep4(){
+      const body=document.getElementById('moc-wiz-body');
+      body.innerHTML=prioritySummaryHtml()
+        + '<div class="moc-dilemma"><div class="ec-head">🏗 FUND INTERVENTIONS</div>'
+        + '<div class="dq">Choose up to two changes. Compare each immediate effect with the priorities above; delayed or uncertain outcomes are labeled separately.</div></div>'
+        + '<div class="moc-sub" id="moc-budget-line"></div><div class="moc-shop" id="moc-shop"></div>';
+      renderShop(true);
+      renderNav(true,'Watch the town ▶',false);
     }
 
     goTo(0);
@@ -14427,6 +14590,11 @@ async function initLLMSubsystem() {
     });
     return h + '</div>';
   }
+  const publicLeaderboard = 'https://app-cammelot-leaderboard-a8f605fa.azurewebsites.net/api/leaderboard';
+  function communityEndpoint(){
+    return window.CAMMELOT_LEADERBOARD_URL
+      || (/^(www\.)?cammelot\.org$/i.test(location.hostname) ? publicLeaderboard : '/api/leaderboard');
+  }
 
   // ── G4: End statement (succeed/fail epitaph under the verdict) ──
   function endStatement(r, reason){
@@ -14436,9 +14604,8 @@ async function initLLMSubsystem() {
     const cabinetReasons = GS.scenario === 'cabinetcrisis' && reason === 'election' && (GS._cabinetReasons || []).length
       ? ' Failed conditions: ' + GS._cabinetReasons.join('; ') + '.'
       : '';
-    return political+cabinetReasons+' At tick '+final.tick+': '+final.systemDeaths+' model-classified system deaths, '
-      +final.treatments+' treatment starts, '+final.waiting+' waiting (mean '+final.meanWait.toFixed(1)+' weeks). '
-      +'Budget '+fmtK(final.budget)+'; dependence '+GS.dependence+'; trust '+GS.trustC+'/'+GS.trustD+'/'+GS.trustP+'.';
+    const wait=final.waiting ? final.waiting+' waiting; mean '+final.meanWait.toFixed(1)+' weeks' : 'no one currently waiting; '+final.deathsWaiting+' died before treatment';
+    return political+cabinetReasons+' '+final.systemDeaths+' model-classified system deaths · '+final.treatments+' treatment starts · '+wait+'.';
   }
 
   // ── G4: Post-game data reveal (play-first-explain-later) ──
@@ -14510,20 +14677,21 @@ async function initLLMSubsystem() {
         + '\nTry the same town: https://cammelot.org/minister.html#scn=' + GS.scenario + '&seed=' + MoC.seed + '&v='+MoC.MODEL_VERSION;
     }
     const shareText = buildShareText(r, reason);
-    const publicLeaderboard = 'https://app-cammelot-leaderboard-a8f605fa.azurewebsites.net/api/leaderboard';
-    const communityApi = window.CAMMELOT_LEADERBOARD_URL
-      || (/^(www\.)?cammelot\.org$/i.test(location.hostname) ? publicLeaderboard : '/api/leaderboard');
-    const leaderboardPayload=function(username){
+    const communityApi = communityEndpoint();
+    const leaderboardPayload=function(username,scoreResult){
       const summary=GS._finalSnapshot;
       return {username,scenario:GS.scenario,seed:MoC.seed,modelVersion:MoC.MODEL_VERSION,endTick:summary.tick,
-        score:r.score,politicalOutcome:reason,summary:{systemDeaths:summary.systemDeaths,waiting:summary.waiting,
+        score:scoreResult.score,politicalOutcome:reason,summary:{systemDeaths:summary.systemDeaths,waiting:summary.waiting,
           meanWait:summary.meanWait,treatments:summary.treatments,deathsWaiting:summary.deathsWaiting,admin:summary.admin,
           budget:summary.budget,trust:GS.trust,fragility:fragility()}};
     };
+    const publicName=GS.playerName || loadJSON('moc_player_name','') || '';
     const lb = recordRun(r, reason);
     const ov = document.createElement('div');
     ov.className = 'moc-overlay'; ov.id = 'moc-endscreen';
     let html = '<div class="moc-box"><h2>\ud83c\udfdb End of Term</h2>';
+    html += '<section class="moc-score-hero"><b class="moc-score-number" id="moc-scoreval">' + r.score + '</b><div>'
+      + '<div class="moc-score-label">FINAL SCORE</div><div class="moc-score-meta">' + (publicName || 'Generated public name') + ' · seed ' + MoC.seed + '</div></div></section>';
     // G8c: verdict as stamp + staged reveal + score count-up
     Audio5.stamp();
     const politicalWin = GS.scenario === 'sandbox'
@@ -14531,8 +14699,12 @@ async function initLLMSubsystem() {
         : (MoC.TOTAL_QUARTERS < 16 || GS._electionResult === 'strong'));
     const earnedWinStamp = reason === 'served' && politicalWin && (GS.scenario === 'cabinetcrisis' || r.score >= 400);
     html += '<div class="moc-verdict"><span class="moc-stamp' + (earnedWinStamp ? ' win' : '') + '">' + verdict(r, reason) + '</span></div>';
-    html += '<div class="moc-sub" style="text-align:center;font-style:italic;font-size:13px">' + endStatement(r, reason) + '</div>';
-    html += '<div class="moc-emoji">' + trail + '</div>';
+    html += '<div class="moc-sub" style="text-align:center;font-size:13px">' + endStatement(r, reason) + '</div>';
+    html += '<div id="moc-care-comparison">'+careComparisonHtml()+'</div>';
+    html += '<section class="moc-community" id="moc-community"><h3>Same-town standings</h3>'
+      + '<p class="moc-sub">Your completed run is published automatically under the public name chosen at the start. Community submissions are unverified.</p>'
+      + '<div class="moc-publish-status" id="moc-community-status" role="status">Publishing result…</div>'
+      + '<ol class="moc-community-list" id="moc-community-list" aria-label="Community leaderboard"></ol></section>';
     // Secondary detail: the result and same-date care comparison remain above this section.
     html += '<details class="moc-result-details"><summary>Term record and handover</summary>';
     html += '<h3>Your decisions</h3><div class="moc-sub" style="line-height:1.7">';
@@ -14629,10 +14801,10 @@ async function initLLMSubsystem() {
     })();
     html += '</details><details class="moc-result-details"><summary>Score calculation</summary><h3>Scorecard</h3>';
     html += '<div class="moc-score-row"><span>Preventable deaths (your term)</span><b>' + r.sd + '</b></div>';
-    html += '<div id="moc-care-comparison">'+careComparisonHtml()+'</div>';
     const careResult = MoC.care.snapshot();
     html += '<div class="moc-score-row"><span>Admin burden reduced</span><b>' + r.adminGain + ' pts (now ' + Math.round(M.IST.admin * 100) + '%)</b></div>';
-    html += '<div class="moc-score-row"><span>Current referral wait / fixed model norm</span><b>' + careResult.meanWait.toFixed(1) + 'w / 12w</b></div>';
+    html += '<div class="moc-score-row"><span>Current referral queue / fixed model norm</span><b>' + (careResult.waiting ? careResult.meanWait.toFixed(1)+'w' : 'No one waiting') + ' / 12w</b></div>';
+    html += '<div class="moc-score-row"><span>Deaths before treatment</span><b>' + careResult.deathsWaiting + '</b></div>';
     html += '<div class="moc-score-row"><span>Final trust / fragility</span><b>' + GS.trust + ' / ' + fragility() + '</b></div>';
     if ((GS.fragmentation || 0) > 2) { // G17: show frag penalty only when it actually costs something
       html += '<div class="moc-score-row"><span>AI fragmentation penalty (' + (GS.fragmentation || 0) + ' silos)</span><b style="color:#e07050">\u2212' + fragPenalty() + ' pts</b></div>';
@@ -14647,33 +14819,22 @@ async function initLLMSubsystem() {
     if (r.platformBonus > 0) html += '<div class="moc-score-row"><span>Platform coherence (platform + AI on shared data)</span><b style="color:#7bc67b">+' + r.platformBonus + ' pts</b></div>';
     html += '<div class="moc-score-row"><span>Budget unspent</span><b>' + fmtK(GS.budget) + '</b></div>';
     html += '<div class="moc-score-row"><span>Term points (25% of live play + objectives)</span><b>' + Math.round((GS.liveScore || 0) * 0.25) + '</b></div>';
-    html += '<div class="moc-score-row" style="font-size:15px"><span><b>FINAL SCORE</b></span><b id="moc-scoreval" style="color:#FFB300">' + r.score + '</b></div>';
+    html += '<div class="moc-score-row" style="font-size:15px"><span><b>FINAL SCORE</b></span><b style="color:#FFB300">' + r.score + '</b></div>';
     html += '</details>';
     if (GS.challengeScore !== null) {
       const beat = r.score > GS.challengeScore;
       html += '<div class="moc-gazette" style="border-left-color:' + (beat ? '#7bc67b' : '#e07050') + '">\ud83c\udfaf Challenge: '
         + (beat ? 'You beat the target of ' + GS.challengeScore + '!' : 'Target was ' + GS.challengeScore + ' \u2014 not this time.') + '</div>';
     }
-    html += leaderboardHtml(lb.runs, r);
     if (GS.scenario === 'sprint' && lb.streak.count > 1) {
       html += '<div class="moc-sub">\ud83d\udd25 Daily sprint streak: <b>' + lb.streak.count + ' days</b>. Tomorrow\u2019s scenario arrives at midnight.</div>';
     }
     html += dataRevealHtml();
-    html += '<section class="moc-community" id="moc-community"><h3>Community scores</h3>'
-      + '<p class="moc-sub">Optional and public. Same-town ranking for seed ' + MoC.seed + ': fewer system deaths first, then deaths before treatment, treatment starts, waiting time, political completion and score. Enter a name or leave it blank for a generated name. No account or email. Submissions are unverified.</p>'
-      + '<div class="moc-community-form"><input id="moc-community-name" maxlength="24" autocomplete="nickname" aria-label="Public leaderboard name" placeholder="Public name (optional)">'
-      + '<button class="moc-buy" id="moc-submit-score">Publish score</button></div><div class="moc-community-status" id="moc-community-status" role="status"></div>'
-      + '<ol class="moc-community-list" id="moc-community-list" aria-label="Community leaderboard"></ol></section>';
-    html += '<h3>Copy your result</h3><div class="moc-share" id="moc-sharetext">' + shareText.replace(/</g, '&lt;') + '</div>';
-    html += '<div style="text-align:center;line-height:2.4"><button class="moc-buy" id="moc-copy" style="padding:9px 20px;font-size:12.5px">\ud83d\udccb Copy result</button> ';
-    html += '<button class="moc-buy" id="moc-again" style="padding:9px 20px;font-size:12.5px">Try another approach</button><p id="moc-replay-status" role="status"></p></div></div>';
+    html += '<details class="moc-result-details"><summary>Copy result</summary><div class="moc-share" id="moc-sharetext">' + shareText.replace(/</g, '&lt;') + '</div>';
+    html += '<div style="text-align:center;line-height:2.4"><button class="moc-buy" id="moc-copy" style="padding:9px 20px;font-size:12.5px">\ud83d\udccb Copy result</button></div></details>';
+    html += '<div style="text-align:center;line-height:2.4"><button class="moc-buy" id="moc-again" style="padding:9px 20px;font-size:12.5px">Try another approach</button><p id="moc-replay-status" role="status"></p></div></div>';
     ov.innerHTML = html;
     document.body.appendChild(ov);
-    document.getElementById('moc-community-name').value = GS.playerName || loadJSON('moc_player_name', '');
-    // Put the actual care comparison before the lengthy legacy/score narrative.
-    const box=ov.querySelector('.moc-box');
-    const comparison=document.getElementById('moc-care-comparison');
-    if (box && comparison) box.insertBefore(comparison,box.children[2]||null);
     GS._rebuildShare = buildShareText;
     // G8c: staged reveal of end-screen sections + score count-up
     const kids = [...ov.querySelectorAll('.moc-box > *')];
@@ -14689,11 +14850,10 @@ async function initLLMSubsystem() {
           sv0.textContent = Math.round(target * (1 - Math.pow(1 - p, 3)));
           if (p < 1) requestAnimationFrame(step); else Audio5.jingle();
         })(performance.now());
-      }, Math.min(kids.length * 140, 2200) + 200);
+      }, 250);
     }
     async function loadCommunity(){
       const list=document.getElementById('moc-community-list');
-      const status=document.getElementById('moc-community-status');
       try {
         const response=await fetch(communityApi+'?scenario='+encodeURIComponent(GS.scenario)+'&modelVersion='+encodeURIComponent(MoC.MODEL_VERSION)+'&seed='+MoC.seed+'&limit=10');
         if(!response.ok) throw new Error('unavailable');
@@ -14706,23 +14866,35 @@ async function initLLMSubsystem() {
           const score=document.createElement('span');score.textContent=entry.summary.systemDeaths+' deaths · '+entry.score+' pts';
           row.append(rank,name,score);list.appendChild(row);
         });
-        status.textContent=data.entries.length?'Results for this town and model.':'No published results for this town yet.';
-      } catch(e) { status.textContent='Community scores are unavailable. Your result is still stored locally.'; }
+      } catch(e) { throw new Error('standings unavailable'); }
     }
-    document.getElementById('moc-submit-score').addEventListener('click',async function(){
-      const button=this,status=document.getElementById('moc-community-status');
-      button.disabled=true;status.textContent='Publishing…';
+    async function publishCompletedRun(force){
+      const status=document.getElementById('moc-community-status');
+      if(GS._communityPublishStarted)return;
+      if(!force&&!MoC.referenceAt(cycle)){
+        status.textContent='Waiting for the same-date reference before publishing…';
+        return;
+      }
+      GS._communityPublishStarted=true;
+      status.textContent='Publishing completed run…';
       try {
+        const finalScore=computeScore(MoC.baseline);
+        const scoreElement=document.getElementById('moc-scoreval');if(scoreElement)scoreElement.textContent=finalScore.score;
         const response=await fetch(communityApi,{method:'POST',headers:{'content-type':'application/json'},
-          body:JSON.stringify(leaderboardPayload(document.getElementById('moc-community-name').value))});
-        const data=await response.json();
+          body:JSON.stringify(leaderboardPayload(publicName,finalScore))});
+        const data=String(response.headers.get('content-type')||'').includes('application/json') ? await response.json() : {error:'leaderboard service unavailable'};
         if(!response.ok) throw new Error(data.error||'submission failed');
-        document.getElementById('moc-community-name').value=data.entry.username;
         await loadCommunity();
         status.textContent=(data.duplicate?'Already published as ':'Published as ')+data.entry.username+' · rank '+data.rank+'.';
-      } catch(e) { status.textContent='Could not publish: '+e.message+'. Your local result was not lost.'; button.disabled=false; }
-    });
-    loadCommunity();
+      } catch(e) {
+        GS._communityPublishStarted=false;
+        status.replaceChildren(document.createTextNode('Publication failed: '+e.message+'. '));
+        const retry=document.createElement('button');retry.className='moc-buy';retry.textContent='Retry publication';retry.onclick=function(){publishCompletedRun(true);};status.appendChild(retry);
+      }
+    }
+    GS._publishCompletedRun=publishCompletedRun;
+    publishCompletedRun(false);
+    setTimeout(function(){publishCompletedRun(true);},12000);
     document.getElementById('moc-copy').addEventListener('click', function(){
       navigator.clipboard.writeText(document.getElementById('moc-sharetext').textContent);
       this.textContent = '\u2713 Copied';
@@ -14748,6 +14920,7 @@ async function initLLMSubsystem() {
     const runs=loadJSON('moc_runs_'+MoC.MODEL_VERSION,[]);
     const saved=runs.find(run=>run.seed===MoC.seed && run.scenario===GS.scenario && run.endTick===cycle);
     if(saved){saved.score=r.score;saved.livesSaved=r.livesSaved;saveJSON('moc_runs_'+MoC.MODEL_VERSION,runs);}
+    if(GS._publishCompletedRun)GS._publishCompletedRun(false);
   }
 
   // ═══ G5a: LIVE SCORE, POPUPS, OBJECTIVES ═══
@@ -14810,7 +14983,7 @@ async function initLLMSubsystem() {
 
   // ═══ G5d/G8: AUDIO — file-based SFX (assets/sfx/*.mp3, e.g. Suno-generated) with chiptune fallback ═══
   const Audio5 = (function(){
-    let ctx = null, muted = loadJSON('moc_muted', false);
+    let ctx = null, muted = loadJSON('moc_muted_v2', false);
     const voices = new Set(), musicVoices = new Set();
     function cancelVoices(group){
       [...group].forEach(function(voice){
@@ -14917,7 +15090,7 @@ async function initLLMSubsystem() {
         };
       })(),
       setMuted: function(m){
-        muted = m; saveJSON('moc_muted', m);
+        muted = m; saveJSON('moc_muted_v2', m);
         if (m) {
           this.title.stop(); cancelVoices(voices);
           Object.values(sfxCache).forEach(function(file){ if (file !== 'missing') file.pause(); });
@@ -15160,7 +15333,8 @@ async function initLLMSubsystem() {
     el.className = 'moc-flash';
     el.innerHTML = '<h4>' + flash.t + '</h4><div class="moc-sub">Time is paused.</div>'
       + '<div class="ft">' + flash.d(face) + '</div>'
-      + '<button id="moc-fa">' + flash.a.l + '</button><button id="moc-fb">' + flash.b.l + '</button>';
+      + '<button id="moc-fa"'+optionAttrs(flash.a).html+'>' + flash.a.l + unavailableHtml(flash.a) + '</button>'
+      + '<button id="moc-fb"'+optionAttrs(flash.b).html+'>' + flash.b.l + unavailableHtml(flash.b) + '</button>';
     document.body.appendChild(el);
     function cleanup(){ el.remove(); flashActive = false; if (!councilOpen && !GS.over) resumeSim(); }
     function decide(option){
@@ -15586,10 +15760,12 @@ async function initLLMSubsystem() {
         + '<p class="moc-sub"><b>' + (sc.id === 'cabinetcrisis'
           ? 'Finish with all three trust scores at 35 or above, 5 or fewer preventable deaths, and no stage-3 cascade.'
           : b.win) + '</b></p>'
-        + '<div class="moc-name-entry"><label for="moc-player-name">YOUR PUBLIC PLAYER NAME</label><div class="moc-name-row">'
+        + '<div class="moc-name-entry"><label for="moc-player-name">YOUR PUBLIC LEADERBOARD NAME</label><div class="moc-name-row">'
         + '<input id="moc-player-name" maxlength="24" autocomplete="nickname" aria-describedby="moc-name-error">'
         + '<button class="moc-buy" id="moc-generate-name" type="button">RANDOM NAME</button></div>'
-        + '<p class="moc-name-error" id="moc-name-error"></p></div>'
+        + '<p class="moc-sub" style="margin:5px 0 0">Your completed score is published automatically. No account or email.</p><p class="moc-name-error" id="moc-name-error"></p></div>'
+        + '<button class="moc-opening-sound" id="moc-opening-sound" type="button">🔊 SOUND ON · TAP TO MUTE</button>'
+        + '<section class="moc-opening-board" id="moc-opening-board"><h3>COMMUNITY TOP 5</h3><small>Loading persisted results…</small><ol></ol></section>'
         + '<details style="text-align:left"><summary>Why this game? Model &amp; limits</summary>'
         + '<p class="moc-sub">How do you improve healthcare while keeping it running? Test staffing, technology and resilience against the same town without your interventions. More technology is not the goal.</p>'
         + '<p class="moc-sub">Simulated people, not clinical predictions. Results depend on model assumptions. Annual targets earn bonus points; they are not the whole goal. <a href="about.html" target="_blank" rel="noopener">Research context</a>.</p></details>'
@@ -15601,6 +15777,32 @@ async function initLLMSubsystem() {
       document.getElementById('moc-generate-name').addEventListener('click', function(){
         nameInput.value = randomPlayerName(nameInput.value); nameError.textContent = ''; nameInput.focus(); nameInput.select();
       });
+      const openingSound = document.getElementById('moc-opening-sound');
+      openingSound.textContent = Audio5.isMuted() ? '🔇 SOUND OFF · TAP TO ENABLE' : '🔊 SOUND ON · TAP TO MUTE';
+      openingSound.addEventListener('click', function(){
+        Audio5.setMuted(!Audio5.isMuted());
+        openingSound.textContent = Audio5.isMuted() ? '🔇 SOUND OFF · TAP TO ENABLE' : '🔊 SOUND ON · TAP TO MUTE';
+      });
+      (async function loadOpeningBoard(){
+        const board=document.getElementById('moc-opening-board'),list=board.querySelector('ol'),note=board.querySelector('small');
+        try {
+          const response=await fetch(communityEndpoint()+'?scenario='+encodeURIComponent(sc.id)+'&modelVersion='+encodeURIComponent(MoC.MODEL_VERSION)+'&limit=5');
+          if(!response.ok)throw new Error('unavailable');
+          const data=await response.json();
+          if(data.entries.length){
+            note.textContent='Persisted community runs · different town seeds · care-first ranking';
+            data.entries.forEach(function(entry,index){
+              const row=document.createElement('li'),rank=document.createElement('span'),name=document.createElement('strong'),score=document.createElement('span');
+              rank.textContent=(index+1)+'.';name.textContent=entry.username;score.textContent=entry.summary.systemDeaths+' deaths · '+entry.score+' pts';
+              row.append(rank,name,score);list.appendChild(row);
+            });
+            return;
+          }
+          note.textContent='Simulation examples until the first community runs are published';
+          [['Benchmark Resilient','4 deaths · 412 pts'],['Benchmark Digital','5 deaths · 386 pts'],['Benchmark Staffing','5 deaths · 351 pts'],['Benchmark Foundation','6 deaths · 443 pts'],['Benchmark No Action','6 deaths · 303 pts']]
+            .forEach(function(example,index){const row=document.createElement('li');row.innerHTML='<span>'+(index+1)+'.</span><strong></strong><span></span>';row.children[1].textContent=example[0];row.children[2].textContent=example[1];list.appendChild(row);});
+        } catch(error){ note.textContent='Community board unavailable; the game still works offline.'; }
+      })();
       document.getElementById('moc-takeoffice').addEventListener('click', function(){
         if (!validPlayerName(nameInput.value)) { nameError.textContent = 'Use 2–24 letters or numbers.'; nameInput.focus(); return; }
         GS.playerName = nameInput.value.trim().replace(/\s+/g, ' ');
