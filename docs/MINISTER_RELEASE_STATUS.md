@@ -37,7 +37,7 @@ This is the canonical status list. Older plans describe how the current release 
 These improve evidence and quality; they do not mean the currently deployed game or leaderboard is offline.
 
 - [x] Complete the active-copy pass: council newspaper, escalation banners, aging/flu updates and confidence-vote choices now report actual mechanics without invented testimonials or moralizing verdicts.
-- [ ] Complete the balance study: separate purchase and response policies, run at least twenty development seeds, report distributions and paired care differences, then validate on holdout seeds.
+- [ ] Complete balance validation: the 20-seed purchase × response development matrix is done; diagnose why 0/400 automated policies pass the final vote, make only justified corrections, then validate on holdout seeds.
 - [ ] Audit the legacy emergency-care bypass against the routine staffed-capacity model.
 
 ## Human validation
