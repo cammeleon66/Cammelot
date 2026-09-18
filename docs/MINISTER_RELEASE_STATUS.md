@@ -59,4 +59,66 @@ These require people or physical devices and cannot be honestly checked by autom
 
 ## Next action
 
-Run the twenty-seed benchmark while physical-device and human playtests proceed in parallel.
+Follow the improvement plan below while physical-device and human playtests proceed in parallel.
+
+## Improvement plan
+
+### 1. Make the balance experiment complete
+
+The 20-seed purchase × response matrix is valid for those two dimensions, but it enacts no laws. It cannot establish that Cabinet Crisis is unwinnable.
+
+- Add a separate governance policy: no laws, parliament-first laws, care-bottleneck laws and resilience-first laws.
+- Keep purchase, response and governance policies independent in output.
+- Retry wishlist purchases at later councils when they are temporarily unavailable instead of discarding them permanently.
+- Record every ending tick, final-vote reason, trust delta source, law, purchase, response and cascade stage.
+- Add parser tests for representative option text so trust/budget/care heuristics select what their names claim.
+
+**Exit:** sampled traces reconstruct every trust and budget change; policies actually enact distinct laws and purchases.
+
+### 2. Prove Cabinet Crisis has a legitimate winning path
+
+- Build one documented survival policy using only information visible to a player; no direct state mutation or hidden future knowledge.
+- Run it through the real UI on fixed development seeds.
+- Identify which condition blocks a win: parliament, citizen trust, doctor trust, death cap or cascade.
+- Check whether a player can discover the required actions from previews and target cards.
+
+**Exit:** at least one reproducible, non-cheating path passes the final vote. If none exists after laws are included, treat that as a model defect.
+
+### 3. Correct political balance at its source
+
+Do not lower every target or add arbitrary bonuses. Use the trust ledger from steps 1–2.
+
+- Fix contradictory, duplicated or unavoidable parliament penalties first.
+- Align option previews with the trust changes they actually apply.
+- If the 40-point threshold remains unreachable under coherent play, adjust the smallest responsible penalty/gain or threshold and document why.
+- Keep mortality, care capacity and the paired reference unchanged unless a separate clinical defect is found.
+- Ensure no single law or purchase becomes a mandatory obvious answer.
+
+**Exit:** multiple coherent strategies can reach the final vote, but none is uniformly best on care, politics and cost.
+
+### 4. Revalidate without tuning to the test seeds
+
+- Rerun the 20 development seeds after the justified correction.
+- Freeze parameters, then run a separate holdout set not used during correction.
+- Report medians, ranges, ending ticks, final-vote criteria and paired care differences.
+- Continue ranking community scores by same-seed care outcomes, not scalar score.
+
+**Exit:** the winning path remains feasible on holdout seeds; worse care is not rewarded merely by a higher score.
+
+### 5. Audit the remaining care-model risk
+
+- Trace emergency admissions through the legacy bypass and routine staffed-capacity paths.
+- Define when emergency care may bypass the routine queue and what capacity it still consumes.
+- Add fixtures for simultaneous emergency and routine demand.
+- Retain cautious `model-classified system deaths` language until domain review.
+
+**Exit:** emergency priority cannot create unlimited hospital throughput or silently displace routine care without being measured.
+
+### 6. Human release gates
+
+- Test the latest build on physical Android Chrome and iPhone Safari.
+- Run five uncoached playtests, including one healthcare-domain reviewer.
+- Require players to explain the target, a followed person, a trade-off, political versus care outcome and what they would change on replay.
+- Resolve comprehension blockers before adding scenarios or mechanics.
+
+**Exit:** four of five players complete and explain the loop without coaching; no physical-device blocker remains.
