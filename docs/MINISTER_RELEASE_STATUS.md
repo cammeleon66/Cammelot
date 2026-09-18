@@ -2,7 +2,7 @@
 
 Updated: 2026-09-17
 Public game: https://cammelot.org/minister.html
-Model: `minister-care-4-political`
+Model: `minister-care-5-rollout`
 Reference protocol: `no-discretionary-action-v1`
 
 This is the canonical status list. Older plans describe how the current release was built; their unchecked boxes are not active tasks.
@@ -23,6 +23,11 @@ This is the canonical status list. Older plans describe how the current release 
 - [x] Town requests pause without a timer and show the immediate modeled effect before closing.
 - [x] Continuous soundtrack through gameplay and councils; Android unmute starts media in the tap gesture.
 - [x] Public player-name entry with five random-name styles.
+- [x] Opening top-five board uses persisted results, with transparent simulation examples only when a new model board is empty.
+- [x] Completed runs publish automatically; failed publication preserves the local result and offers retry.
+- [x] Empty referral queues say `No one currently waiting` and keep deaths-before-treatment adjacent.
+- [x] Mobile council flow separates Briefing, Decision, Law and Fund; action priorities remain visible.
+- [x] Low-adoption digital rollouts add visible temporary paperwork and GP burnout strain; change management reduces it.
 - [x] Care-first, same-seed community leaderboard labeled as unverified submissions.
 - [x] Azure App Service backend with HTTPS, exact-origin CORS and persistent `/home` storage.
 - [x] Managed-identity ACR pull; no registry password enabled.

@@ -1,6 +1,6 @@
 # Community leaderboard
 
-The Minister game can publish an end score to `GET/POST /api/leaderboard`. Publishing is optional and requires an explicit button click.
+The Minister game publishes a completed end score to `GET/POST /api/leaderboard` under the public name chosen before play. No account or email is required. If publication fails, the local result remains available and the result screen offers a retry.
 
 ## Public data
 
@@ -14,6 +14,8 @@ No account, email, cookie identifier or IP address is stored. The service uses a
 Community scores are unverified. With no account and no signed server-side replay, a determined caller can forge client results. The interface labels them accordingly. A future verified board would require the server to replay the recorded decision path under the declared model version.
 
 Boards compare only the same model version, scenario and seed. Ranking prioritizes fewer model-classified system deaths, fewer deaths before treatment, more treatment starts, shorter current waits, political completion and finally the scalar score. This prevents an easier seed or a high score with worse mortality from taking precedence. The interface shows both deaths and points beside each name.
+
+The opening screen shows five persisted runs for the selected scenario/model across town seeds and labels that cross-town context. When a newly versioned board is empty, it shows clearly labeled simulation examples; these are UI examples, not stored players. The end screen remains a same-seed board.
 
 ## Names and moderation
 

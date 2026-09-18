@@ -91,6 +91,23 @@ test('leaderboard exposes no IP address and supports health checks', async () =>
   } finally { await app.close(); }
 });
 
+test('leaderboard serves an opening top five across persisted town seeds', async () => {
+  const app = await fixture();
+  try {
+    for (let index = 0; index < 7; index++) {
+      const response = await post(app.base, validRun({ username:`Player ${index + 1}`, seed:7000 + index,
+        score:400 + index, summary:{...validRun().summary,systemDeaths:index % 4,deathsWaiting:index % 3} }));
+      assert.equal(response.status,201);
+    }
+    const overall = await fetch(`${app.base}/api/leaderboard?scenario=cabinetcrisis&modelVersion=minister-care-3-paired&limit=5`).then(response=>response.json());
+    assert.equal(overall.entries.length,5);
+    assert.equal(new Set(overall.entries.map(entry=>entry.seed)).size,5);
+    assert.deepEqual(overall.entries.map(entry=>entry.summary.systemDeaths),[0,0,1,1,2]);
+    const sameTown = await fetch(`${app.base}/api/leaderboard?scenario=cabinetcrisis&modelVersion=minister-care-3-paired&seed=7003&limit=5`).then(response=>response.json());
+    assert.deepEqual(sameTown.entries.map(entry=>entry.seed),[7003]);
+  } finally { await app.close(); }
+});
+
 test('leaderboard moderation removes an entry without a public admin route', async () => {
   const app = await fixture();
   try {

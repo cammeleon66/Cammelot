@@ -34,7 +34,7 @@ function startSiteServer() {
 }
 
 async function openCouncilActions(page) {
-  for (let step = 0; step < 3 && !(await page.locator('#moc-shop').count()); step++) {
+  for (let step = 0; step < 4 && !(await page.locator('#moc-shop').count()); step++) {
     const choices = page.locator('#moc-council .moc-opt:not(:disabled)');
     if (await choices.count()) await choices.first().click();
     await page.locator('#moc-wiz-next').click();
@@ -48,7 +48,7 @@ test('Minister picker offers two responsive game modes', { timeout: 30000 }, asy
   const address = server.address();
   const baseUrl = `http://127.0.0.1:${address.port}/minister.html`;
   const page = await browser.newPage();
-  await page.addInitScript(() => localStorage.setItem('moc_muted','true'));
+  await page.addInitScript(() => localStorage.setItem('moc_muted_v2','true'));
   const failedRequests = [];
   page.on('requestfailed', (request) => failedRequests.push(request.url()));
 
@@ -92,6 +92,10 @@ test('Drawing the town cannot advance a paused patient', { timeout: 30000 }, asy
   const page = await browser.newPage();
   try {
     await page.goto(`http://127.0.0.1:${server.address().port}/minister.html#scn=cabinetcrisis&seed=2468`, { waitUntil: 'domcontentloaded' });
+    assert.equal(await page.evaluate(()=>MoC.audio.isMuted()),false,'new visitors should start with sound enabled');
+    assert.match(await page.locator('#moc-opening-sound').innerText(),/SOUND ON/);
+    const openingSoundBox=await page.locator('#moc-opening-sound').boundingBox();
+    assert.ok(openingSoundBox&&openingSoundBox.height>=44);
     const result = await page.evaluate(() => {
       MoC.audio.setMuted(true);
       const person = agents.find(a => a.type === 'patient' && a.hp > 0);
@@ -204,7 +208,7 @@ test('Shared conditions and no-action reference agree at the same dates', { time
     async function run(baseline, seed=2468, scenario='cabinetcrisis') {
       const context = await browser.newContext();
       const page = await context.newPage();
-      await page.addInitScript(() => { window.requestAnimationFrame=()=>0; localStorage.setItem('moc_muted','true'); });
+      await page.addInitScript(() => { window.requestAnimationFrame=()=>0; localStorage.setItem('moc_muted_v2','true'); });
       await page.goto(`http://127.0.0.1:${server.address().port}/minister.html#scn=${scenario}&seed=${seed}${baseline?'&baseline=1':''}`,{waitUntil:'domcontentloaded'});
       const result = await page.evaluate(() => {
         MoC.referencePolicy = true;
@@ -342,10 +346,17 @@ test('Care reports preserve adverse outcomes and previews match purchases', { ti
     await page.evaluate(() => { document.getElementById('play-overlay')?.remove(); window._mocForceCouncil(2); });
     await openCouncilActions(page);
     const card = page.locator('[data-buy="scribes1"]');
-    assert.match(await card.evaluate(el=>el.closest('.moc-item').innerText), /30% → 17%/);
+    assert.match(await card.evaluate(el=>el.closest('.moc-item').innerText), /30% → 18%/);
+    const burnoutBefore=await page.evaluate(()=>agents.filter(a=>a.type==='gp').map(a=>a.burnoutLevel||0));
     await card.click();
-    assert.equal(await page.evaluate(()=>M.IST.admin),0.17);
-    assert.match(await page.locator('#moc-policy-receipt').innerText(),/30% → 17%/);
+    assert.equal(await page.evaluate(()=>M.IST.admin),0.18);
+    assert.match(await page.locator('#moc-policy-receipt').innerText(),/30% → 18%/);
+    const rollout=await page.evaluate(()=>({burnout:agents.filter(a=>a.type==='gp').map(a=>a.burnoutLevel||0),strain:MoC.S.rolloutStrain,adoption:MoC.S.adoptionRate}));
+    assert.ok(rollout.burnout.every((value,index)=>value>burnoutBefore[index]));
+    assert.ok(rollout.strain>0);
+    assert.equal(rollout.adoption,0.7);
+    const trainedPreview=await page.evaluate(()=>{MoC.S.adoptionRate=1;return MoC.previewPolicy('scribes2');});
+    assert.equal(trainedPreview._rolloutAdmin,undefined,'full adoption should remove rollout paperwork overhead');
   } finally {
     await browser.close();
     await new Promise(resolve=>server.close(resolve));
@@ -356,7 +367,7 @@ test('Early results match the reference date and replay preserves the prior atte
   const server=await startSiteServer(), browser=await launchBrowser();
   const page=await browser.newPage({viewport:{width:390,height:844}});
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
-  await page.addInitScript(()=>localStorage.setItem('moc_muted','true'));
+  await page.addInitScript(()=>localStorage.setItem('moc_muted_v2','true'));
   try {
     const url=`http://127.0.0.1:${server.address().port}/minister.html?debug=1#scn=cabinetcrisis&seed=2468`;
     await page.goto(url,{waitUntil:'domcontentloaded'});
@@ -376,7 +387,8 @@ test('Early results match the reference date and replay preserves the prior atte
     assert.match(await page.locator('#moc-care-verdict').innerText(),/same number/i);
     const endCopy=await page.locator('#moc-endscreen').innerText();
     assert.doesNotMatch(endCopy,/not heroic|played it safe|your successor inherits|the system won|hard route|rare trifecta/i);
-    assert.match(endCopy,/At tick 75:/);
+    assert.match(endCopy,/FINAL SCORE/);
+    assert.match(endCopy,/Parliament ended the term/);
     const forged=await page.evaluate(()=>{
       const before=MoC.baseline;
       window.dispatchEvent(new MessageEvent('message',{origin:location.origin,source:window,data:{...MoC.baseline,systemDeaths:999}}));
@@ -384,11 +396,11 @@ test('Early results match the reference date and replay preserves the prior atte
     });
     assert.equal(forged,true);
     await page.locator('#moc-again').click();
-    await page.waitForURL(/&v=minister-care-4-political/);
+    await page.waitForURL(/&v=minister-care-5-rollout/);
     await page.locator('#moc-takeoffice').waitFor();
     assert.match(await page.locator('#moc-previous-attempt').innerText(),/tick 75/);
     assert.equal(await page.evaluate(()=>MoC.previousRun.final.tick),75);
-    assert.equal(await page.evaluate(()=>MoC.previousRun.modelVersion), 'minister-care-4-political');
+    assert.equal(await page.evaluate(()=>MoC.previousRun.modelVersion), 'minister-care-5-rollout');
     assert.deepEqual(await page.evaluate(()=>MoC.previousRun.externalSchedule),await page.evaluate(()=>MoC.environment.schedule));
     assert.equal(await page.evaluate(()=>MoC.audio.isMuted()),true);
     // Controlled outcome fixture: political survival must not conceal worse care.
@@ -409,9 +421,9 @@ test('Early results match the reference date and replay preserves the prior atte
   } finally {await browser.close();await new Promise(resolve=>server.close(resolve));}
 });
 
-test('Player can publish a score with a public or generated name', { timeout: 60000 }, async () => {
+test('Completed runs publish automatically with a public or generated name', { timeout: 60000 }, async () => {
   const server=await startSiteServer(),browser=await launchBrowser(),page=await browser.newPage({viewport:{width:390,height:844}});
-  await page.addInitScript(()=>localStorage.setItem('moc_muted','true'));
+  await page.addInitScript(()=>localStorage.setItem('moc_muted_v2','true'));
   let submitted;
   let requestedSeed;
   await page.route('**/api/leaderboard**',async route=>{
@@ -427,26 +439,38 @@ test('Player can publish a score with a public or generated name', { timeout: 60
   });
   try {
     await page.goto(`http://127.0.0.1:${server.address().port}/minister.html?debug=1#scn=cabinetcrisis&seed=2468`,{waitUntil:'domcontentloaded'});
-    await page.evaluate(()=>{document.getElementById('play-overlay')?.remove();MoC.referencePolicy=true;MoC.paused=false;while(cycle<75)tick();MoC.referencePolicy=false;window._mocDebug.endTerm('served');});
+    await page.waitForFunction(()=>document.querySelectorAll('#moc-opening-board li').length===2);
+    assert.deepEqual(await page.locator('#moc-opening-board strong').allTextContents(),['Vera van den Broek','<img src=x onerror=alert(1)>']);
+    assert.equal(await page.locator('#moc-opening-board img').count(),0,'opening leaderboard names render as text');
+    assert.match(await page.locator('.moc-name-entry').innerText(),/published automatically/);
+    await page.evaluate(()=>{
+      document.getElementById('play-overlay')?.remove();MoC.referencePolicy=true;MoC.paused=false;while(cycle<75)tick();MoC.referencePolicy=false;
+      agents.filter(agent=>agent.hp>0&&!agent.moved&&(agent.behaviorState==='going_to_hospital'||agent.behaviorState==='emergency'||(agent.behaviorState==='queuing'&&agent.queueType==='hospital')))
+        .forEach(agent=>{agent.moved=true;agent.state='moved';});MoC.care.sync();
+      const reference=MoC.care.snapshot();
+      MoC.baseline={protocol:MoC.REFERENCE_PROTOCOL,scheduleId:MoC.environment.scheduleId,modelVersion:MoC.MODEL_VERSION,
+        seed:MoC.seed,scenario:MoC.S.scenario,snapshots:{75:reference}};
+      window._mocDebug.endTerm('served');
+    });
     await page.locator('#moc-community').waitFor();
+    await page.waitForFunction(()=>document.querySelector('#moc-community-status').textContent.includes('rank 2'));
     assert.equal(await page.locator('#moc-card').count(),0,'PNG score sharing is replaced by the leaderboard');
     assert.deepEqual(await page.locator('.moc-community-entry strong').allTextContents(),['Vera van den Broek','<img src=x onerror=alert(1)>']);
     assert.equal(requestedSeed,'2468');
     assert.equal(await page.locator('.moc-community-entry img').count(),0,'leaderboard names render as text');
-    await page.locator('#moc-community-name').focus();
-    await page.keyboard.press('Tab');
-    assert.equal(await page.evaluate(()=>document.activeElement?.id),'moc-submit-score');
-    await page.locator('#moc-submit-score').click();
-    await page.waitForFunction(()=>document.querySelector('#moc-community-status').textContent.includes('rank 2'));
+    assert.equal(await page.locator('#moc-community-name,#moc-submit-score').count(),0,'publication is automatic, not an optional form');
     assert.equal(submitted.username,'');
     assert.equal(submitted.seed,2468);
-    assert.equal(submitted.modelVersion,'minister-care-4-political');
+    assert.equal(submitted.modelVersion,'minister-care-5-rollout');
     assert.equal(submitted.endTick,75);
     assert.equal(typeof submitted.summary.meanWait,'number');
-    assert.equal(await page.locator('#moc-community-name').inputValue(),'Minister Silver Heron 468');
-    const inputBox=await page.locator('#moc-community-name').boundingBox();
-    const buttonBox=await page.locator('#moc-submit-score').boundingBox();
-    assert.ok(inputBox&&buttonBox&&inputBox.height>=44&&buttonBox.height>=44&&await page.evaluate(()=>document.body.scrollWidth<=390));
+    assert.match(await page.locator('#moc-community-status').innerText(),/Published as Minister Silver Heron 468 · rank 2/);
+    assert.match(await page.locator('#moc-care-comparison').innerText(),/No one currently waiting/);
+    assert.doesNotMatch(await page.locator('#moc-care-comparison').innerText(),/0\.0w/);
+    assert.match(await page.locator('#moc-care-comparison').innerText(),/Deaths before treatment/);
+    const topChildren=await page.locator('#moc-endscreen .moc-box').evaluate(element=>[...element.children].slice(0,5).map(child=>child.className||child.id||child.tagName));
+    assert.ok(topChildren.some(value=>String(value).includes('moc-score-hero')),'score should be at the top of the result');
+    assert.ok(await page.evaluate(()=>document.body.scrollWidth<=390));
     for (const viewport of [{width:375,height:667},{width:390,height:844},{width:412,height:915},{width:1440,height:900}]) {
       await page.setViewportSize(viewport);
       await page.evaluate(()=>window.scrollTo(0,0));
@@ -469,7 +493,7 @@ test('Player can publish a score with a public or generated name', { timeout: 60
 
 test('Town requests pause without a countdown', { timeout: 30000 }, async () => {
   const server=await startSiteServer(),browser=await launchBrowser(),page=await browser.newPage({viewport:{width:390,height:844}});
-  await page.addInitScript(()=>localStorage.setItem('moc_muted','true'));
+  await page.addInitScript(()=>localStorage.setItem('moc_muted_v2','true'));
   try {
     await page.goto(`http://127.0.0.1:${server.address().port}/minister.html#scn=cabinetcrisis&seed=2468`,{waitUntil:'domcontentloaded'});
     await page.evaluate(()=>{
@@ -488,6 +512,9 @@ test('Town requests pause without a countdown', { timeout: 30000 }, async () => 
     assert.match(await page.locator('.moc-flash').innerText(),/Decision applied/);
     await page.getByRole('button',{name:/Continue to town/}).click();
     assert.equal(await page.locator('.moc-flash').count(),0);
+    await page.evaluate(()=>{MoC.S.budget=0;window._mocForceFlash(0);});
+    assert.equal(await page.getByRole('button',{name:/Assign case manager/}).isDisabled(),true);
+    assert.match(await page.locator('.moc-flash').innerText(),/Unavailable: needs €5K, budget €0K/);
   } finally {await browser.close();await new Promise(resolve=>server.close(resolve));}
 });
 
@@ -495,7 +522,7 @@ test('Minister full term respects council and year-end pauses', { timeout: 60000
   const server = await startSiteServer();
   const browser = await launchBrowser();
   const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
-  await page.addInitScript(() => localStorage.setItem('moc_muted','true'));
+  await page.addInitScript(() => localStorage.setItem('moc_muted_v2','true'));
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
   try {
@@ -577,7 +604,7 @@ test('Minister cabinet crisis starts after phone walkthrough and reaches council
 
   try {
     await page.addInitScript(() => {
-      localStorage.setItem('moc_muted','true');
+      localStorage.setItem('moc_muted_v2','true');
       const original = window.setTimeout;
       window.setTimeout = function(callback, delay, ...args) {
         if (delay === 45000) window.fireStartupWatchdog = callback;
@@ -639,7 +666,18 @@ test('Minister cabinet crisis starts after phone walkthrough and reaches council
     assert.equal(await page.locator('#moc-town-toggle').isVisible(), false, 'resume control must be hidden while council is due');
     const readyBox = await page.locator('#moc-town-council').boundingBox();
     assert.ok(readyBox && readyBox.height >= 44 && readyBox.x >= 0 && readyBox.x + readyBox.width <= 405, 'council-ready control must fit the phone');
+    await page.evaluate(()=>{
+      const care=MoC.care.snapshot();
+      MoC.S._councilKpis=[{q:1,trustC:MoC.S.trustC-2,trustD:MoC.S.trustD-1,trustP:MoC.S.trustP-3,
+        deaths:Math.max(0,care.systemDeaths-1),waiting:care.waiting+2,meanWait:care.meanWait+1,treatments:Math.max(0,care.treatments-1),
+        admin:M.IST.admin*100,sick:M.IST.sick*100,dependence:MoC.S.dependence,fragmentation:MoC.S.fragmentation||0,burnout:0}];
+      MoC.S.pendingBanners.push({head:'Flu wave',body:'Staff absence +3 points. Active this quarter.',soft:true,open:true});
+    });
     await page.locator('#moc-town-council').click();
+    assert.match(await page.locator('.moc-quarter-trends').innerText(),/vs Q1/);
+    assert.match(await page.locator('.moc-gazette').innerText(),/The specialist list|first quarterly reading/i);
+    const fluReport=page.locator('details.moc-dilemma').filter({has:page.locator('summary',{hasText:'Flu wave'})}).first();
+    assert.equal(await fluReport.getAttribute('open'),'');
     const frozen = await page.evaluate(() => {
       const snapshot = () => JSON.stringify({ cycle, hp: agents.map(a => a.hp), graves: GRAVE_MARKERS, events: EVENT_LOG.length });
       const before = snapshot();
@@ -660,7 +698,7 @@ test('Minister cabinet crisis starts after phone walkthrough and reaches council
     assert.equal(state.paused, true, 'the council should pause the simulation');
     assert.equal(state.timerRunning, false, 'the council should stop the tick timer');
 
-    assert.match(await page.locator('#moc-wiz-tabs').innerText(), /1\. Briefing\n(?:2\. Decision\n3\. Action|2\. Action)/);
+    assert.match(await page.locator('#moc-wiz-tabs').innerText(), /1\. Briefing\n(?:2\. Decision\n3\. Law\n4\. Fund|2\. Law\n3\. Fund)/);
     await page.locator('#moc-inspect-town').click();
     assert.equal(await page.locator('#moc-council').isVisible(), false);
     assert.equal(await page.locator('[data-town-person]').count(), 3);
@@ -669,9 +707,16 @@ test('Minister cabinet crisis starts after phone walkthrough and reaches council
     assert.equal(await page.locator('.moc-follow-thought').isVisible(), true, 'followed resident should show a thought prominently');
     assert.ok(await page.locator('.moc-follow-tag').count(), 'followed resident should show health context');
     await page.locator('#moc-town-council').click();
-    await openCouncilActions(page);
-    assert.ok(await page.locator('#moc-laws [data-law]').count(), 'action stage should offer legislation');
-    assert.ok(await page.locator('#moc-shop [data-buy]').count(), 'action stage should offer interventions');
+    for(let step=0;step<3&&!(await page.locator('#moc-laws').count());step++){
+      const choices=page.locator('#moc-council .moc-opt:not(:disabled)');if(await choices.count())await choices.first().click();
+      await page.locator('#moc-wiz-next').click();
+    }
+    assert.ok(await page.locator('#moc-laws [data-law]').count(), 'law stage should visibly offer legislation');
+    assert.match(await page.locator('#moc-wiz-body').innerText(),/PASS A LAW/);
+    assert.equal(await page.locator('#moc-shop').count(),0,'funding must be on a separate screen');
+    await page.locator('#moc-wiz-next').click();
+    assert.ok(await page.locator('#moc-shop [data-buy]').count(), 'fund stage should offer interventions');
+    assert.match(await page.locator('.moc-priority-strip').innerText(),/PRIORITIES BEFORE YOU SPEND/);
     const canvasBeforeHire = await page.locator('#cv').evaluate((canvas) => canvas.toDataURL());
     await page.getByRole('button', { name: /Buy €80K/ }).click();
     const hireEffect = await page.evaluate(() => window._mocWorldEffects?.hire);
@@ -688,6 +733,7 @@ test('Minister cabinet crisis starts after phone walkthrough and reaches council
     assert.match(await page.locator('#moc-town-change').innerText(), /wait|Admin/i, 'town should show measured changes after the purchase');
     assert.equal(await page.locator('#moc-town-council').isVisible(), false, 'council-ready control must be hidden during the quarter');
     assert.equal(await page.locator('#moc-town-toggle').isVisible(), true, 'player must be able to pause and inspect the running town');
+    assert.ok(await page.evaluate(()=>document.getElementById('panel').scrollTop<=6),'council exit should focus the KPI summary');
     await page.locator('#moc-town-toggle').click();
     assert.equal(await page.evaluate(() => MoC.paused), true);
     for (const viewport of [{ width: 1440, height: 900 }, { width: 412, height: 915 }, { width: 375, height: 667 }]) {
@@ -757,7 +803,7 @@ test('Desktop play uses one uncluttered Ministry panel and explains immediate re
   const server = await startSiteServer();
   const browser = await launchBrowser();
   const page = await browser.newPage({ viewport:{ width:1440, height:900 } });
-  await page.addInitScript(() => localStorage.setItem('moc_muted','true'));
+  await page.addInitScript(() => localStorage.setItem('moc_muted_v2','true'));
   try {
     await page.goto(`http://127.0.0.1:${server.address().port}/minister.html?desktop-regression=1#scn=cabinetcrisis&seed=2468`, { waitUntil:'domcontentloaded' });
     const name = page.locator('#moc-player-name');
@@ -797,9 +843,11 @@ test('Desktop play uses one uncluttered Ministry panel and explains immediate re
     assert.ok(layout.panel >= 340, 'desktop Ministry panel should remain readable');
 
     await page.locator('#moc-town-watch summary').click();
+    const runningBeforeFollow=await page.evaluate(()=>({paused:MoC.paused,cycle}));
     await page.locator('[data-town-person]').first().click();
     assert.equal(await page.locator('#panel').getAttribute('data-moc-detail'), 'false');
     assert.equal(await page.locator('#moc-ministry').isVisible(), true);
+    assert.equal(await page.evaluate(()=>MoC.paused),runningBeforeFollow.paused,'following a person must preserve simulation state');
     assert.equal(await page.locator('.moc-follow-thought').isVisible(), true);
     assert.match(await page.locator('.moc-follow-now').innerText(), /Now:/);
     await page.locator('[data-town-person]').nth(1).click();
@@ -832,7 +880,7 @@ test('Android unmute starts media inside the user gesture', { timeout: 30000 }, 
   const browser = await launchBrowser();
   const page = await browser.newPage({ viewport:{ width:412, height:915 }, isMobile:true, hasTouch:true });
   await page.addInitScript(() => {
-    localStorage.setItem('moc_muted', 'true');
+    localStorage.setItem('moc_muted_v2', 'true');
     window.testPlayCalls = [];
     window.testGestureActive = false;
     const markGesture = () => {

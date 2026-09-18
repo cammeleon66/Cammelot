@@ -75,7 +75,7 @@ async function chooseResponse(buttons,policy) {
 }
 
 async function reachActions(page,responsePolicy) {
-  for(let step=0;step<3 && !(await page.locator('#moc-shop').count());step++){
+  for(let step=0;step<4 && !(await page.locator('#moc-shop').count());step++){
     if(await page.evaluate(()=>MoC.S.over)||!(await page.locator('#moc-council').count()))return false;
     const choices=page.locator('#moc-council .moc-opt:not(:disabled)');
     if(await choices.count()) await chooseResponse(choices,responsePolicy);
@@ -90,7 +90,7 @@ async function play(browser,base,seed,purchasePolicy,wishlist,responsePolicy) {
   try {
     const page=await context.newPage();
     page.setDefaultTimeout(5000);
-    await page.addInitScript(()=>{window.requestAnimationFrame=()=>0;localStorage.setItem('moc_muted','true');});
+    await page.addInitScript(()=>{window.requestAnimationFrame=()=>0;localStorage.setItem('moc_muted_v2','true');});
     const errors=[];page.on('pageerror',error=>errors.push(error.message));
     await page.goto(`${base}/minister.html?debug=1#scn=cabinetcrisis&seed=${seed}`,{waitUntil:'domcontentloaded',timeout:15000});
     await page.evaluate(()=>{
