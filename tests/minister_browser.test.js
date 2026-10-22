@@ -201,6 +201,90 @@ test('Hospital staff do not occupy patient treatment slots', { timeout:30000 }, 
   }finally{await browser.close();await new Promise(resolve=>server.close(resolve));}
 });
 
+test('Lethal disease progression finalizes death before hospital treatment', { timeout:30000 }, async()=>{
+  const server=await startSiteServer(),browser=await launchBrowser(),page=await browser.newPage();
+  try{
+    await page.goto(`http://127.0.0.1:${server.address().port}/minister.html#scn=cabinetcrisis&seed=2468`,{waitUntil:'domcontentloaded'});
+    const outcome=await page.evaluate(()=>{
+      MoC.audio.setMuted(true); MoC.paused=false;
+      const patients=agents.filter(a=>a.type==='patient'||a.type==='citizen');
+      patients.forEach(a=>{a.moved=true;a.insideBuilding='test-isolation';a.conditions=[];a.hp=100;});
+      const patient=patients[0];
+      Object.assign(patient,{moved:false,insideBuilding:'hospital',behaviorState:'at_hospital',state:'active',
+        stateTimer:10,hp:2.5,waitWeeks:8,conditions:[{code:'I25',name:'Chronic Ischemic Heart Disease',severity:'critical'}]});
+      const queued=patients[1];
+      Object.assign(queued,{moved:false,insideBuilding:'test-isolation',behaviorState:'queuing',state:'active',
+        queueType:'hospital',queueBuilding:'hospital',hp:2.5,waitWeeks:8,path:[],pathComplete:true,
+        conditions:[{code:'I25',name:'Chronic Ischemic Heart Disease',severity:'critical'}]});
+      QUEUES.hospital.agents.push(queued.id);
+      cycle=3;
+      const oldRandom=Math.random, oldTransition=window.transitionDiseaseState;
+      const graveCount=GRAVE_MARKERS.length, deathCount=EVENT_LOG.filter(e=>e.type==='died').length;
+      try {
+        Math.random=()=>0.5;
+        window.transitionDiseaseState=()=> 'deceased';
+        tick();
+        const firstTick={hp:patient.hp,state:patient.state,behavior:patient.behaviorState,cause:patient.causeOfDeath,
+          graves:GRAVE_MARKERS.length-graveCount,deaths:EVENT_LOG.filter(e=>e.type==='died').length-deathCount,
+          history:patient.actionHistory?.filter(e=>e.type==='died').length||0};
+        tick();
+        return {...firstTick,repeat:{hp:patient.hp,state:patient.state,behavior:patient.behaviorState,
+          graves:GRAVE_MARKERS.length-graveCount,deaths:EVENT_LOG.filter(e=>e.type==='died').length-deathCount,
+          history:patient.actionHistory?.filter(e=>e.type==='died').length||0},
+          queued:{state:queued.state,behavior:queued.behaviorState,inQueue:QUEUES.hospital.agents.includes(queued.id)},
+          episode:MoC.care.episodes.find(e=>e.agentId===queued.id)?.status};
+      } finally {
+        Math.random=oldRandom;
+        window.transitionDiseaseState=oldTransition;
+      }
+    });
+    assert.equal(outcome.hp,0,'a lethal transition must not be reversed by hospital healing');
+    assert.equal(outcome.state,'dead');
+    assert.equal(outcome.behavior,'dead');
+    assert.equal(outcome.cause,'system_failure');
+    assert.equal(outcome.graves,2,'both terminal patients should be finalized exactly once');
+    assert.equal(outcome.deaths,2,'each terminal patient should have one mortality event');
+    assert.equal(outcome.history,1,'the patient history should record one death');
+    assert.deepEqual(outcome.repeat,{hp:0,state:'dead',behavior:'dead',graves:2,deaths:2,history:1},
+      'repeated ticks must not resurrect or double-count a finalized patient');
+    assert.deepEqual(outcome.queued,{state:'dead',behavior:'dead',inQueue:false},
+      'a terminal queued resident must be removed before hospital admission');
+    assert.equal(outcome.episode,'died_waiting','a pending care episode should close with the terminal outcome');
+  }finally{await browser.close();await new Promise(resolve=>server.close(resolve));}
+});
+
+test('Early recovery exit clears its protection from passive deterioration', { timeout:30000 }, async()=>{
+  const server=await startSiteServer(),browser=await launchBrowser(),page=await browser.newPage();
+  try{
+    await page.goto(`http://127.0.0.1:${server.address().port}/minister.html#scn=cabinetcrisis&seed=2468`,{waitUntil:'domcontentloaded'});
+    const outcome=await page.evaluate(()=>{
+      MoC.audio.setMuted(true); MoC.paused=false;
+      const patients=agents.filter(a=>a.type==='patient'||a.type==='citizen');
+      patients.forEach(a=>{a.moved=true;a.insideBuilding='test-isolation';a.conditions=[];a.hp=100;});
+      const patient=patients[0];
+      Object.assign(patient,{moved:false,insideBuilding:null,behaviorState:'recovering',state:'active',
+        hp:84,waitWeeks:12,healingTicksLeft:11,isNightOwl:true,lifeStage:'adult',
+        workplace:null,workplacePos:null,homePos:null,pathComplete:true,path:[],
+        conditions:[{code:'I25',name:'Chronic Ischemic Heart Disease',severity:'severe'}]});
+      cycle=1;
+      const oldRandom=Math.random;
+      try {
+        Math.random=()=>0.5;
+        tick();
+        const afterRecovery={hp:patient.hp,behavior:patient.behaviorState,healingTicksLeft:patient.healingTicksLeft};
+        const hpBeforeRoaming=patient.hp;
+        tick();
+        return {...afterRecovery,hpAfterRoaming:patient.hp,hpBeforeRoaming};
+      } finally {
+        Math.random=oldRandom;
+      }
+    });
+    assert.equal(outcome.behavior,'roaming','reaching the HP threshold should end recovery: '+JSON.stringify(outcome));
+    assert.equal(outcome.healingTicksLeft,0,'roaming should not retain recovery protection');
+    assert.ok(outcome.hpAfterRoaming<outcome.hpBeforeRoaming,'passive deterioration should resume on the next roaming tick');
+  }finally{await browser.close();await new Promise(resolve=>server.close(resolve));}
+});
+
 test('Shared conditions and no-action reference agree at the same dates', { timeout: 300000 }, async () => {
   const server = await startSiteServer();
   const browser = await launchBrowser();
@@ -396,11 +480,11 @@ test('Early results match the reference date and replay preserves the prior atte
     });
     assert.equal(forged,true);
     await page.locator('#moc-again').click();
-    await page.waitForURL(/&v=minister-care-5-rollout/);
+    await page.waitForURL(/&v=minister-care-6-terminal-mortality/);
     await page.locator('#moc-takeoffice').waitFor();
     assert.match(await page.locator('#moc-previous-attempt').innerText(),/tick 75/);
     assert.equal(await page.evaluate(()=>MoC.previousRun.final.tick),75);
-    assert.equal(await page.evaluate(()=>MoC.previousRun.modelVersion), 'minister-care-5-rollout');
+    assert.equal(await page.evaluate(()=>MoC.previousRun.modelVersion), 'minister-care-6-terminal-mortality');
     assert.deepEqual(await page.evaluate(()=>MoC.previousRun.externalSchedule),await page.evaluate(()=>MoC.environment.schedule));
     assert.equal(await page.evaluate(()=>MoC.audio.isMuted()),true);
     // Controlled outcome fixture: political survival must not conceal worse care.
@@ -461,7 +545,7 @@ test('Completed runs publish automatically with a public or generated name', { t
     assert.equal(await page.locator('#moc-community-name,#moc-submit-score').count(),0,'publication is automatic, not an optional form');
     assert.equal(submitted.username,'');
     assert.equal(submitted.seed,2468);
-    assert.equal(submitted.modelVersion,'minister-care-5-rollout');
+    assert.equal(submitted.modelVersion,'minister-care-6-terminal-mortality');
     assert.equal(submitted.endTick,75);
     assert.equal(typeof submitted.summary.meanWait,'number');
     assert.match(await page.locator('#moc-community-status').innerText(),/Published as Minister Silver Heron 468 · rank 2/);

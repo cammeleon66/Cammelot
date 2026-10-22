@@ -7235,6 +7235,66 @@ function checkCommunityProtest() {
 }
 
 // ═══ SIMULATION ═══
+function finalizeAgentDeath(a){
+  if(a.state==='dead'){
+    a.hp=0; a.behaviorState='dead'; a.insideBuilding=null; a.healingTicksLeft=0;
+    return;
+  }
+  a.hp=0; a.state='dead'; a.behaviorState='dead';
+  a.insideBuilding=null; a.healingTicksLeft=0;
+  if(!a.causeOfDeath) a.causeOfDeath='system_failure';
+  // ── Sprint 5: Ghost float-up and grave marker ──
+  a.ghostFloatTimer=90;
+  // Sprint S1: Trigger death screen flash
+  deathFlashTimer=15;
+  GRAVE_MARKERS.push({
+    x:a.x,y:a.y,name:a.name,age:a.age,
+    cause:a.causeOfDeath,waitWeeks:a.waitWeeks||0,
+    cycle,conditions:(a.conditions||[]).map(c=>c.name)
+  });
+  // Remove from any queue
+  Object.values(QUEUES).forEach(q=>{
+    q.agents=q.agents.filter(aid=>aid!==a.id);
+  });
+  if(a.causeOfDeath==='natural'){
+    logEvent('natural_death',a,'Age '+a.age);
+    addHistory(a,'died',`Passed away peacefully at age ${a.age}.`);
+    say(a.name,`Passed away peacefully at age ${a.age}.`,'ghost');
+    say('SYSTEM',`NATURAL DEATH: ${a.name} (${a.age}).`,'sys');
+  } else {
+    logEvent('died',a,'System failure');
+    addHistory(a,'died','The system failed me. I waited too long...');
+    say(a.name,`I waited too long... ${Math.round(a.waitWeeks)} weeks. The system failed me.`,'ghost');
+    say('SYSTEM',`MORTALITY: ${a.name} (${a.age}) — after ${Math.round(a.waitWeeks)} weeks.`,'alert');
+  }
+  // ── Sprint 4 + Sprint 27 + Sprint 28.2: Grieving — nearby agents react, friends/memories grieve longer ──
+  agents.forEach(nb=>{
+    if(nb.id===a.id||nb.hp<=0||nb.insideBuilding)return;
+    const gdx=nb.x-a.x,gdy=nb.y-a.y;
+    const dist=Math.sqrt(gdx*gdx+gdy*gdy);
+    const isNearby=dist<0.08;
+    const isFriend=nb.friendIds&&nb.friendIds.includes(a.id);
+    const isFamily=nb.familyId&&nb.familyId===a.familyId;
+    const hasMemory=nb.heardExperiences&&nb.heardExperiences.some(e=>e.from===a.name);
+    if(isFamily||isFriend){
+      nb.grievingTimer=isFamily?300:240;
+      nb.grievingFor=a.name;
+      addMemory(nb,'death_nearby',a.name+' passed away',isFamily?10:8);
+    }else if(hasMemory){
+      nb.grievingTimer=50;
+      nb.grievingFor=a.name;
+      addMemory(nb,'death_nearby',a.name+' died waiting',7);
+    }else if(isNearby){
+      nb.grievingTimer=30;
+      nb.grievingFor=a.name;
+      addMemory(nb,'death_nearby',a.name+' died nearby',5);
+    }
+  });
+  // Sprint 15: Death chime
+  playDeathChime();
+  MoC.care?.sync();
+}
+
 function tick(){
   if (MoC.paused || MoC.S.over) return;
   cycle++; const p=M[mode];
@@ -7276,62 +7336,12 @@ function tick(){
     }
 
     // --- DEATH CHECK ---
-    if(a.hp<=0){
-      if(a.state!=='dead'){
-        a.state='dead'; a.behaviorState='dead';
-        a.insideBuilding=null;
-        if(!a.causeOfDeath) a.causeOfDeath='system_failure';
-        // ── Sprint 5: Ghost float-up and grave marker ──
-        a.ghostFloatTimer = 90;
-        // Sprint S1: Trigger death screen flash
-        deathFlashTimer = 15;
-        GRAVE_MARKERS.push({
-          x: a.x, y: a.y, name: a.name, age: a.age,
-          cause: a.causeOfDeath, waitWeeks: a.waitWeeks || 0,
-          cycle, conditions: (a.conditions || []).map(c => c.name)
-        });
-        // Remove from any queue
-        Object.values(QUEUES).forEach(q => {
-          q.agents = q.agents.filter(aid => aid !== a.id);
-        });
-        if(a.causeOfDeath==='natural'){
-          logEvent('natural_death', a, 'Age ' + a.age);
-          addHistory(a,'died',`Passed away peacefully at age ${a.age}.`);
-          say(a.name,`Passed away peacefully at age ${a.age}.`,'ghost');
-          say('SYSTEM',`NATURAL DEATH: ${a.name} (${a.age}).`,'sys');
-        } else {
-          logEvent('died', a, 'System failure');
-          addHistory(a,'died','The system failed me. I waited too long...');
-          say(a.name,`I waited too long... ${Math.round(a.waitWeeks)} weeks. The system failed me.`,'ghost');
-          say('SYSTEM',`MORTALITY: ${a.name} (${a.age}) — after ${Math.round(a.waitWeeks)} weeks.`,'alert');
-        }
-        // ── Sprint 4 + Sprint 27 + Sprint 28.2: Grieving — nearby agents react, friends/memories grieve longer ──
-        agents.forEach(nb => {
-          if (nb.id === a.id || nb.hp <= 0 || nb.insideBuilding) return;
-          const gdx = nb.x - a.x, gdy = nb.y - a.y;
-          const dist = Math.sqrt(gdx * gdx + gdy * gdy);
-          const isNearby = dist < 0.08; // Sprint 28.2: expanded proximity to 0.08
-          const isFriend = nb.friendIds && nb.friendIds.includes(a.id);
-          const isFamily = nb.familyId && nb.familyId === a.familyId;
-          // Sprint 28.2: Check if dead agent was in their heard experiences (memory)
-          const hasMemory = nb.heardExperiences && nb.heardExperiences.some(e => e.from === a.name);
-          if (isFamily || isFriend) {
-            nb.grievingTimer = isFamily ? 300 : 240;
-            nb.grievingFor = a.name;
-            addMemory(nb, 'death_nearby', a.name + ' passed away', isFamily ? 10 : 8);
-          } else if (hasMemory) {
-            nb.grievingTimer = 50;
-            nb.grievingFor = a.name;
-            addMemory(nb, 'death_nearby', a.name + ' died waiting', 7);
-          } else if (isNearby) {
-            nb.grievingTimer = 30;
-            nb.grievingFor = a.name;
-            addMemory(nb, 'death_nearby', a.name + ' died nearby', 5);
-          }
-        });
-        // Sprint 15: Death chime
-        playDeathChime();
-      }
+    if(a.state==='dead'){
+      a.hp=0; a.behaviorState='dead'; a.insideBuilding=null; a.healingTicksLeft=0;
+      return;
+    }
+    if(a.hp<=0||a.behaviorState==='dead'){
+      finalizeAgentDeath(a);
       return;
     }
 
@@ -7383,10 +7393,17 @@ function tick(){
           if (newState === 'deceased' && a.hp > 0 && LETHAL_CONDITIONS.includes(cond.code)) {
             a.hp = 0;
             a.causeOfDeath = 'system_failure';
-            break; // death check above will handle on next tick
+            break; // finalize immediately after disease progression
           }
         }
       }
+    }
+
+    // A lethal disease transition is terminal, including when treatment is
+    // scheduled later in this same tick.
+    if(a.hp<=0){
+      finalizeAgentDeath(a);
+      return;
     }
 
     // ═══ Sprint 28: Emergency Pathway (SEH) — critical/severe patients bypass GP ═══
@@ -7949,6 +7966,7 @@ function tick(){
         }
         if(a.hp>=85 || a.healingTicksLeft<=0){
           a.behaviorState='roaming';
+          a.healingTicksLeft=0;
           if(a.actionHistory?.length>0 && a.actionHistory[a.actionHistory.length-1].type!=='recovered'){
             addHistory(a,'recovered','Feeling much better. Grateful for the care.');
             addMemory(a, 'recovered', 'Recovered after treatment — feeling well', 6);
@@ -7963,11 +7981,13 @@ function tick(){
       case 'protesting': break;
     }
 
+    if(a.hp<=0){
+      finalizeAgentDeath(a);
+      return;
+    }
+
     // Update visual state
-    // MoC fix: do NOT set state='dead' here — that pre-empts the DEATH CHECK
-    // (grave marker, cause of death, ghost float) which requires state!=='dead'.
-    if(a.hp<=0) { /* death registered by DEATH CHECK next tick */ }
-    else if(a.hp<=20) a.state='critical';
+    if(a.hp<=20) a.state='critical';
     else if(a.hp<=50) a.state='waiting';
     else if(a.hp<=75) a.state='concerned';
     else a.state='managed';
@@ -12498,7 +12518,7 @@ async function initLLMSubsystem() {
 // ════════════════════════════════════════════════════════════
 (function(){
   const GS = MoC.S;
-  MoC.MODEL_VERSION = 'minister-care-5-rollout';
+  MoC.MODEL_VERSION = 'minister-care-6-terminal-mortality';
   MoC.REFERENCE_PROTOCOL = 'no-discretionary-action-v1';
   MoC.referencePolicy = MoC.IS_BASELINE;
   MoC.comparisonValidated = true;
