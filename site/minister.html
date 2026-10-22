@@ -3874,7 +3874,7 @@ function assignLifeStageDestinations(agent, lifeStage) {
       agent.workplacePos = { x: (workplace.x1 + workplace.x2) / 2, y: workplace.y2 + 0.02 };
     }
   } else {
-    if (agent.insideBuilding === agent.workplace) agent.insideBuilding = null;
+    if (agent.atWork && agent.behaviorState === 'roaming' && agent.insideBuilding === agent.workplace) agent.insideBuilding = null;
     agent.workplace = null;
     agent.workplacePos = null;
     agent.atWork = false;

@@ -246,10 +246,21 @@ test('Aging preserves completed-year bands, initializes new destinations, and fo
           workplace:resident.workplace,workplacePos:resident.workplacePos};
         const oldWorkplace=resident.workplace;
         Object.assign(resident,{moved:true,age:67.999,_ageStart:67.999,_ageElapsedTicks:0,lifeStage:'adult',
-          insideBuilding:oldWorkplace,atWork:true,workTimer:12,schoolPos:null,schoolTimer:0});
+          behaviorState:'roaming',insideBuilding:oldWorkplace,atWork:true,workTimer:12,schoolPos:null,schoolTimer:0});
         tick();
         const senior={age:resident.age,lifeStage:resident.lifeStage,workplace:resident.workplace,
           workplacePos:resident.workplacePos,insideBuilding:resident.insideBuilding,atWork:resident.atWork,workTimer:resident.workTimer};
+        const treatmentBirthdays=[
+          {behavior:'at_hospital',building:'hospital'},
+          {behavior:'at_gp',building:getGPDest(resident.gpName).building}
+        ].map(({behavior,building})=>{
+          Object.assign(resident,{age:67.999,_ageStart:67.999,_ageElapsedTicks:0,lifeStage:'adult',
+            behaviorState:behavior,insideBuilding:building,workplace:building,workplacePos:{x:0.5,y:0.5},
+            atWork:true,workTimer:12,stateTimer:8});
+          tick();
+          return {building,behavior:resident.behaviorState,insideBuilding:resident.insideBuilding,
+            lifeStage:resident.lifeStage,workplace:resident.workplace,atWork:resident.atWork,stateTimer:resident.stateTimer};
+        });
         resident.age=70+1/208;
         resident.causeOfDeath='natural';
         finalizeAgentDeath(resident);
@@ -257,7 +268,7 @@ test('Aging preserves completed-year bands, initializes new destinations, and fo
         const deathHistory=resident.actionHistory.filter(e=>e.type==='died').at(-1);
         const grave=GRAVE_MARKERS.at(-1);
         showMemorial(grave);
-        return {bands,child,adult,senior,preciseAge:resident.age,eventDetail:naturalEvent.detail,
+        return {bands,child,adult,senior,treatmentBirthdays,preciseAge:resident.age,eventDetail:naturalEvent.detail,
           deathHistory:deathHistory.text,graveAge:grave.age,memorial:document.getElementById('agent-detail').innerText};
       } finally {
         MoC.seedTick=oldSeedTick;MoC.environment.advance=oldAdvance;
@@ -279,6 +290,14 @@ test('Aging preserves completed-year bands, initializes new destinations, and fo
     assert.equal(result.senior.insideBuilding,null);
     assert.equal(result.senior.atWork,false);
     assert.equal(result.senior.workTimer,0);
+    for(const visit of result.treatmentBirthdays){
+      assert.equal(visit.insideBuilding,visit.building,'retirement must preserve an active treatment location, even at the former workplace');
+      assert.ok(['at_hospital','at_gp'].includes(visit.behavior));
+      assert.equal(visit.lifeStage,'senior');
+      assert.equal(visit.workplace,null);
+      assert.equal(visit.atWork,false);
+      assert.equal(visit.stateTimer,8,'retirement must not alter the active treatment timer');
+    }
     assert.equal(result.preciseAge,70+1/208,'clinical age retains its fractional-year precision');
     assert.equal(result.eventDetail,'Age 70');
     assert.equal(result.deathHistory,'Passed away peacefully at age 70.');
