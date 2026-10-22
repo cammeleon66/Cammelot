@@ -1,9 +1,6 @@
 # Minister model contract
 
-**Status:** Proposed; maintainer approval is still required for the decisions called out below.  
-**Audited baseline:** [`bb6df6490ceb56e68cc8922ae167660ac6079b18`](https://github.com/cammeleon66/Cammelot/commit/bb6df6490ceb56e68cc8922ae167660ac6079b18)  
-**Executable model:** `minister-care-5-rollout`  
-**Paired-reference protocol:** `no-discretionary-action-v1`
+**Status:** Proposed; maintainer approval is still required for the decisions called out below. **Audited baseline:** [`bb6df6490ceb56e68cc8922ae167660ac6079b18`](https://github.com/cammeleon66/Cammelot/commit/bb6df6490ceb56e68cc8922ae167660ac6079b18). **Executable model:** `minister-care-5-rollout`. **Paired-reference protocol:** `no-discretionary-action-v1`.
 
 This contract describes the Minister policy game only. It records verified behavior separately from proposed rules; it does not calibrate the model, approve clinical semantics, or authorize a runtime change. The audit summary and browser evidence in issue [#1](https://github.com/cammeleon66/Cammelot/issues/1) are the supplied evidence; no private audit artifacts are assumed.
 
