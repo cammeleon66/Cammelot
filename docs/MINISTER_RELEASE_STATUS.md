@@ -1,6 +1,6 @@
 # Minister of Cammelot — release status
 
-Updated: 2026-09-17
+Updated: 2026-10-22
 Public game: https://cammelot.org/minister.html
 Model: `minister-care-5-rollout`
 Reference protocol: `no-discretionary-action-v1`
@@ -36,6 +36,20 @@ This is the canonical status list. Older plans describe how the current release 
 - [x] Superseded Azure experiments and identities removed.
 - [x] GitHub Pages and CI deployment workflow operational.
 - [x] Automated desktop and emulated mobile regression coverage; repository suite passed with 155 tests on the main release checkpoint.
+
+## Supported-host smoke evidence
+
+Only these Minister hosting paths are supported:
+
+- **Public release:** static GitHub Pages artifact copied from the repository's `site/` directory; the Minister URL is `/minister.html`.
+- **Development/test:** local HTTP from the repository root (for example, `python3 -m http.server 4200` and `/site/minister.html`). It does not provide the community leaderboard.
+- **Unsupported:** Docker/nginx, `file://`, and other hosting providers. The legacy container files and nginx headers are not Minister release targets; this verification makes no header changes.
+
+`tests/minister_deployment_smoke.test.js` exercises the `site/` artifact at Pages' root path and the documented Python HTTP path. It starts both public scenarios, waits for the same-origin no-action iframe to complete, and checks its scenario, seed, model/protocol identity, schedule and snapshots. The test blocks external requests, stubs leaderboard reads, and fails if a score submission is attempted. The local static artifact host does not contact or mutate production and does not claim to verify the live CDN's response headers.
+
+Run the focused evidence with `node --test tests/minister_deployment_smoke.test.js`; `npm test` includes the same test and is the release regression command. CI installs the declared dependencies and Chromium before running `npm test`. The existing `Minister backlog checks / Validate` PR check is the master merge gate; the repository owner confirmed that fresh Validate checks are required on master, including for administrators ([issue #9 implementation note](https://github.com/cammeleon66/Cammelot/issues/9#issuecomment-6341267146)). The workflow and branch-protection rule are unchanged by F09.
+
+**Release-gate limitation:** `.github/workflows/deploy-pages.yml` also permits a manual dispatch and a `feature/agentic-overhaul` push. Those paths are not protected by the master PR check and must not be used as supported production releases. Changing those shared deployment triggers or binding the deployment job directly to the check requires a separately reviewed workflow change; F09 leaves that infrastructure untouched.
 
 ## Remaining agent work
 
