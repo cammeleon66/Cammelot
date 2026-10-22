@@ -125,9 +125,11 @@ test('Elapsed model clock uses quarter-week ticks and exact calendar boundaries'
       const annualProbability=0.12;
       const rate=MoC.annualProbabilityToTick(annualProbability);
       const expectedRate=1-Math.pow(1-annualProbability,1/208);
+      const overdueDrain=overdueWaitDrainPerTick(13,12,'moderate',0.3);
       const oldSeedTick=MoC.seedTick,oldAdvance=MoC.environment.advance;
       const oldQuarter=MoC.onQuarter,oldTermEnd=MoC.onTermEnd;
       const oldTransition=window.transitionDiseaseState;
+      const councilTicks=[];
       const resident=agents.find(a=>a.type==='patient'||a.type==='citizen');
       agents.filter(a=>a.type==='patient'||a.type==='citizen').forEach(a=>{a.moved=true;});
       Object.assign(resident,{moved:false,insideBuilding:'hospital',behaviorState:'at_hospital',state:'managed',
@@ -137,10 +139,12 @@ test('Elapsed model clock uses quarter-week ticks and exact calendar boundaries'
       window.transitionDiseaseState=function(code,state){progressionTicks.push(modelTick);return state;};
       MoC.seedTick=function(){Math.random=()=>0.5;};
       MoC.environment.advance=function(){};
-      MoC.onQuarter=function(){};
+      MoC.onQuarter=function(q){councilTicks.push({q,tick:modelTick});};
       let terminalAtTerm=null;
       MoC.onTermEnd=function(){terminalAtTerm={dead:resident.state==='dead',finalized:resident.deathFinalized};};
       MoC.paused=false;MoC.S.over=false;
+      logEvent('time_fixture',resident,'cycle offset check');
+      const eventTick=EVENT_LOG[EVENT_LOG.length-1].cycle;
       const initial={cycle,elapsed:MoC.elapsedTick(),ticksPerWeek:MoC.TICKS_PER_WEEK,
         ticksPerDay:MoC.TICKS_PER_DAY,ticksPerQuarter:MoC.QUARTER_TICKS,
         ticksPerYear:MoC.TICKS_PER_YEAR,modelVersion:MoC.MODEL_VERSION};
@@ -160,11 +164,12 @@ test('Elapsed model clock uses quarter-week ticks and exact calendar boundaries'
       MoC.seedTick=oldSeedTick;MoC.environment.advance=oldAdvance;
       MoC.onQuarter=oldQuarter;MoC.onTermEnd=oldTermEnd;
       window.transitionDiseaseState=oldTransition;
-      return {initial,short,quarter,year,term,initialAge,rate,expectedRate,
+      return {initial,short,quarter,year,term,councilTicks,eventTick,initialAge,rate,expectedRate,overdueDrain,
         zeroRate:MoC.annualProbabilityToTick(0),terminalDeaths:EVENT_LOG.filter(e=>e.type==='died').length};
     });
     assert.deepEqual(outcome.initial,{cycle:30,elapsed:0,ticksPerWeek:4,ticksPerDay:4/7,ticksPerQuarter:52,ticksPerYear:208,
       modelVersion:'minister-care-7-elapsed-time'});
+    assert.equal(outcome.eventTick,0,'event timestamps use elapsed ticks rather than the cycle-30 display offset');
     assert.deepEqual(outcome.short,{cycle:31,elapsed:1,age:70+1/208,progressions:0,
       phases:['night','dusk','day','dawn']});
     assert.equal(outcome.quarter.elapsed,52,'the first full quarter ends on elapsed tick 52');
@@ -176,9 +181,36 @@ test('Elapsed model clock uses quarter-week ticks and exact calendar boundaries'
     assert.equal(outcome.year.progressionCount,52,'disease progression is evaluated every four elapsed ticks');
     assert.deepEqual(outcome.term,{cycle:446,elapsed:416,over:true,terminalAtTerm:{dead:true,finalized:true}},
       'the final clinical tick is processed before the term-end callback');
+    assert.deepEqual(outcome.councilTicks.map(({q,tick})=>[q,tick]),
+      [[2,52],[3,104],[4,156],[5,208],[6,260],[7,312],[8,364]],
+      'Cabinet Crisis offers seven allocations at Q2-Q8; the opening quarter has no allocation council');
     assert.equal(outcome.zeroRate,0,'zero annual probability remains zero per tick');
     assert.ok(Math.abs(outcome.rate-outcome.expectedRate)<1e-15,'annual probability conversion uses the 208-tick year');
+    assert.equal(outcome.overdueDrain,0.975,'one overdue week at moderate severity converts the 3 HP/week rule to per-tick drain');
     assert.equal(outcome.terminalDeaths,1,'terminal death is finalized exactly once at the year/term boundary');
+  } finally {await browser.close();await new Promise(resolve=>server.close(resolve));}
+});
+
+test('Full Term horizon ends after 40 elapsed quarters', { timeout: 30000 }, async () => {
+  const server=await startSiteServer(),browser=await launchBrowser(),page=await browser.newPage();
+  try {
+    await page.goto(`http://127.0.0.1:${server.address().port}/minister.html#scn=campaign&seed=2468`,{waitUntil:'domcontentloaded'});
+    const result=await page.evaluate(()=>{
+      clearInterval(autoTimer);autoTimer=null;
+      const councils=[];
+      let endedAt=null;
+      let currentTick=0;
+      MoC.onQuarter=q=>councils.push({q,tick:(q-1)*MoC.QUARTER_TICKS});
+      MoC.onTermEnd=()=>{endedAt=currentTick;};
+      for(let elapsedTick=1;elapsedTick<=MoC.TOTAL_QUARTERS*MoC.QUARTER_TICKS;elapsedTick++){currentTick=elapsedTick;MoC.onTick(elapsedTick);}
+      return {quarters:MoC.TOTAL_QUARTERS,ticksPerQuarter:MoC.QUARTER_TICKS,endedAt,councils};
+    });
+    assert.equal(result.quarters,40);
+    assert.equal(result.ticksPerQuarter,52);
+    assert.equal(result.endedAt,2080);
+    assert.equal(result.councils.length,39,'allocation councils begin after the first quarter and run through Q40');
+    assert.deepEqual(result.councils[0],{q:2,tick:52});
+    assert.deepEqual(result.councils.at(-1),{q:40,tick:2028});
   } finally {await browser.close();await new Promise(resolve=>server.close(resolve));}
 });
 

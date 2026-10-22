@@ -1465,7 +1465,7 @@ const MoC = (function(){
         threats:['Only your own curiosity'],
         win:'There is no losing here. Experiment freely.' } },
     cabinetcrisis: { id:'cabinetcrisis', name:'Cabinet Crisis', icon:'🚨', quarters:8,
-      desc:'Two years, eight councils, €400K. Keep care running and survive the final vote. Play at your own pace.',
+      desc:'Two years, seven councils after the opening quarter, €400K. Keep care running and survive the final vote. Play at your own pace.',
       budget:400000, trust:50,
       story:'The coalition nearly fell last night. Your chief of staff woke you at 05:15: <i>"We need a decision by nine."</i><br><br>Dr. de Jong\'s waiting room is already three weeks over the legal limit. Parliament has tabled two motions. The Gazette has your photo under the headline: <i>HOW LONG?</i><br><br>You have eight councils to prove the cabinet deserves to survive.',
       dateline:'Tuesday 05:15 · The Minister\'s residence, Cammelot',
@@ -1473,7 +1473,7 @@ const MoC = (function(){
         MoC.S.specialistCapacity = 1.5; M.IST.sick = 0.10; M.IST.drain = 1.12;
         MoC.S._speed = 1;
       },
-      brief:{ situation:'System under pressure: waits at 13 weeks, staff sick leave at 10%, drain elevated. Eight councils. Budget of €400K. No midterm election - just a hard final confidence gate at Q8.',
+      brief:{ situation:'System under pressure: waits at 13 weeks, staff sick leave at 10%, drain elevated. Seven allocation councils from Q2 through Q8; the opening quarter has no purchase window. Budget of €400K. No midterm election - just a hard final confidence gate at Q8.',
         threats:['Only 8 quarters - no slow plays, no long-term bets', 'Every wrong call shows up before the term ends', 'Final gate: all trusts >=40, deaths <5, no stage-3 cascade'],
         win:'Cabinet survives Q8 final confidence vote. All three trust pillars >=40. Deaths below 5. No stage-3 cascade.' } }
   };
@@ -1783,11 +1783,11 @@ function findWaypointPath(fromIdx, toIdx) {
 }
 
 // ═══ GLOBAL EVENT LOG (Sprint 3 — Epic 4.1) ═══
-const EVENT_LOG = []; // { cycle, type, agentId, agentName, detail, hp, timestamp }
+const EVENT_LOG = []; // { cycle: elapsed tick, type, agentId, agentName, detail, hp, timestamp }
 
 function logEvent(type, agent, detail) {
   EVENT_LOG.push({
-    cycle,
+    cycle: modelTick,
     type,
     agentId: agent.id,
     agentName: agent.name,
@@ -1801,7 +1801,7 @@ function logEvent(type, agent, detail) {
 // ═══ SPRINT 19: CAMMELOT GAZETTE DATA ═══
 const GAZETTE_HISTORY = []; // { day, season, year, entries, mood, moodClass, moodEmoji, stats, mayorComment, trendPeriod }
 const TREND_DATA = { periods: [] }; // each: { startCycle, endCycle, deaths, naturalDeaths, treatments, admissions, recoveries, queuePeak, avgWait, cost }
-let lastGazetteCycle = MoC.STARTUP_CYCLE;
+let lastGazetteCycle = 0;
 let mayorBubbleTimer = 0;
 let mayorBubbleText = '';
 // ═══ END GAZETTE DATA ═══
@@ -1818,7 +1818,7 @@ let insightQueueRecord = 0; // separate queue record tracker for insights
 
 // ═══ SPRINT 23: WEEKLY REPORT DATA ═══
 const WEEKLY_REPORTS = []; // { cycle, weekNumber, deaths, queues, financial, bias, moments }
-let lastWeeklyReportCycle = MoC.STARTUP_CYCLE;
+let lastWeeklyReportCycle = 0;
 // ═══ END WEEKLY REPORT DATA ═══
 
 // ═══ SPRINT 5: VISIBLE QUEUES ═══
@@ -2132,7 +2132,7 @@ function drawTimeline() {
   // Draw death event markers
   EVENT_LOG.forEach(function(e) {
     if (e.type !== 'died' && e.type !== 'natural_death') return;
-    var x = ((e.cycle - MoC.STARTUP_CYCLE) / maxCycle) * w;
+    var x = (e.cycle / maxCycle) * w;
     ctx.fillStyle = e.type === 'died' ? 'rgba(229,57,53,0.7)' : 'rgba(150,150,150,0.5)';
     ctx.fillRect(x - 1, 0, 2, h);
   });
@@ -2254,10 +2254,10 @@ const FHIR_STORE = []; // Array of FHIR-like resources
 function createFHIRResource(type, agentId, data) {
   const resource = {
     resourceType: type,
-    id: type.toLowerCase() + '-' + agentId + '-' + cycle,
+    id: type.toLowerCase() + '-' + agentId + '-' + modelTick,
     subject: { reference: 'Patient/' + agentId },
     effectiveDateTime: '2025-01-01T00:00:00Z',
-    cycle: cycle,
+    cycle: modelTick,
     ...data
   };
   FHIR_STORE.push(resource);
@@ -2288,12 +2288,12 @@ const A2A_MESSAGES = [];
 
 function sendA2AMessage(from, to, type, payload) {
   const msg = {
-    id: 'msg-' + cycle + '-' + Math.random().toString(36).slice(2, 6),
+    id: 'msg-' + modelTick + '-' + Math.random().toString(36).slice(2, 6),
     from: from.id, fromName: from.name,
     to: to.id, toName: to.name,
     type,
     payload,
-    cycle,
+    cycle: modelTick,
     status: 'sent'
   };
   A2A_MESSAGES.push(msg);
@@ -2402,9 +2402,8 @@ function buildDigitalTwinPanel(agent) {
   const p = M[mode];
   let drainPerTick = 0;
   if (agent.conditions.length > 0 && agent.waitWeeks > p.tree) {
-    const sevMult = { healthy: 0, mild: 0.5, moderate: 1.0, severe: 2.0, critical: 4.0 };
     agent.conditions.forEach(function(c) {
-      drainPerTick += (3 * (agent.waitWeeks - p.tree) * (sevMult[c.severity] || 0) * (1 + p.admin)) / 28;
+      drainPerTick += overdueWaitDrainPerTick(agent.waitWeeks, p.tree, c.severity, p.admin);
     });
   }
   const ticksToC = drainPerTick > 0 ? Math.round((agent.hp - 20) / drainPerTick) : -1;
@@ -3749,7 +3748,7 @@ function getPersonalityTrait(agentId) {
 function addMemory(agent, type, text, importance) {
   if (!agent.memory) agent.memory = [];
   importance = Math.max(1, Math.min(10, importance || 5));
-  agent.memory.push({ cycle: cycle, type: type, text: text, importance: importance });
+  agent.memory.push({ cycle: modelTick, type: type, text: text, importance: importance });
   if (agent.memory.length > MAX_MEMORIES) {
     // Evict lowest-importance entry
     var minIdx = 0;
@@ -4263,6 +4262,12 @@ function transitionDiseaseState(conditionCode, currentState, waitWeeks, treeknor
 // HP_drain = drainRate × (t_wait - T_Treeknorm) × severityMultiplier × (1 + adminBurden)
 const SEVERITY_MULTIPLIER = { healthy:0, mild:0.5, moderate:1.0, severe:2.0, critical:4.0 };
 
+function overdueWaitDrainPerTick(waitWeeks, normWeeks, severity, adminBurden) {
+  const overdueWeeks = Math.max(0, waitWeeks - normWeeks);
+  const severityMultiplier = SEVERITY_MULTIPLIER[severity] ?? 1.0;
+  return 3 * overdueWeeks * severityMultiplier * (1 + adminBurden) / MoC.TICKS_PER_WEEK;
+}
+
 function calculateHPDrain(condition, severity, waitWeeks, params, agent) {
   // params = p (the current mode's M.IST or M.SOLL)
   const db = DISEASE_DB[condition.code];
@@ -4280,10 +4285,8 @@ function calculateHPDrain(condition, severity, waitWeeks, params, agent) {
 
   // Additional drain from Treeknorm violation
   if (waitWeeks > params.tree) {
-    const overdue = waitWeeks - params.tree;
-    const sevMult = SEVERITY_MULTIPLIER[severity] || 1.0;
-    // 3 HP per week overdue × severity × admin burden (from CLAUDE.md Section 4.3)
-    drain += (3 * overdue * sevMult * (1 + params.admin)) * 0.05; // scaled per-tick
+    // Convert the weekly overdue drain to HP per elapsed model tick.
+    drain += overdueWaitDrainPerTick(waitWeeks, params.tree, severity, params.admin);
   }
 
   // Living Patient Agent: persona drainModifier (resilience<1, fatalism>1)
@@ -7059,7 +7062,7 @@ function sanitizeText(s) {
 
 function addHistory(agent, type, text){
   if(!agent.actionHistory) agent.actionHistory=[];
-  agent.actionHistory.push({cycle, type, text, hp:Math.max(0,Math.round(agent.hp))});
+  agent.actionHistory.push({cycle:modelTick, type, text, hp:Math.max(0,Math.round(agent.hp))});
   if(agent.actionHistory.length>50) agent.actionHistory.shift();
 }
 
@@ -7135,7 +7138,7 @@ function shareExperience(speaker, listener) {
     const weeks = Math.round(speaker.waitWeeks);
     const specialty = speaker.conditions && speaker.conditions[0] ? speaker.conditions[0].name : 'treatment';
     const memory = 'I heard ' + speaker.name + ' waited ' + weeks + ' weeks for ' + specialty;
-    listener.heardExperiences.push({ from: speaker.name, weeks: weeks, specialty: specialty, cycle: cycle });
+    listener.heardExperiences.push({ from: speaker.name, weeks: weeks, specialty: specialty, cycle: modelTick });
     // Increase listener's system anxiety (+0.05 per word-of-mouth event)
     listener.systemAnxiety = Math.min(1.0, (listener.systemAnxiety || 0) + 0.05);
     // Override the chat bubble to show word-of-mouth dialogue
@@ -7147,7 +7150,7 @@ function shareExperience(speaker, listener) {
     // Pass along secondhand info
     const hearsay = speaker.heardExperiences[Math.floor(Math.random() * speaker.heardExperiences.length)];
     const memory = 'I heard ' + hearsay.from + ' waited ' + hearsay.weeks + ' weeks for ' + hearsay.specialty;
-    listener.heardExperiences.push({ from: hearsay.from, weeks: hearsay.weeks, specialty: hearsay.specialty, cycle: cycle });
+    listener.heardExperiences.push({ from: hearsay.from, weeks: hearsay.weeks, specialty: hearsay.specialty, cycle: modelTick });
     listener.systemAnxiety = Math.min(1.0, (listener.systemAnxiety || 0) + 0.05);
     listener.chatBubbleText = speaker.name + ' told me the hospital queue is terrible...';
     addHistory(listener, 'word_of_mouth', memory);
@@ -7274,7 +7277,7 @@ function finalizeAgentDeath(a){
   GRAVE_MARKERS.push({
     x:a.x,y:a.y,name:a.name,age:a.age,
     cause:a.causeOfDeath,waitWeeks:a.waitWeeks||0,
-    cycle,conditions:(a.conditions||[]).map(c=>c.name)
+    cycle:modelTick,conditions:(a.conditions||[]).map(c=>c.name)
   });
   // Remove from any queue
   Object.values(QUEUES).forEach(q=>{
@@ -7817,7 +7820,7 @@ function tick(){
               gpAgent.totalPatientsSeen=(gpAgent.totalPatientsSeen||0)+1;
               gpAgent.referralsMade=(gpAgent.referralsMade||0)+1;
               if(!gpAgent.actionHistory)gpAgent.actionHistory=[];
-              gpAgent.actionHistory.push({cycle,action:'referred',patientName:a.name,detail:a.conditions.map(c=>c.code).join(',')});
+              gpAgent.actionHistory.push({cycle:modelTick,action:'referred',patientName:a.name,detail:a.conditions.map(c=>c.code).join(',')});
               if(gpAgent.actionHistory.length>50)gpAgent.actionHistory.shift();
               gpAgent.burnoutLevel=calculateBurnout(gpAgent, p); gpAgent.peakBurnout=Math.max(gpAgent.peakBurnout||0, gpAgent.burnoutLevel);
               incrementBurnoutForPatient(gpAgent); // Sprint 23: per-patient burnout
@@ -7857,7 +7860,7 @@ function tick(){
               gpAgent.patientsSeenToday=(gpAgent.patientsSeenToday||0)+1;
               gpAgent.totalPatientsSeen=(gpAgent.totalPatientsSeen||0)+1;
               if(!gpAgent.actionHistory)gpAgent.actionHistory=[];
-              gpAgent.actionHistory.push({cycle,action:'treated',patientName:a.name,detail:a.conditions.map(c=>c.code).join(',')});
+              gpAgent.actionHistory.push({cycle:modelTick,action:'treated',patientName:a.name,detail:a.conditions.map(c=>c.code).join(',')});
               if(gpAgent.actionHistory.length>50)gpAgent.actionHistory.shift();
               gpAgent.burnoutLevel=calculateBurnout(gpAgent, p); gpAgent.peakBurnout=Math.max(gpAgent.peakBurnout||0, gpAgent.burnoutLevel);
               incrementBurnoutForPatient(gpAgent); // Sprint 23: per-patient burnout
@@ -7969,7 +7972,7 @@ function tick(){
           a.conditions.forEach(c => {
             const med = MEDICATIONS[c.code];
             if (med && !a.medications.some(m => m.code === c.code)) {
-              a.medications.push({ code: c.code, name: med.name, desc: med.desc, since: cycle });
+              a.medications.push({ code: c.code, name: med.name, desc: med.desc, since: modelTick });
             }
           });
           // Improve condition severity via treatmentEffect
@@ -7987,7 +7990,7 @@ function tick(){
           say('Hospital',`${a.name} treated & discharged. Recovery underway.`);
           createFHIRResource('Encounter', a.id, { class: 'hospital_discharge', outcome: 'discharged', hpBefore: hpBefore, hpAfter: Math.round(a.hp) });
           // Track discharged patients for hospital dashboard
-          HOSPITAL_DISCHARGED.push({name:a.name,codes:a.conditions.map(c=>c.code).join(','),hpBefore,hpAfter:Math.round(a.hp),cycle});
+          HOSPITAL_DISCHARGED.push({name:a.name,codes:a.conditions.map(c=>c.code).join(','),hpBefore,hpAfter:Math.round(a.hp),cycle:modelTick});
           if(HOSPITAL_DISCHARGED.length>10)HOSPITAL_DISCHARGED.shift();
           a.path=[]; a.pathIdx=0; a.idleUntil=cycle*350+1500;
         }
@@ -8265,7 +8268,7 @@ function tick(){
               // Mark agent as receiving treatment — slows Markov progression (SOLL only)
               if (mode === 'SOLL') {
                 a.receivingKetenzorg = true;
-                a.lastKetenzorgCycle = cycle;
+                a.lastKetenzorgCycle = modelTick;
               }
             }
           }
@@ -8314,7 +8317,7 @@ function tick(){
       // Broad query always succeeds (population HP)
       if (hpCount >= 10) {
         var avgHP = Math.round((hpSum / hpCount) * 10) / 10;
-        researchAgent.researchResults.push({ cycle: cycle, metric: 'population_health', value: avgHP, n: hpCount, optOutRate: Math.round(refused / patients.length * 100) });
+        researchAgent.researchResults.push({ cycle: modelTick, metric: 'population_health', value: avgHP, n: hpCount, optOutRate: Math.round(refused / patients.length * 100) });
         researchQueriesCompleted++;
         createFHIRResource('Observation', 'research-agent', { code: 'CAMMELOT-RESEARCH', valueQuantity: { value: avgHP, unit: 'HP' }, note: 'Population health N=' + hpCount + ', opt-out=' + refused });
         logEvent('research_query', researchAgent, 'Population health: mean HP=' + avgHP + ', N=' + hpCount + ', opt-out=' + refused);
@@ -8322,7 +8325,7 @@ function tick(){
       // Specific diabetes query: k-anonymity check (cohort >= 10)
       if (hba1cCount >= 10) {
         var avgHba1c = Math.round((hba1cSum / hba1cCount) * 10) / 10;
-        researchAgent.researchResults.push({ cycle: cycle, metric: 'mean_hba1c', value: avgHba1c, n: hba1cCount });
+        researchAgent.researchResults.push({ cycle: modelTick, metric: 'mean_hba1c', value: avgHba1c, n: hba1cCount });
         researchQueriesCompleted++;
         createFHIRResource('Observation', 'research-agent', { code: 'CAMMELOT-RESEARCH', valueQuantity: { value: avgHba1c, unit: 'mmol/mol' }, note: 'HbA1c N=' + hba1cCount });
         say('Research Agent', 'Federated query: mean HP=' + avgHP + ', HbA1c=' + avgHba1c + ' (N=' + hba1cCount + ', ' + refused + ' opted out).');
@@ -8331,7 +8334,7 @@ function tick(){
         say('Research Agent', 'Population health: mean HP=' + (hpCount >= 10 ? avgHP : 'N/A') + '. Diabetes cohort too small (N=' + hba1cCount + ') — suppressed.');
       }
       if (researchAgent.researchResults.length > 50) researchAgent.researchResults.shift();
-      researchAgent.lastQueryCycle = cycle;
+      researchAgent.lastQueryCycle = modelTick;
       researchAgent.state = 'idle';
     }
   }
@@ -8355,14 +8358,14 @@ function tick(){
       var avgWait = waitingPatients.length > 0 ? Math.round(waitingPatients.reduce(function(sum, a) { return sum + a.waitWeeks; }, 0) / waitingPatients.length * 10) / 10 : 0;
       // Benchmark 3: GP burnout comparison
       var gpBurnout = gpAgents.map(function(g) { return { id: g.id, name: g.name, burnout: Math.round(g.burnoutLevel || 0) }; });
-      var report = { cycle: cycle, avgWaitWeeks: avgWait, specialists: specMetrics, gpBurnout: gpBurnout, totalAlive: allPatients.length };
+      var report = { cycle: modelTick, avgWaitWeeks: avgWait, specialists: specMetrics, gpBurnout: gpBurnout, totalAlive: allPatients.length };
       benchAgent.benchmarkResults.push(report);
       if (benchAgent.benchmarkResults.length > 30) benchAgent.benchmarkResults.shift();
       benchmarkReportsGenerated++;
       createFHIRResource('Observation', 'benchmark-agent', { code: 'CAMMELOT-BENCHMARK', valueQuantity: { value: avgWait, unit: 'weeks' }, note: 'Avg wait. Alive: ' + allPatients.length });
       logEvent('benchmark', benchAgent, 'Quality report: avg wait ' + avgWait + 'w, ' + allPatients.length + ' alive');
       say('Benchmark Agent', 'Quality report #' + benchmarkReportsGenerated + ': avg wait ' + avgWait + ' weeks, ' + allPatients.length + ' patients alive.');
-      benchAgent.lastBenchmarkCycle = cycle;
+      benchAgent.lastBenchmarkCycle = modelTick;
       benchAgent.state = 'idle';
     }
   }
@@ -8463,11 +8466,11 @@ function resetSim(){
   FHIR_STORE.length=0;
   A2A_MESSAGES.length=0;
   TIMELINE_SNAPSHOTS.length=0; // Sprint 16
-  GAZETTE_HISTORY.length=0; TREND_DATA.periods.length=0; lastGazetteCycle=MoC.STARTUP_CYCLE; mayorBubbleTimer=0; mayorBubbleText=''; // Sprint 19
+  GAZETTE_HISTORY.length=0; TREND_DATA.periods.length=0; lastGazetteCycle=0; mayorBubbleTimer=0; mayorBubbleText=''; // Sprint 19
   MOMENTS.items.length=0; MOMENTS.queueRecord=0; // Sprint 20
   // Sprint 23: Clear Insight Engine & Weekly Reports
   INSIGHT_LOG.length=0; Object.keys(INSIGHT_FIRED).forEach(function(k){delete INSIGHT_FIRED[k];}); insightQueueRecord=0;
-  WEEKLY_REPORTS.length=0; lastWeeklyReportCycle=MoC.STARTUP_CYCLE; window._systemOverload=false;
+  WEEKLY_REPORTS.length=0; lastWeeklyReportCycle=0; window._systemOverload=false;
   // Sprint S4: Clear Gini & bias history
   BIAS_DATA.giniHistory.length=0; BIAS_DATA.currentGini=0;
   BIAS_DATA.biasScoreHistory.length=0; BIAS_DATA.currentBiasScore=0;
@@ -8752,7 +8755,7 @@ function generateGazetteData() {
   var alive = pop.filter(function(a) { return a.hp > 0; });
   var dead = pop.filter(function(a) { return a.hp <= 0; });
   var startCycle = lastGazetteCycle;
-  var endCycle = cycle;
+  var endCycle = modelTick;
 
   // Filter events in this period
   var periodEvents = EVENT_LOG.filter(function(e) { return e.cycle > startCycle && e.cycle <= endCycle; });
@@ -8922,7 +8925,7 @@ function autoGenerateGazette() {
   var data = generateGazetteData();
   GAZETTE_HISTORY.push(data);
   TREND_DATA.periods.push(data.trendPeriod);
-  lastGazetteCycle = cycle;
+  lastGazetteCycle = modelTick;
 
   // Mayor says in chatlog
   mayorSay(data.mayorComment);
@@ -9026,7 +9029,7 @@ function showGazette() {
 
   // Generate current gazette if none exist or force fresh
   var currentData;
-  if (GAZETTE_HISTORY.length === 0 || cycle - lastGazetteCycle > 0) {
+  if (GAZETTE_HISTORY.length === 0 || modelTick - lastGazetteCycle > 0) {
     currentData = generateGazetteData();
   } else {
     currentData = GAZETTE_HISTORY[GAZETTE_HISTORY.length - 1];
@@ -10180,7 +10183,7 @@ function updateUI(){
 
   // Deaths This Week — deaths in the last four elapsed model ticks.
   var recentDeathsWeek = EVENT_LOG.filter(function(e) {
-    return (e.type === 'died' || e.type === 'natural_death') && e.cycle > cycle - MoC.TICKS_PER_WEEK;
+    return (e.type === 'died' || e.type === 'natural_death') && e.cycle > modelTick - MoC.TICKS_PER_WEEK;
   }).length;
   var hDWEl = document.getElementById('hDW');
   if (hDWEl) {
@@ -10371,7 +10374,7 @@ function idbDelete(slot){
   }));
 }
 function buildSaveState(){
-  return{version:2,cycle,mode,
+  return{version:2,cycle:modelTick,displayCycle:cycle,mode,
     stats:{res:S.res,msgs:S.msgs,waste:S.waste},
     agents:agents.map(a=>({
       id:a.id,x:a.x,y:a.y,tx:a.tx,ty:a.ty,hp:a.hp,conditions:a.conditions,
@@ -11026,7 +11029,7 @@ function dismissToast(toast) {
 // 20.2 — Moment Cards
 function addMoment(type, moment) {
   moment.type = type;
-  moment.cycle = cycle;
+  moment.cycle = modelTick;
   moment.timestamp = Date.now();
   MOMENTS.items.push(moment);
   showMomentToast(moment);
@@ -11039,7 +11042,7 @@ function showMomentToast(moment) {
 }
 
 function checkForMoments(elapsedTick) {
-  const currentCycle = MoC.STARTUP_CYCLE + elapsedTick;
+  const currentCycle = elapsedTick;
   var recentEvents = EVENT_LOG.filter(function(e) { return e.cycle >= currentCycle - 5 && e.cycle <= currentCycle; });
 
   // Death moments (system failure deaths only, not natural)
@@ -11139,7 +11142,7 @@ function showMomentsGallery() {
 // ═══ SPRINT 23: INSIGHT ENGINE (Epic 26.1) ═══
 function addInsight(insightType, headline, explanation, dataPoint) {
   var entry = {
-    cycle: cycle,
+    cycle: modelTick,
     headline: headline,
     explanation: explanation,
     dataPoint: dataPoint,
@@ -11150,7 +11153,7 @@ function addInsight(insightType, headline, explanation, dataPoint) {
   if (INSIGHT_LOG.length > 200) INSIGHT_LOG.splice(0, INSIGHT_LOG.length - 200);
   // Also log as EVENT_LOG entry with type 'insight'
   EVENT_LOG.push({
-    cycle: cycle,
+    cycle: modelTick,
     type: 'insight',
     agentId: 'system',
     agentName: 'INSIGHT',
@@ -11171,9 +11174,9 @@ function runInsightEngine() {
   // ── 1. First death of the year ──
   var yearKey = 'first_death_year_' + yearNum;
   if (!INSIGHT_FIRED[yearKey]) {
-    var yearStartCycle = MoC.STARTUP_CYCLE + (yearNum - 1) * MoC.TICKS_PER_YEAR;
+    var yearStartCycle = (yearNum - 1) * MoC.TICKS_PER_YEAR;
     var deathsThisYear = EVENT_LOG.filter(function(e) {
-      return e.type === 'died' && e.cycle >= yearStartCycle && e.cycle <= cycle;
+      return e.type === 'died' && e.cycle >= yearStartCycle && e.cycle <= modelTick;
     });
     if (deathsThisYear.length > 0) {
       INSIGHT_FIRED[yearKey] = true;
@@ -11304,7 +11307,7 @@ function showInsightsPanel() {
 function generateWeeklyReport() {
   var weekNumber = WEEKLY_REPORTS.length + 1;
   var startCycle = lastWeeklyReportCycle;
-  var endCycle = cycle;
+  var endCycle = modelTick;
   var p = M[mode];
   var pop = agents.filter(function(a) { return a.type === 'patient' || a.type === 'citizen'; });
   var periodEvents = EVENT_LOG.filter(function(e) { return e.cycle > startCycle && e.cycle <= endCycle; });
@@ -11614,7 +11617,7 @@ function runResearchExport(nCycles) {
     weeklyReports: []
   };
 
-  var startCycle = cycle;
+  var startCycle = modelTick;
   var startDeaths = EVENT_LOG.filter(function(e) { return e.type === 'died'; }).length;
   var startNatural = EVENT_LOG.filter(function(e) { return e.type === 'natural_death'; }).length;
   var startER = erAdmissionCount;
@@ -11629,13 +11632,13 @@ function runResearchExport(nCycles) {
     tick();
     // Sample Gini every 50 cycles
     if (i % 50 === 0) {
-      snapshot.giniTimeline.push({ cycle: cycle, gini: BIAS_DATA.currentGini || 0 });
-      snapshot.biasScoreTimeline.push({ cycle: cycle, score: BIAS_DATA.currentBiasScore || 0 });
+      snapshot.giniTimeline.push({ cycle: modelTick, gini: BIAS_DATA.currentGini || 0 });
+      snapshot.biasScoreTimeline.push({ cycle: modelTick, score: BIAS_DATA.currentBiasScore || 0 });
     }
     // Track deaths per 100-cycle window
     if (i % 100 === 0) {
-      var d = EVENT_LOG.filter(function(e) { return e.type === 'died' && e.cycle > cycle - 100; }).length;
-      snapshot.deathsByCycle.push({ cycle: cycle, deaths: d });
+      var d = EVENT_LOG.filter(function(e) { return e.type === 'died' && e.cycle > modelTick - 100; }).length;
+      snapshot.deathsByCycle.push({ cycle: modelTick, deaths: d });
     }
   }
   window.updateUI = _origUpdate;
@@ -11735,7 +11738,7 @@ function getSimStats() {
     pop: totalPop.length, alive: alive.length, deaths: dead.length,
     sysDead: sysDead, elderlyPct: elderlyPct, avgWait: avgWait, maxWait: maxWait,
     adminWaste: adminWaste, dramaticDeath: dramaticDeath, sollPct: sollPct,
-    savedLives: savedLives, savedMoney: savedMoney, cycle: cycle,
+    savedLives: savedLives, savedMoney: savedMoney, cycle: modelTick,
     preventable: Math.round(sysDead * 0.7)
   };
 }
@@ -13004,7 +13007,7 @@ async function initLLMSubsystem() {
     GS.owned[item.id] = (GS.owned[item.id] || 0) + 1;
     GS.interventions.push({ q: GS.quarter, label: item.name.replace(/^\S+\s/, ''), cost: cost });
     applyFx(effectiveFx, 'Purchased: ' + item.name + ' (' + fmtK(cost) + ')');
-    GS.interventions[GS.interventions.length - 1].tick = cycle;
+    GS.interventions[GS.interventions.length - 1].tick = modelTick;
     GS.interventions[GS.interventions.length - 1].effectiveFx = effectiveFx;
     GS._observation = { itemId:item.id, name:item.name, cost, before:beforePolicy };
     // G19: changeprog directly raises the adoption rate
@@ -13300,7 +13303,7 @@ async function initLLMSubsystem() {
     { id:'praise', name:'\ud83c\udfc5 Inspection report', once:true,
       weight:function(){
         if (GS.quarter < 8) return 0;
-        const recent = GRAVE_MARKERS.filter(function(g){ return g.cause === 'system_failure' && g.cycle > cycle - MoC.TICKS_PER_YEAR; }).length;
+        const recent = GRAVE_MARKERS.filter(function(g){ return g.cause === 'system_failure' && g.cycle > modelTick - MoC.TICKS_PER_YEAR; }).length;
         return recent === 0 ? 12 : 0;
       },
       text:function(){ return 'Inspectorate review: no model-classified system-delay death was recorded in the last four quarters.'; },
@@ -13805,7 +13808,7 @@ async function initLLMSubsystem() {
   function gazetteReport(q, dueDelayed, evt){
     const sd = systemDeaths();
     const avgWait = MoC.care.snapshot().meanWait.toFixed(1);
-    const lastQGraves = GRAVE_MARKERS.filter(function(g){ return g.cause === 'system_failure' && g.cycle > cycle - MoC.QUARTER_TICKS; });
+    const lastQGraves = GRAVE_MARKERS.filter(function(g){ return g.cause === 'system_failure' && g.cycle > modelTick - MoC.QUARTER_TICKS; });
     // Choose front page: strike > deaths > event > citizens-avoid > praise > calm
     let kind = 'calm', headline = 'NO SIRENS, SOME PAPERWORK';
     if (GS._finaleActive) { kind = 'flu'; headline = 'FLU WAVE FILLS THE WARDS'; }
@@ -14589,7 +14592,7 @@ async function initLLMSubsystem() {
     const perYear = [];
     const years = Math.ceil(MoC.TOTAL_QUARTERS / 4);
     for (let y = 1; y <= years; y++) {
-      const d = GRAVE_MARKERS.filter(function(g){ return g.cause === 'system_failure' && Math.ceil((g.cycle - MoC.STARTUP_CYCLE) / MoC.TICKS_PER_YEAR) === y; }).length;
+      const d = GRAVE_MARKERS.filter(function(g){ return g.cause === 'system_failure' && Math.ceil(g.cycle / MoC.TICKS_PER_YEAR) === y; }).length;
       perYear.push(d === 0 ? '\ud83d\udfe9' : d === 1 ? '\ud83d\udfe8' : '\ud83d\udfe5');
     }
     return perYear.join('');
@@ -14817,7 +14820,7 @@ async function initLLMSubsystem() {
       const years = Math.ceil(MoC.TOTAL_QUARTERS / 4);
       let darkYear = 1, darkDeaths = 0;
       for (let y = 1; y <= years; y++) {
-        const yDeaths = GRAVE_MARKERS.filter(function(g){ return g.cause === 'system_failure' && Math.ceil((g.cycle - MoC.STARTUP_CYCLE) / MoC.TICKS_PER_YEAR) === y; }).length;
+        const yDeaths = GRAVE_MARKERS.filter(function(g){ return g.cause === 'system_failure' && Math.ceil(g.cycle / MoC.TICKS_PER_YEAR) === y; }).length;
         if (yDeaths > darkDeaths) { darkDeaths = yDeaths; darkYear = y; }
       }
       if (darkDeaths > 0) moments.push('<b>Most recorded deaths:</b> Year ' + darkYear + ' \u2014 ' + darkDeaths + ' model-classified system death' + (darkDeaths !== 1 ? 's' : ''));
