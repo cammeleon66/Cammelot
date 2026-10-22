@@ -581,7 +581,7 @@ test('branch action telemetry reserves lanes and is not double-counted with its 
 
 test('repair intent waits for observable execution completion, not stale completed task', () => {
   const s = withPr(), state = emptyState();
-  state.issues[1] = { repairs: 1, repairPendingHead: HEAD, lastRepairAt: stamp };
+  state.issues[1] = { repairs: 1, repairPendingHead: HEAD, lastRepairAt: stamp, workPendingRunIds: [] };
   observe(state, s, NOW);
   assert.equal(forIssue(s, 1, state).length, 0);
   s.prs[0].codingRuns = [{ id: 99, status: 'completed', created_at: new Date(NOW + 1).toISOString() }];
@@ -1270,4 +1270,121 @@ test('CLI defaults dry-run and rejects unknown/ambiguous arguments', () => {
 test('successor prompt preserves scope, evidence honesty, and no routine gate', () => {
   const prompt = taskPrompt(16);
   for (const text of ['base', 'master', 'no production leaderboard writes', 'human/real-device', 'Do not merge', 'backlog-evidence']) assert.ok(prompt.includes(text), text);
+});
+
+test('same-second unchanged-head completion clears only a newly observed follow-up run', () => {
+  const s = withPr(), state = emptyState();
+  state.issues[1] = {
+    workPendingHead: HEAD, workPendingAt: new Date(NOW + 750).toISOString(), workPendingRunIds: [10],
+  };
+  s.prs[0].codingRuns = [{ id: 10, status: 'completed', created_at: stamp }];
+  observe(state, s, NOW + 1000);
+  assert.equal(state.issues[1].workPendingHead, HEAD);
+  s.prs[0].codingRuns.push({ id: 11, status: 'completed', created_at: stamp });
+  observe(state, s, NOW + 2000);
+  assert.equal(state.issues[1].workPendingHead, undefined);
+  assert.equal(state.issues[1].workPendingRunIds, undefined);
+});
+
+test('preexisting completed run cannot clear a reservation even at the exact request timestamp', () => {
+  const s = withPr(), state = emptyState();
+  state.issues[1] = { workPendingHead: HEAD, workPendingAt: stamp, workPendingRunIds: [10] };
+  s.prs[0].codingRuns = [{ id: 10, status: 'completed', created_at: stamp }];
+  observe(state, s, NOW + 1000);
+  assert.equal(state.issues[1].workPendingHead, HEAD);
+});
+
+for (const kind of ['evidence', 'repair']) test(`${kind} intent and reservation durably capture pre-request IDs from the fresh snapshot`, async t => {
+  const dir = await temp(t), s = withPr();
+  if (kind === 'evidence') s.prs[0].comments = [];
+  else s.tasks[0].state = 'failed';
+  s.prs[0].codingRuns = [{ id: 10, status: 'completed', created_at: stamp }];
+  let reads = 0;
+  const api = fake(s, {
+    snapshot: async () => {
+      const copy = clone(s);
+      if (++reads > 1) copy.prs[0].codingRuns.push({ id: 11, status: 'completed', created_at: stamp });
+      return copy;
+    },
+    execute: async action => {
+      const saved = await loadState(dir);
+      assert.equal(action.kind, kind);
+      assert.deepEqual(action.preRequestRunIds, [10, 11]);
+      assert.deepEqual(saved.inFlight.preRequestRunIds, [10, 11]);
+      assert.deepEqual(saved.issues[1].workPendingRunIds, [10, 11]);
+    },
+  });
+  await runOnce({ stateDir: dir, apply: true, github: api, now: () => NOW + 750, log: quiet });
+});
+
+test('legacy reservation without pre-request IDs cannot certify unchanged-head completion', () => {
+  const s = withPr(), state = emptyState();
+  state.issues[1] = { repairPendingHead: HEAD, lastRepairAt: stamp };
+  s.prs[0].codingRuns = [{ id: 11, status: 'completed', created_at: new Date(NOW + 1000).toISOString() }];
+  observe(state, s, NOW + 2000);
+  assert.equal(state.issues[1].repairPendingHead, HEAD);
+  assert.equal(actions(s, state, NOW + WAIT_MS + 1)[0].kind, 'park');
+  s.prs[0].head.sha = OTHER;
+  observe(state, s, NOW + WAIT_MS + 2);
+  assert.equal(state.issues[1].repairPendingHead, undefined);
+});
+
+test('recovered newer repair marker preserves its bounded wait despite an old checkpoint', () => {
+  const s = withPr(), state = emptyState(), reason = 'task task-1 failed', reasonKey = `${HEAD}:${reason}`;
+  s.tasks[0].state = 'failed';
+  state.issues[1] = { repairs: 1, fingerprints: [reasonKey],
+    lastRepairAt: new Date(NOW - WAIT_MS - 1000).toISOString() };
+  s.prs[0].comments.push({ user: { login: 'operator' }, created_at: stamp,
+    body: `<!-- backlog-dispatcher ${JSON.stringify({ id: 'new-repair', kind: 'repair', issue: 1, reasonKey })} -->` });
+  assert.equal(issueLedger(s, state, 1).lastRepairAt, stamp);
+  assert.equal(repairOrPark(s, state, s.prs[0], 1, reason, NOW), null);
+  assert.equal(repairOrPark(s, state, s.prs[0], 1, reason, NOW + WAIT_MS + 1).kind, 'park');
+  state.issues[1].lastRepairAt = new Date(NOW + 2000).toISOString();
+  assert.equal(issueLedger(s, state, 1).lastRepairAt, state.issues[1].lastRepairAt);
+});
+
+test('newest failed terminal task drives repair fingerprints in either array order', () => {
+  for (const reverse of [false, true]) {
+    const s = withPr(), state = emptyState();
+    const old = { id: 'old-failure', state: 'failed', prIds: [s.prs[0].id],
+      created_at: new Date(NOW - 7200000).toISOString() };
+    const recent = { id: 'new-failure', state: 'failed', prIds: [s.prs[0].id],
+      created_at: new Date(NOW - 3600000).toISOString() };
+    s.tasks = reverse ? [recent, old] : [old, recent];
+    state.issues[1] = { repairs: 1, fingerprints: [`${HEAD}:task old-failure failed`],
+      lastRepairAt: old.created_at };
+    const action = forIssue(s, 1, state)[0];
+    assert.equal(action?.kind, 'repair');
+    assert.equal(action.reasonKey, `${HEAD}:task new-failure failed`);
+    assert.equal(action.attempt, 2);
+  }
+});
+
+test('same-state terminal histories with missing or tied timestamps fail closed', () => {
+  for (const created of [undefined, stamp]) {
+    for (const reverse of [false, true]) {
+      const s = withPr();
+      s.tasks = [
+        { id: 'one', state: 'failed', prIds: [s.prs[0].id], created_at: stamp },
+        { id: 'two', state: 'failed', prIds: [s.prs[0].id], created_at: created },
+      ];
+      if (reverse) s.tasks.reverse();
+      const action = forIssue(s, 1)[0];
+      assert.equal(action.kind, 'park');
+      assert.match(action.reason, /ambiguous.*task histories/);
+    }
+  }
+});
+
+test('pending CI waits from the latest current-head rerun after an offline interval', () => {
+  const s = withPr(), state = emptyState(), old = new Date(NOW - WAIT_MS - 1000).toISOString();
+  s.prs[0].runs[0].status = 'queued'; s.prs[0].runs[0].run_attempt = 3;
+  s.prs[0].runs[0].conclusion = null;
+  state.issues[1] = { observedHead: HEAD, headSeenAt: old, repairs: 0,
+    validationReruns: { [`${HEAD}:401:1`]: old, [`${HEAD}:401:2`]: stamp } };
+  assert.equal(actions(s, state, NOW + 1000).length, 0);
+  assert.equal(actions(s, state, NOW + WAIT_MS + 1)[0].kind, 'park');
+  state.issues[1].validationReruns = { [`${OTHER}:401:2`]: stamp };
+  assert.equal(actions(s, state, NOW + 1000)[0].kind, 'park');
+  assert.equal(state.issues[1].repairs, 0);
 });

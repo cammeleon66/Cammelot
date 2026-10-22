@@ -291,6 +291,9 @@ function commentsFor(snapshot, n) {
     ...snapshot.prs.filter(p => associatedIssue(p) === n).flatMap(p => p.comments ?? [])];
 }
 
+const latestTimestamp = values => values.filter(value => typeof value === 'string' && Number.isFinite(Date.parse(value)))
+  .sort((a, b) => Date.parse(a) - Date.parse(b)).at(-1);
+
 export function issueLedger(snapshot, state, n) {
   const entry = state.issues[n] ?? {};
   const comments = commentsFor(snapshot, n).filter(c => c.user?.login === snapshot.viewer);
@@ -305,7 +308,7 @@ export function issueLedger(snapshot, state, n) {
       ...Object.fromEntries(markers.filter(m => m.kind === 'evidence' && isSha(m.head)).map(m => [m.head, m.createdAt])),
       ...(entry.evidenceRequests ?? {}),
     },
-    lastRepairAt: entry.lastRepairAt ?? markers.filter(m => m.kind === 'repair').map(m => m.createdAt).sort().at(-1),
+    lastRepairAt: latestTimestamp([entry.lastRepairAt, ...markers.filter(m => m.kind === 'repair').map(m => m.createdAt)]),
     parked: entry.parked || markers.some(m => m.kind === 'park' && (!entry.resumeAfter || m.createdAt > entry.resumeAfter)),
   };
 }
@@ -439,10 +442,10 @@ export function plan(snapshot, state, now) {
       // Aggregate ANY active task above. For terminal histories, use explicit
       // creation timestamps, never array order or branch-artifact base_ref.
       let task = tasks[0];
-      if (tasks.length > 1 && new Set(tasks.map(t => t.state)).size > 1) {
+      if (tasks.length > 1) {
         const ordered = [...tasks].sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at));
-        if (tasks.some(t => !Number.isFinite(Date.parse(t.created_at))) ||
-          new Set(ordered.filter(t => Date.parse(t.created_at) === Date.parse(ordered[0].created_at)).map(t => t.state)).size > 1) {
+        if (tasks.some(t => typeof t.created_at !== 'string' || !Number.isFinite(Date.parse(t.created_at))) ||
+          ordered.filter(t => Date.parse(t.created_at) === Date.parse(ordered[0].created_at)).length > 1) {
           actions.push({ kind: 'park', issue: n, pr: p.number, reason: 'ambiguous conflicting task histories' }); continue;
         }
         task = ordered[0];
@@ -525,7 +528,9 @@ export function plan(snapshot, state, now) {
         } else holds.push({ issue: n, reason: 'capacity or resource lane busy for evidence request' });
       } else if (gate.infrastructureHold || gate.infrastructurePending) {
         holds.push({ issue: n, reason: gate.reason });
-        if (now - Date.parse(seenAt) >= WAIT_MS) actions.push({
+        const waitStarted = latestTimestamp([seenAt, ...Object.entries(e.validationReruns ?? {})
+          .filter(([key]) => key.startsWith(`${p.head.sha}:`)).map(([, requested]) => requested)]);
+        if (now - Date.parse(waitStarted) >= WAIT_MS) actions.push({
           kind: 'park', issue: n, pr: p.number, reason: `validation infrastructure wait exceeded 24h: ${gate.reason}`,
         });
       } else if (gate.repair) {

@@ -8,6 +8,8 @@ import { ISSUES, BASE, REPO, plan, associatedIssue, isCoder, isSha, mergeGate, p
 export const emptyState = () => ({ version: 1, repo: REPO, base: BASE, issues: {}, inFlight: null });
 const logDefault = event => console.log(JSON.stringify(event));
 const stateFile = dir => path.join(dir, 'state.json');
+const validRunIds = ids => Array.isArray(ids) && ids.every(id => Number.isSafeInteger(id) && id > 0) &&
+  new Set(ids).size === ids.length;
 
 export function validateState(state) {
   const date = value => typeof value === 'string' && Number.isFinite(Date.parse(value));
@@ -25,6 +27,7 @@ export function validateState(state) {
     for (const key of ['repairPendingHead', 'observedHead', 'workPendingHead']) {
       if (e[key] !== undefined && !isSha(e[key])) throw new Error(`Invalid ledger SHA: ${key}`);
     }
+    if (e.workPendingRunIds !== undefined && !validRunIds(e.workPendingRunIds)) throw new Error('Invalid pending run IDs');
     for (const key of ['reviews', 'updates', 'evidenceRequests', 'validationReruns']) {
       if (e[key] !== undefined && (!e[key] || typeof e[key] !== 'object' || Array.isArray(e[key]) ||
         Object.values(e[key]).some(value => !date(value)))) throw new Error(`Invalid ledger reservations: ${key}`);
@@ -32,6 +35,7 @@ export function validateState(state) {
   }
   const a = state.inFlight;
   if (a !== null && (!a || typeof a !== 'object' || Array.isArray(a))) throw new Error('Invalid mutation journal');
+  if (a?.preRequestRunIds !== undefined && !validRunIds(a.preRequestRunIds)) throw new Error('Invalid journal run IDs');
   if (a && (!ISSUES.includes(a.issue) || typeof a.id !== 'string' || !a.id || !date(a.createdAt) ||
     !['prepared', 'sent'].includes(a.status) ||
     !['dispatch', 'repair', 'evidence', 'rerun-validation', 'park', 'review', 'ready', 'update', 'merge', 'close'].includes(a.kind) ||
@@ -105,12 +109,16 @@ export function observe(state, snapshot, now) {
       e.headSeenAt = new Date(now).toISOString();
     }
     const pending = pendingWork(e);
+    // Actions timestamps have second precision. Identity, not timestamp
+    // rounding, distinguishes a new execution from a pre-request completed run.
+    // Legacy reservations without a baseline cannot prove unchanged-head work.
     if (pending.head && (i.state === 'closed' ||
-      (p && (p.head.sha !== pending.head || p.codingRuns?.some(r =>
-        r.status === 'completed' && Date.parse(r.created_at) >= Date.parse(pending.at)))))) {
+      (p && (p.head.sha !== pending.head || (validRunIds(e.workPendingRunIds) && p.codingRuns?.some(r =>
+        r.status === 'completed' && Number.isSafeInteger(r.id) && r.id > 0 && !e.workPendingRunIds.includes(r.id))))))) {
       delete e.repairPendingHead;
       delete e.workPendingHead;
       delete e.workPendingAt;
+      delete e.workPendingRunIds;
     }
   }
 }
@@ -158,8 +166,14 @@ export function reconcile(state, snapshot, log) {
   state.inFlight = null;
 }
 
-function prepare(state, action, now) {
+function prepare(state, action, now, snapshot) {
   const a = { ...action, id: randomUUID(), createdAt: new Date(now).toISOString(), status: 'prepared' };
+  if (['repair', 'evidence'].includes(a.kind)) {
+    const p = snapshot.prs.find(p => p.number === a.pr && p.head.sha === a.head);
+    const ids = p?.codingRuns?.map(r => r.id);
+    if (!validRunIds(ids)) throw new Error('Missing/invalid pre-request coding run IDs');
+    a.preRequestRunIds = [...ids].sort((x, y) => x - y);
+  }
   const e = entry(state, a.issue);
   if (a.kind === 'dispatch') e.dispatchedAt = a.createdAt;
   if (a.kind === 'repair') {
@@ -172,6 +186,7 @@ function prepare(state, action, now) {
   if (['repair', 'evidence'].includes(a.kind)) {
     e.workPendingHead = a.head;
     e.workPendingAt = a.createdAt;
+    e.workPendingRunIds = [...a.preRequestRunIds];
     delete e.repairPendingHead;
   }
   if (a.kind === 'review') (e.reviews ??= {})[`${a.head}:${a.evidenceRevision}`] = a.createdAt;
@@ -231,7 +246,7 @@ export async function runOnce({ stateDir, apply = false, github, now = () => Dat
         return { ...result, aborted: true };
       }
     }
-    const action = prepare(state, candidate, now());
+    const action = prepare(state, candidate, now(), fresh);
     await checkpoint(stateDir, state); // Durable intent BEFORE subprocess.
     try {
       await adapter.execute(action);
