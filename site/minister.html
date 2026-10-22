@@ -1486,6 +1486,7 @@ const MoC = (function(){
   const QUARTER_TICKS = 13 * TICKS_PER_WEEK;   // 52 ticks per quarter
   const TICKS_PER_YEAR = 52 * TICKS_PER_WEEK;   // 208 ticks per model year
   const STARTUP_CYCLE = 30;         // display/render offset; elapsed model time starts at zero
+  // Convert an annual probability to the equivalent independent per-tick probability.
   function annualProbabilityToTick(probability){
     if (!Number.isFinite(probability) || probability < 0 || probability > 1) {
       throw new RangeError('Annual probability must be between 0 and 1.');
@@ -4173,6 +4174,7 @@ function seedInitialCrisis(agentList) {
 
 // ═══ DISEASE ENGINE (ported from disease_engine.js) ═══════════════════════
 
+// Matrix entries are per-week transition probabilities; tick() samples once per four-tick week.
 // Markov state transition using condition-specific matrices from DISEASE_DB
 // receivingTreatment: boolean — if true, slows disease progression (ketenzorg/proactive care effect)
 function transitionDiseaseState(conditionCode, currentState, waitWeeks, treeknormWeeks, receivingTreatment, comorbidityBoost) {
@@ -7389,7 +7391,8 @@ function tick(){
     if(a.behaviorState!=='recovering'&&a.healingTicksLeft>0) a.healingTicksLeft=0;
 
     // --- NATURAL MORTALITY (age-based background) ---
-    const annualMortality = 48/5000; // Annual hazard input; conversion is a clock convention, not validation.
+    // Treat 48 deaths per 5,000 residents as an approximate annual probability before age multipliers.
+    const annualMortality = 48/5000; // The age multipliers and this proxy are unvalidated model assumptions.
     let ageMult = 1.0;
     if(a.age >= 80) ageMult = 15.0;
     else if(a.age >= 65) ageMult = 5.0;
