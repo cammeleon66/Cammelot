@@ -1626,3 +1626,246 @@ test('persisted validation run identities and observation dates are schema-valid
     assert.deepEqual(await loadState(dir), state);
   }
 });
+
+async function startStoppedRepair(t, taskState = 'failed', extraTasks = []) {
+  const dir = await temp(t), s = withPr();
+  Object.assign(s.tasks[0], { state: taskState, created_at: new Date(NOW - 1000).toISOString(),
+    updated_at: stamp, session_count: 1 });
+  s.tasks.push(...extraTasks);
+  s.prs[0].codingRuns = [{ id: 10, status: 'completed', conclusion: 'success', created_at: stamp }];
+  const api = fake(s);
+  await runOnce({ stateDir: dir, apply: true, github: api, now: () => NOW + 750, log: quiet });
+  assert.equal(api.calls[0].kind, 'repair');
+  s.prs[0].comments.push({ user: { login: s.viewer }, created_at: stamp,
+    body: `<!-- backlog-dispatcher ${JSON.stringify(api.calls[0])} -->` });
+  const state = await loadState(dir);
+  reconcile(state, s, quiet);
+  return { dir, s, state, action: api.calls[0] };
+}
+
+function setRepairedHead(s, head) {
+  const p = s.prs[0];
+  p.head.sha = head;
+  p.comments = [evidence(1, head), ...p.comments.filter(c => c.user?.login === s.viewer)];
+  p.reviews[0].commit_id = head;
+  p.checks[0].head_sha = head;
+  p.runs[0].head_sha = head;
+  p.runs[0].pull_requests[0].head.sha = head;
+  p.workflowDefinition.headCommit = head;
+}
+
+function completedFollowup(s, conclusion = 'success') {
+  // Run's source SHA can precede the repair's pushed commit; branch identity
+  // and durable pre-request run IDs, not timestamps or head equality, correlate it.
+  s.prs[0].codingRuns.push({ id: 11, status: 'completed', conclusion, created_at: stamp, head_sha: HEAD });
+}
+
+for (const taskState of ['failed', 'idle', 'waiting_for_user', 'timed_out', 'cancelled']) {
+  for (const head of [HEAD, OTHER]) {
+    test(`successful correlated follow-up supersedes ${taskState} REST task with ${head === HEAD ? 'unchanged' : 'changed'} head`, async t => {
+      const { dir, s, state } = await startStoppedRepair(t, taskState);
+      setRepairedHead(s, head);
+      completedFollowup(s);
+      observe(state, s, NOW + 2000);
+      assert.equal(state.issues[1].workPendingHead, undefined);
+      assert.equal(forIssue(s, 1, state)[0]?.kind, 'merge');
+      assert.equal(state.issues[1].repairs, 1);
+      await checkpoint(dir, state);
+      const restored = await loadState(dir);
+      observe(restored, s, NOW + WAIT_MS + 1);
+      assert.equal(actions(s, restored, NOW + WAIT_MS + 1)[0]?.kind, 'merge');
+      assert.equal(restored.issues[1].repairs, 1);
+    });
+  }
+}
+
+test('head change alone preserves pending correlation and cannot certify a successful repair', async t => {
+  const { s, state } = await startStoppedRepair(t);
+  setRepairedHead(s, OTHER);
+  observe(state, s, NOW + 1000);
+  assert.equal(state.issues[1].workPendingHead, HEAD);
+  assert.equal(Object.keys(state.issues[1].supersededStoppedTasks ?? {}).length, 0);
+  assert.equal(forIssue(s, 1, state).length, 0);
+  assert.equal(actions(s, state, NOW + WAIT_MS + 1000)[0].kind, 'park');
+  completedFollowup(s);
+  observe(state, s, NOW + 2000);
+  assert.equal(forIssue(s, 1, state)[0].kind, 'merge');
+});
+
+test('repair success supersedes all captured stopped histories, not just the latest one', async t => {
+  const older = { id: 'older-stopped-task', state: 'idle', prIds: [1001], session_count: 1,
+    created_at: new Date(NOW - 3000).toISOString(), updated_at: new Date(NOW - 2000).toISOString() };
+  const { s, state } = await startStoppedRepair(t, 'failed', [older]);
+  completedFollowup(s);
+  observe(state, s, NOW + 2000);
+  assert.equal(Object.keys(state.issues[1].supersededStoppedTasks ?? {}).length, 2);
+  assert.equal(forIssue(s, 1, state)[0].kind, 'merge');
+});
+
+for (const revision of ['new task ID', 'updated timestamp', 'session count']) {
+  test(`genuinely new stopped failure (${revision}) still requires repair on unchanged head`, async t => {
+    const { s, state } = await startStoppedRepair(t);
+    completedFollowup(s);
+    observe(state, s, NOW + 2000);
+    assert.equal(forIssue(s, 1, state)[0]?.kind, 'merge');
+    if (revision === 'new task ID') s.tasks.push({ ...s.tasks[0], id: 'new-failure',
+      created_at: new Date(NOW + 1000).toISOString(), updated_at: new Date(NOW + 1000).toISOString() });
+    // Preserve sub-millisecond server revision precision, unlike Date.parse().
+    else if (revision === 'updated timestamp') s.tasks[0].updated_at = '2026-10-22T12:00:00.000000001Z';
+    else s.tasks[0].session_count++;
+    observe(state, s, NOW + 3000);
+    const action = forIssue(s, 1, state)[0];
+    assert.equal(action?.kind, 'repair');
+    assert.equal(action.attempt, 2);
+  });
+}
+
+test('failure appearing during a successful follow-up is not part of the pre-request supersession set', async t => {
+  const { s, state } = await startStoppedRepair(t);
+  s.tasks.push({ ...s.tasks[0], id: 'new-during-followup', created_at: new Date(NOW + 1000).toISOString(),
+    updated_at: new Date(NOW + 1000).toISOString() });
+  completedFollowup(s);
+  observe(state, s, NOW + 2000);
+  const action = forIssue(s, 1, state)[0];
+  assert.equal(action.kind, 'repair');
+  assert.match(action.reason, /new-during-followup/);
+});
+
+for (const conclusion of ['failure', 'cancelled', undefined]) {
+  test(`completed follow-up with ${conclusion ?? 'missing'} conclusion does not supersede stopped tasks`, async t => {
+    const { s, state } = await startStoppedRepair(t);
+    setRepairedHead(s, OTHER);
+    completedFollowup(s);
+    s.prs[0].codingRuns.at(-1).conclusion = conclusion;
+    observe(state, s, NOW + 2000);
+    assert.equal(Object.keys(state.issues[1].supersededStoppedTasks ?? {}).length, 0);
+    assert.equal(forIssue(s, 1, state)[0].kind, 'repair');
+  });
+}
+
+for (const head of [HEAD, OTHER]) {
+  test(`failed correlated Actions execution blocks merge despite completed REST telemetry (${head === HEAD ? 'same' : 'changed'} head)`, async t => {
+    const { s, state } = await startStoppedRepair(t);
+    setRepairedHead(s, head);
+    s.tasks[0].state = 'completed'; // REST cannot certify the failed follow-up.
+    completedFollowup(s, 'failure');
+    observe(state, s, NOW + 2000);
+    assert.equal(Object.keys(state.issues[1].supersededStoppedTasks ?? {}).length, 0);
+    assert.equal(forIssue(s, 1, state)[0]?.kind, 'repair');
+  });
+}
+
+for (const mode of ['new run', 'new attempt']) {
+  test(`later Actions failure (${mode}) remains actionable after successful stopped-task repair`, async t => {
+    const { s, state } = await startStoppedRepair(t);
+    completedFollowup(s);
+    observe(state, s, NOW + 2000);
+    assert.equal(forIssue(s, 1, state)[0]?.kind, 'merge');
+    if (mode === 'new run') s.prs[0].codingRuns.push({
+      id: 12, status: 'completed', conclusion: 'failure', created_at: stamp, head_sha: HEAD,
+    });
+    else Object.assign(s.prs[0].codingRuns.at(-1), { run_attempt: 2, conclusion: 'failure' });
+    observe(state, s, NOW + 3000);
+    const action = forIssue(s, 1, state)[0];
+    assert.equal(action?.kind, 'repair');
+    assert.equal(action.attempt, 2);
+  });
+}
+
+test('final merge fence rejects a later failed Actions execution after a successful repair', async t => {
+  const { dir, s, state } = await startStoppedRepair(t);
+  completedFollowup(s);
+  observe(state, s, NOW + 2000);
+  await checkpoint(dir, state);
+  const api = fake(s, { pull: async () => {
+    const p = clone(s.prs[0]);
+    p.codingRuns.push({ id: 12, status: 'completed', conclusion: 'failure', created_at: stamp });
+    return p;
+  } });
+  const result = await runOnce({ stateDir: dir, apply: true, github: api, now: () => NOW + 3000, log: quiet });
+  assert.equal(result.aborted, true);
+  assert.equal(api.calls.length, 0);
+});
+
+test('stopped-task revisions and PR ownership are journaled before the follow-up request', async t => {
+  const dir = await temp(t), s = withPr();
+  Object.assign(s.tasks[0], { state: 'failed', created_at: stamp, updated_at: stamp, session_count: 1 });
+  let inspected = false;
+  const api = fake(s, { execute: async action => {
+    const saved = await loadState(dir);
+    assert.equal(saved.inFlight.status, 'prepared');
+    assert.equal(action.preRequestStoppedTasks.length, 1);
+    assert.match(action.preRequestStoppedTasks[0], /^task-1:[a-f0-9]{64}$/);
+    assert.deepEqual(saved.inFlight.preRequestStoppedTasks, action.preRequestStoppedTasks);
+    assert.deepEqual(saved.issues[1].workPendingStoppedTasks, action.preRequestStoppedTasks);
+    assert.equal(saved.issues[1].workPendingPrId, s.prs[0].id);
+    assert.equal(saved.inFlight.prId, s.prs[0].id);
+    inspected = true;
+  } });
+  await runOnce({ stateDir: dir, apply: true, github: api, now: () => NOW, log: quiet });
+  assert.equal(inspected, true);
+});
+
+test('a subsequent successful correlated retry acknowledges its earlier failed Actions run', async t => {
+  const { dir, s, state } = await startStoppedRepair(t);
+  completedFollowup(s, 'failure');
+  observe(state, s, NOW + 2000);
+  await checkpoint(dir, state);
+  const api = fake(s);
+  await runOnce({ stateDir: dir, apply: true, github: api, now: () => NOW + 3000, log: quiet });
+  assert.equal(api.calls[0].kind, 'repair');
+  assert.equal(api.calls[0].attempt, 2);
+  s.prs[0].comments.push({ user: { login: s.viewer }, created_at: stamp,
+    body: `<!-- backlog-dispatcher ${JSON.stringify(api.calls[0])} -->` });
+  setRepairedHead(s, OTHER);
+  s.prs[0].codingRuns.push({ id: 12, status: 'completed', conclusion: 'success', created_at: stamp });
+  await runOnce({ stateDir: dir, apply: true, github: api, now: () => NOW + 4000, log: quiet });
+  assert.deepEqual(api.calls.map(a => a.kind), ['repair', 'merge']);
+  assert.equal((await loadState(dir)).issues[1].repairs, 2);
+});
+
+test('partial success cannot hide another correlated execution that is running or failed', async t => {
+  const { s, state } = await startStoppedRepair(t);
+  completedFollowup(s);
+  s.prs[0].codingRuns.push({ id: 12, status: 'in_progress', conclusion: null, created_at: stamp });
+  observe(state, s, NOW + 2000);
+  assert.equal(state.issues[1].workPendingHead, HEAD);
+  assert.equal(Object.keys(state.issues[1].supersededStoppedTasks ?? {}).length, 0);
+  assert.equal(forIssue(s, 1, state).length, 0);
+  Object.assign(s.prs[0].codingRuns.at(-1), { status: 'completed', conclusion: 'failure' });
+  observe(state, s, NOW + 3000);
+  assert.equal(Object.keys(state.issues[1].supersededStoppedTasks ?? {}).length, 0);
+  assert.equal(forIssue(s, 1, state)[0].kind, 'repair');
+});
+
+test('missing stopped-task revision metadata cannot inherit historical supersession', async t => {
+  const { s, state } = await startStoppedRepair(t);
+  completedFollowup(s);
+  observe(state, s, NOW + 2000);
+  delete s.tasks[0].updated_at;
+  assert.equal(forIssue(s, 1, state)[0].kind, 'repair');
+});
+
+test('malformed supersession proof fails ledger validation', async t => {
+  const { dir, s, state } = await startStoppedRepair(t);
+  completedFollowup(s);
+  observe(state, s, NOW + 2000);
+  await checkpoint(dir, state);
+  const invalid = clone(state), revision = Object.keys(invalid.issues[1].supersededStoppedTasks)[0];
+  invalid.issues[1].supersededStoppedTasks[revision].runIds = [];
+  await assert.rejects(checkpoint(dir, invalid), /Invalid stopped-task supersession/);
+  assert.deepEqual(await loadState(dir), state);
+});
+
+test('a completed task cannot hide a new failure revision of a superseded older task', async t => {
+  const { s, state } = await startStoppedRepair(t);
+  completedFollowup(s);
+  observe(state, s, NOW + 2000);
+  s.tasks.push({ ...s.tasks[0], id: 'later-created-completed', state: 'completed',
+    created_at: new Date(NOW + 1000).toISOString(), updated_at: new Date(NOW + 2000).toISOString() });
+  s.tasks[0].updated_at = new Date(NOW + 3000).toISOString();
+  s.tasks[0].session_count++;
+  const action = forIssue(s, 1, state)[0];
+  assert.equal(action.kind, 'repair');
+  assert.match(action.reason, /task-1/);
+});

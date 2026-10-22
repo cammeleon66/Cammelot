@@ -109,6 +109,17 @@ dynamic paths) reserve work even when the task still says `completed`, including
 runs on **older source SHAs**. Mirrored task/run observations count by the larger
 per-PR count; ambiguous associations remain conservative.
 
+Follow-up intent records the PR identity, pre-request branch-run IDs, and exact
+stopped-task revisions (task ID, state, creation/update timestamps, session count).
+A pushed head alone is not successful execution: the reservation follows the PR
+until newly correlated runs finish. Only explicit Actions `success` for every
+correlated execution supersedes captured stopped revisions. This survives stale
+REST task states and unchanged or changed heads; missing revision metadata never
+earns supersession. Failed/cancelled/unverified executions remain repairable, not
+mergeable. New task revisions remain actionable despite old completed history.
+Later failed Actions runs/attempts are also checked at the final merge fence.
+Supersession and execution evidence persist without resetting repair budgets.
+
 A parked inactive implementation releases its lanes, allowing unrelated work to
 continue. An actually running parked task retains its slots/lanes: parking is not
 cancellation, and the dispatcher never pretends an agent has stopped.

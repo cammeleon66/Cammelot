@@ -29,6 +29,24 @@ export const pendingWork = e => ({
   head: e.workPendingHead ?? e.repairPendingHead,
   at: e.workPendingAt ?? e.lastRepairAt,
 });
+const pendingForPr = (e, pr) => pendingWork(e).head &&
+  (e.workPendingPrId !== undefined ? e.workPendingPrId === pr.id : pendingWork(e).head === pr.head.sha);
+
+export function stoppedTaskRevision(task) {
+  if (!task || !STOPPED.has(task.state) ||
+    !((typeof task.id === 'string' && task.id.length > 0 && !/[\r\n]/.test(task.id)) ||
+      (Number.isSafeInteger(task.id) && task.id > 0)) ||
+    !['created_at', 'updated_at'].every(k => typeof task[k] === 'string' && Number.isFinite(Date.parse(task[k]))) ||
+    !Number.isSafeInteger(task.session_count) || task.session_count < 0) return null;
+  // Keep the exact server revision, including sub-millisecond timestamp digits.
+  return `${task.id}:${createHash('sha256').update(JSON.stringify([
+    task.state, task.created_at, task.updated_at, task.session_count,
+  ])).digest('hex')}`;
+}
+
+export const codingExecutionRevision = run => createHash('sha256').update(JSON.stringify([
+  run.id, run.run_attempt ?? null, run.status, run.conclusion ?? null,
+])).digest('hex');
 
 function activeWork(snapshot) {
   const work = snapshot.tasks.filter(t => RUNNING.has(t.state));
@@ -282,7 +300,16 @@ export function acceptanceGate(pr, n) {
 const idleOwnershipGate = unknownActive => unknownActive ?
   { ok: false, ownershipHold: true, reason: 'active coding task ownership is unknown' } : { ok: true };
 
-export function mergeGate(pr, n, baseSha, { merged = false, unknownActive = false } = {}) {
+function followupExecutionGate(pr, execution) {
+  if (execution?.prId !== pr.id) return { ok: true };
+  const failures = pr.codingRuns.filter(r => r.status === 'completed' && r.conclusion !== 'success' &&
+    !execution.observedRuns.includes(codingExecutionRevision(r)));
+  const reason = !execution.success ? `follow-up execution failed or unverified: ${execution.runIds.join(',')}` :
+    failures.length ? `new failed/unverified branch execution: ${failures.map(r => `${r.id}:${codingExecutionRevision(r)}`).sort().join(',')}` : null;
+  return reason ? { ok: false, repair: true, reason } : { ok: true };
+}
+
+export function mergeGate(pr, n, baseSha, { merged = false, unknownActive = false, followupExecution } = {}) {
   const ownership = idleOwnershipGate(unknownActive);
   if (!merged && !ownership.ok) return ownership;
   const scope = scopeProblem(pr, n);
@@ -290,6 +317,8 @@ export function mergeGate(pr, n, baseSha, { merged = false, unknownActive = fals
   if (!Array.isArray(pr.codingRuns) || pr.codingRuns.some(r => r.status !== 'completed')) {
     return { ok: false, reason: 'missing or active branch coding activity' };
   }
+  const followup = followupExecutionGate(pr, followupExecution);
+  if (!followup.ok) return followup;
   const evidence = acceptanceGate(pr, n);
   for (const gate of [evidence, ciGate(pr), reviewGate(pr, evidence)]) if (!gate.ok) return gate;
   if (merged) return pr.merged === true && pr.mergeInBase === true ?
@@ -345,7 +374,7 @@ function canStartFollowup(snapshot, state, n, now) {
   const activeIssues = active.map(t => associatedIssue(snapshot.prs.find(p => t.prIds.includes(p.id)) ?? {}));
   const pending = Object.entries(state.issues).filter(([number, item]) =>
     pendingWork(item).head && now - Date.parse(pendingWork(item).at) < WAIT_MS &&
-    snapshot.prs.some(p => associatedIssue(p) === Number(number) && p.state === 'open' && p.head.sha === pendingWork(item).head) &&
+    snapshot.prs.some(p => associatedIssue(p) === Number(number) && p.state === 'open' && pendingForPr(item, p)) &&
     !activeIssues.includes(Number(number))).map(([number]) => Number(number));
   if (unknownActive || slots > MAX_ACTIVE || pending.includes(n) || active.length + pending.length >= MAX_ACTIVE ||
     pendingAssignments.some(other => other !== n && lanes(other).some(l => lanes(n).includes(l))) ||
@@ -402,7 +431,7 @@ function resources(snapshot, state, now) {
       busyIssues.add(n); lanes(n).forEach(l => occupied.add(l));
     }
     if (pendingWork(e).head && now - Date.parse(pendingWork(e).at) < WAIT_MS &&
-      snapshot.prs.some(p => associatedIssue(p) === n && p.state === 'open' && p.head.sha === pendingWork(e).head)) {
+      snapshot.prs.some(p => associatedIssue(p) === n && p.state === 'open' && pendingForPr(e, p))) {
       busyIssues.add(n); lanes(n).forEach(l => occupied.add(l));
     }
   }
@@ -465,24 +494,44 @@ export function plan(snapshot, state, now) {
         if (now - Date.parse(seenAt) >= WAIT_MS) actions.push({ kind: 'park', issue: n, pr: p.number, reason: 'missing task association after 24h' });
         continue;
       }
-      if (pendingWork(e).head === p.head.sha) {
+      if (pendingForPr(e, p)) {
         if (now - Date.parse(pendingWork(e).at) >= WAIT_MS) actions.push({ kind: 'park', issue: n, pr: p.number, reason: 'follow-up execution not confirmed after 24h' });
         else holds.push({ issue: n, reason: 'awaiting follow-up execution confirmation' });
         continue;
       }
+      const followup = followupExecutionGate(p, e.followupExecution);
+      if (!followup.ok) {
+        const action = repairOrPark(snapshot, state, p, n, followup.reason, now);
+        if (action) actions.push(action);
+        continue;
+      }
+      // A successful correlated repair can supersede only the exact stopped
+      // revisions captured before its request, never a new task/session/failure.
+      const remaining = tasks.filter(t => {
+        const revision = stoppedTaskRevision(t);
+        return !revision || e.supersededStoppedTasks?.[revision]?.prId !== p.id;
+      });
+      // Once exact historical failures have been superseded, any remaining
+      // stopped revision is unaccounted for. A completed task cannot hide it,
+      // even when a reused task ID has an older creation time.
+      const stopped = remaining.filter(t => STOPPED.has(t.state));
+      const candidates = e.followupExecution?.prId === p.id && e.followupExecution.success && stopped.length ?
+        stopped : remaining;
       // Aggregate ANY active task above. For terminal histories, use explicit
       // creation timestamps, never array order or branch-artifact base_ref.
-      let task = tasks[0];
-      if (tasks.length > 1) {
-        const ordered = [...tasks].sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at));
-        if (tasks.some(t => typeof t.created_at !== 'string' || !Number.isFinite(Date.parse(t.created_at))) ||
+      let task = candidates[0];
+      if (candidates.length > 1) {
+        const ordered = [...candidates].sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at));
+        if (candidates.some(t => typeof t.created_at !== 'string' || !Number.isFinite(Date.parse(t.created_at))) ||
           ordered.filter(t => Date.parse(t.created_at) === Date.parse(ordered[0].created_at)).length > 1) {
           actions.push({ kind: 'park', issue: n, pr: p.number, reason: 'ambiguous conflicting task histories' }); continue;
         }
         task = ordered[0];
       }
-      if (STOPPED.has(task.state)) {
-        const action = repairOrPark(snapshot, state, p, n, `task ${task.id} ${task.state}`, now);
+      if (STOPPED.has(task?.state)) {
+        const revision = stoppedTaskRevision(task);
+        const action = repairOrPark(snapshot, state, p, n,
+          `task ${task.id} ${task.state}${revision ? ` revision ${revision}` : ''}`, now);
         if (action) actions.push(action);
         continue;
       }
@@ -533,7 +582,7 @@ export function plan(snapshot, state, now) {
         } else actions.push(action);
         continue;
       }
-      const gate = mergeGate(p, n, snapshot.baseSha, { unknownActive });
+      const gate = mergeGate(p, n, snapshot.baseSha, { unknownActive, followupExecution: e.followupExecution });
       if (gate.ok) {
         const dependenciesDone = issue.blockers.every(b => {
           const full = snapshot.issues.find(i => i.number === b.number && b.repository_url === `https://api.github.com/repos/${REPO}`);
