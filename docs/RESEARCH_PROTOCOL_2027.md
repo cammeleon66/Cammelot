@@ -1,7 +1,9 @@
 # Cammelot 2027 research protocol: coordinating a cardiology referral pathway
 
-**Protocol:** R01, version 1.0  
-**Status:** Design proposal; freeze model, inputs and analysis plan before confirmatory runs.  
+**Protocol:** R01, version 1.0
+
+**Status:** Design proposal; freeze model, inputs and analysis plan before confirmatory runs.
+
 **Scope:** One bounded simulation experiment. No gameplay implementation or claim of real-world effectiveness.
 
 ## Decision this experiment is meant to inform
@@ -40,7 +42,7 @@ The conventional-integration versus agentic contrast isolates the proposed contr
 Before implementation or confirmatory runs, publish one versioned input ledger and freeze:
 
 1. **Common service goal:** For every eligible referral, deliver the same appropriate clinical assessment and first indicated treatment under the same safety, eligibility and triage rules. “Faster” routing is not success if it causes inappropriate treatment or leaves patients untreated.
-2. **Common operating resources:** Identical baseline GP and specialist staffing, staffed appointment slots, clinical capacity, demand, patient states, care costs and external shocks in every arm. No arm gets extra clinical FTE or treatment capacity unless it purchases that capacity from the same capped envelope and its cost is charged.
+2. **Common operating resources:** Identical GP and specialist staffing, staffed appointment slots, clinical capacity, demand, patient states, care costs and external shocks in every primary-comparison arm. No arm may purchase extra clinical FTE or treatment slots in the primary comparison. If capacity-purchase scenarios are explored, report them separately from the primary comparison, charge their full costs, and do not attribute their gains to coordination alone.
 3. **Common finite implementation envelope:** One auditable five-year cash/resource cap and one implementation-staff-hours cap for every intervention arm. Set and cite both from a documented, service-neutral scenario budget before running the comparison. If no defensible base cost can be sourced, report physical resource use and cost ranges, and do not declare a cost-based winner. Show results at 0.5×, 1.0× and 1.5× the frozen base envelope; unused funds are not converted into a care bonus.
 4. **Full lifecycle accounting:** Separately record initial design/procurement, data cleanup, migration and dual-running, training/backfill, implementation labor, licenses/compute, human oversight, incident handling, cybersecurity/privacy work, maintenance, upgrades, decommissioning and residual liabilities. Count clinician time spent on coordination, review and overrides. State price year, source and discount assumption for each monetary input. Do not count a modeled capacity or health benefit as a cost saving unless a separately measured resource is actually avoided.
 5. **No outcome bonuses:** There is no score, reward, cost offset or scripted transition for adopting a technology, reducing paperwork, shrinking a queue or choosing a favored arm. Clinical transitions and patient outcomes use the same frozen rules in all arms. Any action that changes care must act through the explicit workflow and resource ledger.
@@ -54,8 +56,8 @@ All outcomes use all eligible referral episodes as the denominator unless stated
 
 ### Co-primary end-to-end outcomes
 
-1. **180-day referral success:** proportion receiving the first appropriate treatment within 180 days without first crossing into the frozen model's `critical` disease state (HP ≤20 where the model uses HP) or dying before treatment. Report each component separately as well as the prespecified joint endpoint. This is a model-defined endpoint, not a validated clinical composite; freeze the state definition across arms and do not tune it to the results.
-2. **Timely treatment:** cumulative proportion receiving first appropriate treatment by day 84. Also show death before treatment, deterioration before treatment, refusal/withdrawal and still waiting as separate competing outcomes. The 84-day cutoff is an experimental reporting window, not a statement of a Dutch legal or clinical norm.
+1. **180-day referral success:** proportion receiving the first appropriate treatment within 180 days after the episode enters the experiment, without first crossing into the frozen model's `critical` disease state (HP ≤20 where the model uses HP) or dying before treatment. Report each component separately as well as the prespecified joint endpoint. This is a model-defined endpoint, not a validated clinical composite; freeze the state definition across arms and do not tune it to the results.
+2. **Timely treatment:** cumulative proportion receiving first appropriate treatment within 84 days after the episode enters the experiment. The endpoint clock starts at simulation day zero for each of the 120 already-pending referrals, and at the scheduled arrival/referral time for each new episode. For pending referrals, freeze and retain their elapsed pre-start wait at enrollment; it does not count against the post-entry 84- or 180-day windows, but include it in total referral-to-treatment time and report the backlog separately. Thus, an episode pending for 100 days at day zero and treated 40 days later meets the post-entry 84-day endpoint but has a 140-day total referral-to-treatment time. Also report death before treatment, refusal/withdrawal and still waiting as distinct competing outcomes. Deterioration is an overlapping intermediate outcome, not a competing event: continue follow-up and count a later appropriate treatment in the treatment endpoint. The 84-day cutoff is an experimental reporting window, not a statement of a Dutch legal or clinical norm.
 
 Do not collapse the co-primary outcomes, mortality, cost or equity into one score. Compare the paired run-level arm differences with 95% uncertainty intervals and report their direction and magnitude. Account for all eight prespecified endpoint-by-comparator tests (two co-primary outcomes × four agentic-versus-comparator contrasts) with a family-wise procedure (Holm adjustment). If model uncertainty or interval width prevents a clear decision, the result is inconclusive—not a tie or a win.
 
@@ -89,7 +91,8 @@ Any of the following is evidence against preferring the agentic arm for this pat
 - It fails to improve both co-primary outcomes over conventional integration, or a simpler arm matches its care outcomes at lower lifecycle cost or with less implementation burden.
 - Its apparent gain is confined to current queue length, paperwork, acknowledgement time, utilization or a scalar score, without improved patient-level end-to-end outcomes.
 - Treatment starts rise but serious deterioration, death before treatment, inappropriate routing, or unresolved referrals rise as well.
-- Its advantage disappears under no-effect, delayed implementation, lower uptake, higher operating cost, ordinary system downtime or demand/capacity sensitivity conditions.
+- Under the required zero-benefit setting, a coordination advantage persists even though the coordination mechanism is disabled; investigate this as a model or implementation error. Disappearance of an advantage in this setting is the expected negative-control result, not evidence against an otherwise effective strategy.
+- Its advantage disappears under delayed implementation, lower uptake, higher operating cost, ordinary system downtime or demand/capacity sensitivity conditions.
 - It exceeds the common budget or staff-hours cap, requires extra care capacity not charged to the arm, creates a material subgroup disadvantage, or depends on a differential clinical rule/data feed.
 - Missing or invalid referral state, agent failure, overrides or security incidents negate the proposed coordination gain.
 
