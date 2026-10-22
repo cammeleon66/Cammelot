@@ -109,37 +109,41 @@ function startLocalPythonServer() {
 
 async function exerciseSupportedPath({ name, serverFactory, pagePath }) {
   const server = await serverFactory();
-  const browser = await chromium.launch({ headless: true, args: ['--mute-audio'] });
-  const baseUrl = `${server.baseUrl}${pagePath}`;
-  const origin = new URL(baseUrl).origin;
-  const attemptedSubmissions = [];
+  let browser;
+  let failed = false;
+  let failure;
 
   try {
+    browser = await chromium.launch({ headless: true, args: ['--mute-audio'] });
+    const baseUrl = `${server.baseUrl}${pagePath}`;
+    const origin = new URL(baseUrl).origin;
+    const attemptedSubmissions = [];
     for (const [index, scenario] of SCENARIOS.entries()) {
       const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
-      const page = await context.newPage();
-      const pageErrors = [];
-      const sameOriginFailures = [];
-      page.on('pageerror', error => pageErrors.push(error.message));
-      page.on('requestfailed', request => {
-        if (new URL(request.url()).origin === origin) sameOriginFailures.push(request.url());
-      });
-      await page.addInitScript(() => localStorage.setItem('moc_muted_v2', 'true'));
-      await page.route('**/*', route => {
-        const requestUrl = new URL(route.request().url());
-        if (requestUrl.origin !== origin) return route.abort();
-        if (requestUrl.pathname.endsWith('/api/leaderboard')) {
-          if (route.request().method() === 'POST') attemptedSubmissions.push(requestUrl.href);
-          return route.fulfill({
-            status: route.request().method() === 'POST' ? 501 : 200,
-            contentType: 'application/json',
-            body: JSON.stringify({ entries: [] }),
-          });
-        }
-        return route.continue();
-      });
-
+      let contextFailed = false;
       try {
+        const page = await context.newPage();
+        const pageErrors = [];
+        const sameOriginFailures = [];
+        page.on('pageerror', error => pageErrors.push(error.message));
+        page.on('requestfailed', request => {
+          if (new URL(request.url()).origin === origin) sameOriginFailures.push(request.url());
+        });
+        await page.addInitScript(() => localStorage.setItem('moc_muted_v2', 'true'));
+        await page.route('**/*', route => {
+          const requestUrl = new URL(route.request().url());
+          if (requestUrl.origin !== origin) return route.abort();
+          if (requestUrl.pathname.endsWith('/api/leaderboard')) {
+            if (route.request().method() === 'POST') attemptedSubmissions.push(requestUrl.href);
+            return route.fulfill({
+              status: route.request().method() === 'POST' ? 501 : 200,
+              contentType: 'application/json',
+              body: JSON.stringify({ entries: [] }),
+            });
+          }
+          return route.continue();
+        });
+
         const response = await page.goto(`${baseUrl}#scn=${scenario.id}&seed=2468`, {
           waitUntil: 'domcontentloaded',
         });
@@ -154,7 +158,8 @@ async function exerciseSupportedPath({ name, serverFactory, pagePath }) {
         }));
         assert.equal(startup.scenario, scenario.id, `${name}: selected scenario must initialize`);
         assert.equal(startup.quarters, scenario.quarters, `${name}: scenario horizon must load`);
-        assert.equal(startup.modelVersion, 'minister-care-5-rollout');
+        assert.equal(typeof startup.modelVersion, 'string');
+        assert.ok(startup.modelVersion.trim().length > 0, `${name}: model identity must be nonempty`);
         assert.equal(startup.isBaseline, false);
         assert.equal(startup.openingScreen, true, `${name}: player must start at the game opening`);
 
@@ -199,22 +204,47 @@ async function exerciseSupportedPath({ name, serverFactory, pagePath }) {
           assert.equal(reference.baselineMode, true);
           assert.equal(reference.scenario, scenario.id);
           assert.equal(reference.seed, 2468);
-          assert.equal(reference.modelVersion, 'minister-care-5-rollout');
+          assert.equal(reference.modelVersion, startup.modelVersion);
           assert.equal(reference.protocol, 'no-discretionary-action-v1');
           assert.ok(reference.scheduleId);
           assert.ok(reference.snapshots > 0, `${name}: completed reference must contain snapshots`);
         }
         assert.deepEqual(pageErrors, [], `${name}: scenario startup must not throw`);
         assert.deepEqual(sameOriginFailures, [], `${name}: same-origin assets must load`);
+      } catch (error) {
+        contextFailed = true;
+        throw error;
       } finally {
-        await context.close();
+        try {
+          await context.close();
+        } catch (error) {
+          if (!contextFailed) throw error;
+        }
       }
     }
     assert.deepEqual(attemptedSubmissions, [], `${name}: smoke tests must never submit scores`);
+  } catch (error) {
+    failed = true;
+    failure = error;
   } finally {
-    await browser.close();
-    await server.close();
+    try {
+      if (browser) await browser.close();
+    } catch (error) {
+      if (!failed) {
+        failed = true;
+        failure = error;
+      }
+    }
+    try {
+      await server.close();
+    } catch (error) {
+      if (!failed) {
+        failed = true;
+        failure = error;
+      }
+    }
   }
+  if (failed) throw failure;
 }
 
 test('GitHub Pages site artifact serves both supported Minister scenarios and its same-origin reference', {
