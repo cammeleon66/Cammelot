@@ -267,7 +267,7 @@ test('Previously finalized deaths are cleaned before movement and hospital capac
         x:0.2,y:0.2,tx:0.8,ty:0.8,path:[],pathIdx:0,pathComplete:false,waitWeeks:3,
         conditions:[{code:'I25',name:'Chronic Ischemic Heart Disease',severity:'critical'}],
         queueType:'hospital',queueBuilding:'hospital',causeOfDeath:'natural'});
-      Object.assign(living,{state:'managed',behaviorState:'queuing',hp:80,waitWeeks:3,
+      Object.assign(living,{moved:false,state:'managed',behaviorState:'queuing',hp:80,waitWeeks:3,
         conditions:[{code:'I25',name:'Chronic Ischemic Heart Disease',severity:'mild'}],
         queueType:'hospital',queueBuilding:'hospital'});
       QUEUES.hospital.agents=[patient.id,living.id];
