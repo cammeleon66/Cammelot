@@ -1058,6 +1058,43 @@ test('dispatch revalidation catches newly active assignment/task', async t => {
   assert.equal(result.aborted, true); assert.equal(api.calls.length, 0);
 });
 
+test('unknown active task ownership holds a merge-ready PR without starting repair', () => {
+  for (const taskState of ['queued', 'in_progress']) {
+    const s = withPr();
+    s.tasks.push({ id: 'awaiting-artifacts', state: taskState, prIds: [] });
+    const result = plan(s, emptyState(), NOW + WAIT_MS + 1);
+    assert.equal(result.unknownActive, true);
+    assert.equal(result.actions.length, 0);
+    assert.ok(result.holds.some(h => h.issue === 1 && /ownership.*unknown/.test(h.reason)));
+    s.tasks.at(-1).state = 'completed';
+    assert.equal(forIssue(s, 1)[0].kind, 'merge');
+  }
+});
+
+test('final merge gate rejects unknown active task ownership despite passing PR checks', () => {
+  const s = withPr();
+  assert.equal(mergeGate(s.prs[0], 1, BASE).ok, true);
+  s.tasks.push({ id: 'awaiting-artifacts', state: 'in_progress', prIds: [] });
+  const { unknownActive } = plan(s, emptyState(), NOW);
+  const gate = mergeGate(s.prs[0], 1, BASE, { unknownActive });
+  assert.equal(gate.ok, false);
+  assert.match(gate.reason, /ownership.*unknown/);
+});
+
+test('merge revalidation aborts when an unknown-owner task appears after planning', async t => {
+  const dir = await temp(t), s = withPr();
+  let reads = 0;
+  const api = fake(s, { snapshot: async () => {
+    const copy = clone(s);
+    if (++reads > 1) copy.tasks.push({ id: 'awaiting-artifacts', state: 'in_progress', prIds: [] });
+    return copy;
+  } });
+  const result = await runOnce({ stateDir: dir, apply: true, github: api, now: () => NOW, log: quiet });
+  assert.equal(result.aborted, true);
+  assert.equal(api.calls.length, 0);
+  assert.equal((await loadState(dir)).inFlight, null);
+});
+
 for (const race of ['source head', 'base head']) {
   test(`merge fence aborts changed ${race}`, async t => {
     const dir = await temp(t), s = withPr();

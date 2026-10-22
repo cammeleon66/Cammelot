@@ -234,7 +234,7 @@ export async function runOnce({ stateDir, apply = false, github, now = () => Dat
     if (candidate.kind === 'merge') {
       const base = await adapter.base();
       const p = await adapter.pull(candidate.pr, base);
-      const gate = mergeGate(p, candidate.issue, base);
+      const gate = mergeGate(p, candidate.issue, base, { unknownActive: freshPlan.unknownActive });
       // Last lightweight read immediately before the guarded merge. GitHub
       // match-head-commit makes source-head races fail server-side too.
       const last = await adapter.api(`repos/${REPO}/pulls/${candidate.pr}`);

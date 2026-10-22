@@ -263,7 +263,7 @@ export function acceptanceGate(pr, n) {
     evidenceRevision: `${latest.comment.id}:${revisedAt}:${createHash('sha256').update(String(latest.comment.body)).digest('hex')}` };
 }
 
-export function mergeGate(pr, n, baseSha, { merged = false } = {}) {
+export function mergeGate(pr, n, baseSha, { merged = false, unknownActive = false } = {}) {
   const scope = scopeProblem(pr, n);
   if (scope) return { ok: false, reason: scope, park: true };
   if (!Array.isArray(pr.codingRuns) || pr.codingRuns.some(r => r.status !== 'completed')) {
@@ -278,6 +278,7 @@ export function mergeGate(pr, n, baseSha, { merged = false } = {}) {
   if (pr.mergeable !== true || !['clean', 'has_hooks'].includes(pr.mergeable_state)) {
     return { ok: false, reason: 'PR not mergeable', repair: pr.mergeable === false };
   }
+  if (unknownActive) return { ok: false, ownershipHold: true, reason: 'active coding task ownership is unknown' };
   return { ok: true };
 }
 
@@ -502,7 +503,7 @@ export function plan(snapshot, state, now) {
         } else actions.push(action);
         continue;
       }
-      const gate = mergeGate(p, n, snapshot.baseSha);
+      const gate = mergeGate(p, n, snapshot.baseSha, { unknownActive });
       if (gate.ok) {
         const dependenciesDone = issue.blockers.every(b => {
           const full = snapshot.issues.find(i => i.number === b.number && b.repository_url === `https://api.github.com/repos/${REPO}`);
@@ -510,7 +511,8 @@ export function plan(snapshot, state, now) {
         });
         if (dependenciesDone) actions.push({ kind: 'merge', issue: n, pr: p.number, head: p.head.sha, base: snapshot.baseSha });
         else holds.push({ issue: n, reason: 'dependencies must complete before merge' });
-      } else if (gate.park) actions.push({ kind: 'park', issue: n, pr: p.number, reason: gate.reason });
+      } else if (gate.ownershipHold) holds.push({ issue: n, reason: gate.reason });
+      else if (gate.park) actions.push({ kind: 'park', issue: n, pr: p.number, reason: gate.reason });
       else if (gate.update) {
         actions.push({ kind: 'update', issue: n, pr: p.number, head: p.head.sha, base: snapshot.baseSha });
       } else if (gate.request) {
