@@ -7508,7 +7508,7 @@ function tick(){
     const timeOfDay = getTimeOfDay(modelTick).phase;
 
     // ── 26.1: Day/Night Rhythm ──
-    if (timeOfDay === 'night' && a.behaviorState !== 'at_hospital' && a.behaviorState !== 'queuing' && a.behaviorState !== 'at_gp' && a.behaviorState !== 'going_to_hospital' && a.behaviorState !== 'emergency' && a.behaviorState !== 'dead') {
+    if (timeOfDay === 'night' && a.behaviorState !== 'at_hospital' && a.behaviorState !== 'queuing' && a.behaviorState !== 'at_gp' && a.behaviorState !== 'going_to_gp' && a.behaviorState !== 'going_to_hospital' && a.behaviorState !== 'emergency' && a.behaviorState !== 'dead') {
       if (!a.isNightOwl) {
         // Send home at night
         if (!a.insideBuilding && a.homePos) {

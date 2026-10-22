@@ -360,6 +360,59 @@ test('Full Term horizon ends after 40 elapsed quarters', { timeout: 30000 }, asy
   } finally {await browser.close();await new Promise(resolve=>server.close(resolve));}
 });
 
+test('GP journeys retain their destination across a night tick', { timeout: 30000 }, async () => {
+  const server=await startSiteServer(),browser=await launchBrowser(),page=await browser.newPage();
+  try {
+    await page.goto(`http://127.0.0.1:${server.address().port}/minister.html#scn=cabinetcrisis&seed=2468`,{waitUntil:'domcontentloaded'});
+    const result=await page.evaluate(()=>{
+      clearInterval(autoTimer);autoTimer=null;
+      const oldSeedTick=MoC.seedTick,oldRandom=Math.random;
+      const oldReferencePolicy=MoC.referencePolicy,oldPaused=MoC.paused;
+      const person=agents.find(a=>a.type==='patient'&&a.hp>0);
+      agents.filter(a=>a.type==='patient'||a.type==='citizen').forEach(a=>{a.moved=true;});
+      const gp=getGPDest(person.gpName).entrance;
+      const gpWaypoint=nearestWaypointIdx(gp.x,gp.y);
+      const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+      const start=ROAD_WAYPOINTS.reduce((best,wp)=>distance(wp,gp)>distance(best,gp)?wp:best);
+      const home=ROAD_WAYPOINTS.find(wp=>distance(wp,start)>0.1&&distance(wp,gp)>0.1
+        &&findWaypointPath(nearestWaypointIdx(start.x,start.y),nearestWaypointIdx(wp.x,wp.y))?.length>1);
+      if(!home)throw new Error('Fixture needs distinct reachable home and GP destinations');
+      Object.assign(person,{moved:false,x:start.x,y:start.y,insideBuilding:null,homePos:{x:home.x,y:home.y},
+        age:40,_ageStart:40,_ageElapsedTicks:0,lifeStage:'adult',conditions:[],hp:100,state:'managed',
+        behaviorState:'going_to_gp',isNightOwl:false,chatTimer:100,grievingTimer:0,atWork:false,
+        queueLeaveTimer:0,queueType:null,queueBuilding:null,personality:null,persona:null});
+      Object.values(QUEUES).forEach(queue=>{queue.agents=queue.agents.filter(id=>id!==person.id);});
+      MoC.seedTick=()=>{Math.random=()=>0.5;};
+      MoC.referencePolicy=true;MoC.paused=false;
+      try {
+        sendAgentTo(person,gp);
+        const originalPath=person.path.slice();
+        modelTick=2;cycle=MoC.STARTUP_CYCLE+modelTick;
+        tick();
+        tick();
+        const journey={tick:modelTick,phase:getTimeOfDay(modelTick).phase,path:person.path.slice(),
+          behavior:person.behaviorState,queued:Object.values(QUEUES).some(queue=>queue.agents.includes(person.id))};
+        person.behaviorState='roaming';person.chatTimer=100;
+        sendAgentTo(person,gp);
+        modelTick=3;cycle=MoC.STARTUP_CYCLE+modelTick;
+        tick();
+        return {originalPath,gpWaypoint,journey,roamingDestination:person.path.at(-1),
+          homeWaypoint:nearestWaypointIdx(home.x,home.y)};
+      } finally {
+        MoC.seedTick=oldSeedTick;Math.random=oldRandom;
+        MoC.referencePolicy=oldReferencePolicy;MoC.paused=oldPaused;
+      }
+    });
+    assert.equal(result.originalPath.at(-1),result.gpWaypoint);
+    assert.equal(result.journey.tick,4);
+    assert.equal(result.journey.phase,'night');
+    assert.deepEqual(result.journey.path,result.originalPath,'nightfall must not replace an active GP journey with a home route');
+    assert.equal(result.journey.behavior,'going_to_gp');
+    assert.equal(result.journey.queued,false,'a resident still travelling must not join the GP queue');
+    assert.equal(result.roamingDestination,result.homeWaypoint,'ordinary roaming residents should still head home at night');
+  } finally {await browser.close();await new Promise(resolve=>server.close(resolve));}
+});
+
 test('Clinical replay is independent of drawing and baseline batching', { timeout: 30000 }, async () => {
   const server = await startSiteServer();
   const browser = await launchBrowser();
