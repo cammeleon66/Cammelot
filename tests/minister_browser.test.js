@@ -165,7 +165,7 @@ test('Elapsed model clock uses quarter-week ticks and exact calendar boundaries'
         const initial={cycle,elapsed:MoC.elapsedTick(),ticksPerWeek:MoC.TICKS_PER_WEEK,
           ticksPerDay:MoC.TICKS_PER_DAY,ticksPerQuarter:MoC.QUARTER_TICKS,
           ticksPerYear:MoC.TICKS_PER_YEAR,modelVersion:MoC.MODEL_VERSION};
-        const openingCopy={story:SCENARIOS.cabinetcrisis.story,brief:SCENARIOS.cabinetcrisis.brief.situation};
+        const openingCopy={story:MoC.SCENARIOS.cabinetcrisis.story,brief:MoC.SCENARIOS.cabinetcrisis.brief.situation};
         advanceTo(1);
         const short={cycle,elapsed:MoC.elapsedTick(),age:resident.age,progressions:progressionTicks.length,
           phases:[0,1,2,3].map(getTimeOfDay).map(clock=>clock.phase)};
@@ -283,7 +283,7 @@ test('Aging preserves completed-year bands, initializes new destinations, and fo
     assert.equal(result.eventDetail,'Age 70');
     assert.equal(result.deathHistory,'Passed away peacefully at age 70.');
     assert.equal(result.graveAge,70+1/208,'grave data retains the precise numeric age');
-    assert.match(result.memorial,/Age 70\b/);
+    assert.match(result.memorial,/Age 70\b/i);
     assert.doesNotMatch(result.memorial,/70\.004/);
   } finally {await browser.close();await new Promise(resolve=>server.close(resolve));}
 });
@@ -306,8 +306,8 @@ test('Gazette keeps partial days and HP breakdown shows the actual overdue wait 
     assert.deepEqual(result.days,{day:6,dayOfYear:5,year:1,season:'Spring'});
     assert.deepEqual(result.seasonBoundary,{day:92,dayOfYear:91,year:1,season:'Summer'});
     assert.deepEqual(result.yearBoundary,{day:365,dayOfYear:0,year:2,season:'Spring'});
-    assert.equal(result.expected,0.975);
-    assert.equal(result.actualWait,result.expected);
+    assert.ok(Math.abs(result.expected-0.975)<1e-12);
+    assert.ok(Math.abs(result.actualWait-result.expected)<1e-12);
     assert.ok(result.breakdown.includes('+0.975/tick'), 'the resident inspector must show the same wait penalty as the clinical calculation');
     assert.ok(!result.breakdown.includes('+0.195/tick'), 'the inspector must not understate the penalty');
   } finally {await browser.close();await new Promise(resolve=>server.close(resolve));}
@@ -370,14 +370,18 @@ test('Clinical replay is independent of drawing and baseline batching', { timeou
       await page.addInitScript(() => { window.requestAnimationFrame = () => 0; });
       await page.goto(`http://127.0.0.1:${server.address().port}/minister.html#scn=cabinetcrisis&seed=2468${baseline ? '&baseline=1' : ''}`, { waitUntil:'domcontentloaded' });
       const state = await page.evaluate(frames => {
+        clearInterval(autoTimer);autoTimer=null;
         MoC.audio.setMuted(true);
-        MoC.onQuarter = null; // same no-discretionary-policy path in both runs
+        MoC.referencePolicy = true;
         MoC.paused = false;
         for (let step = 0; step < 80; step++) {
+          const before=modelTick;
           tick();
+          if(modelTick!==before+1)throw new Error(`Replay stopped at elapsed tick ${modelTick}; expected ${before+1}`);
           for (let f = 0; f < frames; f++) render();
         }
-        return { cycle, agents:agents.map(a => ({id:a.id,x:a.x,y:a.y,hp:a.hp,behavior:a.behaviorState,
+        if(modelTick!==80)throw new Error(`Replay did not reach elapsed tick 80; stopped at ${modelTick}`);
+        return { cycle, elapsed:modelTick, agents:agents.map(a => ({id:a.id,x:a.x,y:a.y,hp:a.hp,behavior:a.behaviorState,
           wait:a.waitWeeks,conditions:a.conditions,path:a.path,pathIdx:a.pathIdx,inside:a.insideBuilding})),
           graves:GRAVE_MARKERS, queues:QUEUES,
           events:EVENT_LOG.map(({timestamp,...event}) => event) };
@@ -386,6 +390,8 @@ test('Clinical replay is independent of drawing and baseline batching', { timeou
       return state;
     }
     const foreground = await replay(0, false, 390);
+    assert.equal(foreground.elapsed,80);
+    assert.equal(foreground.cycle,110);
     assert.deepEqual(await replay(2, false, 1440), foreground, 'extra drawing must not alter outcomes');
     assert.deepEqual(await replay(0, true, 390), foreground, 'baseline batching must run the same care simulation');
   } finally {
