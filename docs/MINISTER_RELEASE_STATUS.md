@@ -7,6 +7,14 @@ Reference protocol: `no-discretionary-action-v1`
 
 This is the canonical status list. Older plans describe how the current release was built; their unchecked boxes are not active tasks.
 
+## Upcoming model 7 timing change (not yet published)
+
+The current source change versions the elapsed-time behavior as `minister-care-7-elapsed-time`; it is not a claim that model 7 is live. Until a reviewed release is published, the deployed game remains the model version identified above.
+
+Model 7 uses one elapsed clock: four ticks per week, 52 ticks per quarter, and 208 ticks per model year. The initial displayed cycle of 30 is only a presentation offset. These timing semantics change scenario outcomes, so model 6 and model 7 results are incompatible and must not be compared or ranked as equivalent.
+
+The annual mortality input conversion is mathematical bookkeeping, not clinical validation. The `48/5000` annual baseline, age multipliers, and 3 HP/week overdue-wait drain remain unvalidated model assumptions; neither the conversion nor the elapsed-time repair validates mortality probabilities or clinical coefficients.
+
 ## Live and verified
 
 - [x] Two public modes: Cabinet Crisis and The Full Term.

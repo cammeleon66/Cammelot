@@ -129,6 +129,8 @@ test('Elapsed model clock uses quarter-week ticks and exact calendar boundaries'
       const oldSeedTick=MoC.seedTick,oldAdvance=MoC.environment.advance;
       const oldQuarter=MoC.onQuarter,oldTermEnd=MoC.onTermEnd;
       const oldTransition=window.transitionDiseaseState;
+      const oldReferencePolicy=MoC.referencePolicy,oldPaused=MoC.paused,oldOver=MoC.S.over;
+      const oldRandom=Math.random;
       const councilTicks=[];
       const resident=agents.find(a=>a.type==='patient'||a.type==='citizen');
       agents.filter(a=>a.type==='patient'||a.type==='citizen').forEach(a=>{a.moved=true;});
@@ -142,33 +144,57 @@ test('Elapsed model clock uses quarter-week ticks and exact calendar boundaries'
       MoC.onQuarter=function(q){councilTicks.push({q,tick:modelTick});};
       let terminalAtTerm=null;
       MoC.onTermEnd=function(){terminalAtTerm={dead:resident.state==='dead',finalized:resident.deathFinalized};};
-      MoC.paused=false;MoC.S.over=false;
-      logEvent('time_fixture',resident,'cycle offset check');
-      const eventTick=EVENT_LOG[EVENT_LOG.length-1].cycle;
-      const initial={cycle,elapsed:MoC.elapsedTick(),ticksPerWeek:MoC.TICKS_PER_WEEK,
-        ticksPerDay:MoC.TICKS_PER_DAY,ticksPerQuarter:MoC.QUARTER_TICKS,
-        ticksPerYear:MoC.TICKS_PER_YEAR,modelVersion:MoC.MODEL_VERSION};
-      tick();
-      const short={cycle,elapsed:MoC.elapsedTick(),age:resident.age,progressions:progressionTicks.length,
-        phases:[0,1,2,3].map(getTimeOfDay).map(clock=>clock.phase)};
-      while(modelTick<52)tick();
-      const quarter={cycle,elapsed:MoC.elapsedTick(),quarter:MoC.S.quarter,
-        lastProgression:progressionTicks.at(-1)};
-      while(modelTick<208)tick();
-      const year={cycle,elapsed:MoC.elapsedTick(),quarter:MoC.S.quarter,age:resident.age,
-        progressionCount:progressionTicks.length};
-      while(modelTick<415)tick();
-      resident.hp=0;
-      tick();
-      const term={cycle,elapsed:MoC.elapsedTick(),over:MoC.S.over,terminalAtTerm};
-      MoC.seedTick=oldSeedTick;MoC.environment.advance=oldAdvance;
-      MoC.onQuarter=oldQuarter;MoC.onTermEnd=oldTermEnd;
-      window.transitionDiseaseState=oldTransition;
-      return {initial,short,quarter,year,term,councilTicks,eventTick,initialAge,rate,expectedRate,overdueDrain,
-        zeroRate:MoC.annualProbabilityToTick(0),terminalDeaths:EVENT_LOG.filter(e=>e.type==='died').length};
+      MoC.paused=false;MoC.S.over=false;MoC.referencePolicy=true;
+      const advanceTo=target=>{
+        const limit=Math.max(0,target-modelTick);
+        for(let step=0;modelTick<target&&step<limit;step++){
+          const before=modelTick;tick();
+          if(modelTick!==before+1)throw new Error(`Clock stopped at elapsed tick ${modelTick}; expected ${before+1}`);
+        }
+        if(modelTick!==target)throw new Error(`Clock did not reach elapsed tick ${target}; stopped at ${modelTick}`);
+      };
+      try {
+        MoC.paused=true;
+        let boundedPauseError='';
+        try { advanceTo(1); } catch(error) { boundedPauseError=error.message; }
+        MoC.paused=false;
+        if(!boundedPauseError.includes('Clock stopped at elapsed tick 0'))
+          throw new Error('Bounded clock fixture did not report a stalled tick clearly');
+        logEvent('time_fixture',resident,'cycle offset check');
+        const eventTick=EVENT_LOG[EVENT_LOG.length-1].cycle;
+        const initial={cycle,elapsed:MoC.elapsedTick(),ticksPerWeek:MoC.TICKS_PER_WEEK,
+          ticksPerDay:MoC.TICKS_PER_DAY,ticksPerQuarter:MoC.QUARTER_TICKS,
+          ticksPerYear:MoC.TICKS_PER_YEAR,modelVersion:MoC.MODEL_VERSION};
+        const openingCopy={story:SCENARIOS.cabinetcrisis.story,brief:SCENARIOS.cabinetcrisis.brief.situation};
+        advanceTo(1);
+        const short={cycle,elapsed:MoC.elapsedTick(),age:resident.age,progressions:progressionTicks.length,
+          phases:[0,1,2,3].map(getTimeOfDay).map(clock=>clock.phase)};
+        advanceTo(52);
+        const quarter={cycle,elapsed:MoC.elapsedTick(),quarter:MoC.S.quarter,
+          lastProgression:progressionTicks.at(-1)};
+        advanceTo(208);
+        const year={cycle,elapsed:MoC.elapsedTick(),quarter:MoC.S.quarter,age:resident.age,
+          progressionCount:progressionTicks.length};
+        advanceTo(415);
+        resident.hp=0;
+        advanceTo(416);
+        const term={cycle,elapsed:MoC.elapsedTick(),over:MoC.S.over,terminalAtTerm};
+        return {initial,openingCopy,short,quarter,year,term,councilTicks,eventTick,initialAge,rate,expectedRate,overdueDrain,boundedPauseError,
+          zeroRate:MoC.annualProbabilityToTick(0),terminalDeaths:EVENT_LOG.filter(e=>e.type==='died').length};
+      } finally {
+        MoC.seedTick=oldSeedTick;MoC.environment.advance=oldAdvance;
+        MoC.onQuarter=oldQuarter;MoC.onTermEnd=oldTermEnd;
+        window.transitionDiseaseState=oldTransition;
+        MoC.referencePolicy=oldReferencePolicy;MoC.paused=oldPaused;MoC.S.over=oldOver;
+        Math.random=oldRandom;
+      }
     });
     assert.deepEqual(outcome.initial,{cycle:30,elapsed:0,ticksPerWeek:4,ticksPerDay:4/7,ticksPerQuarter:52,ticksPerYear:208,
       modelVersion:'minister-care-7-elapsed-time'});
+    assert.match(outcome.openingCopy.story,/Seven allocation councils remain, from Q2 through Q8/);
+    assert.match(outcome.openingCopy.brief,/Seven allocation councils from Q2 through Q8/);
+    assert.match(outcome.openingCopy.brief,/opening quarter has no purchase window/);
+    assert.match(outcome.boundedPauseError,/Clock stopped at elapsed tick 0; expected 1/);
     assert.equal(outcome.eventTick,0,'event timestamps use elapsed ticks rather than the cycle-30 display offset');
     assert.deepEqual(outcome.short,{cycle:31,elapsed:1,age:70+1/208,progressions:0,
       phases:['night','dusk','day','dawn']});
@@ -188,6 +214,126 @@ test('Elapsed model clock uses quarter-week ticks and exact calendar boundaries'
     assert.ok(Math.abs(outcome.rate-outcome.expectedRate)<1e-15,'annual probability conversion uses the 208-tick year');
     assert.ok(Math.abs(outcome.overdueDrain-0.975)<1e-12,'one overdue week at moderate severity converts the 3 HP/week rule to per-tick drain');
     assert.equal(outcome.terminalDeaths,1,'terminal death is finalized exactly once at the year/term boundary');
+  } finally {await browser.close();await new Promise(resolve=>server.close(resolve));}
+});
+
+test('Aging preserves completed-year bands, initializes new destinations, and formats displayed age', { timeout: 30000 }, async () => {
+  const server=await startSiteServer(),browser=await launchBrowser(),page=await browser.newPage();
+  try {
+    await page.goto(`http://127.0.0.1:${server.address().port}/minister.html#scn=cabinetcrisis&seed=2468`,{waitUntil:'domcontentloaded'});
+    const result=await page.evaluate(()=>{
+      clearInterval(autoTimer);autoTimer=null;
+      const oldSeedTick=MoC.seedTick,oldAdvance=MoC.environment.advance;
+      const oldReferencePolicy=MoC.referencePolicy,oldPaused=MoC.paused,oldOver=MoC.S.over,oldRandom=Math.random;
+      const resident=agents.find(a=>(a.type==='patient'||a.type==='citizen')&&a.hp>0);
+      agents.filter(a=>a.type==='patient'||a.type==='citizen').forEach(a=>Object.assign(a,{
+        moved:true,insideBuilding:'test-isolation',behaviorState:'at_hospital',state:'managed',
+        hp:100,conditions:[],age:40,_ageStart:40,_ageElapsedTicks:0,lifeStage:'adult'
+      }));
+      const bands=[5.999,6,12.999,13,17.004,18,67.999,68,79.004,80].map(age=>[age,lifeStageForAge(age)]);
+      MoC.seedTick=function(){Math.random=()=>0.5;};
+      MoC.environment.advance=function(){};
+      MoC.referencePolicy=true;MoC.paused=false;MoC.S.over=false;
+      try {
+        Object.assign(resident,{moved:true,age:5.999,_ageStart:5.999,_ageElapsedTicks:0,lifeStage:'toddler',
+          schoolPos:null,schoolTimer:0,workplace:null,workplacePos:null,atWork:false,workTimer:0});
+        tick();
+        const child={age:resident.age,lifeStage:resident.lifeStage,schoolPos:resident.schoolPos};
+        Object.assign(resident,{moved:true,age:17.999,_ageStart:17.999,_ageElapsedTicks:0,lifeStage:'teen',
+          schoolPos:{x:0.42,y:0.18},schoolTimer:9,workplace:null,workplacePos:null});
+        tick();
+        const adult={age:resident.age,lifeStage:resident.lifeStage,schoolPos:resident.schoolPos,
+          workplace:resident.workplace,workplacePos:resident.workplacePos};
+        const oldWorkplace=resident.workplace;
+        Object.assign(resident,{moved:true,age:67.999,_ageStart:67.999,_ageElapsedTicks:0,lifeStage:'adult',
+          insideBuilding:oldWorkplace,atWork:true,workTimer:12,schoolPos:null,schoolTimer:0});
+        tick();
+        const senior={age:resident.age,lifeStage:resident.lifeStage,workplace:resident.workplace,
+          workplacePos:resident.workplacePos,insideBuilding:resident.insideBuilding,atWork:resident.atWork,workTimer:resident.workTimer};
+        resident.age=70+1/208;
+        resident.causeOfDeath='natural';
+        finalizeAgentDeath(resident);
+        const naturalEvent=EVENT_LOG.filter(e=>e.type==='natural_death'&&e.agentId===resident.id).at(-1);
+        const deathHistory=resident.actionHistory.filter(e=>e.type==='died').at(-1);
+        const grave=GRAVE_MARKERS.at(-1);
+        showMemorial(grave);
+        return {bands,child,adult,senior,preciseAge:resident.age,eventDetail:naturalEvent.detail,
+          deathHistory:deathHistory.text,graveAge:grave.age,memorial:document.getElementById('agent-detail').innerText};
+      } finally {
+        MoC.seedTick=oldSeedTick;MoC.environment.advance=oldAdvance;
+        MoC.referencePolicy=oldReferencePolicy;MoC.paused=oldPaused;MoC.S.over=oldOver;Math.random=oldRandom;
+      }
+    });
+    assert.deepEqual(result.bands,[
+      [5.999,'toddler'],[6,'child'],[12.999,'child'],[13,'teen'],[17.004,'teen'],
+      [18,'adult'],[67.999,'adult'],[68,'senior'],[79.004,'senior'],[80,'elderly']
+    ]);
+    assert.equal(result.child.lifeStage,'child');
+    assert.deepEqual(result.child.schoolPos,{x:0.42,y:0.18},'new students need a school destination');
+    assert.equal(result.adult.lifeStage,'adult');
+    assert.equal(result.adult.schoolPos,null,'adults must not retain a school destination');
+    assert.ok(result.adult.workplace&&result.adult.workplacePos,'new adults need a workplace destination');
+    assert.equal(result.senior.lifeStage,'senior');
+    assert.equal(result.senior.workplace,null);
+    assert.equal(result.senior.workplacePos,null);
+    assert.equal(result.senior.insideBuilding,null);
+    assert.equal(result.senior.atWork,false);
+    assert.equal(result.senior.workTimer,0);
+    assert.equal(result.preciseAge,70+1/208,'clinical age retains its fractional-year precision');
+    assert.equal(result.eventDetail,'Age 70');
+    assert.equal(result.deathHistory,'Passed away peacefully at age 70.');
+    assert.equal(result.graveAge,70+1/208,'grave data retains the precise numeric age');
+    assert.match(result.memorial,/Age 70\b/);
+    assert.doesNotMatch(result.memorial,/70\.004/);
+  } finally {await browser.close();await new Promise(resolve=>server.close(resolve));}
+});
+
+test('Gazette keeps partial days and HP breakdown shows the actual overdue wait drain', { timeout: 30000 }, async () => {
+  const server=await startSiteServer(),browser=await launchBrowser(),page=await browser.newPage();
+  try {
+    await page.goto(`http://127.0.0.1:${server.address().port}/minister.html#scn=cabinetcrisis&seed=2468`,{waitUntil:'domcontentloaded'});
+    const result=await page.evaluate(()=>{
+      const p=M[mode],resident=agents.find(a=>a.type==='patient'||a.type==='citizen');
+      Object.assign(resident,{waitWeeks:13,receivingKetenzorg:false,persona:null,personality:null,
+        conditions:[{code:'I25',name:'Fixture condition',severity:'moderate'}]});
+      const expected=overdueWaitDrainPerTick(resident.waitWeeks,p.tree,'moderate',p.admin);
+      const breakdown=buildDrainBreakdown(resident);
+      const base=DISEASE_DB.I25.hpDrainPerTick*p.drain;
+      const actualWait=calculateHPDrain({code:'I25'},'moderate',resident.waitWeeks,p,resident)-base;
+      return {days:getSeasonAndDay(3),seasonBoundary:getSeasonAndDay(52),yearBoundary:getSeasonAndDay(208),
+        expected,actualWait,breakdown};
+    });
+    assert.deepEqual(result.days,{day:6,dayOfYear:5,year:1,season:'Spring'});
+    assert.deepEqual(result.seasonBoundary,{day:92,dayOfYear:91,year:1,season:'Summer'});
+    assert.deepEqual(result.yearBoundary,{day:365,dayOfYear:0,year:2,season:'Spring'});
+    assert.equal(result.expected,0.975);
+    assert.equal(result.actualWait,result.expected);
+    assert.ok(result.breakdown.includes('+0.975/tick'), 'the resident inspector must show the same wait penalty as the clinical calculation');
+    assert.ok(!result.breakdown.includes('+0.195/tick'), 'the inspector must not understate the penalty');
+  } finally {await browser.close();await new Promise(resolve=>server.close(resolve));}
+});
+
+test('Weekly report numbering follows elapsed weeks after retention reaches 50 reports', { timeout: 30000 }, async () => {
+  const server=await startSiteServer(),browser=await launchBrowser(),page=await browser.newPage();
+  try {
+    await page.goto(`http://127.0.0.1:${server.address().port}/minister.html#scn=cabinetcrisis&seed=2468`,{waitUntil:'domcontentloaded'});
+    const result=await page.evaluate(()=>{
+      clearInterval(autoTimer);autoTimer=null;
+      const oldReports=WEEKLY_REPORTS.slice(),oldLast=lastWeeklyReportCycle,oldTick=modelTick;
+      try {
+        WEEKLY_REPORTS.splice(0,WEEKLY_REPORTS.length,...Array.from({length:50},(_,i)=>({weekNumber:i+2})));
+        modelTick=208;lastWeeklyReportCycle=204;
+        const week52=generateWeeklyReport();
+        modelTick=212;
+        const week53=generateWeeklyReport();
+        return {week52:week52.weekNumber,week53:week53.weekNumber,count:WEEKLY_REPORTS.length,
+          oldest:WEEKLY_REPORTS[0].weekNumber,newest:WEEKLY_REPORTS.at(-1).weekNumber};
+      } finally {
+        WEEKLY_REPORTS.splice(0,WEEKLY_REPORTS.length,...oldReports);
+        lastWeeklyReportCycle=oldLast;modelTick=oldTick;
+      }
+    });
+    assert.deepEqual(result,{week52:52,week53:53,count:50,oldest:4,newest:53});
   } finally {await browser.close();await new Promise(resolve=>server.close(resolve));}
 });
 
@@ -682,7 +828,11 @@ test('Early results match the reference date and replay preserves the prior atte
     await page.evaluate(()=>{
       document.getElementById('play-overlay')?.remove();
       MoC.referencePolicy=true;MoC.paused=false;
-      while(modelTick<75)tick();
+      for(let step=0;modelTick<75&&step<75;step++){
+        const before=modelTick;tick();
+        if(modelTick!==before+1)throw new Error(`Clock stopped at elapsed tick ${modelTick}; expected ${before+1}`);
+      }
+      if(modelTick!==75)throw new Error(`Clock did not reach elapsed tick 75; stopped at ${modelTick}`);
       MoC.referencePolicy=false;
       window._mocDebug.endTerm('noconfidence');
     });
@@ -714,9 +864,16 @@ test('Early results match the reference date and replay preserves the prior atte
     // Controlled outcome fixture: political survival must not conceal worse care.
     await page.evaluate(()=>{
       document.getElementById('play-overlay')?.remove();
-      MoC.referencePolicy=true;MoC.paused=false;while(modelTick<75)tick();MoC.referencePolicy=false;
+      MoC.referencePolicy=true;MoC.paused=false;
+      for(let step=0;modelTick<75&&step<75;step++){
+        const before=modelTick;tick();
+        if(modelTick!==before+1)throw new Error(`Clock stopped at elapsed tick ${modelTick}; expected ${before+1}`);
+      }
+      if(modelTick!==75)throw new Error(`Clock did not reach elapsed tick 75; stopped at ${modelTick}`);
+      MoC.referencePolicy=false;
       const reference=MoC.care.snapshot();
-      GRAVE_MARKERS.push({name:'Fixture',age:70,cause:'system_failure',cycle,waitWeeks:14});
+      GRAVE_MARKERS.push({name:'Fixture',age:70,cause:'system_failure',cycle:modelTick,waitWeeks:14});
+      window._fixtureGraveTick=GRAVE_MARKERS.at(-1).cycle;
       MoC.baseline={protocol:MoC.REFERENCE_PROTOCOL,scheduleId:MoC.environment.scheduleId,modelVersion:MoC.MODEL_VERSION,
         seed:MoC.seed,scenario:MoC.S.scenario,snapshots:{75:reference}};
       MoC.S._cabinetResult='narrow';
@@ -725,6 +882,7 @@ test('Early results match the reference date and replay preserves the prior atte
     assert.match(await page.locator('#moc-care-verdict').innerText(),/more model-classified system deaths/);
     assert.equal(await page.locator('#moc-livesval').innerText(),'-1');
     assert.match(await page.locator('#moc-care-comparison').innerText(),/Previous attempt/);
+    assert.equal(await page.evaluate(()=>window._fixtureGraveTick),75,'fixture grave timestamps must use elapsed model ticks');
     assert.deepEqual(errors,[]);
   } finally {await browser.close();await new Promise(resolve=>server.close(resolve));}
 });
@@ -752,7 +910,13 @@ test('Completed runs publish automatically with a public or generated name', { t
     assert.equal(await page.locator('#moc-opening-board img').count(),0,'opening leaderboard names render as text');
     assert.match(await page.locator('.moc-name-entry').innerText(),/published automatically/);
     await page.evaluate(()=>{
-      document.getElementById('play-overlay')?.remove();MoC.referencePolicy=true;MoC.paused=false;while(modelTick<75)tick();MoC.referencePolicy=false;
+      document.getElementById('play-overlay')?.remove();MoC.referencePolicy=true;MoC.paused=false;
+      for(let step=0;modelTick<75&&step<75;step++){
+        const before=modelTick;tick();
+        if(modelTick!==before+1)throw new Error(`Clock stopped at elapsed tick ${modelTick}; expected ${before+1}`);
+      }
+      if(modelTick!==75)throw new Error(`Clock did not reach elapsed tick 75; stopped at ${modelTick}`);
+      MoC.referencePolicy=false;
       agents.filter(agent=>agent.hp>0&&!agent.moved&&(agent.behaviorState==='going_to_hospital'||agent.behaviorState==='emergency'||(agent.behaviorState==='queuing'&&agent.queueType==='hospital')))
         .forEach(agent=>{agent.moved=true;agent.state='moved';});MoC.care.sync();
       const reference=MoC.care.snapshot();
@@ -954,22 +1118,43 @@ test('Minister cabinet crisis starts after phone walkthrough and reaches council
     assert.match(await page.locator('[data-town-person]').first().evaluate(el => getComputedStyle(el).fontFamily), /VT323/, 'citizen names should use the game font');
     const boundary = await page.evaluate(() => {
       clearInterval(autoTimer); autoTimer = null;
-      while (modelTick < 51) tick();
-      const person = agents.find(a => a.type === 'patient' && a.state !== 'dead');
-      person.hp = 0;
-      const original = MoC.onQuarter;
-      let stateAtCouncil;
-      MoC.onQuarter = function(q) {
-        original(q);
-        stateAtCouncil = { dead: person.state === 'dead', graves: GRAVE_MARKERS.length };
+      const oldReferencePolicy=MoC.referencePolicy,oldPaused=MoC.paused;
+      const advanceTo=target=>{
+        const limit=Math.max(0,target-modelTick);
+        for(let step=0;modelTick<target&&step<limit;step++){
+          const before=modelTick;tick();
+          if(modelTick!==before+1)throw new Error(`Clock stopped at elapsed tick ${modelTick}; expected ${before+1}`);
+        }
+        if(modelTick!==target)throw new Error(`Clock did not reach elapsed tick ${target}; stopped at ${modelTick}`);
       };
-      tick();
-      MoC.onQuarter = original;
-      const after = GRAVE_MARKERS.length;
-      return { stateAtCouncil, after, processed: person.hpHistory.length };
+      MoC.referencePolicy=true;MoC.paused=false;
+      try {
+        advanceTo(51);
+        MoC.referencePolicy=oldReferencePolicy;
+        MoC.paused=false;
+        const person = agents.find(a => a.type === 'patient' && a.state !== 'dead');
+        person.hp = 0;
+        const original = MoC.onQuarter;
+        let stateAtCouncil;
+        MoC.onQuarter = function(q) {
+          original(q);
+          stateAtCouncil = { dead: person.state === 'dead', graves: GRAVE_MARKERS.length };
+        };
+        try {
+          advanceTo(52);
+          const after = GRAVE_MARKERS.length;
+          return { stateAtCouncil, after, processed: person.hpHistory.length, paused:MoC.paused };
+        } finally {
+          MoC.onQuarter = original;
+        }
+      } finally {
+        MoC.referencePolicy=oldReferencePolicy;
+        MoC.paused=oldPaused;
+      }
     });
     assert.equal(boundary.stateAtCouncil.dead, true, 'clinical tick must finish before council boundary');
     assert.equal(boundary.stateAtCouncil.graves, boundary.after, 'no deaths may occur after council pause');
+    assert.equal(boundary.paused, true, 'normal council handling must pause after the setup fast-forward');
     await page.locator('#moc-town-council').waitFor();
     assert.equal(await page.locator('#moc-council').count(), 0, 'council must wait for the player');
     assert.equal(await page.locator('#moc-town-toggle').isVisible(), false, 'resume control must be hidden while council is due');
