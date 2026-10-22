@@ -471,6 +471,7 @@ test('Completed runs publish automatically with a public or generated name', { t
     const topChildren=await page.locator('#moc-endscreen .moc-box').evaluate(element=>[...element.children].slice(0,5).map(child=>child.className||child.id||child.tagName));
     assert.ok(topChildren.some(value=>String(value).includes('moc-score-hero')),'score should be at the top of the result');
     assert.ok(await page.evaluate(()=>document.body.scrollWidth<=390));
+    await page.waitForFunction(()=>document.querySelector('#moc-endscreen .moc-box').getAnimations().every(animation=>animation.playState==='finished'));
     for (const viewport of [{width:375,height:667},{width:390,height:844},{width:412,height:915},{width:1440,height:900}]) {
       await page.setViewportSize(viewport);
       await page.evaluate(()=>window.scrollTo(0,0));
