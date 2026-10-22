@@ -188,52 +188,50 @@ async function exerciseSupportedPath({
           assert.deepEqual(attemptedSubmissions, [], `${name}: smoke tests must never submit scores`);
         }
 
-        if (index === 0) {
-          await page.waitForFunction(() => {
-            const frame = MoC?.baselineFrame;
-            const reference = MoC?.baseline;
-            if (!frame || !reference || !frame.contentWindow) return false;
-            try {
-              return frame.contentWindow.location.origin === location.origin
-                && reference.type === 'mocBaseline'
-                && reference.scenario === MoC.S.scenario
-                && reference.seed === MoC.seed
-                && reference.modelVersion === MoC.MODEL_VERSION
-                && reference.protocol === MoC.REFERENCE_PROTOCOL
-                && reference.scheduleId === MoC.environment.scheduleId
-                && Object.keys(reference.snapshots || {}).length > 0;
-            } catch {
-              return false;
-            }
-          }, null, { timeout: 150000 });
-          const reference = await page.evaluate(() => ({
-            parentPath: location.pathname,
-            frameUrl: MoC.baselineFrame.src,
-            frameOrigin: MoC.baselineFrame.contentWindow.location.origin,
-            framePath: MoC.baselineFrame.contentWindow.location.pathname,
-            baselineMode: MoC.baselineFrame.contentWindow.eval('MoC.IS_BASELINE'),
-            scenario: MoC.baseline.scenario,
-            seed: MoC.baseline.seed,
-            modelVersion: MoC.baseline.modelVersion,
-            protocol: MoC.baseline.protocol,
-            scheduleId: MoC.baseline.scheduleId,
-            snapshots: Object.keys(MoC.baseline.snapshots).length,
-          }));
-          const frameUrl = new URL(reference.frameUrl);
-          assert.equal(reference.frameOrigin, origin, `${name}: reference must be same-origin`);
-          assert.equal(reference.framePath, reference.parentPath, `${name}: relative reference path must resolve beside Minister`);
-          assert.equal(frameUrl.origin, origin);
-          assert.equal(frameUrl.search, '');
-          assert.equal(frameUrl.hash.includes(`scn=${scenario.id}`), true);
-          assert.equal(frameUrl.hash.includes('baseline=1'), true);
-          assert.equal(reference.baselineMode, true);
-          assert.equal(reference.scenario, scenario.id);
-          assert.equal(reference.seed, 2468);
-          assert.equal(reference.modelVersion, startup.modelVersion);
-          assert.equal(reference.protocol, 'no-discretionary-action-v1');
-          assert.ok(reference.scheduleId);
-          assert.ok(reference.snapshots > 0, `${name}: completed reference must contain snapshots`);
-        }
+        await page.waitForFunction(() => {
+          const frame = MoC?.baselineFrame;
+          const reference = MoC?.baseline;
+          if (!frame || !reference || !frame.contentWindow) return false;
+          try {
+            return frame.contentWindow.location.origin === location.origin
+              && reference.type === 'mocBaseline'
+              && reference.scenario === MoC.S.scenario
+              && reference.seed === MoC.seed
+              && reference.modelVersion === MoC.MODEL_VERSION
+              && reference.protocol === MoC.REFERENCE_PROTOCOL
+              && reference.scheduleId === MoC.environment.scheduleId
+              && Object.keys(reference.snapshots || {}).length > 0;
+          } catch {
+            return false;
+          }
+        }, null, { timeout: 150000 });
+        const reference = await page.evaluate(() => ({
+          parentPath: location.pathname,
+          frameUrl: MoC.baselineFrame.src,
+          frameOrigin: MoC.baselineFrame.contentWindow.location.origin,
+          framePath: MoC.baselineFrame.contentWindow.location.pathname,
+          baselineMode: MoC.baselineFrame.contentWindow.eval('MoC.IS_BASELINE'),
+          scenario: MoC.baseline.scenario,
+          seed: MoC.baseline.seed,
+          modelVersion: MoC.baseline.modelVersion,
+          protocol: MoC.baseline.protocol,
+          scheduleId: MoC.baseline.scheduleId,
+          snapshots: Object.keys(MoC.baseline.snapshots).length,
+        }));
+        const frameUrl = new URL(reference.frameUrl);
+        assert.equal(reference.frameOrigin, origin, `${name}: reference must be same-origin`);
+        assert.equal(reference.framePath, reference.parentPath, `${name}: relative reference path must resolve beside Minister`);
+        assert.equal(frameUrl.origin, origin);
+        assert.equal(frameUrl.search, '');
+        assert.equal(frameUrl.hash.includes(`scn=${scenario.id}`), true);
+        assert.equal(frameUrl.hash.includes('baseline=1'), true);
+        assert.equal(reference.baselineMode, true);
+        assert.equal(reference.scenario, scenario.id);
+        assert.equal(reference.seed, 2468);
+        assert.equal(reference.modelVersion, startup.modelVersion);
+        assert.equal(reference.protocol, 'no-discretionary-action-v1');
+        assert.ok(reference.scheduleId);
+        assert.ok(reference.snapshots > 0, `${name}: completed reference must contain snapshots`);
         assert.deepEqual(pageErrors, [], `${name}: scenario startup must not throw`);
         assert.deepEqual(sameOriginFailures, [], `${name}: same-origin assets must load`);
       } catch (error) {
@@ -273,7 +271,7 @@ async function exerciseSupportedPath({
 }
 
 test('GitHub Pages site artifact serves both supported Minister scenarios and its same-origin reference', {
-  timeout: 180000,
+  timeout: 360000,
 }, async () => exerciseSupportedPath({
   name: 'Pages site artifact',
   serverFactory: startArtifactServer,
@@ -281,7 +279,7 @@ test('GitHub Pages site artifact serves both supported Minister scenarios and it
 }));
 
 test('documented local Python HTTP path serves both supported Minister scenarios and its same-origin reference', {
-  timeout: 180000,
+  timeout: 360000,
 }, async () => exerciseSupportedPath({
   name: 'local Python HTTP',
   serverFactory: startLocalPythonServer,
