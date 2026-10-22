@@ -253,7 +253,7 @@ test('Lethal disease progression finalizes death before hospital treatment', { t
   }finally{await browser.close();await new Promise(resolve=>server.close(resolve));}
 });
 
-test('Early recovery exit clears its protection from passive deterioration', { timeout:30000 }, async()=>{
+test('Recovery exits clear their protection from passive deterioration', { timeout:30000 }, async()=>{
   const server=await startSiteServer(),browser=await launchBrowser(),page=await browser.newPage();
   try{
     await page.goto(`http://127.0.0.1:${server.address().port}/minister.html#scn=cabinetcrisis&seed=2468`,{waitUntil:'domcontentloaded'});
@@ -266,6 +266,11 @@ test('Early recovery exit clears its protection from passive deterioration', { t
         hp:84,waitWeeks:12,healingTicksLeft:11,isNightOwl:true,lifeStage:'adult',
         workplace:null,workplacePos:null,homePos:null,pathComplete:true,path:[],
         conditions:[{code:'I25',name:'Chronic Ischemic Heart Disease',severity:'severe'}]});
+      const queueLeavingPatient=patients[1];
+      Object.assign(queueLeavingPatient,{moved:false,insideBuilding:null,behaviorState:'recovering',state:'active',
+        hp:84,waitWeeks:12,healingTicksLeft:11,queueLeaveTimer:1,isNightOwl:true,lifeStage:'adult',
+        workplace:null,workplacePos:null,homePos:null,pathComplete:true,path:[],lastGPCycle:2,
+        conditions:[{code:'I25',name:'Chronic Ischemic Heart Disease',severity:'severe'}]});
       cycle=1;
       const oldRandom=Math.random;
       try {
@@ -273,8 +278,11 @@ test('Early recovery exit clears its protection from passive deterioration', { t
         tick();
         const afterRecovery={hp:patient.hp,behavior:patient.behaviorState,healingTicksLeft:patient.healingTicksLeft};
         const hpBeforeRoaming=patient.hp;
+        const afterQueueLeave={hp:queueLeavingPatient.hp,behavior:queueLeavingPatient.behaviorState,
+          healingTicksLeft:queueLeavingPatient.healingTicksLeft};
         tick();
-        return {...afterRecovery,hpAfterRoaming:patient.hp,hpBeforeRoaming};
+        return {...afterRecovery,hpAfterRoaming:patient.hp,hpBeforeRoaming,
+          afterQueueLeave,hpAfterQueueLeave:queueLeavingPatient.hp};
       } finally {
         Math.random=oldRandom;
       }
@@ -282,6 +290,9 @@ test('Early recovery exit clears its protection from passive deterioration', { t
     assert.equal(outcome.behavior,'roaming','reaching the HP threshold should end recovery: '+JSON.stringify(outcome));
     assert.equal(outcome.healingTicksLeft,0,'roaming should not retain recovery protection');
     assert.ok(outcome.hpAfterRoaming<outcome.hpBeforeRoaming,'passive deterioration should resume on the next roaming tick');
+    assert.equal(outcome.afterQueueLeave.behavior,'roaming','a queue-leave transition should exit recovery');
+    assert.equal(outcome.afterQueueLeave.healingTicksLeft,0,'queue-leave roaming should clear recovery protection');
+    assert.ok(outcome.hpAfterQueueLeave<outcome.afterQueueLeave.hp,'passive deterioration should resume on the queue-leave tick');
   }finally{await browser.close();await new Promise(resolve=>server.close(resolve));}
 });
 
@@ -555,6 +566,7 @@ test('Completed runs publish automatically with a public or generated name', { t
     const topChildren=await page.locator('#moc-endscreen .moc-box').evaluate(element=>[...element.children].slice(0,5).map(child=>child.className||child.id||child.tagName));
     assert.ok(topChildren.some(value=>String(value).includes('moc-score-hero')),'score should be at the top of the result');
     assert.ok(await page.evaluate(()=>document.body.scrollWidth<=390));
+    await page.waitForFunction(()=>document.querySelector('#moc-endscreen .moc-box').getAnimations().every(animation=>animation.playState==='finished'));
     for (const viewport of [{width:375,height:667},{width:390,height:844},{width:412,height:915},{width:1440,height:900}]) {
       await page.setViewportSize(viewport);
       await page.evaluate(()=>window.scrollTo(0,0));

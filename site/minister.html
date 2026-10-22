@@ -7335,6 +7335,9 @@ function tick(){
       }
     }
 
+    // Recovery ticks only protect agents while they are recovering.
+    if(a.behaviorState!=='recovering'&&a.healingTicksLeft>0) a.healingTicksLeft=0;
+
     // --- DEATH CHECK ---
     if(a.state==='dead'){
       a.hp=0; a.behaviorState='dead'; a.insideBuilding=null; a.healingTicksLeft=0;
@@ -7619,6 +7622,9 @@ function tick(){
         sendAgentTo(a, a.homePos);
       }
     }
+
+    // Also clear protection if a transition earlier in this tick left recovery.
+    if(a.behaviorState!=='recovering'&&a.healingTicksLeft>0) a.healingTicksLeft=0;
 
     // === BEHAVIORAL STATE MACHINE ===
     switch(a.behaviorState){
