@@ -1,4 +1,5 @@
 // Pure policy: no clock, filesystem, network, or issue-body execution.
+import { createHash } from 'node:crypto';
 export const REPO = 'cammeleon66/Cammelot';
 export const BASE = 'master';
 export const WORKFLOW = '.github/workflows/minister-backlog-checks.yml';
@@ -103,7 +104,7 @@ export function scopeProblem(pr, n, { checkFiles = true } = {}) {
   return null;
 }
 
-export function reviewGate(pr) {
+export function reviewGate(pr, evidence = acceptanceGate(pr, associatedIssue(pr))) {
   if (!Array.isArray(pr.reviews) || !Array.isArray(pr.reviewComments) || !Array.isArray(pr.threads)) {
     return { ok: false, reason: 'missing review metadata', repair: false };
   }
@@ -115,10 +116,16 @@ export function reviewGate(pr) {
   if ([...latestByUser.values()].some(r => r.state === 'CHANGES_REQUESTED')) {
     return { ok: false, reason: 'changes requested', repair: true };
   }
+  if (!evidence.ok) return evidence;
   const reviews = pr.reviews.filter(r => r.user?.login === REVIEWER && r.user?.type === 'Bot' &&
     r.commit_id === pr.head.sha && r.state !== 'PENDING').sort((a, b) => b.id - a.id);
   const r = reviews[0];
-  if (!r) return { ok: false, reason: 'missing current-head independent review', request: true };
+  if (!r) return { ok: false, reason: 'missing current-head independent review', request: true,
+    evidenceRevision: evidence.evidenceRevision, evidenceRevisedAt: evidence.revisedAt };
+  if (!Number.isFinite(Date.parse(r.submitted_at)) || Date.parse(r.submitted_at) <= Date.parse(evidence.revisedAt)) {
+    return { ok: false, reason: 'independent review does not follow the selected evidence revision', request: true,
+      evidenceRevision: evidence.evidenceRevision, evidenceRevisedAt: evidence.revisedAt };
+  }
   if (pr.reviewComments.some(c => c.pull_request_review_id === r.id)) {
     return { ok: false, reason: `independent review ${r.id} contains findings`, repair: true };
   }
@@ -206,24 +213,54 @@ export function validationRerunGate(pr, n, baseSha) {
 }
 
 export function acceptanceGate(pr, n) {
-  if (n === 16) return { ok: false, reason: 'issue 16 requires genuine human/real-device evidence; never fabricate it', park: true };
+  const invalid = reason => ({ ok: false, reason, evidence: true });
+  const candidates = [];
   for (const c of pr.comments ?? []) {
     if (!isCoder(c.user)) continue;
-    const matches = String(c.body).matchAll(/<!-- backlog-evidence ([^\r\n]+) -->/g);
-    for (const m of matches) {
+    const claims = [];
+    for (const m of String(c.body).matchAll(/<!--\s*backlog-evidence\b([\s\S]*?)(?:-->|$)/g)) {
       try {
         const e = JSON.parse(m[1]);
-        if (e.issue === n && e.head === pr.head.sha && e.humanValidation === 'not-required' &&
-          Array.isArray(e.limitations) && e.limitations.every(x => typeof x === 'string') &&
-          (e.blockingGaps === undefined ? e.limitations.length === 0 :
-            Array.isArray(e.blockingGaps) && e.blockingGaps.length === 0) &&
-          Array.isArray(e.criteria) && e.criteria.length > 0 && e.criteria.every(x =>
-            typeof x.criterion === 'string' && x.criterion.trim() && typeof x.evidence === 'string' && x.evidence.trim()) &&
-          Array.isArray(e.tests) && e.tests.length > 0 && e.tests.every(x => typeof x === 'string' && x.trim())) return { ok: true };
-      } catch { /* Untrusted evidence is data; malformed claims cannot pass. */ }
+        if (!e || typeof e !== 'object' || !Number.isSafeInteger(e.issue) || !isSha(e.head)) claims.push(null);
+        else if (e.issue === n && e.head === pr.head.sha) claims.push(e);
+      } catch {
+        // A malformed newer correction cannot be silently discarded in favour
+        // of an older passing claim. Its routing is ambiguous, so fail closed.
+        claims.push(null);
+      }
     }
+    if (!claims.length) continue;
+    const created = Date.parse(c.created_at), edited = Date.parse(c.updated_at);
+    if (!Number.isSafeInteger(c.id) || !Number.isFinite(created) || !Number.isFinite(edited) || edited < created) {
+      return invalid('acceptance evidence has missing revision metadata');
+    }
+    candidates.push({ comment: c, claim: claims.length === 1 ? claims[0] : null,
+      revised: Math.max(created, edited), edited: edited > created });
   }
-  return { ok: false, reason: 'missing current-head acceptance evidence (backlog-evidence comment)', evidence: true };
+  candidates.sort((a, b) => b.revised - a.revised || b.comment.id - a.comment.id);
+  const latest = candidates[0];
+  if (!latest) return invalid('missing current-head acceptance evidence (backlog-evidence comment)');
+  if (candidates.slice(1).some(c => c.revised === latest.revised && (c.edited || latest.edited))) {
+    return invalid('ambiguous order of acceptance evidence edits');
+  }
+  const e = latest.claim;
+  if (!e) return invalid('latest acceptance evidence is malformed or ambiguous');
+  const text = value => typeof value === 'string' && value.trim().length > 0;
+  const texts = value => Array.isArray(value) && value.length > 0 && value.every(text);
+  const humanEvidence = n === 16 ?
+    text(e.releaseEvidence) && (
+      (e.humanValidation === 'completed' && texts(e.humanEvidence)) ||
+      (e.humanValidation === 'release-limitations' && texts(e.limitations) &&
+        Array.isArray(e.blockingGaps) && e.blockingGaps.length === 0)
+    ) : e.humanValidation === 'not-required';
+  if (!humanEvidence || !Array.isArray(e.limitations) || !e.limitations.every(x => typeof x === 'string') ||
+    (e.blockingGaps === undefined ? e.limitations.length !== 0 :
+      !Array.isArray(e.blockingGaps) || e.blockingGaps.length !== 0) ||
+    !Array.isArray(e.criteria) || !e.criteria.length || !e.criteria.every(x => x && text(x.criterion) && text(x.evidence)) ||
+    !texts(e.tests)) return invalid('latest acceptance evidence has blocking, missing, or unsupported claims');
+  const revisedAt = new Date(latest.revised).toISOString();
+  return { ok: true, revisedAt,
+    evidenceRevision: `${latest.comment.id}:${revisedAt}:${createHash('sha256').update(String(latest.comment.body)).digest('hex')}` };
 }
 
 export function mergeGate(pr, n, baseSha, { merged = false } = {}) {
@@ -232,7 +269,8 @@ export function mergeGate(pr, n, baseSha, { merged = false } = {}) {
   if (!Array.isArray(pr.codingRuns) || pr.codingRuns.some(r => r.status !== 'completed')) {
     return { ok: false, reason: 'missing or active branch coding activity' };
   }
-  for (const gate of [acceptanceGate(pr, n), ciGate(pr), reviewGate(pr)]) if (!gate.ok) return gate;
+  const evidence = acceptanceGate(pr, n);
+  for (const gate of [evidence, ciGate(pr), reviewGate(pr, evidence)]) if (!gate.ok) return gate;
   if (merged) return pr.merged === true && pr.mergeInBase === true ?
     { ok: true } : { ok: false, reason: 'missing verified merge ancestry' };
   if (pr.state !== 'open') return { ok: false, reason: 'PR not open', park: true };
@@ -414,6 +452,11 @@ export function plan(snapshot, state, now) {
         if (action) actions.push(action);
         continue;
       }
+      if (p.mergeable === false) {
+        const action = repairOrPark(snapshot, state, p, n, 'confirmed merge conflict with master', now);
+        if (action) actions.push(action);
+        continue;
+      }
       // Bring the branch current before asking for source-head evidence or review.
       // A merge/update invalidates both; never repeatedly request the same update.
       if (p.includesBase === false) {
@@ -468,9 +511,10 @@ export function plan(snapshot, state, now) {
       else if (gate.update) {
         actions.push({ kind: 'update', issue: n, pr: p.number, head: p.head.sha, base: snapshot.baseSha });
       } else if (gate.request) {
-        const requested = e.reviews?.[p.head.sha];
-        if (!requested && !p.reviewRequested) actions.push({ kind: 'review', issue: n, pr: p.number, head: p.head.sha });
-        else if (now - Date.parse(requested ?? seenAt) >= WAIT_MS) actions.push({ kind: 'park', issue: n, pr: p.number, reason: 'independent review timed out' });
+        const requested = e.reviews?.[`${p.head.sha}:${gate.evidenceRevision}`];
+        if (!requested && !p.reviewRequested) actions.push({ kind: 'review', issue: n, pr: p.number, head: p.head.sha,
+          evidenceRevision: gate.evidenceRevision });
+        else if (now - Date.parse(requested ?? gate.evidenceRevisedAt ?? seenAt) >= WAIT_MS) actions.push({ kind: 'park', issue: n, pr: p.number, reason: 'independent review timed out' });
       } else if (gate.evidence) {
         const requested = e.evidenceRequests[p.head.sha];
         if (requested) {
@@ -527,7 +571,7 @@ Keep research docs in docs/research/ (not README); contract docs in docs/MINISTE
 Only issue 1 may add a minimal contract-discovery link to README.md; no unrelated README edits.
 Run appropriate tests. Do not weaken or skip tests to manufacture green checks.
 Do not merge or close the issue; the dispatcher handles independent review and current-head CI.
-For issue 16, unavailable human/real-device validation is an evidence gap, never fabricated success.
+For issue 16, never fabricate human/real-device checks. Its acceptance criterion permits either actual checks or explicitly documented release limitations. Supply releaseEvidence pointing to the versioned release summary, and either humanValidation:"completed" with nonempty humanEvidence references, or humanValidation:"release-limitations" with explicit nonempty limitations and no unmet acceptance criteria in blockingGaps. All automated coverage and other criteria still apply.
 When finished, post a PR comment with actual current source head SHA and this single-line JSON marker:
 <!-- backlog-evidence {"issue":${n},"head":"40-character current SHA","criteria":[{"criterion":"each issue acceptance criterion","evidence":"concrete test/result or file evidence"}],"tests":["actual command and result"],"humanValidation":"not-required","limitations":[],"blockingGaps":[]} -->
 List EVERY acceptance criterion honestly. Keep nonblocking scientific/clinical caveats in limitations; put EVERY unmet acceptance criterion, unavailable required validation, or unfinished work in blockingGaps. Only declare blockingGaps empty when all issue acceptance criteria are genuinely met. Do not erase caveats or manufacture evidence to claim completion.

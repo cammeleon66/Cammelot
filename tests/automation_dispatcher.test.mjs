@@ -170,7 +170,7 @@ test('active clinical PR holds; completed behind PR refreshes base before reject
 const response = (data, headers = '') => `HTTP/2.0 200 OK\r\nContent-Type: application/json\r\n${headers}\r\n${JSON.stringify(data)}`;
 
 function evidence(n = 1, sha = HEAD) {
-  return { id: 701, user: coder, created_at: stamp, body: `<!-- backlog-evidence ${JSON.stringify({
+  return { id: 701, user: coder, created_at: stamp, updated_at: stamp, body: `<!-- backlog-evidence ${JSON.stringify({
     issue: n, head: sha, criteria: [{ criterion: 'Contract defined', evidence: 'docs/MINISTER_MODEL_CONTRACT.md and test results' }],
     tests: ['node --test: passed'], humanValidation: 'not-required', limitations: [],
   })} -->` };
@@ -183,7 +183,8 @@ function pull(n = 1, overrides = {}) {
     user: coder, base: { ref: 'master', repo: { full_name: REPO } },
     head: { sha: HEAD, ref: `copilot/issue-${n}`, repo: { full_name: REPO } },
     files: [{ filename: n === 1 ? 'docs/MINISTER_MODEL_CONTRACT.md' : n === 17 ? 'docs/research/evidence.md' : 'site/minister.html' }],
-    reviews: [{ id: 501, user: reviewer, commit_id: HEAD, state: 'COMMENTED', body: 'Approval assessment: Approved.\nNo actionable findings.' }],
+    reviews: [{ id: 501, user: reviewer, commit_id: HEAD, submitted_at: new Date(NOW + 1000).toISOString(),
+      state: 'COMMENTED', body: 'Approval assessment: Approved.\nNo actionable findings.' }],
     reviewComments: [], threads: [], comments: [evidence(n)],
     checks: [{ id: 301, name: 'Validate', head_sha: HEAD, status: 'completed', conclusion: 'success',
       app: { id: 1, slug: 'github-actions' }, check_suite: { id: 11 }, workflowId: 1 }],
@@ -229,6 +230,193 @@ function fake(s, overrides = {}) {
     verifyMerge: async () => true,
     ...overrides,
   };
+}
+
+function changeEvidence(comment, fields) {
+  const data = JSON.parse(comment.body.match(/<!-- backlog-evidence (.*) -->/)[1]);
+  comment.body = `<!-- backlog-evidence ${JSON.stringify({ ...data, ...fields })} -->`;
+}
+
+test('issue16 accepts its documented release-limitations alternative with honest evidence', () => {
+  const s = withPr(16);
+  changeEvidence(s.prs[0].comments[0], {
+    humanValidation: 'release-limitations',
+    releaseEvidence: 'docs/MINISTER_RELEASE_STATUS.md: executable/version and release-readiness summary',
+    limitations: ['Uncoached physical-device checks were unavailable; release scope explicitly documents that limitation.'],
+    blockingGaps: [],
+  });
+  assert.equal(acceptanceGate(s.prs[0], 16).ok, true);
+  assert.equal(forIssue(s, 16)[0].kind, 'merge');
+});
+
+test('issue16 accepts referenced real human checks but not an unsupported completion claim', () => {
+  const p = pull(16);
+  changeEvidence(p.comments[0], { humanValidation: 'completed',
+    releaseEvidence: 'docs/MINISTER_RELEASE_STATUS.md: versioned release evidence',
+    humanEvidence: ['Documented uncoached participant/device results in release evidence appendix'], blockingGaps: [] });
+  assert.equal(acceptanceGate(p, 16).ok, true);
+  changeEvidence(p.comments[0], { humanEvidence: [] });
+  assert.equal(acceptanceGate(p, 16).ok, false);
+});
+
+test('latest blocking or malformed attestation revokes older current-head success', () => {
+  for (const malformed of [false, true]) {
+    const p = pull(), correction = evidence();
+    correction.id = 702;
+    correction.created_at = correction.updated_at = new Date(NOW + 2000).toISOString();
+    changeEvidence(correction, { blockingGaps: ['An acceptance criterion is not met'] });
+    if (malformed) correction.body = `<!-- backlog-evidence {"issue":1,"head":"${HEAD}","blockingGaps": -->`;
+    p.comments.push(correction);
+    assert.equal(acceptanceGate(p, 1).ok, false);
+    assert.equal(mergeGate(p, 1, BASE).ok, false);
+  }
+});
+
+test('editing an older attestation makes its blocking correction the latest revision', () => {
+  const p = pull(), newer = evidence();
+  newer.id = 702;
+  newer.created_at = newer.updated_at = new Date(NOW + 2000).toISOString();
+  p.comments.push(newer);
+  p.comments[0].updated_at = new Date(NOW + 3000).toISOString();
+  changeEvidence(p.comments[0], { blockingGaps: ['Corrected finding: incomplete required test'] });
+  assert.equal(acceptanceGate(p, 1).ok, false);
+});
+
+test('newer malformed routing or missing edit metadata never revives historical success', () => {
+  for (const mutation of [
+    c => changeEvidence(c, { issue: '1' }),
+    c => changeEvidence(c, { head: null }),
+    c => { delete c.updated_at; },
+  ]) {
+    const p = pull(), correction = evidence(); correction.id = 702;
+    correction.created_at = correction.updated_at = new Date(NOW + 2000).toISOString();
+    mutation(correction); p.comments.push(correction);
+    assert.equal(acceptanceGate(p, 1).ok, false);
+  }
+});
+
+test('untrusted or explicitly other-head attestations cannot replace current trusted evidence', () => {
+  const p = pull(), wrongAuthor = evidence();
+  wrongAuthor.id = 702; wrongAuthor.user = { login: 'outsider', type: 'User' };
+  wrongAuthor.created_at = wrongAuthor.updated_at = new Date(NOW + 2000).toISOString();
+  changeEvidence(wrongAuthor, { blockingGaps: ['not a trusted attestation'] });
+  const oldHead = evidence(1, OTHER); oldHead.id = 703;
+  oldHead.created_at = oldHead.updated_at = new Date(NOW + 3000).toISOString();
+  p.comments.push(wrongAuthor, oldHead);
+  assert.equal(acceptanceGate(p, 1).ok, true);
+  assert.equal(reviewGate(p).ok, true);
+});
+
+test('current-head review predating a new or edited attestation cannot authorize merge', () => {
+  for (const edited of [false, true]) {
+    const s = withPr();
+    if (edited) s.prs[0].comments[0].updated_at = new Date(NOW + 2000).toISOString();
+    else {
+      const latest = evidence(); latest.id = 702;
+      latest.created_at = latest.updated_at = new Date(NOW + 2000).toISOString();
+      s.prs[0].comments.push(latest);
+    }
+    assert.equal(mergeGate(s.prs[0], 1, BASE).ok, false);
+    assert.equal(forIssue(s, 1)[0].kind, 'review');
+    s.prs[0].reviews[0].submitted_at = new Date(NOW + 3000).toISOString();
+    assert.equal(mergeGate(s.prs[0], 1, BASE).ok, true);
+  }
+});
+
+test('review reservations bind both source head and evidence revision', () => {
+  const s = withPr(), state = emptyState();
+  s.prs[0].reviews = [];
+  state.issues[1] = { reviews: { [HEAD]: stamp } };
+  const first = forIssue(s, 1, state)[0];
+  assert.equal(first?.kind, 'review'); // Legacy head-only reservation cannot certify evidence.
+  assert.ok(first.evidenceRevision);
+  state.issues[1].reviews[`${HEAD}:${first.evidenceRevision}`] = stamp;
+  assert.equal(forIssue(s, 1, state).length, 0);
+  s.prs[0].comments[0].updated_at = new Date(NOW + 2000).toISOString();
+  const second = forIssue(s, 1, state)[0];
+  assert.equal(second.kind, 'review');
+  assert.notEqual(second.evidenceRevision, first.evidenceRevision);
+});
+
+test('same-second review/evidence ambiguity holds, while a genuinely later review passes', () => {
+  const p = pull();
+  p.reviews[0].submitted_at = stamp;
+  assert.equal(reviewGate(p).request, true);
+  p.reviews[0].submitted_at = new Date(NOW + 1000).toISOString();
+  assert.equal(reviewGate(p).ok, true);
+});
+
+test('fresh evidence gets a bounded review wait even when the source head is old', () => {
+  const s = withPr(), state = emptyState();
+  s.prs[0].reviews = []; s.prs[0].reviewRequested = true;
+  state.issues[1] = { observedHead: HEAD, headSeenAt: new Date(NOW - WAIT_MS - 1).toISOString() };
+  assert.equal(forIssue(s, 1, state).length, 0);
+});
+
+test('review intent persists the exact evidence revision and aborts if it changes before request', async t => {
+  const dir = await temp(t), s = withPr(); s.prs[0].reviews = [];
+  const api = fake(s);
+  await runOnce({ stateDir: dir, apply: true, github: api, now: () => NOW, log: quiet });
+  const action = api.calls[0], saved = await loadState(dir);
+  assert.equal(saved.issues[1].reviews[`${HEAD}:${action.evidenceRevision}`], stamp);
+
+  const otherDir = await temp(t);
+  let reads = 0;
+  const racing = fake(s, { snapshot: async () => {
+    const copy = clone(s);
+    if (++reads > 1) copy.prs[0].comments[0].updated_at = new Date(NOW + 2000).toISOString();
+    return copy;
+  } });
+  const result = await runOnce({ stateDir: otherDir, apply: true, github: racing, now: () => NOW, log: quiet });
+  assert.equal(result.aborted, true);
+  assert.equal(racing.calls.length, 0);
+});
+
+test('confirmed conflict routes to bounded repair before attempting a behind-branch update', () => {
+  const s = withPr(3, { includesBase: false, mergeable: false, mergeable_state: 'dirty' });
+  assert.equal(forIssue(s, 3)[0].kind, 'repair');
+  s.issues[9].assignees = [coder];
+  assert.equal(forIssue(s, 3).length, 0); // Same pending-assignment lane guard.
+  s.issues[9].assignees = [];
+  const state = emptyState(); state.issues[3] = { repairs: 3 };
+  assert.equal(forIssue(s, 3, state)[0].kind, 'park');
+});
+
+for (const issueClosed of [false, true]) {
+  test(`GraphQL-only association survives PR merge with issue ${issueClosed ? 'closed' : 'open'}`, async () => {
+    const s = snapshot([1]), p = pull(1, { state: 'closed', body: '', merged: true, mergeInBase: true,
+      changed_files: 1, merge_commit_sha: OTHER });
+    if (issueClosed) { s.issues[0].state = 'closed'; s.issues[0].state_reason = 'completed'; }
+    const graph = { closingRefs: [{ repo: REPO, number: 1 }], threads: [] };
+    const api = new GitHub();
+    api.base = async () => BASE;
+    api.graph = async () => graph;
+    api.api = async route => {
+      if (route === 'user') return { login: 'operator' };
+      if (route.endsWith('/pulls/22')) return p;
+      if (route.includes('/compare/')) return { status: 'ahead' };
+      const n = Number(route.match(/\/issues\/(\d+)$/)?.[1]);
+      if (n) return s.issues[n - 1];
+      throw new Error(`Unexpected fixture route ${route}`);
+    };
+    api.pages = async route => {
+      if (route.includes('/tasks')) return [];
+      if (route.includes('/pulls?')) return [p];
+      if (route.endsWith('/files')) return p.files;
+      return [];
+    };
+    api.pull = async (number, base, prefetchedGraph) => ({ ...p, ...(prefetchedGraph ?? await api.graph(number)) });
+    const result = await api.snapshot();
+    assert.equal(result.prs.length, 1);
+    assert.equal(associatedIssue(result.prs[0]), 1);
+    if (issueClosed) assert.equal(completed(result.issues[0], result.prs), true);
+    else {
+      const state = emptyState(); state.inFlight = { id: 'merge', kind: 'merge', issue: 1, pr: 22 };
+      reconcile(state, result, quiet);
+      assert.equal(state.issues[1].needsPark, undefined);
+      assert.equal(forIssue(result, 1, state)[0].kind, 'close');
+    }
+  });
 }
 
 test('allowlist is exactly 1..21 and base policy reserves all model writers', () => {
@@ -686,8 +874,8 @@ test('scientific caveats require explicit zero blocking gaps, never silent accep
 
 test('issue16 human/device acceptance is never fabricated', () => {
   const s = withPr(16);
-  assert.equal(acceptanceGate(s.prs[0], 16).park, true);
-  assert.equal(forIssue(s, 16)[0].kind, 'park');
+  assert.equal(acceptanceGate(s.prs[0], 16).ok, false);
+  assert.equal(forIssue(s, 16)[0].kind, 'evidence');
 });
 
 test('new base updates before fresh acceptance/review and invalidates old approvals', () => {
@@ -705,10 +893,11 @@ test('update request deduplicates and then parks after bounded wait', () => {
   assert.equal(actions(s, state, NOW + WAIT_MS + 1)[0].kind, 'park');
 });
 
-test('review request deduplicates by head and times out visibly', () => {
+test('review request deduplicates by head/evidence revision and times out visibly', () => {
   const s = withPr(); s.prs[0].reviews = [];
-  assert.equal(forIssue(s, 1)[0].kind, 'review');
-  const state = emptyState(); state.issues[1] = { reviews: { [HEAD]: stamp } };
+  const action = forIssue(s, 1)[0];
+  assert.equal(action.kind, 'review');
+  const state = emptyState(); state.issues[1] = { reviews: { [`${HEAD}:${action.evidenceRevision}`]: stamp } };
   assert.equal(forIssue(s, 1, state).length, 0);
   assert.equal(actions(s, state, NOW + WAIT_MS + 1)[0].kind, 'park');
 });

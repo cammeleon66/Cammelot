@@ -115,7 +115,7 @@ export class GitHub {
     throw new Error('Pagination bound reached; refusing incomplete metadata');
   }
 
-  async mergedPull(number, baseSha) {
+  async mergedPull(number, baseSha, graph) {
     // Completed issues need only identity/scope/ancestry proof for dependency
     // readiness, not every historical CI run/review on every five-minute poll.
     const p = await this.api(`${ROOT}/pulls/${number}`);
@@ -129,7 +129,7 @@ export class GitHub {
       required(['ahead', 'behind', 'identical', 'diverged'].includes(comparison?.status), 'Missing historical merge ancestry');
       mergeInBase = ['ahead', 'identical'].includes(comparison.status);
     }
-    return { ...p, files, mergeInBase };
+    return { ...p, ...(graph ?? await this.graph(number)), files, mergeInBase };
   }
 
   async base() {
@@ -179,7 +179,7 @@ export class GitHub {
       threads: p.reviewThreads.nodes };
   }
 
-  async pull(number, baseSha) {
+  async pull(number, baseSha, prefetchedGraph) {
     required(Number.isSafeInteger(number) && number > 0, 'Invalid PR number');
     const p = await this.api(`${ROOT}/pulls/${number}`);
     required(p?.number === number && isSha(p.head?.sha) && typeof p.merged === 'boolean' &&
@@ -189,7 +189,7 @@ export class GitHub {
       Array.isArray(p.requested_reviewers), 'Incomplete PR metadata');
     const sha = p.head.sha;
     const [graph, files, reviews, reviewComments, comments, checks, statuses, runs, comparison, branchRuns, baseBlob, headBlob] = await Promise.all([
-      this.graph(number),
+      prefetchedGraph ?? this.graph(number),
       this.pages(`${ROOT}/pulls/${number}/files`),
       this.pages(`${ROOT}/pulls/${number}/reviews`),
       this.pages(`${ROOT}/pulls/${number}/comments`),
@@ -204,7 +204,8 @@ export class GitHub {
     required(files.length === p.changed_files, 'Incomplete PR file list');
     required(files.every(f => typeof f.filename === 'string'), 'Missing changed file path');
     for (const c of comments) required(Number.isSafeInteger(c.id) && typeof c.body === 'string' &&
-      typeof c.user?.login === 'string' && Number.isFinite(Date.parse(c.created_at)), 'Incomplete PR comment metadata');
+      typeof c.user?.login === 'string' && Number.isFinite(Date.parse(c.created_at)) &&
+      Number.isFinite(Date.parse(c.updated_at)), 'Incomplete PR comment metadata');
     required(isSha(comparison?.merge_base_commit?.sha), 'Missing base comparison');
     for (const r of reviews) required(Number.isSafeInteger(r.id) && r.user?.login && typeof r.state === 'string' && isSha(r.commit_id), 'Incomplete review');
     for (const c of checks) {
@@ -268,15 +269,18 @@ export class GitHub {
       for (const b of blockers) required(Number.isSafeInteger(b.number) && typeof b.repository_url === 'string', 'Incomplete blocker metadata');
       return { ...i, blockers, comments };
     });
-    // Unrelated human/bootstrap PRs are never actionable. Open coding PRs still
-    // count as resource consumers even when their association is unknown.
-    const candidates = pulls.filter(p => (isCoder(p.user) && p.state === 'open') ||
+    // Resolve GraphQL associations before dropping closed coding PRs: a merged
+    // implementation may have no body closing keyword at all.
+    const candidates = pulls.filter(p => isCoder(p.user) ||
       closingRefs(p.body).some(r => ISSUES.includes(r.number) && r.repo.toLowerCase() === REPO.toLowerCase()));
-    const prs = await mapBounded(candidates, p => {
-      const refs = closingRefs(p.body);
-      const finished = refs.length === 1 && issues.some(i => i.number === refs[0].number && i.state === 'closed');
-      return p.state === 'closed' && finished ? this.mergedPull(p.number, baseSha) : this.pull(p.number, baseSha);
-    });
+    const prs = (await mapBounded(candidates, async p => {
+      const graph = await this.graph(p.number);
+      const refs = closingRefs(p.body, graph.closingRefs);
+      if (p.state === 'closed' && !refs.some(r => ISSUES.includes(r.number) && r.repo.toLowerCase() === REPO.toLowerCase())) return null;
+      const finished = refs.length === 1 && refs[0].repo.toLowerCase() === REPO.toLowerCase() &&
+        issues.some(i => i.number === refs[0].number && i.state === 'closed');
+      return p.state === 'closed' && finished ? this.mergedPull(p.number, baseSha, graph) : this.pull(p.number, baseSha, graph);
+    })).filter(Boolean);
     return { viewer: user.login, baseSha, tasks, issues, prs };
   }
 

@@ -143,6 +143,9 @@ must also assess the issue's actual requested scope.
    node ID `BOT_kgDOC9w8XQ` or database ID `198982749`, never the login alone),
    not the independent review bot, and every changed and
    renamed-from path allowed.
+   GraphQL-only associations are fetched and retained for closed/merged coding
+   PRs too; removal or absence of a body `Fixes` line cannot drop accepted work
+   from merge reconciliation, explicit issue closure or dependency completion.
 2. Coding tasks **and branch Actions sessions** must be idle/completed, not queued
    or running. Failed/idle/waiting/timed-out/cancelled tasks require repair, not
    fabricated completion.
@@ -151,6 +154,8 @@ must also assess the issue's actual requested scope.
    merges. The next pass reads all runs again.
 4. Update a behind branch with `expected_head_sha`, then wait for new source-head
    evidence/checks/review. Update requests are deduplicated by source/base pair.
+   A confirmed `mergeable=false` conflict goes to the existing bounded repair
+   policy **before** update-branch, under the same slot/lane reservations.
 5. Require coding-bot **current-head acceptance evidence**, as a PR comment:
 
    ```text
@@ -159,14 +164,26 @@ must also assess the issue's actual requested scope.
 
    This is a claim for independent review, not an assertion that prose is a test.
    All criteria must be documented honestly. The reviewer must assess completeness,
-   tests, calibration claims and limitations. Issue16 remains parked when genuine
-   human/device evidence is required; the runner does not manufacture or auto-certify
-   that evidence. Existing PRs without the marker receive a deduplicated
+   tests, calibration claims and limitations. Only the **latest trusted
+   issue/head attestation revision** counts, ordered by creation/edit time. A newer
+   blocking or malformed correction revokes older success; ambiguous edit ordering
+   fails closed. Revision identity includes comment ID, revision time and a body hash.
+   Existing PRs without valid evidence receive a deduplicated
    administrative evidence request, separate from the failed-code repair budget.
    Nonblocking scientific caveats may remain in `limitations`, but nonempty
    limitations require an explicit empty `blockingGaps` declaration. Any blocking
    gap prevents acceptance. Legacy markers with empty limitations remain supported;
    ambiguous nonempty limitations are never silently interpreted as completion.
+   Issue16's actual acceptance criterion allows human/physical-device checks **or
+   explicitly documented release limitations**. Its marker must reference the
+   versioned summary in `releaseEvidence` and use either:
+   - `humanValidation: "completed"` with nonempty `humanEvidence` references to
+     genuine check results; or
+   - `humanValidation: "release-limitations"` with explicit nonempty `limitations`
+     and `blockingGaps: []`.
+   This does not waive the automated coverage or other acceptance criteria, nor
+   does the dispatcher claim to have performed human checks. Independent review
+   must assess the cited results/limitations and complete release evidence.
 6. Require the **latest current-head** trusted workflow run at
    `.github/workflows/minister-backlog-checks.yml`, name `Minister backlog checks`,
    from this repo/PR branch, event PR or workflow_dispatch, completed successfully,
@@ -199,6 +216,11 @@ must also assess the issue's actual requested scope.
    Historical resolved findings inside `<details>` are not new open findings.
    Narrow explicit approval/no-actionable-assessment text is also recognized;
    unfamiliar prose, missing reviews, or negative assessments never pass.
+   The review's `submitted_at` must be **strictly later than the selected evidence
+   creation/edit revision**. A same-head evidence edit invalidates older approval.
+   Review requests are deduplicated by source head **and evidence revision**, not
+   head alone; legacy head-only reservations cannot suppress the required fresh
+   review. Same-second ambiguous review/evidence timing holds rather than passing.
 9. Re-read all metadata before mutation. Immediately before merge, recheck source
    head/base, latest-base ancestry and all gates, then re-read base/head again.
    Merge uses only `gh pr merge --squash --match-head-commit SHA`.
@@ -240,7 +262,8 @@ the residual base race despite the final reads.
 - Durable intent is fsynced and atomically renamed **before** a subprocess call.
   After a timeout/crash/partial API failure, the next pass re-reads remote state
   first. Unconfirmed non-idempotent dispatch/repair/merge/close operations are
-  parked, not blindly retried. A review/update intent reserves its head even if
+  parked, not blindly retried. A review intent reserves its head/evidence revision
+  and an update intent its source/base pair even if
   the response was lost. An unconfirmed parking comment emits an error and records
   `visibilityUncertain`; it does not flood comments.
 - Reads are bounded to 100 entries/page and 10 pages/collection, with Link/header,
@@ -264,8 +287,9 @@ timestamp. This deliberately supersedes older remote parking markers.
 Keep `repairs`, fingerprints, evidence requests and review/update/follow-up/validation-rerun reservations; new commits naturally
 invalidate old head-specific gates. Do not erase `inFlight`: first run a dry-run
 to inspect reconciliation, then an apply pass to checkpoint it. Re-enable the
-scheduler only after reviewing that plan. Genuine unavailable human/device
-criteria still park again; clearing state is not evidence.
+scheduler only after reviewing that plan. Unmet required criteria still block;
+issue16 may use its explicitly permitted documented-limitations alternative.
+Clearing state is not evidence.
 
 **Reset/disaster recovery:** restore a known ledger backup, not an empty file.
 Remote comments recover repair fingerprints/evidence requests/parking, but cannot perfectly

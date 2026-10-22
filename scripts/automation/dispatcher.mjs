@@ -174,7 +174,7 @@ function prepare(state, action, now) {
     e.workPendingAt = a.createdAt;
     delete e.repairPendingHead;
   }
-  if (a.kind === 'review') (e.reviews ??= {})[a.head] = a.createdAt;
+  if (a.kind === 'review') (e.reviews ??= {})[`${a.head}:${a.evidenceRevision}`] = a.createdAt;
   if (a.kind === 'update') (e.updates ??= {})[`${a.head}:${a.base}`] = a.createdAt;
   if (a.kind === 'park') { e.parked = true; delete e.needsPark; }
   state.inFlight = a;
@@ -190,7 +190,7 @@ function decide(snapshot, state, now) {
 }
 
 const sameAction = (a, b) => ['kind', 'issue', 'pr', 'head', 'base', 'reason', 'reasonKey',
-  'runId', 'runAttempt', 'workflowId', 'baseBlob', 'headBlob'].every(k => a[k] === b[k]);
+  'runId', 'runAttempt', 'workflowId', 'baseBlob', 'headBlob', 'evidenceRevision'].every(k => a[k] === b[k]);
 
 export async function runOnce({ stateDir, apply = false, github, now = () => Date.now(), log = logDefault }) {
   if (!stateDir || !path.isAbsolute(stateDir)) throw new Error('--state-dir must be an absolute external directory');
