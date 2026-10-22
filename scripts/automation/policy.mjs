@@ -147,13 +147,12 @@ export function reviewGate(pr, evidence = acceptanceGate(pr, associatedIssue(pr)
     { ok: false, reason: `unknown or negative review assessment (${r.id})`, repair: true };
 }
 
-export function ciGate(pr) {
-  const head = pr.head.sha;
-  if (!Array.isArray(pr.runs) || !Array.isArray(pr.checks) || !Array.isArray(pr.statuses)) {
-    return { ok: false, reason: 'missing CI metadata' };
-  }
+// One selector for CI acceptance and its durable wait clock. An unrelated or
+// historical run must never advance the selected trusted execution identity.
+export function trustedValidationRun(pr) {
+  if (!Array.isArray(pr.runs)) return { ok: false, reason: 'missing CI metadata' };
   const runs = pr.runs.filter(r => r.path === WORKFLOW && r.name === 'Minister backlog checks' &&
-    r.head_sha === head && r.head_branch === pr.head.ref &&
+    r.head_sha === pr.head.sha && r.head_branch === pr.head.ref &&
     r.head_repository?.full_name?.toLowerCase() === REPO.toLowerCase() &&
     ['pull_request', 'workflow_dispatch'].includes(r.event)).sort((a, b) => b.run_number - a.run_number || b.run_attempt - a.run_attempt);
   const run = runs[0];
@@ -161,6 +160,22 @@ export function ciGate(pr) {
   if (new Set(runs.map(r => r.workflow_id)).size !== 1 || !Number.isSafeInteger(run.workflow_id)) {
     return { ok: false, reason: 'ambiguous trusted workflow identity' };
   }
+  if (runs.some(r => ['id', 'workflow_id', 'run_number', 'run_attempt'].some(k =>
+    !Number.isSafeInteger(r[k]) || r[k] < 1)) ||
+    runs.some(r => r.run_number === run.run_number && r.id !== run.id)) {
+    return { ok: false, reason: 'ambiguous trusted run/attempt identity' };
+  }
+  return { ok: true, run };
+}
+
+export function ciGate(pr) {
+  const head = pr.head.sha;
+  if (!Array.isArray(pr.runs) || !Array.isArray(pr.checks) || !Array.isArray(pr.statuses)) {
+    return { ok: false, reason: 'missing CI metadata' };
+  }
+  const selected = trustedValidationRun(pr);
+  if (!selected.ok) return selected;
+  const { run } = selected;
   if (run.status !== 'completed') return { ok: false, reason: 'trusted CI pending', infrastructurePending: true };
   if (run.conclusion === 'action_required') return {
     ok: false, reason: `trusted CI run ${run.id} action_required`, infrastructureHold: true, run,
@@ -178,12 +193,13 @@ export function ciGate(pr) {
     // another workflow which happens to use the same job name.
     latestChecks.set(`${c.app.id}:${c.workflowId ?? 'external'}:${c.name}`, c);
   }
-  if ([...latestChecks.values()].some(c => c.status !== 'completed')) return { ok: false, reason: 'pending checks' };
+  if ([...latestChecks.values()].some(c => c.status !== 'completed')) return { ok: false, reason: 'pending checks', infrastructurePending: true };
   if ([...latestChecks.values()].some(c => c.conclusion !== 'success')) return { ok: false, reason: 'unsuccessful check run', repair: true };
   const latest = new Map();
   for (const s of [...pr.statuses].sort((a, b) => a.id - b.id)) latest.set(s.context, s);
   if ([...latest.values()].some(s => s.sha !== head || s.state !== 'success')) {
-    return { ok: false, reason: 'pending or failing commit status', repair: [...latest.values()].some(s => ['error', 'failure'].includes(s.state)) };
+    const failed = [...latest.values()].some(s => ['error', 'failure'].includes(s.state));
+    return { ok: false, reason: 'pending or failing commit status', repair: failed, infrastructurePending: !failed };
   }
   return { ok: true, runId: run.id };
 }
@@ -263,7 +279,12 @@ export function acceptanceGate(pr, n) {
     evidenceRevision: `${latest.comment.id}:${revisedAt}:${createHash('sha256').update(String(latest.comment.body)).digest('hex')}` };
 }
 
+const idleOwnershipGate = unknownActive => unknownActive ?
+  { ok: false, ownershipHold: true, reason: 'active coding task ownership is unknown' } : { ok: true };
+
 export function mergeGate(pr, n, baseSha, { merged = false, unknownActive = false } = {}) {
+  const ownership = idleOwnershipGate(unknownActive);
+  if (!merged && !ownership.ok) return ownership;
   const scope = scopeProblem(pr, n);
   if (scope) return { ok: false, reason: scope, park: true };
   if (!Array.isArray(pr.codingRuns) || pr.codingRuns.some(r => r.status !== 'completed')) {
@@ -278,7 +299,6 @@ export function mergeGate(pr, n, baseSha, { merged = false, unknownActive = fals
   if (pr.mergeable !== true || !['clean', 'has_hooks'].includes(pr.mergeable_state)) {
     return { ok: false, reason: 'PR not mergeable', repair: pr.mergeable === false };
   }
-  if (unknownActive) return { ok: false, ownershipHold: true, reason: 'active coding task ownership is unknown' };
   return { ok: true };
 }
 
@@ -294,6 +314,12 @@ function commentsFor(snapshot, n) {
 
 const latestTimestamp = values => values.filter(value => typeof value === 'string' && Number.isFinite(Date.parse(value)))
   .sort((a, b) => Date.parse(a) - Date.parse(b)).at(-1);
+
+function validationWaitStarted(pr, entry, fallback) {
+  return latestTimestamp([entry.validationObservations?.[pr.head.sha]?.observedAt ?? fallback,
+    ...Object.entries(entry.validationReruns ?? {})
+      .filter(([key]) => key.startsWith(`${pr.head.sha}:`)).map(([, requested]) => requested)]);
+}
 
 export function issueLedger(snapshot, state, n) {
   const entry = state.issues[n] ?? {};
@@ -421,6 +447,10 @@ export function plan(snapshot, state, now) {
     }
     const p = opens[0];
     if (p) {
+      // An artifact-less task could own any PR. This shared fence precedes
+      // every idle-only PR action, not just merges and new coding requests.
+      const ownership = idleOwnershipGate(unknownActive);
+      if (!ownership.ok) { holds.push({ issue: n, reason: ownership.reason }); continue; }
       const seenAt = e.observedHead === p.head.sha ? e.headSeenAt : p.updated_at;
       const problem = scopeProblem(p, n, { checkFiles: false });
       if (problem) { actions.push({ kind: 'park', issue: n, pr: p.number, reason: problem }); continue; }
@@ -488,7 +518,7 @@ export function plan(snapshot, state, now) {
         const authorization = validationRerunGate(p, n, snapshot.baseSha);
         if (!authorization.ok) {
           holds.push({ issue: n, reason: authorization.reason });
-          if (now - Date.parse(seenAt) >= WAIT_MS) actions.push({ kind: 'park', issue: n, pr: p.number,
+          if (now - Date.parse(validationWaitStarted(p, e, seenAt)) >= WAIT_MS) actions.push({ kind: 'park', issue: n, pr: p.number,
             reason: `validation authorization held for 24h: ${authorization.reason}` });
           continue;
         }
@@ -530,8 +560,7 @@ export function plan(snapshot, state, now) {
         } else holds.push({ issue: n, reason: 'capacity or resource lane busy for evidence request' });
       } else if (gate.infrastructureHold || gate.infrastructurePending) {
         holds.push({ issue: n, reason: gate.reason });
-        const waitStarted = latestTimestamp([seenAt, ...Object.entries(e.validationReruns ?? {})
-          .filter(([key]) => key.startsWith(`${p.head.sha}:`)).map(([, requested]) => requested)]);
+        const waitStarted = validationWaitStarted(p, e, seenAt);
         if (now - Date.parse(waitStarted) >= WAIT_MS) actions.push({
           kind: 'park', issue: n, pr: p.number, reason: `validation infrastructure wait exceeded 24h: ${gate.reason}`,
         });

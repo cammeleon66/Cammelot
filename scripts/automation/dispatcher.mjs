@@ -3,7 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
 import { GitHub } from './github.mjs';
-import { ISSUES, BASE, REPO, plan, associatedIssue, isCoder, isSha, mergeGate, pendingWork, validationKey } from './policy.mjs';
+import { ISSUES, BASE, REPO, plan, associatedIssue, isCoder, isSha, mergeGate, pendingWork, validationKey, trustedValidationRun } from './policy.mjs';
 
 export const emptyState = () => ({ version: 1, repo: REPO, base: BASE, issues: {}, inFlight: null });
 const logDefault = event => console.log(JSON.stringify(event));
@@ -28,6 +28,13 @@ export function validateState(state) {
       if (e[key] !== undefined && !isSha(e[key])) throw new Error(`Invalid ledger SHA: ${key}`);
     }
     if (e.workPendingRunIds !== undefined && !validRunIds(e.workPendingRunIds)) throw new Error('Invalid pending run IDs');
+    if (e.validationObservations !== undefined) {
+      const observations = e.validationObservations;
+      if (!observations || typeof observations !== 'object' || Array.isArray(observations) ||
+        Object.entries(observations).some(([head, r]) => !isSha(head) || !r || typeof r !== 'object' ||
+          Array.isArray(r) || !date(r.observedAt) || ['workflowId', 'runId', 'runNumber', 'runAttempt']
+            .some(k => !Number.isSafeInteger(r[k]) || r[k] < 1))) throw new Error('Invalid validation observation');
+    }
     for (const key of ['reviews', 'updates', 'evidenceRequests', 'validationReruns']) {
       if (e[key] !== undefined && (!e[key] || typeof e[key] !== 'object' || Array.isArray(e[key]) ||
         Object.values(e[key]).some(value => !date(value)))) throw new Error(`Invalid ledger reservations: ${key}`);
@@ -107,6 +114,22 @@ export function observe(state, snapshot, now) {
     if (p && e.observedHead !== p.head.sha) {
       e.observedHead = p.head.sha;
       e.headSeenAt = new Date(now).toISOString();
+    }
+    if (p) {
+      const selected = trustedValidationRun(p);
+      if (selected.ok) {
+        const run = selected.run, previous = e.validationObservations?.[p.head.sha];
+        // Only a genuinely newer run/attempt of the same workflow advances
+        // this head's clock. Status/timestamp churn and regressed reads do not.
+        if (!previous || (previous.workflowId === run.workflow_id &&
+          ((run.run_number > previous.runNumber && run.id !== previous.runId) ||
+            (run.id === previous.runId && run.run_number === previous.runNumber && run.run_attempt > previous.runAttempt)))) {
+          (e.validationObservations ??= {})[p.head.sha] = {
+            workflowId: run.workflow_id, runId: run.id, runNumber: run.run_number,
+            runAttempt: run.run_attempt, observedAt: new Date(now).toISOString(),
+          };
+        }
+      }
     }
     const pending = pendingWork(e);
     // Actions timestamps have second precision. Identity, not timestamp
@@ -226,6 +249,8 @@ export async function runOnce({ stateDir, apply = false, github, now = () => Dat
     // Re-read all scheduling, dependency, task, check, review, and association
     // metadata before mutation. No decisions from an old scheduler invocation.
     const fresh = await adapter.snapshot();
+    observe(state, fresh, now());
+    await checkpoint(stateDir, state); // Preserve new run clocks even if this action is aborted.
     const freshPlan = decide(fresh, state, now());
     if (!freshPlan.actions.some(a => sameAction(a, candidate))) {
       log({ level: 'warn', event: 'changed-before-action', issue: candidate.issue, kind: candidate.kind });

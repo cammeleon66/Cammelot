@@ -1425,3 +1425,204 @@ test('pending CI waits from the latest current-head rerun after an offline inter
   assert.equal(actions(s, state, NOW + 1000)[0].kind, 'park');
   assert.equal(state.issues[1].repairs, 0);
 });
+
+for (const [kind, change] of [
+  ['update', s => { s.prs[0].includesBase = false; }],
+  ['ready', s => { s.prs[0].draft = true; }],
+  ['merge', () => {}],
+  ['evidence', s => { s.prs[0].comments = []; }],
+  ['repair', s => { s.tasks[0].state = 'failed'; }],
+  ['rerun-validation', s => { s.prs[0].runs[0].conclusion = 'action_required'; }],
+  ['review', s => { s.prs[0].reviews = []; }],
+]) {
+  test(`shared unknown-ownership hold precedes idle PR action ${kind}`, () => {
+    for (const taskState of ['queued', 'in_progress']) {
+      const s = withPr(); change(s);
+      assert.equal(forIssue(s, 1)[0].kind, kind);
+      s.tasks.push({ id: 'unknown-writer', state: taskState, prIds: [] });
+      const result = plan(s, emptyState(), NOW);
+      assert.equal(result.actions.length, 0);
+      assert.ok(result.holds.some(h => h.issue === 1 && /ownership.*unknown/.test(h.reason)));
+    }
+  });
+  test(`fresh unknown-ownership race prevents idle PR action ${kind}`, async t => {
+    const dir = await temp(t), s = withPr(); change(s);
+    let reads = 0;
+    const api = fake(s, { snapshot: async () => {
+      const copy = clone(s);
+      if (++reads > 1) copy.tasks.push({ id: 'unknown-writer', state: 'in_progress', prIds: [] });
+      return copy;
+    } });
+    const result = await runOnce({ stateDir: dir, apply: true, github: api, now: () => NOW, log: quiet });
+    assert.equal(result.aborted, true);
+    assert.equal(api.calls.length, 0);
+    assert.equal((await loadState(dir)).inFlight, null);
+  });
+}
+
+test('final idle ownership guard precedes branch update and repair gate results', () => {
+  for (const overrides of [{ includesBase: false }, { mergeable: false }]) {
+    const gate = mergeGate(pull(1, overrides), 1, BASE, { unknownActive: true });
+    assert.equal(gate.ownershipHold, true);
+    assert.equal(gate.update, undefined);
+    assert.equal(gate.repair, undefined);
+  }
+});
+
+test('ready-triggered same-head validation gets a durable full wait after offline 24h', async t => {
+  const dir = await temp(t), s = withPr(1, { draft: true }), state = emptyState();
+  state.issues[1] = { observedHead: HEAD, headSeenAt: new Date(NOW - 2 * WAIT_MS).toISOString() };
+  await checkpoint(dir, state);
+  let time = NOW;
+  const api = fake(s);
+  const invoke = () => runOnce({ stateDir: dir, apply: true, github: api, now: () => time, log: quiet });
+  await invoke();
+  assert.deepEqual(api.calls.map(a => a.kind), ['ready']);
+  s.prs[0].draft = false;
+  s.prs[0].runs.push({ ...s.prs[0].runs[0], id: 402, run_number: 21, status: 'queued', conclusion: null });
+  time = NOW + 300000;
+  assert.equal((await invoke()).actions.length, 0);
+  const start = time;
+  time = start + WAIT_MS - 1;
+  s.prs[0].runs[1].status = 'in_progress';
+  s.prs[0].runs[1].updated_at = new Date(time).toISOString();
+  assert.equal((await invoke()).actions.length, 0);
+  time = start + WAIT_MS + 1;
+  await invoke();
+  assert.deepEqual(api.calls.map(a => a.kind), ['ready', 'park']);
+  assert.match(api.calls[1].reason, /validation infrastructure wait/);
+});
+
+test('trusted run and attempt observations renew once, independently of head age or trigger', async t => {
+  const dir = await temp(t), s = withPr(), state = emptyState();
+  const old = NOW - 2 * WAIT_MS;
+  s.prs[0].runs[0].status = 'queued'; s.prs[0].runs[0].conclusion = null;
+  observe(state, s, old);
+  await checkpoint(dir, state);
+  let ledger = await loadState(dir);
+  s.prs[0].runs.push({ ...s.prs[0].runs[0], id: 402, run_number: 21 });
+  observe(ledger, s, NOW);
+  assert.equal(actions(s, ledger, NOW).length, 0);
+  await checkpoint(dir, ledger);
+  ledger = await loadState(dir);
+  observe(ledger, s, NOW + WAIT_MS + 1);
+  assert.equal(actions(s, ledger, NOW + WAIT_MS + 1)[0].kind, 'park');
+  s.prs[0].runs[1].run_attempt = 2;
+  observe(ledger, s, NOW + WAIT_MS + 2);
+  assert.equal(actions(s, ledger, NOW + WAIT_MS + 2).length, 0);
+  await checkpoint(dir, ledger);
+  ledger = await loadState(dir);
+  observe(ledger, s, NOW + 2 * WAIT_MS + 3);
+  assert.equal(actions(s, ledger, NOW + 2 * WAIT_MS + 3)[0].kind, 'park');
+});
+
+test('older, untrusted, and regressed run observations cannot renew a pending CI clock', () => {
+  const s = withPr(), state = emptyState();
+  s.prs[0].runs[0].status = 'queued'; s.prs[0].runs[0].conclusion = null;
+  const older = { ...s.prs[0].runs[0], id: 400, run_number: 19 };
+  observe(state, s, NOW);
+  s.prs[0].runs.push(older,
+    { ...older, id: 900, run_number: 900, path: '.github/workflows/untrusted.yml' },
+    { ...older, id: 901, run_number: 901, head_sha: OTHER },
+    { ...older, id: 902, run_number: 902, event: 'push' },
+    { ...older, id: 903, run_number: 903, head_branch: 'unrelated' });
+  observe(state, s, NOW + WAIT_MS - 1);
+  assert.equal(actions(s, state, NOW + WAIT_MS + 1)[0].kind, 'park');
+  s.prs[0].runs = [older]; // Temporary remote regression is not a new execution.
+  observe(state, s, NOW + WAIT_MS + 2);
+  assert.equal(actions(s, state, NOW + WAIT_MS + 2)[0].kind, 'park');
+});
+
+test('fresh validation run aborts stale timeout parking and checkpoints its observation', async t => {
+  const dir = await temp(t), s = withPr(), state = emptyState();
+  s.prs[0].runs[0].status = 'queued'; s.prs[0].runs[0].conclusion = null;
+  observe(state, s, NOW - WAIT_MS - 1);
+  await checkpoint(dir, state);
+  let reads = 0;
+  const newer = { ...s.prs[0].runs[0], id: 402, run_number: 21 };
+  const api = fake(s, { snapshot: async () => {
+    const copy = clone(s);
+    if (++reads > 1) copy.prs[0].runs.push(newer);
+    return copy;
+  } });
+  const result = await runOnce({ stateDir: dir, apply: true, github: api, now: () => NOW, log: quiet });
+  assert.equal(result.aborted, true);
+  assert.equal(api.calls.length, 0);
+  s.prs[0].runs.push(newer);
+  const saved = await loadState(dir);
+  assert.equal(actions(s, saved, NOW + WAIT_MS - 1).length, 0);
+  assert.equal(actions(s, saved, NOW + WAIT_MS + 1)[0].kind, 'park');
+});
+
+test('validation after an update or ordinary push uses the new head run clock, not its head observation', () => {
+  const s = withPr(), state = emptyState(), old = NOW - 2 * WAIT_MS;
+  observe(state, s, old);
+  const p = s.prs[0];
+  p.head.sha = OTHER;
+  p.comments = [evidence(1, OTHER)];
+  p.reviews[0].commit_id = OTHER;
+  p.checks[0].head_sha = OTHER;
+  const next = { ...p.runs[0], id: 402, run_number: 21, head_sha: OTHER,
+    pull_requests: [{ number: p.number, head: { sha: OTHER } }], status: 'queued', conclusion: null };
+  observe(state, s, old + 1000); // Head arrived before CI was visible.
+  p.runs.push(next);
+  observe(state, s, NOW); // Delayed validation appears after another offline interval.
+  assert.equal(actions(s, state, NOW).length, 0);
+  assert.equal(state.issues[1].validationObservations[HEAD].observedAt, new Date(old).toISOString());
+  assert.equal(state.issues[1].validationObservations[OTHER].observedAt, stamp);
+  observe(state, s, NOW + WAIT_MS - 1);
+  assert.equal(actions(s, state, NOW + WAIT_MS + 1)[0].kind, 'park');
+});
+
+for (const waiting of ['checks', 'statuses']) test(`pending ${waiting} share the selected validation run clock`, () => {
+  const s = withPr(), state = emptyState();
+  observe(state, s, NOW - 2 * WAIT_MS);
+  s.prs[0].runs.push({ ...s.prs[0].runs[0], id: 402, run_number: 21 });
+  if (waiting === 'checks') s.prs[0].checks[0].status = 'queued';
+  else s.prs[0].statuses = [{ id: 1, context: 'other-check', sha: HEAD, state: 'pending' }];
+  observe(state, s, NOW);
+  assert.equal(actions(s, state, NOW).length, 0);
+  observe(state, s, NOW + WAIT_MS - 1);
+  assert.equal(actions(s, state, NOW + WAIT_MS + 1)[0].kind, 'park');
+});
+
+test('untrusted or ambiguous execution identities cannot replace the persisted trusted clock', () => {
+  for (const change of [
+    r => { r.path = '.github/workflows/untrusted.yml'; },
+    r => { r.name = 'Other workflow'; },
+    r => { r.head_repository = { full_name: 'other/repo' }; },
+    r => { r.head_branch = 'other-branch'; },
+    r => { r.head_sha = OTHER; },
+    r => { r.event = 'push'; },
+    r => { r.workflow_id = 999; },
+    r => { delete r.run_attempt; },
+    r => { r.run_number = 20; }, // Same run number but different ID is ambiguous.
+  ]) {
+    const s = withPr(), state = emptyState();
+    s.prs[0].runs[0].status = 'queued'; s.prs[0].runs[0].conclusion = null;
+    observe(state, s, NOW);
+    const before = clone(state.issues[1].validationObservations);
+    const untrusted = { ...s.prs[0].runs[0], id: 999, run_number: 999 };
+    change(untrusted);
+    s.prs[0].runs.push(untrusted);
+    observe(state, s, NOW + WAIT_MS - 1);
+    assert.deepEqual(state.issues[1].validationObservations, before);
+    assert.equal(ciGate(s.prs[0]).ok, false);
+  }
+});
+
+test('persisted validation run identities and observation dates are schema-validated', async t => {
+  const dir = await temp(t), state = emptyState(), s = withPr();
+  observe(state, s, NOW);
+  await checkpoint(dir, state);
+  for (const change of [
+    r => { r.runAttempt = 0; },
+    r => { r.observedAt = 'not-a-date'; },
+    r => { delete r.runId; },
+  ]) {
+    const invalid = clone(state);
+    change(invalid.issues[1].validationObservations[HEAD]);
+    await assert.rejects(checkpoint(dir, invalid), /Invalid validation observation/);
+    assert.deepEqual(await loadState(dir), state);
+  }
+});

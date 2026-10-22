@@ -85,7 +85,11 @@ milestone due date/number, then issue number. Labels are matched as `P0`/`P1`
 prefixes, including the live `priority:P0` / `priority:P1` / `priority:P2` names.
 Open implementation PRs, assignments awaiting PR association, pending
 repairs, and active sessions reserve capacity. Duplicate implementations park.
-Unknown active task association holds new starts conservatively.
+Unknown active task association holds new starts and all idle-only PR actions
+conservatively: branch updates, marking ready, review/evidence/repair requests,
+validation authorization, and merges. The shared hold also applies during the
+fresh-plan recheck and final merge gate; an artifact-less task may be a writer on
+any PR. Ownership becoming known releases the hold automatically, without a human gate.
 Capacity counts every active session individually, then adds open-work/assignment
 reservations not represented by those sessions. Duplicate sessions never hide an
 unrelated pending assignment. The same accounting gates evidence/repair follow-ups.
@@ -201,6 +205,16 @@ must also assess the issue's actual requested scope.
    at most three such requests per head, with a 24-hour bounded wait and no code-repair
    charge. A successful newer attempt counts only after its real Validate job and
    all remaining current-head checks succeed.
+   Validation waiting is tied to the selected trusted workflow **run ID + attempt**,
+   not the source-head age or trigger type. The ledger persists the latest trusted
+   run number/ID/attempt and its first-observed time separately for each head.
+   A newly observed run/attempt gets a full 24-hour wait, whether triggered by ready,
+   a branch update, an ordinary push, or a rerun. Polling the same execution,
+   status/timestamp changes, older/regressed runs, and untrusted or ambiguous runs
+   never renew that clock. Current-head rerun reservations also remain wait anchors.
+   Pending checks/statuses use the same clock. Fresh pre-action observations are
+   checkpointed even when revalidation aborts, so a new run prevents stale timeout
+   parking without making repeated invocations extend the wait indefinitely.
 7. All other current checks/statuses must also succeed, including
    `Running Copilot Code Review`. Zero checks, missing metadata, pending, cancelled,
    skipped, neutral or failed checks are not success. Superseded check attempts
