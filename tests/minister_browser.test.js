@@ -263,15 +263,20 @@ test('Previously finalized deaths stay terminal and clear stale care', { timeout
       Object.assign(patient,{moved:false,insideBuilding:null,state:'active',behaviorState:'queuing',hp:80,
         queueType:'hospital',queueBuilding:'hospital',waitWeeks:3,causeOfDeath:'natural'});
       QUEUES.hospital.agents.push(patient.id);
+      const originalSync=MoC.care.sync;
+      let careSyncs=0;
+      MoC.care.sync=function(){careSyncs++;return originalSync();};
       MoC.care.sync();
       finalizeAgentDeath(patient);
+      const syncsAfterFinalization=careSyncs;
       const before={
         graves:GRAVE_MARKERS.length,
         naturalDeaths:EVENT_LOG.filter(e=>e.type==='natural_death').length,
         history:patient.actionHistory.filter(e=>e.type==='died').length,
         episodes:MoC.care.episodes.filter(e=>e.agentId===patient.id).length,
         waiting:MoC.care.snapshot().waiting,
-        treatments:MoC.care.episodes.filter(e=>e.status==='treatment_started').length
+        treatments:MoC.care.episodes.filter(e=>e.status==='treatment_started').length,
+        finalizerSyncs:syncsAfterFinalization
       };
       // Simulate stale persisted queue/care fields on an already-finalized resident.
       delete patient.deathFinalized;
@@ -288,14 +293,16 @@ test('Previously finalized deaths stay terminal and clear stale care', { timeout
         queueType:patient.queueType,queueBuilding:patient.queueBuilding,inQueue:QUEUES.hospital.agents.includes(patient.id),
         episodes:MoC.care.episodes.filter(e=>e.agentId===patient.id).map(e=>e.status),
         waiting:MoC.care.snapshot().waiting,
-        treatments:MoC.care.episodes.filter(e=>e.status==='treatment_started').length
+        treatments:MoC.care.episodes.filter(e=>e.status==='treatment_started').length,
+        finalizerSyncs:careSyncs
       }};
     });
     assert.deepEqual(outcome.after,{
       graves:outcome.before.graves,naturalDeaths:outcome.before.naturalDeaths,history:outcome.before.history,
       state:'dead',behavior:'dead',hp:0,inside:null,queueType:null,queueBuilding:null,inQueue:false,
       episodes:['died_waiting'],waiting:outcome.before.waiting,
-      treatments:outcome.before.treatments
+      treatments:outcome.before.treatments,
+      finalizerSyncs:outcome.before.finalizerSyncs+2
     },'an already-finalized resident must not be counted twice, re-queued, or treated');
     assert.equal(outcome.before.episodes,1,'the waiting episode should be closed exactly once');
   }finally{await browser.close();await new Promise(resolve=>server.close(resolve));}

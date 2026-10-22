@@ -7247,7 +7247,6 @@ function finalizeAgentDeath(a){
     Object.values(QUEUES).forEach(q=>{
       q.agents=q.agents.filter(aid=>aid!==a.id);
     });
-    MoC.care?.sync();
     return;
   }
   a.hp=0; a.deathFinalized=true; a.state='dead'; a.behaviorState='dead';
@@ -7319,7 +7318,12 @@ function tick(){
   if (cycle % 50 === 0) captureSnapshot();
   agents.forEach(a=>{
     if(a.type!=='patient'&&a.type!=='citizen') return;
-    if(a.state==='dead'||a.deathFinalized||a.hp<=0||a.behaviorState==='dead'){
+    if(a.deathFinalized){
+      a.hp=0; a.state='dead'; a.behaviorState='dead'; a.insideBuilding=null; a.healingTicksLeft=0;
+      a.queueType=null; a.queueBuilding=null;
+      return;
+    }
+    if(a.state==='dead'||a.hp<=0||a.behaviorState==='dead'){
       finalizeAgentDeath(a);
       return;
     }
