@@ -135,6 +135,13 @@ npx playwright install chromium
 npm test
 ```
 
+`npm test` is the explicit release regression list, including the Minister
+browser and supported-deployment smoke tests. It deliberately excludes
+`tests/e2e_checks.test.js`: that legacy file checks static text and file/config
+existence for the older World/Docker/nginx setup, not the supported Minister
+runtime or its Pages/local-HTTP paths. It is not evidence that those legacy
+hosting paths are supported.
+
 ---
 
 ## Architecture
