@@ -2,7 +2,7 @@
 
 Updated: 2026-10-22
 Public game: https://cammelot.org/minister.html
-Model: `minister-care-5-rollout`
+Repository model: `minister-care-6-terminal-mortality` (deployment is verified separately from merge)
 Reference protocol: `no-discretionary-action-v1`
 
 This is the canonical status list. Older plans describe how the current release was built; their unchecked boxes are not active tasks.
@@ -49,7 +49,7 @@ Only these Minister hosting paths are supported:
 
 Run the focused evidence with `node --test tests/minister_deployment_smoke.test.js`; `npm test` includes the same test and is the release regression command. CI installs the declared dependencies and Chromium before running `npm test`. `tests/e2e_checks.test.js` is deliberately omitted from `npm test`: its legacy static string/file-existence checks concern the older World/Docker/nginx setup and do not exercise supported Minister behavior or hosting.
 
-The existing `Minister backlog checks / Validate` PR check is the master merge gate; the repository owner confirmed that fresh Validate checks are required on master, including for administrators ([issue #9 implementation note](https://github.com/cammeleon66/Cammelot/issues/9#issuecomment-6341267146)). The Pages workflow now deploys only on `site/**` pushes to `master`, with a job-level master-ref guard. Manual dispatch and the feature-branch publishing trigger are removed, so supported Pages releases follow the protected master PR path. The workflow relies on that existing branch gate; it does not duplicate the regression job. Branch-protection settings remain outside this repository change.
+The existing `Minister backlog checks / Validate` PR check is the master merge gate; the repository owner confirmed that fresh Validate checks are required on master, including for administrators ([issue #9 implementation note](https://github.com/cammeleon66/Cammelot/issues/9#issuecomment-6341267146)). The Pages workflow now deploys only on `site/**` pushes to `master`, with a job-level master-ref guard. Manual dispatch and the feature-branch publishing trigger are removed, so supported Pages releases follow the protected master PR path. The workflow relies on that existing branch gate; it does not duplicate the regression job. The `github-pages` environment must also allow only `master`: its obsolete feature-branch-only allowlist rejected deployment run `39807566702` and was corrected during F09 verification. Branch and environment protection are repository settings; verify them separately from this source file.
 
 ## Remaining agent work
 
