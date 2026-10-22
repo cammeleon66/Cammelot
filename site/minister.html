@@ -1481,8 +1481,17 @@ const MoC = (function(){
   const scenario = SCENARIOS[scenarioId] || null; // null => show picker
 
   // ── Game constants (GAME_DESIGN.md sections 4, 6) ──
-  const TICKS_PER_WEEK = 4;         // engine: waitWeeks += 0.25/tick
+  const TICKS_PER_WEEK = 4;         // one tick is 1/4 week
+  const TICKS_PER_DAY = TICKS_PER_WEEK / 7; // calendar day expressed at the model's 1/4-week resolution
   const QUARTER_TICKS = 13 * TICKS_PER_WEEK;   // 52 ticks per quarter
+  const TICKS_PER_YEAR = 52 * TICKS_PER_WEEK;   // 208 ticks per model year
+  const STARTUP_CYCLE = 30;         // display/render offset; elapsed model time starts at zero
+  function annualProbabilityToTick(probability){
+    if (!Number.isFinite(probability) || probability < 0 || probability > 1) {
+      throw new RangeError('Annual probability must be between 0 and 1.');
+    }
+    return probability === 0 ? 0 : 1 - Math.pow(1 - probability, 1 / TICKS_PER_YEAR);
+  }
   const TOTAL_QUARTERS = scenario ? scenario.quarters : 40;
 
   // ── Game state ──
@@ -1515,13 +1524,14 @@ const MoC = (function(){
   }
 
   // ── Quarter boundary hook (called from tick) ──
-  function seedTick(cycle){
-    // Deterministic per-tick reseed: sim outcomes depend only on (seed, cycle).
+  function seedTick(elapsedTick){
+    // Deterministic per-tick reseed: sim outcomes depend only on (seed, elapsed tick).
     // Render/UI randomness between ticks cannot desync runs this way.
-    Math.random = mulberry32((seed ^ Math.imul(cycle, 0x9E3779B9)) >>> 0);
+    Math.random = mulberry32((seed ^ Math.imul(elapsedTick, 0x9E3779B9)) >>> 0);
   }
-  function onTick(cycle){
-    const newQuarter = Math.min(TOTAL_QUARTERS + 1, Math.floor(cycle / QUARTER_TICKS) + 1);
+  function onTick(elapsedTick){
+    // Opening is elapsed tick 0; quarter 1 runs through tick 52, then the first council starts.
+    const newQuarter = Math.min(TOTAL_QUARTERS + 1, Math.floor(elapsedTick / QUARTER_TICKS) + 1);
     if (newQuarter !== S.quarter && !S.over) {
       S.quarter = Math.min(newQuarter, TOTAL_QUARTERS);
       if (newQuarter > TOTAL_QUARTERS) {
@@ -1567,8 +1577,9 @@ const MoC = (function(){
     updateHUD();
   });
 
-  const api = { S, onTick, seedTick, spend, adjustTrust, updateHUD, QUARTER_TICKS, TOTAL_QUARTERS, seed, IS_BASELINE,
-    SCENARIOS, scenario, dailySeed, mulberry32,
+  const api = { S, onTick, seedTick, spend, adjustTrust, updateHUD, QUARTER_TICKS, TICKS_PER_WEEK, TICKS_PER_DAY,
+    TICKS_PER_YEAR, STARTUP_CYCLE, annualProbabilityToTick, TOTAL_QUARTERS, seed, IS_BASELINE,
+    SCENARIOS, scenario, dailySeed, mulberry32, elapsedTick:() => modelTick,
     paused: false, onQuarter: null, onTermEnd: null, baseline: null };
   return api;
 })();
@@ -1790,7 +1801,7 @@ function logEvent(type, agent, detail) {
 // ═══ SPRINT 19: CAMMELOT GAZETTE DATA ═══
 const GAZETTE_HISTORY = []; // { day, season, year, entries, mood, moodClass, moodEmoji, stats, mayorComment, trendPeriod }
 const TREND_DATA = { periods: [] }; // each: { startCycle, endCycle, deaths, naturalDeaths, treatments, admissions, recoveries, queuePeak, avgWait, cost }
-let lastGazetteCycle = 0;
+let lastGazetteCycle = MoC.STARTUP_CYCLE;
 let mayorBubbleTimer = 0;
 let mayorBubbleText = '';
 // ═══ END GAZETTE DATA ═══
@@ -1807,7 +1818,7 @@ let insightQueueRecord = 0; // separate queue record tracker for insights
 
 // ═══ SPRINT 23: WEEKLY REPORT DATA ═══
 const WEEKLY_REPORTS = []; // { cycle, weekNumber, deaths, queues, financial, bias, moments }
-let lastWeeklyReportCycle = 0;
+let lastWeeklyReportCycle = MoC.STARTUP_CYCLE;
 // ═══ END WEEKLY REPORT DATA ═══
 
 // ═══ SPRINT 5: VISIBLE QUEUES ═══
@@ -1822,7 +1833,7 @@ const GRAVE_MARKERS = []; // {x, y, name, age, cause, waitWeeks, cycle, conditio
 // ── Sim ──
 // Sprint 26.3: Embed mode detection from URL parameters (?embed=true)
 const EMBED_MODE = new URLSearchParams(window.location.search).get('embed') === 'true';
-let cycle=0,mode='IST',autoTimer=null;
+let cycle=0,modelTick=0,mode='IST',autoTimer=null;
 // Persona A/B toggle — runner can prepend `var PERSONA_ENABLED=false;` before eval
 var PERSONA_ENABLED = (typeof PERSONA_ENABLED !== 'undefined') ? PERSONA_ENABLED : true;
     // Big Five -> behaviour modulation (O/C/E/A/N nudges the 7 params). Default ON; runner can prepend `var PERSONA_USE_BIGFIVE=false;`.
@@ -2099,7 +2110,7 @@ let timelineVisible = false;
 function captureSnapshot() {
   var pop = getPopulation();
   TIMELINE_SNAPSHOTS.push({
-    cycle: cycle,
+    cycle: modelTick,
     alive: pop.filter(function(a) { return a.hp > 0; }).length,
     dead: pop.filter(function(a) { return a.hp <= 0; }).length,
     avgWait: (function() { var w = agents.filter(function(a) { return a.waitWeeks > 0 && a.hp > 0; }); return w.length ? w.reduce(function(s,a) { return s + a.waitWeeks; }, 0) / w.length : 0; })()
@@ -2121,7 +2132,7 @@ function drawTimeline() {
   // Draw death event markers
   EVENT_LOG.forEach(function(e) {
     if (e.type !== 'died' && e.type !== 'natural_death') return;
-    var x = (e.cycle / maxCycle) * w;
+    var x = ((e.cycle - MoC.STARTUP_CYCLE) / maxCycle) * w;
     ctx.fillStyle = e.type === 'died' ? 'rgba(229,57,53,0.7)' : 'rgba(150,150,150,0.5)';
     ctx.fillRect(x - 1, 0, 2, h);
   });
@@ -2140,7 +2151,7 @@ function drawTimeline() {
   ctx.stroke();
 
   // Current position indicator
-  var curX = (cycle / maxCycle) * w;
+  var curX = (modelTick / maxCycle) * w;
   ctx.fillStyle = '#FFB300';
   ctx.fillRect(curX - 1, 0, 2, h);
 }
@@ -3838,6 +3849,15 @@ function pickFamilyType() {
 }
 
 // ── Sprint 27: Single agent spawner (refactored from loop body) ──
+function lifeStageForAge(age) {
+  if (age <= 5) return 'toddler';
+  if (age <= 12) return 'child';
+  if (age <= 17) return 'teen';
+  if (age <= 67) return 'adult';
+  if (age <= 79) return 'senior';
+  return 'elderly';
+}
+
 function spawnAgent(index, age, gender, surname) {
   let names;
   if (age <= 12) names = gender === 'M' ? FIRST_NAMES_CHILD_M : FIRST_NAMES_CHILD_F;
@@ -3865,13 +3885,7 @@ function spawnAgent(index, age, gender, surname) {
   else if (conditions.length > 0 && waitWeeks > 0) state = 'waiting';
   else if (conditions.length > 0) state = 'managed';
   // ── Sprint 26: Life-stage properties ──
-  let lifeStage = 'adult';
-  if (age <= 5) lifeStage = 'toddler';
-  else if (age <= 12) lifeStage = 'child';
-  else if (age <= 17) lifeStage = 'teen';
-  else if (age <= 67) lifeStage = 'adult';
-  else if (age <= 79) lifeStage = 'senior';
-  else lifeStage = 'elderly';
+  let lifeStage = lifeStageForAge(age);
   // Speed multiplier by age
   let speedMultiplier = 1.0;
   if (age < 13) speedMultiplier = 1.2;
@@ -3897,7 +3911,7 @@ function spawnAgent(index, age, gender, surname) {
   var _agentPersona = null;
   try { _agentPersona = assignPersona({id: id, age: age, gender: gender === 'M' ? 'male' : 'female'}, PERSONA_ARCHETYPES); } catch(_pe) {}
   return {
-    id, name: firstName + ' ' + surname, age, gender,
+    id, name: firstName + ' ' + surname, age, _initAge:age, gender,
     type: conditions.length > 0 ? 'patient' : 'citizen',
     conditions, hp, waitWeeks,
     x: pos.x, y: pos.y,
@@ -5452,8 +5466,9 @@ function drawBuildingStatus() {
 }
 
 // ═══ DAY/NIGHT CYCLE (Sprint 13) ═══
-function getTimeOfDay() {
-  const dayProgress = (cycle % 100) / 100;
+function getTimeOfDay(tick=modelTick) {
+  // Four elapsed ticks span seven model days; day phase is sampled at the model's tick resolution.
+  const dayProgress = ((tick / MoC.TICKS_PER_DAY) % 1 + 1) % 1;
   if (dayProgress < 0.2 || dayProgress >= 0.8) return { phase: 'night', t: dayProgress };
   if (dayProgress < 0.3) return { phase: 'dawn', t: (dayProgress - 0.2) / 0.1 };
   if (dayProgress < 0.7) return { phase: 'day', t: (dayProgress - 0.3) / 0.4 };
@@ -5596,7 +5611,7 @@ function drawWeather() {
 
 // ═══ SEASONS (Sprint 13) ═══
 function getSeason() {
-  return ['spring', 'summer', 'autumn', 'winter'][Math.floor(cycle / 250) % 4];
+  return ['spring', 'summer', 'autumn', 'winter'][Math.floor(modelTick / MoC.QUARTER_TICKS) % 4];
 }
 
 function drawSeasonalEffects() {
@@ -5876,7 +5891,7 @@ function advanceTownMovement(){
         const socialBoost = (a.personality === 'social' || b.personality === 'social') ? 1.67 : 1.0;
         const chatProb = (areFriendsOrFamily ? 0.009 : 0.003) * socialBoost;
         if (cdist < 0.03 && Math.random() < chatProb) {
-          const chatRng = seededRandom(hashCode(a.id + b.id + cycle));
+          const chatRng = seededRandom(hashCode(a.id + b.id + modelTick));
           const line = pickDialogue(a, b, chatRng);
           a.chatPartner = b.id; a.chatTimer = 120; a.chatBubbleText = line;
           b.chatPartner = a.id; b.chatTimer = 120; b.chatBubbleText = line;
@@ -6998,7 +7013,7 @@ function selectBuilding(building){
 
     // Specialist thought
     if(specialists.length>0){
-      const s=specialists[cycle%specialists.length];
+      const s=specialists[modelTick%specialists.length];
       const thought=s.thoughts[(s.currentThought||0)%s.thoughts.length];
       s.currentThought=(s.currentThought||0)+1;
       html+=`<div class="thought">${thought}</div>`;
@@ -7306,9 +7321,9 @@ function finalizeAgentDeath(a){
 
 function tick(){
   if (MoC.paused || MoC.S.over) return;
-  cycle++; const p=M[mode];
-  MoC.seedTick(cycle);
-  MoC.environment?.advance(cycle);
+  cycle++; modelTick++; const p=M[mode];
+  MoC.seedTick(modelTick);
+  MoC.environment?.advance(modelTick);
   agents.forEach(a=>{
     if((a.type==='patient'||a.type==='citizen')
        && (a.deathFinalized||a.state==='dead'||a.hp<=0||a.behaviorState==='dead')){
@@ -7321,7 +7336,7 @@ function tick(){
   if (EVENT_LOG.length > 1000) EVENT_LOG.splice(0, EVENT_LOG.length - 1000);
   if (GRAVE_MARKERS.length > 500) GRAVE_MARKERS.splice(0, GRAVE_MARKERS.length - 500);
   // Sprint 16: Capture timeline snapshot every 50 cycles
-  if (cycle % 50 === 0) captureSnapshot();
+  if (modelTick % 50 === 0) captureSnapshot();
   agents.forEach(a=>{
     if(a.type!=='patient'&&a.type!=='citizen') return;
     if(a.deathFinalized){
@@ -7332,6 +7347,15 @@ function tick(){
       finalizeAgentDeath(a);
       return;
     }
+    // Advance resident ages in model years, not by render or wall-clock time.
+    if (!Number.isFinite(a._ageStart)) {
+      a._ageStart = Number.isFinite(a.age) ? a.age : 40;
+      a._ageElapsedTicks = 0;
+    }
+    a._ageElapsedTicks = (Number.isInteger(a._ageElapsedTicks) ? a._ageElapsedTicks : 0) + 1;
+    a.age = Math.min(130, a._ageStart + a._ageElapsedTicks / MoC.TICKS_PER_YEAR);
+    a.lifeStage = lifeStageForAge(a.age);
+    a.speedMultiplier = a.age < 13 ? 1.2 : a.age >= 80 ? 0.5 : a.age >= 65 ? 0.7 : 1.0;
     if(a.moved) return;
     // Sprint 30: Capture pre-tick state for LLM trigger detection
     const _prevHp = a.hp;
@@ -7362,12 +7386,12 @@ function tick(){
     if(a.behaviorState!=='recovering'&&a.healingTicksLeft>0) a.healingTicksLeft=0;
 
     // --- NATURAL MORTALITY (age-based background) ---
-    const baseMortality = 48/5000/(365*4); // 48 deaths/year in 5000 pop, 4 ticks/day
+    const annualMortality = 48/5000; // Annual hazard input; conversion is a clock convention, not validation.
     let ageMult = 1.0;
     if(a.age >= 80) ageMult = 15.0;
     else if(a.age >= 65) ageMult = 5.0;
     else if(a.age >= 45) ageMult = 1.5;
-    if(Math.random() < baseMortality * ageMult){
+    if(Math.random() < MoC.annualProbabilityToTick(annualMortality * ageMult)){
       a.hp = 0;
       a.behaviorState = 'dead';
       a.causeOfDeath = 'natural';
@@ -7375,8 +7399,8 @@ function tick(){
       return;
     }
 
-    // === DISEASE STATE PROGRESSION (every 4 ticks ≈ 1 sim week) ===
-    if (cycle % 4 === 0 && a.conditions && a.conditions.length > 0) {
+    // === DISEASE STATE PROGRESSION (once per 4-tick model week) ===
+    if (modelTick % MoC.TICKS_PER_WEEK === 0 && a.conditions && a.conditions.length > 0) {
       // Treatment effect: ketenzorg (persistent for chronic conditions) or active hospital care in SOLL mode
       // Once ketenzorg is initiated, chronic care management continues indefinitely (real-world: diabetes mgmt, cardiac rehab, COPD monitoring)
       const ketenzorgActive = a.receivingKetenzorg === true;
@@ -7447,7 +7471,7 @@ function tick(){
     }
 
     // ═══ Sprint 26: LIFE-STAGE BEHAVIORS ═══
-    const timeOfDay = getTimeOfDay().phase;
+    const timeOfDay = getTimeOfDay(modelTick).phase;
 
     // ── 26.1: Day/Night Rhythm ──
     if (timeOfDay === 'night' && a.behaviorState !== 'at_hospital' && a.behaviorState !== 'queuing' && a.behaviorState !== 'at_gp' && a.behaviorState !== 'going_to_hospital' && a.behaviorState !== 'emergency' && a.behaviorState !== 'dead') {
@@ -7646,7 +7670,7 @@ function tick(){
       case 'roaming': {
         // Should this agent visit the GP?
         const hasConds=a.conditions.length>0;
-        let timeSinceGP=cycle-(a.lastGPCycle||-100);
+        let timeSinceGP=modelTick-(a.lastGPCycle||-100);
         const severe=a.conditions.some(c=>c.severity==='severe'||c.severity==='critical');
         const moderate=a.conditions.some(c=>c.severity==='moderate');
         // Dementia (F03) care-seeking delay — takes twice as long to decide
@@ -7711,7 +7735,7 @@ function tick(){
           a.behaviorState='queuing';
           a.queueBuilding=bldgId;
           a.queueType='gp';
-          a.lastGPCycle=cycle;
+          a.lastGPCycle=modelTick;
         }
         break;
       }
@@ -7817,11 +7841,11 @@ function tick(){
             var _secondOpinionDrive = (PERSONA_ENABLED && a.persona && a.persona.behavior && typeof a.persona.behavior.secondOpinionDrive === 'number')
               ? a.persona.behavior.secondOpinionDrive
               : 0.0;
-            if (a.conditions.length > 0 && (cycle - (a.lastSecondOpinionCycle || -9999)) > 120 && Math.random() < _secondOpinionDrive * 0.05) {
-              a.lastSecondOpinionCycle = cycle;
+            if (a.conditions.length > 0 && (modelTick - (a.lastSecondOpinionCycle || -9999)) > 120 && Math.random() < _secondOpinionDrive * 0.05) {
+              a.lastSecondOpinionCycle = modelTick;
               a.behaviorState = 'going_to_gp';
               a.pathComplete = false;
-              a.lastGPCycle = cycle - 25;
+              a.lastGPCycle = modelTick - 25;
               logEvent('second_opinion', a, 'Seeking another GP opinion');
               addHistory(a, 'second_opinion', 'I want one more opinion before I fully trust this plan.');
               addMemory(a, 'second_opinion', 'Asked for a second opinion after GP treatment', 3);
@@ -8054,7 +8078,7 @@ function tick(){
   // IST: Basic clinical triage (severity + HP — the way real hospitals work today)
   // SOLL: AI-enhanced triage (Digital Twin data, digital literacy, bias mechanisms)
   let admissionSlots = MoC.care ? MoC.care.availableStarts(QUEUES.hospital?.agents.length || 0,
-    agents.filter(a => (a.type==='patient'||a.type==='citizen') && a.behaviorState === 'at_hospital' && isLivingResident(a)).length) : (cycle % 2 === 0 ? 1 : 0);
+    agents.filter(a => (a.type==='patient'||a.type==='citizen') && a.behaviorState === 'at_hospital' && isLivingResident(a)).length) : (modelTick % 2 === 0 ? 1 : 0);
   while (admissionSlots-- > 0) {
     const hq = QUEUES.hospital;
     if (hq && hq.agents.length > 0) {
@@ -8110,8 +8134,8 @@ function tick(){
 
   S.res+=2; S.msgs++; S.waste+=NZA_GP_CONSULT_EUR*p.admin;
 
-  // Weekly GP reset (every 28 ticks ≈ 1 sim week)
-  if(cycle % 28 === 0){
+  // Reset the weekly GP count once per 4-tick model week.
+  if(modelTick % MoC.TICKS_PER_WEEK === 0){
     agents.filter(g=>g.type==='gp').forEach(g=>{g.patientsSeenToday=0;});
   }
 
@@ -8146,22 +8170,22 @@ function tick(){
   });
 
   // Chat dialogue
-  if(cycle%8===0){
+  if(modelTick%8===0){
     const traveling=agents.filter(a=>a.hp>0&&a.behaviorState==='going_to_hospital');
-    if(traveling.length){ const a=traveling[cycle%traveling.length];
+    if(traveling.length){ const a=traveling[modelTick%traveling.length];
       say(a.name,`Week ${Math.round(a.waitWeeks)}. HP: ${Math.round(a.hp)}/100. Heading to hospital...`);}
   }
-  if(cycle%10===0){
+  if(modelTick%10===0){
     const recovering=agents.filter(a=>a.behaviorState==='recovering');
-    if(recovering.length){ const a=recovering[cycle%recovering.length];
+    if(recovering.length){ const a=recovering[modelTick%recovering.length];
       say(a.name,`Recovery going well. HP: ${Math.round(a.hp)}/100.`);}
   }
-  if(cycle%12===0){
+  if(modelTick%12===0){
     say('Dr. de Jong',`Admin load ${Math.round(p.admin*100)}%. ${p.admin>0.2?'Too much paperwork!':'Manageable.'}`);
   }
 
   // ═══ Sprint 10: Cognitive Loop (every 8 ticks) ═══
-  if(cycle%8===0){
+  if(modelTick%8===0){
     agents.forEach(a=>{
       if(a.type!=='patient'&&a.type!=='citizen') return;
       if(a.hp<=0) return;
@@ -8186,7 +8210,7 @@ function tick(){
         ? (_dt.riskPct > 25 || (_dt.deteriorating && _dt.riskPct > 15))
         : (_dt.riskPct > 60));
       if(_fire){
-        const timeSinceGP = cycle - (a.lastGPCycle || -100);
+        const timeSinceGP = modelTick - (a.lastGPCycle || -100);
         if(timeSinceGP > 10){
           var _route = true;
           if(mode === 'SOLL'){
@@ -8251,7 +8275,7 @@ function tick(){
   }
 
   // ═══ Sprint 10: FHIR Observations (every 10 ticks) ═══
-  if(cycle%10===0){
+  if(modelTick%10===0){
     agents.forEach(a=>{
       if(a.type!=='patient'&&a.type!=='citizen') return;
       if(a.hp<=0) return;
@@ -8261,10 +8285,10 @@ function tick(){
   }
 
   // ═══ Sprint 11: Bias tracking (every 50 cycles) ═══
-  if(cycle%50===0) trackBiasData();
+  if(modelTick%50===0) trackBiasData();
 
   // ═══ Research Agent: Federated query (every 100 cycles, SOLL only) ═══
-  if (mode === 'SOLL' && cycle % 100 === 0 && cycle > 0) {
+  if (mode === 'SOLL' && modelTick % 100 === 0 && modelTick > 0) {
     var researchAgent = agents.find(a => a.id === 'research-agent');
     if (researchAgent) {
       researchAgent.state = 'querying';
@@ -8313,7 +8337,7 @@ function tick(){
   }
 
   // ═══ Benchmark Agent: Quality metrics (every 200 cycles, SOLL only) ═══
-  if (mode === 'SOLL' && cycle % 200 === 0 && cycle > 0) {
+  if (mode === 'SOLL' && modelTick % 200 === 0 && modelTick > 0) {
     var benchAgent = agents.find(a => a.id === 'benchmark-agent');
     if (benchAgent) {
       benchAgent.state = 'collecting';
@@ -8344,7 +8368,7 @@ function tick(){
   }
 
   // ═══ Sprint 29: Dynamic disease acquisition — healthy agents can get sick ═══
-  if (cycle % 10 === 0) {
+  if (modelTick % 10 === 0) {
     agents.forEach(function(a) {
       if (a.type === 'gp' || a.type === 'specialist' || a.type === 'research' || a.type === 'benchmark' || a.hp <= 0) return;
       var onsetProb = 0;
@@ -8375,19 +8399,19 @@ function tick(){
   updateWeather();
 
   // ═══ Sprint 11: QA auto-run (every 100 cycles) ═══
-  if(cycle%100===0) runQAChecks();
+  if(modelTick%100===0) runQAChecks();
 
   // ═══ Sprint 19: Auto-generate Gazette every 100 cycles ═══
-  if(cycle%100===0 && cycle>0) autoGenerateGazette();
+  if(modelTick%100===0 && modelTick>0) autoGenerateGazette();
 
   // ═══ Sprint 20: Check for shareable moments ═══
-  checkForMoments(cycle);
+  checkForMoments(modelTick);
 
   // ═══ Sprint 23: Insight Engine (every 10 cycles) ═══
-  if (cycle % 10 === 0 && cycle > 0) runInsightEngine();
+  if (modelTick % 10 === 0 && modelTick > 0) runInsightEngine();
 
-  // ═══ Sprint 23: Weekly Report Generator (every 700 cycles) ═══
-  if (cycle % 700 === 0 && cycle > 0) generateWeeklyReport();
+  // ═══ Sprint 23: Weekly Report Generator ═══
+  if (modelTick % MoC.TICKS_PER_WEEK === 0 && modelTick > 0) generateWeeklyReport();
 
   // ═══ Sprint 23: Burnout Cascade Processing ═══
   processBurnoutCascade();
@@ -8409,13 +8433,13 @@ function tick(){
   updateTicker(); // Sprint 6
   if (timelineVisible) drawTimeline(); // Sprint 16
   if(selectedAgent){const a=agents.find(e=>e.id===selectedAgent);if(a)updateAgentLive(a);}
-  else if(cycle%10===0&&panelIsTownFeed){try{showTownFeed();}catch(e){}} // Auto-refresh feed every 10 ticks
+  else if(modelTick%10===0&&panelIsTownFeed){try{showTownFeed();}catch(e){}} // Auto-refresh feed every 10 ticks
   // Auto-save removed for website version
   // Complete the clinical tick before a quarter hook can pause or show a dialog.
   // Player and baseline both process every boundary tick exactly once.
   MoC.care?.sync();
-  if (MoC.care) MoC.runSnapshots[cycle] = MoC.care.snapshot();
-  MoC.onTick(cycle);
+  if (MoC.care) MoC.runSnapshots[modelTick] = MoC.care.snapshot();
+  MoC.onTick(modelTick);
 }
 
 function batch(n){for(let i=0;i<n;i++)tick();}
@@ -8424,7 +8448,7 @@ function resetSim(){
   if(autoTimer){clearInterval(autoTimer);autoTimer=null;}
   var playBtn = document.getElementById('btn-play');
   if (playBtn) playBtn.textContent = '▶ Play';
-  cycle=0; S={res:6,msgs:0,waste:0};
+  cycle=MoC.STARTUP_CYCLE; modelTick=0; S={res:6,msgs:0,waste:0};
   taxiMeterDisplayed=0; taxiMeterFlash=0; // Sprint S2
   proactiveAlertCount=0; // Sprint S5
   erAdmissionCount=0; // Blog-Ready Sprint
@@ -8439,11 +8463,11 @@ function resetSim(){
   FHIR_STORE.length=0;
   A2A_MESSAGES.length=0;
   TIMELINE_SNAPSHOTS.length=0; // Sprint 16
-  GAZETTE_HISTORY.length=0; TREND_DATA.periods.length=0; lastGazetteCycle=0; mayorBubbleTimer=0; mayorBubbleText=''; // Sprint 19
+  GAZETTE_HISTORY.length=0; TREND_DATA.periods.length=0; lastGazetteCycle=MoC.STARTUP_CYCLE; mayorBubbleTimer=0; mayorBubbleText=''; // Sprint 19
   MOMENTS.items.length=0; MOMENTS.queueRecord=0; // Sprint 20
   // Sprint 23: Clear Insight Engine & Weekly Reports
   INSIGHT_LOG.length=0; Object.keys(INSIGHT_FIRED).forEach(function(k){delete INSIGHT_FIRED[k];}); insightQueueRecord=0;
-  WEEKLY_REPORTS.length=0; lastWeeklyReportCycle=0; window._systemOverload=false;
+  WEEKLY_REPORTS.length=0; lastWeeklyReportCycle=MoC.STARTUP_CYCLE; window._systemOverload=false;
   // Sprint S4: Clear Gini & bias history
   BIAS_DATA.giniHistory.length=0; BIAS_DATA.currentGini=0;
   BIAS_DATA.biasScoreHistory.length=0; BIAS_DATA.currentBiasScore=0;
@@ -8452,6 +8476,7 @@ function resetSim(){
   // localStorage.removeItem removed for website version
   agents.forEach(a=>{
     a.hp=a._initHP; a.waitWeeks=a._initWaitWeeks;
+    a.age=Number.isFinite(a._initAge)?a._initAge:a.age;a._ageStart=a.age;a._ageElapsedTicks=0;
     a.conditions=JSON.parse(JSON.stringify(a._initConditions));
     a.state=a._initState; a.insideBuilding=a._initInsideBuilding;
     a.x=a._initX; a.y=a._initY; a.tx=a.x; a.ty=a.y;
@@ -8714,13 +8739,12 @@ function showPlayground(){
 
 // ═══ SPRINT 19: CAMMELOT GAZETTE ENGINE ═══
 
-function getSeasonAndDay(c) {
-  var ticksPerDay = 4;
-  var totalDays = Math.floor(c / ticksPerDay);
-  var dayOfYear = totalDays % 365;
-  var year = Math.floor(totalDays / 365) + 1;
-  var season = dayOfYear < 91 ? 'Spring' : dayOfYear < 182 ? 'Summer' : dayOfYear < 273 ? 'Autumn' : 'Winter';
-  return { day: totalDays + 1, dayOfYear: dayOfYear, year: year, season: season };
+function getSeasonAndDay(elapsedTick) {
+  var totalWeeks = Math.floor(elapsedTick / MoC.TICKS_PER_WEEK);
+  var weekOfYear = totalWeeks % 52;
+  var year = Math.floor(totalWeeks / 52) + 1;
+  var season = ['Spring', 'Summer', 'Autumn', 'Winter'][Math.floor(weekOfYear / 13)];
+  return { day: totalWeeks * 7 + 1, dayOfYear: weekOfYear * 7, year: year, season: season };
 }
 
 function generateGazetteData() {
@@ -8855,7 +8879,7 @@ function generateGazetteData() {
     mayorComment = 'Another day in Cammelot. ' + alive.length + ' citizens going about their lives.';
   }
 
-  var dateInfo = getSeasonAndDay(endCycle);
+  var dateInfo = getSeasonAndDay(modelTick);
 
   // Trend period data
   var trendPeriod = {
@@ -9008,7 +9032,7 @@ function showGazette() {
     currentData = GAZETTE_HISTORY[GAZETTE_HISTORY.length - 1];
   }
 
-  var dateInfo = getSeasonAndDay(cycle);
+  var dateInfo = getSeasonAndDay(modelTick);
   var html = '<div class="panel-back" data-action="showTownFeed">← Ministry</div>';
 
   // Main gazette header
@@ -9431,7 +9455,7 @@ function trackBiasData() {
   BIAS_DATA.currentGini = gini;
 
   // ── Fairness Guardrail: auto-activate in SOLL when age group avg wait exceeds 120% of mean ──
-  if (mode === 'SOLL' && cycle > 500) {
+  if (mode === 'SOLL' && modelTick > 500) {
     var pop = agents.filter(function(a) { return (a.type === 'patient' || a.type === 'citizen') && a.hp > 0 && a.waitWeeks > 0; });
     var globalMean = pop.length > 0 ? pop.reduce(function(s,a) { return s + a.waitWeeks; }, 0) / pop.length : 0;
     var threshold120 = globalMean * 1.2;
@@ -9706,7 +9730,7 @@ function buildROIHTML() {
 
   // Admin waste: GP hours × rate × admin%
   var gpHoursPerCycle = gps.length * 0.25;
-  var adminWasteEUR = Math.round(gpHoursPerCycle * p.admin * NZA_GP_CONSULT_EUR * cycle);
+  var adminWasteEUR = Math.round(gpHoursPerCycle * p.admin * NZA_GP_CONSULT_EUR * modelTick);
 
   // Preventable deaths cost
   var sysDeaths = EVENT_LOG.filter(function(e) { return e.type === 'died'; }).length;
@@ -9721,7 +9745,7 @@ function buildROIHTML() {
   var totalCostEUR = adminWasteEUR + preventableDeathCostEUR + treeViolationCostEUR;
 
   // SOLL comparison
-  var sollAdmin = Math.round(gpHoursPerCycle * 0.05 * NZA_GP_CONSULT_EUR * cycle);
+  var sollAdmin = Math.round(gpHoursPerCycle * 0.05 * NZA_GP_CONSULT_EUR * modelTick);
   var savings = adminWasteEUR - sollAdmin;
 
   return '<hr class="stats-divider">' +
@@ -10154,9 +10178,9 @@ function updateUI(){
     hTreeEl.className = 'n ' + (treeViolations > 20 ? 'r' : treeViolations > 5 ? 'y' : 'g');
   }
 
-  // Deaths This Week — deaths in last 28 cycles (7 days × 4 ticks/day)
+  // Deaths This Week — deaths in the last four elapsed model ticks.
   var recentDeathsWeek = EVENT_LOG.filter(function(e) {
-    return (e.type === 'died' || e.type === 'natural_death') && e.cycle > cycle - 28;
+    return (e.type === 'died' || e.type === 'natural_death') && e.cycle > cycle - MoC.TICKS_PER_WEEK;
   }).length;
   var hDWEl = document.getElementById('hDW');
   if (hDWEl) {
@@ -10399,7 +10423,7 @@ function loadGame(){ return false; }
 function showSavePrompt(){ startNewGame(); }
 
 function startNewGame(){
-  cycle=30; // Start at day phase so citizens are visible immediately
+  cycle=MoC.STARTUP_CYCLE; modelTick=0; // Keep the startup render offset; model time begins at tick 0.
   // Each step isolated so one failure does not kill everything
   try { updateUI(); } catch(e) { console.error('updateUI error:', e); }
   try { initCharSprites(); } catch(e) { console.error('initCharSprites error:', e); }
@@ -10490,7 +10514,7 @@ document.getElementById('ticker-content')?.addEventListener('click', function(ev
 
 // ═══ SPRINT 6: CONTEXTUAL TOOLTIPS ═══
 const METRIC_TOOLTIPS = {
-  'hC': '⏰ Simulation Cycle: Each cycle represents roughly one day in Cammelot. Four ticks make one week.',
+  'hC': '⏰ Elapsed model time: one tick is 1/4 week; four ticks make one week. The displayed cycle starts at 30.',
   'hP': '👥 Living Citizens: Currently alive out of the starting population. Number in parentheses shows citizens in hospital.',
   'hG': '💀 Deaths: Citizens lost. Includes both natural deaths and system failures (preventable deaths from waiting too long).',
   'hW': '⏳ Average Wait Time: How long citizens wait for specialist care. The legal maximum (Treeknorm) is 4 weeks.',
@@ -10506,7 +10530,7 @@ const METRIC_TOOLTIPS = {
 const LABEL_TOOLTIPS = {
   'Alive': '👥 Living Citizens: Currently alive out of the starting population.',
   'Pop': '👥 Population: Total citizens in the simulation, based on CBS demographic data.',
-  'Cycle': '⏰ Simulation Cycle: Each cycle represents roughly one day in Cammelot.',
+  'Cycle': '⏰ Elapsed model time: one tick is 1/4 week; four ticks make one week. The displayed cycle starts at 30.',
   'Deaths': '💀 Deaths: Citizens lost. Includes both natural deaths and system failures (preventable).',
   'Ghosts': '💀 Deaths: Citizens who have died. Hover the Stats panel to see system vs natural breakdown.',
   'Avg Wait': '⏳ Average Wait Time: How long citizens wait for specialist care. The legal maximum (Treeknorm) is 4 weeks.',
@@ -11014,7 +11038,8 @@ function showMomentToast(moment) {
   showToast(moment.headline, 5000, extraClass, copyText);
 }
 
-function checkForMoments(currentCycle) {
+function checkForMoments(elapsedTick) {
+  const currentCycle = MoC.STARTUP_CYCLE + elapsedTick;
   var recentEvents = EVENT_LOG.filter(function(e) { return e.cycle >= currentCycle - 5 && e.cycle <= currentCycle; });
 
   // Death moments (system failure deaths only, not natural)
@@ -11044,13 +11069,13 @@ function checkForMoments(currentCycle) {
   }
 
   // Milestone cycles
-  if (currentCycle > 0 && currentCycle % 500 === 0) {
+  if (elapsedTick > 0 && elapsedTick % 500 === 0) {
     var totalDeaths = agents.filter(function(a) { return (a.type === 'patient' || a.type === 'citizen') && a.hp <= 0; }).length;
     var aliveCount = agents.filter(function(a) { return a.hp > 0 && (a.type === 'patient' || a.type === 'citizen'); }).length;
     addMoment('milestone', {
-      headline: '📊 Cycle ' + currentCycle + ' complete',
+      headline: '📊 Elapsed tick ' + elapsedTick + ' complete',
       detail: aliveCount + ' alive, ' + totalDeaths + ' lost. ' + mode + ' mode.',
-      data: { cycle: currentCycle, alive: aliveCount, deaths: totalDeaths }
+      data: { tick: elapsedTick, alive: aliveCount, deaths: totalDeaths }
     });
   }
 }
@@ -11137,7 +11162,7 @@ function addInsight(insightType, headline, explanation, dataPoint) {
 }
 
 function runInsightEngine() {
-  var dateInfo = getSeasonAndDay(cycle);
+  var dateInfo = getSeasonAndDay(modelTick);
   var yearNum = dateInfo.year;
   var p = M[mode];
   var pop = agents.filter(function(a) { return a.type === 'patient' || a.type === 'citizen'; });
@@ -11146,7 +11171,7 @@ function runInsightEngine() {
   // ── 1. First death of the year ──
   var yearKey = 'first_death_year_' + yearNum;
   if (!INSIGHT_FIRED[yearKey]) {
-    var yearStartCycle = (yearNum - 1) * 365 * 4; // 4 ticks per day
+    var yearStartCycle = MoC.STARTUP_CYCLE + (yearNum - 1) * MoC.TICKS_PER_YEAR;
     var deathsThisYear = EVENT_LOG.filter(function(e) {
       return e.type === 'died' && e.cycle >= yearStartCycle && e.cycle <= cycle;
     });
@@ -11165,7 +11190,7 @@ function runInsightEngine() {
   // ── 2. All GPs at burnout (>70) ──
   if (gpAgents.length > 0) {
     var allBurnedOut = gpAgents.every(function(g) { return (g.burnoutLevel || 0) > 70; });
-    var burnoutKey = 'all_gps_burnout_' + Math.floor(cycle / 100);
+    var burnoutKey = 'all_gps_burnout_' + Math.floor(modelTick / 100);
     if (allBurnedOut && !INSIGHT_FIRED[burnoutKey]) {
       INSIGHT_FIRED[burnoutKey] = true;
       var avgBurn = Math.round(gpAgents.reduce(function(s, g) { return s + (g.burnoutLevel || 0); }, 0) / gpAgents.length);
@@ -11179,7 +11204,7 @@ function runInsightEngine() {
   }
 
   // ── 3. Age bias detected ──
-  if (cycle % 50 === 0 && cycle > 100) {
+  if (modelTick % 50 === 0 && modelTick > 100) {
     var elderlyWaiters = pop.filter(function(a) { return a.hp > 0 && a.age >= 70 && a.waitWeeks > 0; });
     var youngWaiters = pop.filter(function(a) { return a.hp > 0 && a.age < 70 && a.waitWeeks > 0; });
     if (elderlyWaiters.length >= 2 && youngWaiters.length >= 2) {
@@ -11187,7 +11212,7 @@ function runInsightEngine() {
       var youngAvgWait = youngWaiters.reduce(function(s, a) { return s + a.waitWeeks; }, 0) / youngWaiters.length;
       var waitDiff = elderlyAvgWait - youngAvgWait;
       if (waitDiff > 2) {
-        var biasKey = 'age_bias_' + Math.floor(cycle / 200);
+        var biasKey = 'age_bias_' + Math.floor(modelTick / 200);
         if (!INSIGHT_FIRED[biasKey]) {
           INSIGHT_FIRED[biasKey] = true;
           addInsight('age_bias',
@@ -11220,8 +11245,8 @@ function runInsightEngine() {
   }
 
   // ── 5. Milestone cycles (every 500) ──
-  if (cycle > 0 && cycle % 500 === 0) {
-    var milestoneKey = 'milestone_' + cycle;
+  if (modelTick > 0 && modelTick % 500 === 0) {
+    var milestoneKey = 'milestone_' + modelTick;
     if (!INSIGHT_FIRED[milestoneKey]) {
       INSIGHT_FIRED[milestoneKey] = true;
       var totalDeaths = pop.filter(function(a) { return a.hp <= 0; }).length;
@@ -11414,7 +11439,7 @@ function showWeeklyReport() {
 
   if (WEEKLY_REPORTS.length === 0) {
     html += '<div style="text-align:center;padding:20px;color:var(--parchment);opacity:0.5">';
-    html += 'No reports yet. Reports auto-generate every 700 cycles.</div>';
+    html += 'No reports yet. Reports auto-generate once per 4-tick model week.</div>';
   } else {
     var reports = WEEKLY_REPORTS.slice().reverse();
     reports.forEach(function(r, idx) {
@@ -12540,7 +12565,8 @@ async function initLLMSubsystem() {
 // ════════════════════════════════════════════════════════════
 (function(){
   const GS = MoC.S;
-  MoC.MODEL_VERSION = 'minister-care-6-terminal-mortality';
+  // Immutable outcome-affecting clock change: prior model versions are incompatible and not replayable here.
+  MoC.MODEL_VERSION = 'minister-care-7-elapsed-time';
   MoC.REFERENCE_PROTOCOL = 'no-discretionary-action-v1';
   MoC.referencePolicy = MoC.IS_BASELINE;
   MoC.comparisonValidated = true;
@@ -12552,8 +12578,9 @@ async function initLLMSubsystem() {
   }
   MoC.care = {
     episodes: referralEpisodes,
-    elapsed:function(a){ const episode = activeReferrals.get(a.id); return episode ? Math.max(0, (cycle-episode.startTick)/4) : Math.max(0,a.waitWeeks||0); },
+    elapsed:function(a){ const episode = activeReferrals.get(a.id); return episode ? Math.max(0, (modelTick-episode.startTick)/MoC.TICKS_PER_WEEK) : Math.max(0,a.waitWeeks||0); },
     availableStarts:function(waiting, occupied){
+      // Nominal capacity is starts/week; this returns realized starts, bounded by accrued credit, demand, and occupancy.
       const rate = Math.max(0.25, GS.specialistCapacity);
       const staffedSlots = Math.max(1, Math.ceil(rate * 2.5));
       GS.serviceCredit = Math.min(Math.max(1, rate / 4), GS.serviceCredit + rate / 4);
@@ -12566,12 +12593,12 @@ async function initLLMSubsystem() {
         let episode = activeReferrals.get(a.id);
         if (!episode && pendingReferral(a)) {
           episode = { id:referralEpisodes.length + 1, agentId:a.id, name:a.name,
-            openedTick:cycle, startTick:cycle - (a.waitWeeks || 0) * 4, status:'waiting' };
+            openedTick:modelTick, startTick:modelTick - (a.waitWeeks || 0) * MoC.TICKS_PER_WEEK, status:'waiting' };
           activeReferrals.set(a.id, episode); referralEpisodes.push(episode);
         }
         if (episode && !pendingReferral(a)) {
-          episode.endTick = cycle;
-          episode.waitWeeks = Math.max(0, (cycle - episode.startTick) / 4);
+          episode.endTick = modelTick;
+          episode.waitWeeks = Math.max(0, (modelTick - episode.startTick) / MoC.TICKS_PER_WEEK);
           episode.status = a.hp <= 0 || a.state === 'dead' ? 'died_waiting' : a.moved ? 'relocated'
             : a.behaviorState === 'at_hospital' ? 'treatment_started' : 'other_exit';
           activeReferrals.delete(a.id);
@@ -12581,7 +12608,7 @@ async function initLLMSubsystem() {
     snapshot:function(){
       const waiting = agents.filter(pendingReferral);
       const waits = waiting.map(a => MoC.care.elapsed(a));
-      return { modelVersion:MoC.MODEL_VERSION, seed:MoC.seed, scenario:GS.scenario, tick:cycle,
+      return { modelVersion:MoC.MODEL_VERSION, seed:MoC.seed, scenario:GS.scenario, tick:modelTick,
         waiting:waiting.length, meanWait:waits.length ? waits.reduce((a,b) => a+b,0)/waits.length : 0,
         longestWait:Math.max(0,...waits), overdue:waits.filter(w => w > 12).length,
         treatments:referralEpisodes.filter(e => e.status === 'treatment_started').length,
@@ -12633,8 +12660,8 @@ async function initLLMSubsystem() {
     schedule:Object.freeze(externalSchedule), log:externalLog,
     scheduleId:JSON.stringify(externalSchedule),
     advance:function(tick){
-      if (tick % (MoC.QUARTER_TICKS*4) === 0 && tick < MoC.QUARTER_TICKS*MoC.TOTAL_QUARTERS) {
-        const year=Math.floor(tick/(MoC.QUARTER_TICKS*4))+1;
+      if (tick % MoC.TICKS_PER_YEAR === 0 && tick < MoC.TICKS_PER_YEAR * Math.ceil(MoC.TOTAL_QUARTERS / 4)) {
+        const year=Math.floor(tick/MoC.TICKS_PER_YEAR)+1;
         const increase=0.04*(year<=2?0.5:1)*(GS.owned?.prevention?0.5:1);
         M.IST.drain=Math.round(M.IST.drain*(1+increase)*100)/100;
         M.IST.sick=Math.round((M.IST.sick+0.003*(year<=2?0.5:1)) * 1000)/1000;
@@ -12660,7 +12687,7 @@ async function initLLMSubsystem() {
         const impact={...event,drainFactor,sickDelta,capacityDelta:GS.specialistCapacity-previous};
         activeExternal.push(impact); externalLog.push(impact);
         const name={flu:'Flu wave',grid:'Regional power disruption',shortage:'Regional staffing shortage'}[event.kind];
-        GS.eventLog.push({q:Math.floor(tick/52)+1,name});
+        GS.eventLog.push({q:Math.floor(tick/MoC.QUARTER_TICKS)+1,name});
         GS.pendingBanners=GS.pendingBanners||[];
         const effects = [];
         if (sickDelta) effects.push('staff absence +' + (sickDelta * 100).toFixed(1) + ' points');
@@ -13273,7 +13300,7 @@ async function initLLMSubsystem() {
     { id:'praise', name:'\ud83c\udfc5 Inspection report', once:true,
       weight:function(){
         if (GS.quarter < 8) return 0;
-        const recent = GRAVE_MARKERS.filter(function(g){ return g.cause === 'system_failure' && g.cycle > cycle - MoC.QUARTER_TICKS * 4; }).length;
+        const recent = GRAVE_MARKERS.filter(function(g){ return g.cause === 'system_failure' && g.cycle > cycle - MoC.TICKS_PER_YEAR; }).length;
         return recent === 0 ? 12 : 0;
       },
       text:function(){ return 'Inspectorate review: no model-classified system-delay death was recorded in the last four quarters.'; },
@@ -13605,7 +13632,7 @@ async function initLLMSubsystem() {
     if (a.persona) {
       const situation = deriveSituation({hp:a.hp,conditions:a.conditions || [],waitWeeks:a.waitWeeks || 0,
         recentDeathNearby:(a.grievingTimer || 0) > 0,treekNorm:M.IST.tree});
-      const thought = personaThought(a.persona, situation, {seed:Math.floor(cycle / MoC.QUARTER_TICKS)});
+      const thought = personaThought(a.persona, situation, {seed:Math.floor(modelTick / MoC.QUARTER_TICKS)});
       if (thought) return thought;
     }
     return (a.thoughts && a.thoughts[(GS.quarter || 1) % a.thoughts.length]) || 'I am getting on with my day.';
@@ -14235,7 +14262,7 @@ async function initLLMSubsystem() {
       const id=action.dataset.buy || action.dataset.law || action.id || String([...ov.querySelectorAll('.moc-opt')].indexOf(action));
       Math.random=MoC.mulberry32((MoC.seed ^ Math.imul(q,0x504f4c) ^ hashCode(id))>>>0);
       GS.decisionLog=GS.decisionLog||[];
-      GS.decisionLog.push({tick:cycle,quarter:q,id,text:action.textContent.trim()});
+      GS.decisionLog.push({tick:modelTick,quarter:q,id,text:action.textContent.trim()});
     },true);
     document.getElementById('moc-inspect-town').onclick = function(){
       ov.style.display = 'none'; renderTownWatch(); document.getElementById('moc-town-council').focus();
@@ -14562,14 +14589,14 @@ async function initLLMSubsystem() {
     const perYear = [];
     const years = Math.ceil(MoC.TOTAL_QUARTERS / 4);
     for (let y = 1; y <= years; y++) {
-      const d = GRAVE_MARKERS.filter(function(g){ return g.cause === 'system_failure' && Math.ceil(g.cycle / (MoC.QUARTER_TICKS * 4)) === y; }).length;
+      const d = GRAVE_MARKERS.filter(function(g){ return g.cause === 'system_failure' && Math.ceil((g.cycle - MoC.STARTUP_CYCLE) / MoC.TICKS_PER_YEAR) === y; }).length;
       perYear.push(d === 0 ? '\ud83d\udfe9' : d === 1 ? '\ud83d\udfe8' : '\ud83d\udfe5');
     }
     return perYear.join('');
   }
   function computeScore(baseline){
     const sd = systemDeaths();
-    const matched = MoC.referenceAt(cycle);
+    const matched = MoC.referenceAt(modelTick);
     const baseSd = matched ? matched.systemDeaths : null;
     const livesSaved = baseSd !== null ? baseSd - sd : 0;
     const adminGain = Math.round((0.30 - M.IST.admin) * 100);
@@ -14607,7 +14634,7 @@ async function initLLMSubsystem() {
   function saveJSON(key, v){ try { localStorage.setItem(key, JSON.stringify(v)); } catch(e){} }
   function recordRun(r, reason){
     const runs = loadJSON('moc_runs_' + MoC.MODEL_VERSION, []);
-    runs.push({ date: new Date().toISOString().slice(0, 10), seed: MoC.seed, scenario: GS.scenario, modelVersion:MoC.MODEL_VERSION,endTick:cycle,
+    runs.push({ date: new Date().toISOString().slice(0, 10), seed: MoC.seed, scenario: GS.scenario, modelVersion:MoC.MODEL_VERSION,endTick:modelTick,
       score: r.score, sd: r.sd, livesSaved: r.livesSaved, reason: reason, verdict: verdict(r, reason) });
     runs.sort(function(a, b){ return b.score - a.score; });
     saveJSON('moc_runs_' + MoC.MODEL_VERSION, runs.slice(0, 25));
@@ -14696,7 +14723,7 @@ async function initLLMSubsystem() {
     pauseSim();
     MoC.care.sync();
     GS._finalSnapshot=MoC.care.snapshot();
-    MoC.runSnapshots[cycle]=GS._finalSnapshot;
+    MoC.runSnapshots[modelTick]=GS._finalSnapshot;
     settleYearObjective();
     const objEl = document.getElementById('moc-objective'); if (objEl) setTimeout(function(){ objEl.remove(); }, 4000);
     if (reason === 'served') Audio5.jingle(); else Audio5.dirge();
@@ -14715,7 +14742,7 @@ async function initLLMSubsystem() {
       return 'Minister of Cammelot #' + MoC.seed + ' \u2014 ' + scName + verdictTag + '\n' + trail + '\nScore: ' + rr.score
         + (rr.baseSd !== null ? ' \u00b7 Lives saved vs status quo: ' + rr.livesSaved : '') + streakTag
         + (GS.challengeScore !== null ? '\nChallenge target: ' + GS.challengeScore + ' \u2014 ' + (rr.score > GS.challengeScore ? 'BEATEN \u2705' : 'not beaten') : '')
-        + '\nModel '+MoC.MODEL_VERSION+' · ending tick '+cycle
+        + '\nModel '+MoC.MODEL_VERSION+' · ending tick '+modelTick
         + '\nTry the same town: https://cammelot.org/minister.html#scn=' + GS.scenario + '&seed=' + MoC.seed + '&v='+MoC.MODEL_VERSION;
     }
     const shareText = buildShareText(r, reason);
@@ -14790,7 +14817,7 @@ async function initLLMSubsystem() {
       const years = Math.ceil(MoC.TOTAL_QUARTERS / 4);
       let darkYear = 1, darkDeaths = 0;
       for (let y = 1; y <= years; y++) {
-        const yDeaths = GRAVE_MARKERS.filter(function(g){ return g.cause === 'system_failure' && Math.ceil(g.cycle / (MoC.QUARTER_TICKS * 4)) === y; }).length;
+        const yDeaths = GRAVE_MARKERS.filter(function(g){ return g.cause === 'system_failure' && Math.ceil((g.cycle - MoC.STARTUP_CYCLE) / MoC.TICKS_PER_YEAR) === y; }).length;
         if (yDeaths > darkDeaths) { darkDeaths = yDeaths; darkYear = y; }
       }
       if (darkDeaths > 0) moments.push('<b>Most recorded deaths:</b> Year ' + darkYear + ' \u2014 ' + darkDeaths + ' model-classified system death' + (darkDeaths !== 1 ? 's' : ''));
@@ -14913,7 +14940,7 @@ async function initLLMSubsystem() {
     async function publishCompletedRun(force){
       const status=document.getElementById('moc-community-status');
       if(GS._communityPublishStarted)return;
-      if(!force&&!MoC.referenceAt(cycle)){
+      if(!force&&!MoC.referenceAt(modelTick)){
         status.textContent='Waiting for the same-date reference before publishing…';
         return;
       }
@@ -14950,7 +14977,7 @@ async function initLLMSubsystem() {
   // Late-arriving baseline updates the open end screen
   function updateEndScreenBaseline(){
     const bv = document.getElementById('moc-baseval');
-    if (!MoC.referenceAt(cycle)) return;
+    if (!MoC.referenceAt(modelTick)) return;
     const r = computeScore(MoC.baseline);
     const comparison=document.getElementById('moc-care-comparison');
     if(comparison) comparison.innerHTML=careComparisonHtml();
@@ -14960,7 +14987,7 @@ async function initLLMSubsystem() {
     const st = document.getElementById('moc-sharetext');
     if (st && GS._rebuildShare) st.textContent = GS._rebuildShare(r);
     const runs=loadJSON('moc_runs_'+MoC.MODEL_VERSION,[]);
-    const saved=runs.find(run=>run.seed===MoC.seed && run.scenario===GS.scenario && run.endTick===cycle);
+    const saved=runs.find(run=>run.seed===MoC.seed && run.scenario===GS.scenario && run.endTick===modelTick);
     if(saved){saved.score=r.score;saved.livesSaved=r.livesSaved;saveJSON('moc_runs_'+MoC.MODEL_VERSION,runs);}
     if(GS._publishCompletedRun)GS._publishCompletedRun(false);
   }
@@ -15163,7 +15190,7 @@ async function initLLMSubsystem() {
   function updateLivesHud(){
     const el = document.getElementById('hLives');
     if (!el) return;
-    const matched = MoC.referenceAt(cycle);
+    const matched = MoC.referenceAt(modelTick);
     if (!matched) { el.textContent = 'Not compared'; return; }
     const diff = matched.systemDeaths - systemDeaths();
     el.textContent = (diff >= 0 ? '+' : '') + diff;
@@ -15359,7 +15386,7 @@ async function initLLMSubsystem() {
   function maybeFlash(forcedIndex){
     const forced = Number.isInteger(forcedIndex);
     if (MoC.IS_BASELINE || flashActive || councilOpen || GS.over || (MoC.paused && !forced)) return;
-    const inQuarter = cycle % MoC.QUARTER_TICKS;
+    const inQuarter = modelTick % MoC.QUARTER_TICKS;
     if (!forced && inQuarter !== Math.floor(MoC.QUARTER_TICKS / 2)) return;
     if (!forced && (MoC.seed + GS.quarter) % 3 !== 0) return; // roughly every 3rd quarter
     const pool = FLASH_POOL.filter(function(f, i){ return GS.flashSeen.indexOf(i) < 0 && (!f.cond || f.cond()); });
@@ -15576,11 +15603,11 @@ async function initLLMSubsystem() {
     const avgWait = MoC.care.snapshot().meanWait.toFixed(1);
     const sd = systemDeaths();
     let livesLine = 'Pending for this date';
-    if (MoC.referenceAt(cycle)) {
-      const diff = MoC.referenceAt(cycle).systemDeaths - sd;
+    if (MoC.referenceAt(modelTick)) {
+      const diff = MoC.referenceAt(modelTick).systemDeaths - sd;
       livesLine = (diff >= 0 ? '+' : '') + diff + ' vs status quo';
     }
-    const ticksToCouncil = MoC.QUARTER_TICKS - (cycle % MoC.QUARTER_TICKS);
+    const ticksToCouncil = MoC.QUARTER_TICKS - (modelTick % MoC.QUARTER_TICKS);
     const secsToCouncil = Math.ceil(ticksToCouncil * (350 / (GS._speed || 1)) / 1000);
     const fxLines = GS.timedFx.map(function(t){
       return '<div class="mfx">\u23f3 ' + t.label + ' (' + (t.untilQ - GS.quarter) + 'q left)</div>';
@@ -15642,15 +15669,15 @@ async function initLLMSubsystem() {
       const target = MoC.QUARTER_TICKS * MoC.TOTAL_QUARTERS;
       (function chunk(){
         if (autoTimer) { clearInterval(autoTimer); autoTimer = null; } // walkthrough may restart it
-        const until = Math.min(cycle + 130, target);
-        while (cycle < until) tick();
-        if (cycle < target) { setTimeout(chunk, 0); }
+        const until = Math.min(modelTick + 130, target);
+        while (modelTick < until) tick();
+        if (modelTick < target) { setTimeout(chunk, 0); }
         else {
           MoC.paused = true; // freeze the twin at exactly end-of-term
           const payload = {
             type: 'mocBaseline', seed: MoC.seed, scenario:GS.scenario, modelVersion:MoC.MODEL_VERSION,
             protocol:MoC.REFERENCE_PROTOCOL,scheduleId:MoC.environment.scheduleId,environmentLog:MoC.environment.log,
-            snapshots:MoC.runSnapshots, tick:cycle,
+            snapshots:MoC.runSnapshots, tick:modelTick,
             systemDeaths: GRAVE_MARKERS.filter(function(g){ return g.cause === 'system_failure'; }).length,
             totalDeaths: GRAVE_MARKERS.length
           };
@@ -16063,7 +16090,7 @@ async function initLLMSubsystem() {
       if (GS.scenario !== 'cabinetcrisis') return null;
       const ev = evaluateElection();
       GS._cabinetReasons = ev.reasons.slice();
-      GS.electionSnapshot={tick:cycle,result:ev,promises:(GS.promises||[]).map(i=>({id:GS.PROMISES[i].id,met:GS.PROMISES[i].check()}))};
+      GS.electionSnapshot={tick:modelTick,result:ev,promises:(GS.promises||[]).map(i=>({id:GS.PROMISES[i].id,met:GS.PROMISES[i].check()}))};
       GS._cabinetResult = ev.strong ? 'strong' : ev.passes ? 'narrow' : 'failed';
       if (ev.strong && !GS._cabinetBonusApplied) {
         GS._cabinetBonusApplied = true;
@@ -16099,7 +16126,7 @@ async function initLLMSubsystem() {
       const brokenIdxs = GS.promises.filter(function(i){ return !(_promises[i] && _promises[i].check()); });
       const brokenLabels = brokenIdxs.map(function(i){ return '"' + _promises[i].text + '"'; });
       const ev = evaluateElection();
-      GS.electionSnapshot={tick:cycle,result:ev,promises:GS.promises.map(i=>({id:_promises[i].id,met:_promises[i].check()}))};
+      GS.electionSnapshot={tick:modelTick,result:ev,promises:GS.promises.map(i=>({id:_promises[i].id,met:_promises[i].check()}))};
       if (!ev.passes) {
         GS._electionResult = 'failed';
         setTimeout(function(){ endTerm('election'); }, 400);
