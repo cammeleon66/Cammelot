@@ -103,8 +103,9 @@ When HP reaches 0, the citizen becomes a ghost — a preventable death caused by
 ### 📱 Deployment
 - Mobile responsive (desktop, tablet, phone)
 - Touch support (tap, pan, pinch-to-zoom)
-- Static GitHub Pages deployment for the game
-- Optional Docker/Nginx + Node leaderboard sidecar
+- Supported Minister release: the static GitHub Pages artifact from `site/`
+- Local HTTP serving is supported for development and tests
+- The optional leaderboard is separate from the static game
 - GitHub Actions CI/CD pipeline
 - Social sharing meta tags (Open Graph, Twitter Card)
 
@@ -112,19 +113,20 @@ When HP reaches 0, the citizen becomes a ghost — a preventable death caused by
 
 ## Quick Start
 
-### Run Locally (No Install)
+### Run Locally over HTTP (Development/Test)
 ```bash
-cd Cammelot
-python -m http.server 4200
+python3 -m http.server 4200
 # Open http://localhost:4200/site/minister.html
 ```
 
-### Run with Docker
-```bash
-docker build -t cammelot .
-docker run -p 80:80 cammelot
-# Open http://localhost
-```
+The supported public Minister game is the static GitHub Pages page at
+<https://cammelot.org/minister.html>. Pages publishes the `site/` directory; the
+same-origin reference is part of the browser game. Local HTTP is only a
+development/test path and does not provide community scores. Docker/nginx and
+`file://` are **not supported** Minister deployment paths. The repository's
+legacy container files do not imply release support. See
+[Minister release status](docs/MINISTER_RELEASE_STATUS.md) for smoke-test and
+release-gate evidence.
 
 ### Run Tests
 ```bash
@@ -132,6 +134,13 @@ npm ci
 npx playwright install chromium
 npm test
 ```
+
+`npm test` is the explicit release regression list, including the Minister
+browser and supported-deployment smoke tests. It deliberately excludes
+`tests/e2e_checks.test.js`: that legacy file checks static text and file/config
+existence for the older World/Docker/nginx setup, not the supported Minister
+runtime or its Pages/local-HTTP paths. It is not evidence that those legacy
+hosting paths are supported.
 
 ---
 
@@ -142,13 +151,13 @@ No frontend framework or build step.
 The game runs from one HTML file; shared community scores are optional.
 ```
 
-Cammelot's simulation pages run entirely in the browser. `site/world.html` is the research simulation; `site/minister.html` is the policy game. The optional leaderboard calls a small same-origin Node service.
+Cammelot's simulation pages run in the browser. `site/world.html` is the research simulation; `site/minister.html` is the policy game. The optional community leaderboard is a separate service and is not required to run Minister.
 
 **Why?** Because:
-- Free hosting (static files on any CDN)
+- Static GitHub Pages hosting for the supported Minister release
 - Instant load (no bundle, no compile)
 - Offline-capable (works without network)
-- Shareable (one URL, works everywhere)
+- Shareable through the supported public Pages URL
 
 ### Key Architecture Decisions
 | Decision | Choice | Rationale |
@@ -156,8 +165,8 @@ Cammelot's simulation pages run entirely in the browser. `site/world.html` is th
 | Runtime | Static game + optional score sidecar | Gameplay works without the service; shared scores require persistence |
 | Memory | EVENT_LOG + FHIR store | Simple + semantically structured |
 | Persistence | localStorage | No server, instant save/load |
-| Hosting | Docker + nginx | Static files, CDN-friendly |
-| Security | CSP + no inline handlers | OWASP-compliant for public site |
+| Minister hosting | GitHub Pages (`site/`) and local HTTP for development/tests | The model contract does not support Docker/nginx, `file://`, or other hosts |
+| Minister hosting security | Existing GitHub Pages static path | Legacy nginx headers are not a supported Minister security configuration |
 | Agent count | 45-60 active | Performance vs. meaningful data |
 
 ---
