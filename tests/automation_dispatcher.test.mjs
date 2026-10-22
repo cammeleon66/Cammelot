@@ -86,6 +86,29 @@ test('evidence requests honor maximum coding concurrency and shared writer lanes
   assert.equal(forIssue(docs, 1).length, 0);
 });
 
+for (const kind of ['evidence', 'repair']) {
+  for (const reservation of ['assignment', 'dispatch']) {
+    test(`${kind} follow-up respects another issue's pending ${reservation} lane`, () => {
+      const s = withPr(3), state = emptyState();
+      if (kind === 'evidence') s.prs[0].comments = [];
+      else s.prs[0].checks[0].conclusion = 'failure';
+      if (reservation === 'assignment') s.issues[9].assignees = [coder];
+      else state.issues[10] = { dispatchedAt: stamp };
+
+      const result = plan(s, state, NOW);
+      assert.equal(result.reserved, 2); // Capacity is available; the Minister lane is not.
+      assert.ok(!result.actions.some(a => a.issue === 3 && a.kind === kind));
+
+      // Moving the reservation to an independent lane must not stall this work.
+      s.issues[9].assignees = [];
+      delete state.issues[10];
+      if (reservation === 'assignment') s.issues[16].assignees = [coder];
+      else state.issues[17] = { dispatchedAt: stamp };
+      assert.ok(forIssue(s, 3, state).some(a => a.kind === kind));
+    });
+  }
+}
+
 test('evidence request journals its own dedupe reservation without incrementing repairs', async t => {
   const dir = await temp(t), s = withPr(), state = emptyState();
   s.prs[0].comments = [];

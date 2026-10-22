@@ -273,13 +273,14 @@ export function issueLedger(snapshot, state, n) {
 }
 
 function canStartFollowup(snapshot, state, n, now) {
-  const { activeTasks: active, slots, unknownActive } = resources(snapshot, state, now);
+  const { activeTasks: active, slots, unknownActive, pendingAssignments } = resources(snapshot, state, now);
   const activeIssues = active.map(t => associatedIssue(snapshot.prs.find(p => t.prIds.includes(p.id)) ?? {}));
   const pending = Object.entries(state.issues).filter(([number, item]) =>
     pendingWork(item).head && now - Date.parse(pendingWork(item).at) < WAIT_MS &&
     snapshot.prs.some(p => associatedIssue(p) === Number(number) && p.state === 'open' && p.head.sha === pendingWork(item).head) &&
     !activeIssues.includes(Number(number))).map(([number]) => Number(number));
   if (unknownActive || slots > MAX_ACTIVE || pending.includes(n) || active.length + pending.length >= MAX_ACTIVE ||
+    pendingAssignments.some(other => other !== n && lanes(other).some(l => lanes(n).includes(l))) ||
     activeIssues.some(other => !other || (other !== n && lanes(other).some(l => lanes(n).includes(l)))) ||
     pending.some(other => other !== n && lanes(other).some(l => lanes(n).includes(l)))) return false;
   return true;
@@ -346,7 +347,7 @@ function resources(snapshot, state, now) {
     .map(associatedIssue).filter(Boolean));
   const pendingAssignments = [...busyIssues].filter(n => !representedIssues.has(n));
   const slots = activeTasks.length + unrepresentedPrs.length + pendingAssignments.length;
-  return { activeTasks, busyIssues, occupied, unknownActive, slots };
+  return { activeTasks, busyIssues, occupied, unknownActive, slots, pendingAssignments };
 }
 
 export function plan(snapshot, state, now) {
