@@ -19,6 +19,8 @@ It's built as an **Applied Research tool** for:
 
 The participatory policy game is available at **[cammelot.org/minister.html](https://cammelot.org/minister.html)**. It compares the player's town with a same-seed, same-date no-discretionary-action reference. Community scores are an optional Node sidecar and are not available on static-only deployments.
 
+The current Minister model, units, support scope, and versioning decisions are documented in the [Minister model contract](docs/MINISTER_MODEL_CONTRACT.md).
+
 ---
 
 ## The Crisis in Numbers
