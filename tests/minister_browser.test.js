@@ -186,7 +186,7 @@ test('Elapsed model clock uses quarter-week ticks and exact calendar boundaries'
       'Cabinet Crisis offers seven allocations at Q2-Q8; the opening quarter has no allocation council');
     assert.equal(outcome.zeroRate,0,'zero annual probability remains zero per tick');
     assert.ok(Math.abs(outcome.rate-outcome.expectedRate)<1e-15,'annual probability conversion uses the 208-tick year');
-    assert.equal(outcome.overdueDrain,0.975,'one overdue week at moderate severity converts the 3 HP/week rule to per-tick drain');
+    assert.ok(Math.abs(outcome.overdueDrain-0.975)<1e-12,'one overdue week at moderate severity converts the 3 HP/week rule to per-tick drain');
     assert.equal(outcome.terminalDeaths,1,'terminal death is finalized exactly once at the year/term boundary');
   } finally {await browser.close();await new Promise(resolve=>server.close(resolve));}
 });
