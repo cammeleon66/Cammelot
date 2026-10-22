@@ -346,7 +346,7 @@ test('Full Term horizon ends after 40 elapsed quarters', { timeout: 30000 }, asy
       const councils=[];
       let endedAt=null;
       let currentTick=0;
-      MoC.onQuarter=q=>councils.push({q,tick:(q-1)*MoC.QUARTER_TICKS});
+      MoC.onQuarter=q=>councils.push({q,tick:currentTick});
       MoC.onTermEnd=()=>{endedAt=currentTick;};
       for(let elapsedTick=1;elapsedTick<=MoC.TOTAL_QUARTERS*MoC.QUARTER_TICKS;elapsedTick++){currentTick=elapsedTick;MoC.onTick(elapsedTick);}
       return {quarters:MoC.TOTAL_QUARTERS,ticksPerQuarter:MoC.QUARTER_TICKS,endedAt,councils};
