@@ -36,7 +36,7 @@ jobs:
             exit 0
           fi
           git diff --check "$BASE_SHA...$HEAD_SHA"
-          git diff --name-only "$BASE_SHA...$HEAD_SHA" > "$RUNNER_TEMP/backlog-changed-files"
+          git diff --no-renames --name-only "$BASE_SHA...$HEAD_SHA" > "$RUNNER_TEMP/backlog-changed-files"
           runtime=false
           while IFS= read -r path; do
             if [[ "$path" != docs/*.md && ! "$path" =~ ^[^/]+\.md$ ]]; then
