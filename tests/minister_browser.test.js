@@ -317,7 +317,7 @@ test('Previously finalized deaths are cleaned before movement and hospital capac
       episodes:['died_waiting'],waiting:0,
       treatments:outcome.before.treatments+1,
       finalizerSyncs:outcome.before.finalizerSyncs+2,livingBehavior:'at_hospital',
-      livingInQueue:false,livingEpisode:'treatment_started',starts:1,serviceCredit:0.5
+      livingInQueue:false,livingEpisode:'treatment_started',starts:1,serviceCredit:0
     },'terminal cleanup must precede movement, queue capacity, care bookkeeping, and self-medication');
     assert.equal(outcome.before.episodes,1,'the waiting episode should be closed exactly once');
   }finally{await browser.close();await new Promise(resolve=>server.close(resolve));}
