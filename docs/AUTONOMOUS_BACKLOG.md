@@ -119,6 +119,14 @@ earns supersession. Failed/cancelled/unverified executions remain repairable, no
 mergeable. New task revisions remain actionable despite old completed history.
 Later failed Actions runs/attempts are also checked at the final merge fence.
 Supersession and execution evidence persist without resetting repair budgets.
+Branch execution outcomes are checked even with an empty/restored ledger and
+completed REST task telemetry, including runs on older source heads. Every
+completed outcome other than explicit `success` blocks advancement unless its
+exact revision is acknowledged by a verified successful correlated follow-up.
+Intent captures both pre-request run IDs and their revisions; a run that changes
+attempt/outcome during repair is not silently acknowledged. The same rule applies
+to planning, the final merge fence, and post-merge issue closure. Legacy records
+containing only observed run hashes do not grant acknowledgements.
 
 A parked inactive implementation releases its lanes, allowing unrelated work to
 continue. An actually running parked task retains its slots/lanes: parking is not

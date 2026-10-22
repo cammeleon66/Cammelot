@@ -15,6 +15,8 @@ const taskRevision = value => typeof value === 'string' && /^[^\r\n]+:[a-f0-9]{6
 const validTaskRevisions = values => Array.isArray(values) && values.every(taskRevision) && new Set(values).size === values.length;
 const validExecution = value => value && typeof value === 'object' && !Array.isArray(value) &&
   positiveId(value.prId) && validRunIds(value.runIds) && value.runIds.length > 0;
+const validRunRevisions = values => Array.isArray(values) &&
+  values.every(value => typeof value === 'string' && /^[a-f0-9]{64}$/.test(value)) && new Set(values).size === values.length;
 
 export function validateState(state) {
   const date = value => typeof value === 'string' && Number.isFinite(Date.parse(value));
@@ -33,6 +35,8 @@ export function validateState(state) {
       if (e[key] !== undefined && !isSha(e[key])) throw new Error(`Invalid ledger SHA: ${key}`);
     }
     if (e.workPendingRunIds !== undefined && !validRunIds(e.workPendingRunIds)) throw new Error('Invalid pending run IDs');
+    if (e.workPendingRunRevisions !== undefined && (!validRunRevisions(e.workPendingRunRevisions) ||
+      !validRunIds(e.workPendingRunIds) || e.workPendingRunRevisions.length !== e.workPendingRunIds.length)) throw new Error('Invalid pending run revisions');
     if (e.workPendingPrId !== undefined && !positiveId(e.workPendingPrId)) throw new Error('Invalid pending PR identity');
     if (e.workPendingStoppedTasks !== undefined && (!validTaskRevisions(e.workPendingStoppedTasks) ||
       !positiveId(e.workPendingPrId) || !validRunIds(e.workPendingRunIds))) throw new Error('Invalid pending stopped-task revisions');
@@ -43,6 +47,8 @@ export function validateState(state) {
       typeof e.followupExecution.success !== 'boolean' || !Array.isArray(e.followupExecution.observedRuns) ||
       e.followupExecution.observedRuns.length === 0 ||
       e.followupExecution.observedRuns.some(r => typeof r !== 'string' || !/^[a-f0-9]{64}$/.test(r)))) throw new Error('Invalid follow-up execution');
+    if (e.followupExecution?.acknowledgedRuns !== undefined &&
+      !validRunRevisions(e.followupExecution.acknowledgedRuns)) throw new Error('Invalid acknowledged run revisions');
     if (e.validationObservations !== undefined) {
       const observations = e.validationObservations;
       if (!observations || typeof observations !== 'object' || Array.isArray(observations) ||
@@ -58,6 +64,8 @@ export function validateState(state) {
   const a = state.inFlight;
   if (a !== null && (!a || typeof a !== 'object' || Array.isArray(a))) throw new Error('Invalid mutation journal');
   if (a?.preRequestRunIds !== undefined && !validRunIds(a.preRequestRunIds)) throw new Error('Invalid journal run IDs');
+  if (a?.preRequestRunRevisions !== undefined && (!validRunRevisions(a.preRequestRunRevisions) ||
+    !validRunIds(a.preRequestRunIds) || a.preRequestRunRevisions.length !== a.preRequestRunIds.length)) throw new Error('Invalid journal run revisions');
   if (a?.preRequestStoppedTasks !== undefined && (!validTaskRevisions(a.preRequestStoppedTasks) ||
     !positiveId(a.prId) || !validRunIds(a.preRequestRunIds))) throw new Error('Invalid journal stopped-task revisions');
   if (a && (!ISSUES.includes(a.issue) || typeof a.id !== 'string' || !a.id || !date(a.createdAt) ||
@@ -158,7 +166,16 @@ export function observe(state, snapshot, now) {
     if (pending.head && finished && e.workPendingPrId === p.id && validTaskRevisions(e.workPendingStoppedTasks)) {
       const proof = { prId: p.id, runIds: runs.map(r => r.id).sort((a, b) => a - b) };
       const success = runs.every(r => r.conclusion === 'success');
-      e.followupExecution = { ...proof, success, observedRuns: [...new Set(p.codingRuns.map(codingExecutionRevision))].sort() };
+      const prior = e.followupExecution?.prId === p.id && e.followupExecution.success === true ?
+        (e.followupExecution.acknowledgedRuns ?? []) : [];
+      // Do not acknowledge a baseline ID's changed attempt/outcome merely
+      // because it appeared in the completion snapshot. Legacy observations
+      // without pre-request revision evidence grant no blanket acknowledgement.
+      const acknowledgedRuns = success ? [...new Set([
+        ...prior, ...(e.workPendingRunRevisions ?? []), ...runs.map(codingExecutionRevision),
+      ])].sort() : [];
+      e.followupExecution = { ...proof, success, acknowledgedRuns,
+        observedRuns: [...new Set(p.codingRuns.map(codingExecutionRevision))].sort() };
       if (success) {
         for (const revision of e.workPendingStoppedTasks) (e.supersededStoppedTasks ??= {})[revision] = proof;
       }
@@ -171,6 +188,7 @@ export function observe(state, snapshot, now) {
       delete e.workPendingHead;
       delete e.workPendingAt;
       delete e.workPendingRunIds;
+      delete e.workPendingRunRevisions;
       delete e.workPendingPrId;
       delete e.workPendingStoppedTasks;
     }
@@ -227,6 +245,7 @@ function prepare(state, action, now, snapshot) {
     const ids = p?.codingRuns?.map(r => r.id);
     if (!validRunIds(ids)) throw new Error('Missing/invalid pre-request coding run IDs');
     a.preRequestRunIds = [...ids].sort((x, y) => x - y);
+    a.preRequestRunRevisions = p.codingRuns.map(codingExecutionRevision).sort();
     a.prId = p.id;
     a.preRequestStoppedTasks = [...new Set(snapshot.tasks.filter(t => t.prIds.includes(p.id))
       .map(stoppedTaskRevision).filter(Boolean))].sort();
@@ -244,6 +263,7 @@ function prepare(state, action, now, snapshot) {
     e.workPendingHead = a.head;
     e.workPendingAt = a.createdAt;
     e.workPendingRunIds = [...a.preRequestRunIds];
+    e.workPendingRunRevisions = [...a.preRequestRunRevisions];
     e.workPendingPrId = a.prId;
     e.workPendingStoppedTasks = [...a.preRequestStoppedTasks];
     delete e.repairPendingHead;

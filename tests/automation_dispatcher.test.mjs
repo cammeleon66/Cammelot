@@ -584,7 +584,7 @@ test('repair intent waits for observable execution completion, not stale complet
   state.issues[1] = { repairs: 1, repairPendingHead: HEAD, lastRepairAt: stamp, workPendingRunIds: [] };
   observe(state, s, NOW);
   assert.equal(forIssue(s, 1, state).length, 0);
-  s.prs[0].codingRuns = [{ id: 99, status: 'completed', created_at: new Date(NOW + 1).toISOString() }];
+  s.prs[0].codingRuns = [{ id: 99, status: 'completed', conclusion: 'success', created_at: new Date(NOW + 1).toISOString() }];
   observe(state, s, NOW + 2);
   assert.equal(state.issues[1].repairPendingHead, undefined);
   assert.equal(forIssue(s, 1, state)[0].kind, 'merge');
@@ -1233,7 +1233,7 @@ test('full adapter snapshot consumes REST/GraphQL fixtures and normalizes real s
     else if (route.startsWith(`${root}/actions/runs?head_sha=`)) data = { workflow_runs: p.runs, total_count: 1 };
     else if (route.startsWith(`${root}/actions/runs?branch=`)) data = { workflow_runs: [{
       id: 999, name: 'Addressing comment on PR #22', head_sha: OTHER, head_branch: p.head.ref,
-      head_repository: { full_name: REPO }, status: 'completed', created_at: stamp,
+      head_repository: { full_name: REPO }, status: 'completed', conclusion: 'success', created_at: stamp,
     }], total_count: 1 };
     else if (route.startsWith(`${root}/actions/runs/401/attempts/1/jobs?`)) data = { jobs: [{
       name: 'Validate', head_sha: HEAD, status: 'completed', conclusion: 'success',
@@ -1335,12 +1335,12 @@ for (const kind of ['evidence', 'repair']) test(`${kind} intent and reservation 
   const dir = await temp(t), s = withPr();
   if (kind === 'evidence') s.prs[0].comments = [];
   else s.tasks[0].state = 'failed';
-  s.prs[0].codingRuns = [{ id: 10, status: 'completed', created_at: stamp }];
+  s.prs[0].codingRuns = [{ id: 10, status: 'completed', conclusion: 'success', created_at: stamp }];
   let reads = 0;
   const api = fake(s, {
     snapshot: async () => {
       const copy = clone(s);
-      if (++reads > 1) copy.prs[0].codingRuns.push({ id: 11, status: 'completed', created_at: stamp });
+      if (++reads > 1) copy.prs[0].codingRuns.push({ id: 11, status: 'completed', conclusion: 'success', created_at: stamp });
       return copy;
     },
     execute: async action => {
@@ -1349,9 +1349,13 @@ for (const kind of ['evidence', 'repair']) test(`${kind} intent and reservation 
       assert.deepEqual(action.preRequestRunIds, [10, 11]);
       assert.deepEqual(saved.inFlight.preRequestRunIds, [10, 11]);
       assert.deepEqual(saved.issues[1].workPendingRunIds, [10, 11]);
+      assert.equal(action.preRequestRunRevisions.length, 2);
+      assert.deepEqual(saved.inFlight.preRequestRunRevisions, action.preRequestRunRevisions);
+      assert.deepEqual(saved.issues[1].workPendingRunRevisions, action.preRequestRunRevisions);
     },
   });
-  await runOnce({ stateDir: dir, apply: true, github: api, now: () => NOW + 750, log: quiet });
+  const result = await runOnce({ stateDir: dir, apply: true, github: api, now: () => NOW + 750, log: quiet });
+  assert.equal(result.executed?.kind, kind);
 });
 
 test('legacy reservation without pre-request IDs cannot certify unchanged-head completion', () => {
@@ -1868,4 +1872,127 @@ test('a completed task cannot hide a new failure revision of a superseded older 
   const action = forIssue(s, 1, state)[0];
   assert.equal(action.kind, 'repair');
   assert.match(action.reason, /task-1/);
+});
+
+for (const conclusion of ['failure', 'cancelled', 'timed_out', 'neutral', 'skipped', 'unknown', null, undefined]) {
+  test(`fresh ledger rejects older-head branch execution ending ${conclusion ?? 'unverified'}`, () => {
+    const s = withPr(), state = emptyState(), p = s.prs[0];
+    p.codingRuns = [{ id: 901, run_attempt: 1, name: `Addressing comment on PR #${p.number}`,
+      head_sha: OTHER, status: 'in_progress', conclusion: null, created_at: stamp }];
+    observe(state, s, NOW);
+    assert.equal(forIssue(s, 1, state).length, 0);
+    assert.equal(mergeGate(p, 1, BASE).ok, false);
+    Object.assign(p.codingRuns[0], { status: 'completed', conclusion });
+    observe(state, s, NOW + 1000);
+    assert.equal(state.issues[1].followupExecution, undefined);
+    assert.equal(forIssue(s, 1, state)[0]?.kind, 'repair');
+    assert.equal(mergeGate(p, 1, BASE).ok, false);
+  });
+}
+
+test('ledger and REST state matrix cannot suppress unacknowledged failed branch executions', async t => {
+  const { s: repaired, state: repairedState } = await startStoppedRepair(t);
+  completedFollowup(repaired);
+  observe(repairedState, repaired, NOW + 2000);
+  for (const ledger of ['absent', 'matching-success', 'other-PR', 'failed-record']) {
+    for (const rest of ['completed', 'failed', 'in_progress']) {
+      const s = clone(repaired), state = ledger === 'absent' ? emptyState() : clone(repairedState);
+      if (ledger === 'other-PR') state.issues[1].followupExecution.prId++;
+      if (ledger === 'failed-record') state.issues[1].followupExecution.success = false;
+      s.tasks[0].state = rest;
+      s.prs[0].codingRuns.push({ id: 12, run_attempt: 1, head_sha: OTHER,
+        status: 'completed', conclusion: 'failure', created_at: stamp });
+      const result = forIssue(s, 1, state);
+      assert.ok(!result.some(a => a.kind === 'merge'), `${ledger}/${rest}`);
+      if (rest !== 'in_progress') assert.equal(result[0]?.kind, 'repair', `${ledger}/${rest}`);
+      assert.equal(mergeGate(s.prs[0], 1, BASE, {
+        followupExecution: state.issues[1]?.followupExecution,
+      }).ok, false, `${ledger}/${rest}`);
+    }
+  }
+});
+
+test('fresh-ledger final merge fence catches a newly failed older-head execution', async t => {
+  const dir = await temp(t), s = withPr();
+  const api = fake(s, { pull: async () => {
+    const p = clone(s.prs[0]);
+    p.codingRuns = [{ id: 901, run_attempt: 1, head_sha: OTHER,
+      status: 'completed', conclusion: 'failure', created_at: stamp }];
+    return p;
+  } });
+  const result = await runOnce({ stateDir: dir, apply: true, github: api, now: () => NOW, log: quiet });
+  assert.equal(result.aborted, true);
+  assert.equal(api.calls.length, 0);
+});
+
+test('fresh-ledger failed execution unblocks only after correlated successful repair, then rejects a new failure', async t => {
+  const dir = await temp(t), s = withPr(), api = fake(s);
+  s.prs[0].codingRuns = [{ id: 901, run_attempt: 1, head_sha: OTHER,
+    status: 'completed', conclusion: 'failure', created_at: stamp }];
+  await runOnce({ stateDir: dir, apply: true, github: api, now: () => NOW, log: quiet });
+  assert.equal(api.calls[0].kind, 'repair');
+  s.prs[0].comments.push({ user: { login: s.viewer }, created_at: stamp,
+    body: `<!-- backlog-dispatcher ${JSON.stringify(api.calls[0])} -->` });
+  s.prs[0].codingRuns.push({ id: 902, run_attempt: 1, head_sha: OTHER,
+    status: 'completed', conclusion: 'success', created_at: stamp });
+  const state = await loadState(dir);
+  reconcile(state, s, quiet);
+  observe(state, s, NOW + 1000);
+  await checkpoint(dir, state);
+  const restored = await loadState(dir);
+  assert.equal(forIssue(s, 1, restored)[0].kind, 'merge');
+  assert.equal(mergeGate(s.prs[0], 1, BASE, { followupExecution: restored.issues[1].followupExecution }).ok, true);
+  assert.equal(mergeGate(s.prs[0], 1, BASE).ok, false); // No durable acknowledgement supplied.
+  const legacy = clone(restored.issues[1].followupExecution);
+  delete legacy.acknowledgedRuns;
+  assert.equal(mergeGate(s.prs[0], 1, BASE, { followupExecution: legacy }).ok, false);
+  const unsuccessful = { ...clone(restored.issues[1].followupExecution), success: false };
+  assert.equal(mergeGate(s.prs[0], 1, BASE, { followupExecution: unsuccessful }).ok, false);
+  const merged = clone(s);
+  Object.assign(merged.prs[0], { state: 'closed', merged: true, mergeInBase: true });
+  assert.equal(forIssue(merged, 1, restored)[0].kind, 'close');
+  s.prs[0].codingRuns.push({ id: 903, run_attempt: 1, head_sha: OTHER,
+    status: 'completed', conclusion: 'cancelled', created_at: stamp });
+  assert.equal(forIssue(s, 1, restored)[0].kind, 'repair');
+  assert.equal(mergeGate(s.prs[0], 1, BASE, { followupExecution: restored.issues[1].followupExecution }).ok, false);
+});
+
+test('successful correlation cannot acknowledge a baseline run that changed to a new failed revision during repair', async t => {
+  const { s, state } = await startStoppedRepair(t);
+  Object.assign(s.prs[0].codingRuns[0], { run_attempt: 2, conclusion: 'failure' });
+  completedFollowup(s);
+  observe(state, s, NOW + 2000);
+  assert.equal(forIssue(s, 1, state)[0].kind, 'repair');
+  assert.equal(mergeGate(s.prs[0], 1, BASE, { followupExecution: state.issues[1].followupExecution }).ok, false);
+});
+
+test('fresh-ledger revalidation aborts merge when a failed branch run appears', async t => {
+  const dir = await temp(t), s = withPr();
+  let reads = 0;
+  const api = fake(s, { snapshot: async () => {
+    const copy = clone(s);
+    if (++reads > 1) copy.prs[0].codingRuns.push({ id: 901, run_attempt: 1,
+      head_sha: OTHER, status: 'completed', conclusion: 'cancelled', created_at: stamp });
+    return copy;
+  } });
+  const result = await runOnce({ stateDir: dir, apply: true, github: api, now: () => NOW, log: quiet });
+  assert.equal(result.aborted, true);
+  assert.equal(api.calls.length, 0);
+  assert.equal((await loadState(dir)).inFlight, null);
+});
+
+test('captured and acknowledged execution revisions are schema-validated', async t => {
+  const { dir, s, state } = await startStoppedRepair(t);
+  const saved = await loadState(dir);
+  const invalid = clone(saved);
+  invalid.issues[1].workPendingRunRevisions = [];
+  await assert.rejects(checkpoint(dir, invalid), /Invalid pending run revisions/);
+  assert.deepEqual(await loadState(dir), saved);
+  completedFollowup(s);
+  observe(state, s, NOW + 2000);
+  await checkpoint(dir, state);
+  const badAcknowledgement = clone(state);
+  badAcknowledgement.issues[1].followupExecution.acknowledgedRuns = ['not-a-revision'];
+  await assert.rejects(checkpoint(dir, badAcknowledgement), /Invalid acknowledged run revisions/);
+  assert.deepEqual(await loadState(dir), state);
 });

@@ -300,11 +300,14 @@ export function acceptanceGate(pr, n) {
 const idleOwnershipGate = unknownActive => unknownActive ?
   { ok: false, ownershipHold: true, reason: 'active coding task ownership is unknown' } : { ok: true };
 
-function followupExecutionGate(pr, execution) {
-  if (execution?.prId !== pr.id) return { ok: true };
+function branchExecutionGate(pr, execution) {
+  // Remote branch outcomes are authoritative even after a cold start. A local
+  // record is only permission to acknowledge exact, successfully repaired revisions.
+  const matching = execution?.prId === pr.id;
+  const acknowledged = matching && execution.success === true ? (execution.acknowledgedRuns ?? []) : [];
   const failures = pr.codingRuns.filter(r => r.status === 'completed' && r.conclusion !== 'success' &&
-    !execution.observedRuns.includes(codingExecutionRevision(r)));
-  const reason = !execution.success ? `follow-up execution failed or unverified: ${execution.runIds.join(',')}` :
+    !acknowledged.includes(codingExecutionRevision(r)));
+  const reason = matching && execution.success === false ? `follow-up execution failed or unverified: ${execution.runIds.join(',')}` :
     failures.length ? `new failed/unverified branch execution: ${failures.map(r => `${r.id}:${codingExecutionRevision(r)}`).sort().join(',')}` : null;
   return reason ? { ok: false, repair: true, reason } : { ok: true };
 }
@@ -317,7 +320,7 @@ export function mergeGate(pr, n, baseSha, { merged = false, unknownActive = fals
   if (!Array.isArray(pr.codingRuns) || pr.codingRuns.some(r => r.status !== 'completed')) {
     return { ok: false, reason: 'missing or active branch coding activity' };
   }
-  const followup = followupExecutionGate(pr, followupExecution);
+  const followup = branchExecutionGate(pr, followupExecution);
   if (!followup.ok) return followup;
   const evidence = acceptanceGate(pr, n);
   for (const gate of [evidence, ciGate(pr), reviewGate(pr, evidence)]) if (!gate.ok) return gate;
@@ -469,7 +472,8 @@ export function plan(snapshot, state, now) {
       actions.push({ kind: 'park', issue: n, reason: 'duplicate implementation PRs or active sessions' }); continue;
     }
     if (merged.length) {
-      const p = merged.at(-1), gate = mergeGate(p, n, snapshot.baseSha, { merged: true });
+      const p = merged.at(-1), gate = mergeGate(p, n, snapshot.baseSha,
+        { merged: true, followupExecution: e.followupExecution });
       if (gate.ok) actions.push({ kind: 'close', issue: n, pr: p.number, head: p.head.sha });
       else actions.push({ kind: 'park', issue: n, pr: p.number, reason: `merged but acceptance incomplete: ${gate.reason}` });
       continue;
@@ -499,7 +503,7 @@ export function plan(snapshot, state, now) {
         else holds.push({ issue: n, reason: 'awaiting follow-up execution confirmation' });
         continue;
       }
-      const followup = followupExecutionGate(p, e.followupExecution);
+      const followup = branchExecutionGate(p, e.followupExecution);
       if (!followup.ok) {
         const action = repairOrPark(snapshot, state, p, n, followup.reason, now);
         if (action) actions.push(action);
