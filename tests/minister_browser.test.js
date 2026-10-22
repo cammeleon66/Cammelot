@@ -253,6 +253,87 @@ test('Lethal disease progression finalizes death before hospital treatment', { t
   }finally{await browser.close();await new Promise(resolve=>server.close(resolve));}
 });
 
+test('Previously finalized deaths stay terminal and clear stale care', { timeout:30000 }, async()=>{
+  const server=await startSiteServer(),browser=await launchBrowser(),page=await browser.newPage();
+  try{
+    await page.goto(`http://127.0.0.1:${server.address().port}/minister.html#scn=cabinetcrisis&seed=2468`,{waitUntil:'domcontentloaded'});
+    const outcome=await page.evaluate(()=>{
+      MoC.audio.setMuted(true); MoC.paused=false;
+      const patient=agents.find(a=>a.type==='patient'||a.type==='citizen');
+      Object.assign(patient,{moved:false,insideBuilding:null,state:'active',behaviorState:'queuing',hp:80,
+        queueType:'hospital',queueBuilding:'hospital',waitWeeks:3,causeOfDeath:'natural'});
+      QUEUES.hospital.agents.push(patient.id);
+      MoC.care.sync();
+      finalizeAgentDeath(patient);
+      const before={
+        graves:GRAVE_MARKERS.length,
+        naturalDeaths:EVENT_LOG.filter(e=>e.type==='natural_death').length,
+        history:patient.actionHistory.filter(e=>e.type==='died').length,
+        episodes:MoC.care.episodes.filter(e=>e.agentId===patient.id).length,
+        waiting:MoC.care.snapshot().waiting,
+        treatments:MoC.care.episodes.filter(e=>e.status==='treatment_started').length
+      };
+      // Simulate stale persisted queue/care fields on an already-finalized resident.
+      delete patient.deathFinalized;
+      patient.hp=80; patient.moved=true; patient.behaviorState='queuing'; patient.insideBuilding='hospital';
+      patient.queueType='hospital'; patient.queueBuilding='hospital';
+      QUEUES.hospital.agents.push(patient.id);
+      MoC.S.serviceCredit=10;
+      tick();
+      return {before,after:{
+        graves:GRAVE_MARKERS.length,
+        naturalDeaths:EVENT_LOG.filter(e=>e.type==='natural_death').length,
+        history:patient.actionHistory.filter(e=>e.type==='died').length,
+        state:patient.state,behavior:patient.behaviorState,hp:patient.hp,inside:patient.insideBuilding,
+        queueType:patient.queueType,queueBuilding:patient.queueBuilding,inQueue:QUEUES.hospital.agents.includes(patient.id),
+        episodes:MoC.care.episodes.filter(e=>e.agentId===patient.id).map(e=>e.status),
+        waiting:MoC.care.snapshot().waiting,
+        treatments:MoC.care.episodes.filter(e=>e.status==='treatment_started').length
+      }};
+    });
+    assert.deepEqual(outcome.after,{
+      graves:outcome.before.graves,naturalDeaths:outcome.before.naturalDeaths,history:outcome.before.history,
+      state:'dead',behavior:'dead',hp:0,inside:null,queueType:null,queueBuilding:null,inQueue:false,
+      episodes:['died_waiting'],waiting:outcome.before.waiting,
+      treatments:outcome.before.treatments
+    },'an already-finalized resident must not be counted twice, re-queued, or treated');
+    assert.equal(outcome.before.episodes,1,'the waiting episode should be closed exactly once');
+  }finally{await browser.close();await new Promise(resolve=>server.close(resolve));}
+});
+
+test('Natural death state finalizes once on the following tick', { timeout:30000 }, async()=>{
+  const server=await startSiteServer(),browser=await launchBrowser(),page=await browser.newPage();
+  try{
+    await page.goto(`http://127.0.0.1:${server.address().port}/minister.html#scn=cabinetcrisis&seed=2468`,{waitUntil:'domcontentloaded'});
+    const outcome=await page.evaluate(()=>{
+      MoC.audio.setMuted(true); MoC.paused=false;
+      const patients=agents.filter(a=>a.type==='patient'||a.type==='citizen');
+      patients.forEach(a=>{a.moved=true;a.insideBuilding='test-isolation';a.conditions=[];a.hp=100;});
+      const patient=patients[0];
+      Object.assign(patient,{moved:false,state:'active',behaviorState:'dead',hp:0,causeOfDeath:'natural',
+        healingTicksLeft:5,queueType:'hospital',queueBuilding:'hospital'});
+      QUEUES.hospital.agents.push(patient.id);
+      cycle=1;
+      const graves=GRAVE_MARKERS.length;
+      const naturalDeaths=EVENT_LOG.filter(e=>e.type==='natural_death').length;
+      const systemDeaths=EVENT_LOG.filter(e=>e.type==='died').length;
+      tick();
+      const first={state:patient.state,behavior:patient.behaviorState,hp:patient.hp,finalized:patient.deathFinalized,
+        healingTicksLeft:patient.healingTicksLeft,inQueue:QUEUES.hospital.agents.includes(patient.id),
+        graves:GRAVE_MARKERS.length-graves,
+        naturalDeaths:EVENT_LOG.filter(e=>e.type==='natural_death').length-naturalDeaths,
+        systemDeaths:EVENT_LOG.filter(e=>e.type==='died').length-systemDeaths};
+      tick();
+      return {...first,repeat:{graves:GRAVE_MARKERS.length-graves,
+        naturalDeaths:EVENT_LOG.filter(e=>e.type==='natural_death').length-naturalDeaths,
+        systemDeaths:EVENT_LOG.filter(e=>e.type==='died').length-systemDeaths}};
+    });
+    assert.deepEqual(outcome,{state:'dead',behavior:'dead',hp:0,finalized:true,healingTicksLeft:0,inQueue:false,
+      graves:1,naturalDeaths:1,systemDeaths:0,
+      repeat:{graves:1,naturalDeaths:1,systemDeaths:0}});
+  }finally{await browser.close();await new Promise(resolve=>server.close(resolve));}
+});
+
 test('Recovery exits clear their protection from passive deterioration', { timeout:30000 }, async()=>{
   const server=await startSiteServer(),browser=await launchBrowser(),page=await browser.newPage();
   try{

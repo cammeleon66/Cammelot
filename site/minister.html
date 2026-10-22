@@ -7235,13 +7235,23 @@ function checkCommunityProtest() {
 }
 
 // ═══ SIMULATION ═══
+function isLivingResident(a){
+  return !!a && a.hp>0 && a.state!=='dead' && a.behaviorState!=='dead' && !a.deathFinalized;
+}
+
 function finalizeAgentDeath(a){
-  if(a.state==='dead'){
-    a.hp=0; a.behaviorState='dead'; a.insideBuilding=null; a.healingTicksLeft=0;
+  if(a.deathFinalized||a.state==='dead'){
+    a.deathFinalized=true;
+    a.hp=0; a.state='dead'; a.behaviorState='dead'; a.insideBuilding=null; a.healingTicksLeft=0;
+    a.queueType=null; a.queueBuilding=null;
+    Object.values(QUEUES).forEach(q=>{
+      q.agents=q.agents.filter(aid=>aid!==a.id);
+    });
+    MoC.care?.sync();
     return;
   }
-  a.hp=0; a.state='dead'; a.behaviorState='dead';
-  a.insideBuilding=null; a.healingTicksLeft=0;
+  a.hp=0; a.deathFinalized=true; a.state='dead'; a.behaviorState='dead';
+  a.insideBuilding=null; a.healingTicksLeft=0; a.queueType=null; a.queueBuilding=null;
   if(!a.causeOfDeath) a.causeOfDeath='system_failure';
   // ── Sprint 5: Ghost float-up and grave marker ──
   a.ghostFloatTimer=90;
@@ -7309,6 +7319,10 @@ function tick(){
   if (cycle % 50 === 0) captureSnapshot();
   agents.forEach(a=>{
     if(a.type!=='patient'&&a.type!=='citizen') return;
+    if(a.state==='dead'||a.deathFinalized||a.hp<=0||a.behaviorState==='dead'){
+      finalizeAgentDeath(a);
+      return;
+    }
     if(a.moved) return;
     // Sprint 30: Capture pre-tick state for LLM trigger detection
     const _prevHp = a.hp;
@@ -7337,16 +7351,6 @@ function tick(){
 
     // Recovery ticks only protect agents while they are recovering.
     if(a.behaviorState!=='recovering'&&a.healingTicksLeft>0) a.healingTicksLeft=0;
-
-    // --- DEATH CHECK ---
-    if(a.state==='dead'){
-      a.hp=0; a.behaviorState='dead'; a.insideBuilding=null; a.healingTicksLeft=0;
-      return;
-    }
-    if(a.hp<=0||a.behaviorState==='dead'){
-      finalizeAgentDeath(a);
-      return;
-    }
 
     // --- NATURAL MORTALITY (age-based background) ---
     const baseMortality = 48/5000/(365*4); // 48 deaths/year in 5000 pop, 4 ticks/day
@@ -8015,7 +8019,7 @@ function tick(){
     // Serve front of queue
     const frontId = q.agents.shift();
     const frontAgent = agents.find(a => a.id === frontId);
-    if (frontAgent && frontAgent.behaviorState === 'queuing') {
+    if (isLivingResident(frontAgent) && frontAgent.behaviorState === 'queuing') {
       frontAgent.insideBuilding = bldgId;
       frontAgent.behaviorState = 'at_gp';
       frontAgent.stateTimer = 3 + Math.floor(Math.random() * 3);
@@ -8040,7 +8044,7 @@ function tick(){
   // IST: Basic clinical triage (severity + HP — the way real hospitals work today)
   // SOLL: AI-enhanced triage (Digital Twin data, digital literacy, bias mechanisms)
   let admissionSlots = MoC.care ? MoC.care.availableStarts(QUEUES.hospital?.agents.length || 0,
-    agents.filter(a => (a.type==='patient'||a.type==='citizen') && a.behaviorState === 'at_hospital' && a.hp > 0).length) : (cycle % 2 === 0 ? 1 : 0);
+    agents.filter(a => (a.type==='patient'||a.type==='citizen') && a.behaviorState === 'at_hospital' && isLivingResident(a)).length) : (cycle % 2 === 0 ? 1 : 0);
   while (admissionSlots-- > 0) {
     const hq = QUEUES.hospital;
     if (hq && hq.agents.length > 0) {
@@ -8057,7 +8061,7 @@ function tick(){
       });
       const frontId = hq.agents.shift();
       const frontAgent = agents.find(a => a.id === frontId);
-      if (frontAgent && frontAgent.behaviorState === 'queuing') {
+      if (isLivingResident(frontAgent) && frontAgent.behaviorState === 'queuing') {
         // Log triage reorder if agent wasn't already at front
         const hasCritical = frontAgent.conditions?.some(c => c.severity === 'critical');
         if (hasCritical && hq.agents.length > 0) {
@@ -12531,7 +12535,7 @@ async function initLLMSubsystem() {
   const referralEpisodes = [];
   const activeReferrals = new Map();
   function pendingReferral(a){
-    return a.hp > 0 && !a.moved && (a.behaviorState === 'going_to_hospital' || a.behaviorState === 'emergency'
+    return isLivingResident(a) && !a.moved && (a.behaviorState === 'going_to_hospital' || a.behaviorState === 'emergency'
       || (a.behaviorState === 'queuing' && a.queueType === 'hospital'));
   }
   MoC.care = {
