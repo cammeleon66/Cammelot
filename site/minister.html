@@ -7309,6 +7309,12 @@ function tick(){
   cycle++; const p=M[mode];
   MoC.seedTick(cycle);
   MoC.environment?.advance(cycle);
+  agents.forEach(a=>{
+    if((a.type==='patient'||a.type==='citizen')
+       && (a.deathFinalized||a.state==='dead'||a.hp<=0||a.behaviorState==='dead')){
+      finalizeAgentDeath(a);
+    }
+  });
   MoC.care?.sync();
   advanceTownMovement();
   // Sprint: Bound memory arrays to prevent leaks
@@ -7319,8 +7325,7 @@ function tick(){
   agents.forEach(a=>{
     if(a.type!=='patient'&&a.type!=='citizen') return;
     if(a.deathFinalized){
-      a.hp=0; a.state='dead'; a.behaviorState='dead'; a.insideBuilding=null; a.healingTicksLeft=0;
-      a.queueType=null; a.queueBuilding=null;
+      finalizeAgentDeath(a);
       return;
     }
     if(a.state==='dead'||a.hp<=0||a.behaviorState==='dead'){
@@ -7366,7 +7371,8 @@ function tick(){
       a.hp = 0;
       a.behaviorState = 'dead';
       a.causeOfDeath = 'natural';
-      return; // death check above will handle messaging on next tick
+      finalizeAgentDeath(a);
+      return;
     }
 
     // === DISEASE STATE PROGRESSION (every 4 ticks ≈ 1 sim week) ===
@@ -12448,7 +12454,9 @@ function executeLLMAction(agent, response, trigger) {
       break;
     case 'self_medicate':
       // Minor HP recovery, risky
-      agent.hp = Math.min(100, agent.hp + 2);
+      if ((agent.type !== 'patient' && agent.type !== 'citizen') || isLivingResident(agent)) {
+        agent.hp = Math.min(100, agent.hp + 2);
+      }
       break;
     default:
       // Unknown action — fallback to automaton
