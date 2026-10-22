@@ -107,7 +107,13 @@ function startLocalPythonServer() {
   });
 }
 
-async function exerciseSupportedPath({ name, serverFactory, pagePath }) {
+async function exerciseSupportedPath({
+  name,
+  serverFactory,
+  pagePath,
+  injectMissingMap = false,
+  injectExternalLeaderboardPost = false,
+}) {
   const server = await serverFactory();
   let browser;
   let failed = false;
@@ -129,12 +135,23 @@ async function exerciseSupportedPath({ name, serverFactory, pagePath }) {
         page.on('requestfailed', request => {
           if (new URL(request.url()).origin === origin) sameOriginFailures.push(request.url());
         });
+        page.on('response', response => {
+          const responseUrl = new URL(response.url());
+          if (responseUrl.origin === origin && response.status() >= 400) {
+            sameOriginFailures.push(`${response.status()} ${response.url()}`);
+          }
+        });
         await page.addInitScript(() => localStorage.setItem('moc_muted_v2', 'true'));
         await page.route('**/*', route => {
           const requestUrl = new URL(route.request().url());
+          if (route.request().method() === 'POST' && requestUrl.pathname.endsWith('/api/leaderboard')) {
+            attemptedSubmissions.push(requestUrl.href);
+          }
           if (requestUrl.origin !== origin) return route.abort();
+          if (injectMissingMap && requestUrl.pathname === '/map2.jpeg') {
+            return route.fulfill({ status: 404, body: 'injected missing asset' });
+          }
           if (requestUrl.pathname.endsWith('/api/leaderboard')) {
-            if (route.request().method() === 'POST') attemptedSubmissions.push(requestUrl.href);
             return route.fulfill({
               status: route.request().method() === 'POST' ? 501 : 200,
               contentType: 'application/json',
@@ -162,6 +179,14 @@ async function exerciseSupportedPath({ name, serverFactory, pagePath }) {
         assert.ok(startup.modelVersion.trim().length > 0, `${name}: model identity must be nonempty`);
         assert.equal(startup.isBaseline, false);
         assert.equal(startup.openingScreen, true, `${name}: player must start at the game opening`);
+
+        if (injectExternalLeaderboardPost && index === 0) {
+          await page.evaluate(() => fetch(
+            'https://app-cammelot-leaderboard-a8f605fa.azurewebsites.net/api/leaderboard',
+            { method: 'POST', body: '{}' },
+          ).catch(() => {}));
+          assert.deepEqual(attemptedSubmissions, [], `${name}: smoke tests must never submit scores`);
+        }
 
         if (index === 0) {
           await page.waitForFunction(() => {
@@ -262,3 +287,27 @@ test('documented local Python HTTP path serves both supported Minister scenarios
   serverFactory: startLocalPythonServer,
   pagePath: '/site/minister.html',
 }));
+
+test('deployment smoke rejects a same-origin HTTP 404 for a required map asset', {
+  timeout: 180000,
+}, async () => {
+  await assert.rejects(exerciseSupportedPath({
+    name: 'injected missing map asset',
+    serverFactory: startArtifactServer,
+    pagePath: '/minister.html',
+    injectMissingMap: true,
+  }), error => error.message.includes('same-origin assets must load')
+    && /404 .*map2\.jpeg/.test(error.message));
+});
+
+test('deployment smoke detects an external leaderboard POST before aborting it', {
+  timeout: 180000,
+}, async () => {
+  await assert.rejects(exerciseSupportedPath({
+    name: 'injected external leaderboard POST',
+    serverFactory: startArtifactServer,
+    pagePath: '/minister.html',
+    injectExternalLeaderboardPost: true,
+  }), error => error.message.includes('smoke tests must never submit scores')
+    && error.message.includes('app-cammelot-leaderboard-a8f605fa.azurewebsites.net/api/leaderboard'));
+});
