@@ -1,11 +1,20 @@
 # Minister of Cammelot — release status
 
-Updated: 2026-10-22
+Updated: 2026-10-26
 Public game: https://cammelot.org/minister.html
-Repository and verified public model: `minister-care-7-elapsed-time` (publication evidence below)
+Verified public model: `minister-care-7-elapsed-time` (publication evidence below)
+Upcoming repository model: `minister-care-8-finite-resources` — implementation only, **not deployed**
 Reference protocol: `no-discretionary-action-v1`
 
 This is the canonical status list. Older plans describe how the current release was built; their unchecked boxes are not active tasks.
+
+## Upcoming model 8: finite resources (F04)
+
+Issue [#4](https://github.com/cammeleon66/Cammelot/issues/4) replaces unlimited emergency admission with one separate emergency place and visible queued overflow, and bounds simultaneous GP consultations to one per practice. Routine treatment retains its named finite places and starts/week credit, independent of emergency care. Releases, initial occupancy, starts and completions are separately accounted; reduction of the routine target retires occupied places without evicting residents. See the [implemented resource contract](MINISTER_MODEL_CONTRACT.md#f04-implementation-upcoming-model-8-not-deployed) and [criterion evidence](MINISTER_F04_RESOURCE_EVIDENCE.md).
+
+This changes outcomes and is incompatible with model 7 replay/reference/leaderboard records. No release, workflow, backend, production leaderboard or repository-setting change is included. Model 7 remains the verified public executable. The one-place rule and overflow outcomes are unvalidated gameplay assumptions, not calibration or a claim of lower mortality. F05 workforce/productivity tuning and F07 effects remain separate work.
+
+Local implementation evidence: Minister browser/supported-host tests **37/37 passed**; `npm test` **179/179 passed** using system Chromium and temporary existing test dependencies (the locked Azure mirror was unavailable). This is repository validation, not publication evidence; see the focused evidence record for exact limitations.
 
 ## Model 7 timing change
 
@@ -79,7 +88,7 @@ These improve evidence and quality; they do not mean the currently deployed game
 
 - [x] Complete the active-copy pass: council newspaper, escalation banners, aging/flu updates and confidence-vote choices now report actual mechanics without invented testimonials or moralizing verdicts.
 - [ ] Complete balance validation: the versioned Cabinet Crisis correction produced 11/400 narrow re-elections (2.75%) across five development seeds and every purchase family; freeze it and validate on unseen holdout seeds.
-- [ ] Audit the legacy emergency-care bypass against the routine staffed-capacity model.
+- [x] Reproduce the legacy emergency/GP admission violations and implement finite resources in upcoming model 8; not a deployment claim.
 
 ## Human validation
 
@@ -148,9 +157,8 @@ Do not lower every target or add arbitrary bonuses. Use the trust ledger from st
 
 ### 5. Audit the remaining care-model risk
 
-- Trace emergency admissions through the legacy bypass and routine staffed-capacity paths.
-- Define when emergency care may bypass the routine queue and what capacity it still consumes.
-- Add fixtures for simultaneous emergency and routine demand.
+- Completed in upcoming model 8: trace the bypass, enforce one emergency place with visible overflow and independent routine resources.
+- Active-path fixtures cover simultaneous emergency/routine demand, GP concurrency and absence, terminal releases, re-entry, routine credit and shrinking capacity.
 - Retain cautious `model-classified system deaths` language until domain review.
 
 **Exit:** emergency priority cannot create unlimited hospital throughput or silently displace routine care without being measured.

@@ -5937,6 +5937,7 @@ function advanceTownMovement(){
   agents.forEach(e=>{
     if (e.hp <= 0 || e.moved) return;
     if(e.insideBuilding) return;
+    if(e.behaviorState === 'emergency_overflow') return;
     if(e.type==='specialist' || e.type==='gp') return;
 
     // ── Sprint 4: Chat pause — don't move while chatting ──
@@ -5958,7 +5959,7 @@ function advanceTownMovement(){
         // Path complete
         e.pathComplete = true;
         // If going somewhere specific, wait for tick() to handle arrival
-        if(e.behaviorState==='going_to_gp'||e.behaviorState==='going_to_hospital'||e.behaviorState==='queuing'||e.behaviorState==='protesting') return;
+        if(e.behaviorState==='going_to_gp'||e.behaviorState==='going_to_hospital'||e.behaviorState==='emergency'||e.behaviorState==='queuing'||e.behaviorState==='protesting') return;
         // Default roaming: idle then pick new random destination
         e.idleUntil = now + 2000 + Math.random() * 6000;
         const fromIdx = nearestReachableWaypointIdx(e.x, e.y);
@@ -6427,6 +6428,7 @@ function updateAgentLive(a) {
 
   // 2. State badge
   var stateLabels = {roaming:'Walking in town',going_to_gp:'Going to GP',queuing:'Waiting in queue',at_gp:'At GP consultation',going_to_hospital:'Going to Hospital',emergency:'\ud83d\ude91 Emergency Transport',at_hospital:'Receiving treatment',recovering:'Recovering',dead:'Deceased'};
+  stateLabels.emergency_overflow = 'Emergency overflow — waiting for treatment';
   var stateBadge = document.querySelector('.state-badge');
   if (stateBadge) {
     var newLabel = stateLabels[a.behaviorState] || a.behaviorState || 'Idle';
@@ -6506,6 +6508,7 @@ function selectAgent(a){
   a.currentThought=(a.currentThought||0)+1;
 
   const stateLabels={roaming:'Walking in town',going_to_gp:'Going to GP',queuing:'Waiting in queue',at_gp:'At GP consultation',going_to_hospital:'Going to Hospital',emergency:'🚑 Emergency Transport',at_hospital:'Receiving treatment',recovering:'Recovering',dead:'Deceased'};
+  stateLabels.emergency_overflow = 'Emergency overflow — waiting for treatment';
   const stateLabel=stateLabels[a.behaviorState]||a.behaviorState||'Idle';
 
   // Get agent events from EVENT_LOG
@@ -6659,7 +6662,7 @@ function selectAgent(a){
       {key:'recovered',icon:'✅',label:'Recovered'}
     ];
     const eventTypes=new Set(agentEvents.map(e=>e.type));
-    const currentStageMap={roaming:'spawned',going_to_gp:'feeling_sick',queuing:'feeling_sick',at_gp:'visited_gp',going_to_hospital:'referred',at_hospital:'admitted',recovering:'treated',dead:'died'};
+    const currentStageMap={roaming:'spawned',going_to_gp:'feeling_sick',queuing:'feeling_sick',at_gp:'visited_gp',going_to_hospital:'referred',emergency_overflow:'emergency_overflow',at_hospital:'admitted',recovering:'treated',dead:'died'};
     const currentStage=currentStageMap[a.behaviorState]||'spawned';
     html+=`<div class="ac-section"><h4>Care Pathway</h4><div class="care-pathway">`;
     pathwayStages.forEach((s,i)=>{
@@ -7283,6 +7286,7 @@ function isLivingResident(a){
 }
 
 function finalizeAgentDeath(a){
+  MoC.care?.release(a, 'death');
   if(a.deathFinalized||a.state==='dead'){
     a.deathFinalized=true;
     a.hp=0; a.state='dead'; a.behaviorState='dead'; a.insideBuilding=null; a.healingTicksLeft=0;
@@ -7484,19 +7488,26 @@ function tick(){
     // ═══ Sprint 28: Emergency Pathway (SEH) — critical/severe patients bypass GP ═══
     // In both IST and SOLL, Dutch hospitals have a Spoedeisende Hulp (ER)
     // Critical patients with low HP, OR severe patients with very low HP → emergency admission
-    if (a.conditions && a.conditions.length > 0 && a.behaviorState !== 'at_hospital' && a.behaviorState !== 'emergency' && a.behaviorState !== 'dead') {
+    if (a.conditions && a.conditions.length > 0 && !['at_hospital','emergency','emergency_overflow','dead'].includes(a.behaviorState)) {
       const worstSev = a.conditions.reduce((w, c) => {
         const order = { mild: 1, moderate: 2, severe: 3, critical: 4 };
         return (order[c.severity] || 0) > (order[w] || 0) ? c.severity : w;
       }, 'mild');
       const isEmergency = (worstSev === 'critical' && a.hp < 30) || (worstSev === 'severe' && a.hp < 15);
-      if (isEmergency && !a.referredToHospital) {
+      if (isEmergency) {
+        MoC.care.release(a, 'transfer');
+        Object.values(QUEUES).forEach(q => { q.agents = q.agents.filter(id => id !== a.id); });
+        a.insideBuilding = null;
+        a.queueType = null; a.queueBuilding = null;
+        a.queueLeaveTimer = 0;
         a.referredToHospital = true;
         a.emergencyAdmission = true;
         a.behaviorState = 'emergency';
         a.ambulanceTimer = 20;
         a.pathComplete = false;
-        a.waitWeeks = 0;
+        // Escalation preserves an existing referral's elapsed wait.
+        a.waitWeeks = MoC.care.elapsed(a);
+        MoC.care.sync();
         logEvent('emergency', a, 'Emergency admission — critical ' + a.conditions[0].name);
         addHistory(a, 'emergency', '🚑 Emergency! Rushed to hospital.');
         say('SYSTEM', `🚑 EMERGENCY: ${a.name} (${formatCompletedAge(a.age)}) — critical ${a.conditions[0].name}. Ambulance dispatched.`, 'alert');
@@ -7508,7 +7519,7 @@ function tick(){
     const timeOfDay = getTimeOfDay(modelTick).phase;
 
     // ── 26.1: Day/Night Rhythm ──
-    if (timeOfDay === 'night' && a.behaviorState !== 'at_hospital' && a.behaviorState !== 'queuing' && a.behaviorState !== 'at_gp' && a.behaviorState !== 'going_to_gp' && a.behaviorState !== 'going_to_hospital' && a.behaviorState !== 'emergency' && a.behaviorState !== 'dead') {
+    if (timeOfDay === 'night' && a.behaviorState !== 'at_hospital' && a.behaviorState !== 'queuing' && a.behaviorState !== 'at_gp' && a.behaviorState !== 'going_to_gp' && a.behaviorState !== 'going_to_hospital' && a.behaviorState !== 'emergency' && a.behaviorState !== 'emergency_overflow' && a.behaviorState !== 'dead') {
       if (!a.isNightOwl) {
         // Send home at night
         if (!a.insideBuilding && a.homePos) {
@@ -7527,7 +7538,7 @@ function tick(){
       }
     }
     // Dawn — emerge from home (Sprint 29: clears ALL non-hospital buildings)
-    if (timeOfDay === 'dawn' && a.insideBuilding && a.insideBuilding !== 'hospital' && a.behaviorState !== 'at_hospital' && a.behaviorState !== 'queuing') {
+    if (timeOfDay === 'dawn' && a.insideBuilding && a.insideBuilding !== 'hospital' && a.behaviorState !== 'at_hospital' && a.behaviorState !== 'at_gp' && a.behaviorState !== 'queuing') {
       a.insideBuilding = null;
       a.atWork = false;
       a.workTimer = 0;
@@ -7536,7 +7547,7 @@ function tick(){
     if (!a.insideBuildingTimer) a.insideBuildingTimer = 0;
     if (a.insideBuilding) {
       a.insideBuildingTimer++;
-      if (a.insideBuildingTimer > 100 && a.insideBuilding !== 'hospital') {
+      if (a.insideBuildingTimer > 100 && a.insideBuilding !== 'hospital' && a.behaviorState !== 'at_gp') {
         a.insideBuilding = null;
         a.insideBuildingTimer = 0;
         a.atWork = false;
@@ -7797,8 +7808,13 @@ function tick(){
       }
 
       case 'at_gp': {
+        // An absent provider cannot deliver consultation time. The occupied
+        // place remains reserved until completion, transfer or death.
+        const providerId = a.insideBuilding === 'gp2_bldg' ? 'gp2' : 'gp1';
+        if (agents.find(g => g.id === providerId)?.sickLeaveTimer > 0) break;
         a.stateTimer--;
         if(a.stateTimer<=0){
+          MoC.care.release(a, 'completed');
           // Find the GP agent for tracking
           const gpMap={'gp1_bldg':'gp1','gp2_bldg':'gp2'};
           const gpBldg=a.insideBuilding||getGPDest(a.gpName).building;
@@ -7913,29 +7929,16 @@ function tick(){
         break;
       }
 
-      // ── Sprint 28: Emergency transport — rush to hospital, skip queue ──
-      case 'emergency': {
-        // Sprint S4: Scale AI efficiency by digital literacy
-        var effectiveAI_e = 1 + (p.ai - 1) * (a.digitalLiteracy || 1);
+      // Emergency transport/overflow use the ordinary untreated wait rules.
+      // Admissions run after all clinical updates and releases, not in agent order.
+      case 'emergency':
+      case 'emergency_overflow': {
         a.waitWeeks = MoC.care.elapsed(a);
-        if(a.pathComplete){
-          // Emergency patients skip queue — go directly to treatment
-          // Remove from queue if somehow added
-          if(QUEUES.hospital){
-            QUEUES.hospital.agents = QUEUES.hospital.agents.filter(aid => aid !== a.id);
-          }
-          a.insideBuilding = 'hospital';
-          a.behaviorState = 'at_hospital';
-          a.stateTimer = 5 + Math.floor(Math.random() * 6);
-          a.queueBuilding = null;
-          a.queueType = null;
-          erAdmissionCount++;
-          logEvent('admitted', a, 'Emergency admission');
-          sayA2A('Hospital', a.name, 'ADMITTED', 'Emergency');
-          addHistory(a, 'entered_hospital', '🚑 Emergency admission — bypassed queue.');
-          say('Hospital', `🚑 ${a.name} — EMERGENCY admission. Immediate treatment.`, 'alert');
-          createFHIRResource('Encounter', a.id, { class: 'emergency_admission', serviceProvider: 'Hospital', urgency: 'emergency' });
+        let totalDrain = 0;
+        for (const cond of a.conditions) {
+          totalDrain += calculateHPDrain(cond, cond.severity, a.waitWeeks, p, a);
         }
+        a.hp = Math.max(0, a.hp - totalDrain * getComorbidityMultiplier(a.conditions));
         break;
       }
 
@@ -7988,6 +7991,7 @@ function tick(){
           a.hp = Math.min(100, a.hp + 2.5);
         }
         if(a.stateTimer<=0){
+          MoC.care.release(a, 'completed');
           a.insideBuilding=null; a.behaviorState='recovering';
           // Recovery duration from DISEASE_DB
           let maxRecoveryTicks = 15; // fallback
@@ -8074,20 +8078,30 @@ function tick(){
   });
 
   // ═══ Sprint 5: QUEUE PROCESSING ═══
-  // GP queues: serve 1 per tick (unless admin-blocked)
+  MoC.care.reconcile();
+  MoC.care.processEmergencies();
+  // Remove stale/duplicate entries BEFORE reserving resources or spending credit.
+  Object.entries(QUEUES).forEach(([building,q]) => {
+    q.agents = [...new Set(q.agents)].filter(id => {
+      const a = agents.find(a => a.id === id);
+      return isLivingResident(a) && !a.moved && a.behaviorState === 'queuing' && a.queueBuilding === building;
+    });
+  });
+  // GP queues: one concurrent consultation per named practice.
   ['gp1_bldg', 'gp2_bldg'].forEach(bldgId => {
     const q = QUEUES[bldgId];
     if (!q || q.agents.length === 0) return;
     // Sprint S2: Skip queue processing if GP is on sick leave
     const gpSickMap = {'gp1_bldg':'gp1','gp2_bldg':'gp2'};
     const gpForQueue = agents.find(a => a.id === gpSickMap[bldgId]);
-    if (gpForQueue && gpForQueue.sickLeaveTimer > 0) return;
+    if (!gpForQueue || gpForQueue.sickLeaveTimer > 0 || MoC.care.occupied(bldgId) >= 1) return;
     // Check admin blocking (random chance based on admin burden)
     if (Math.random() < p.admin * 0.3) return; // admin delay
     // Serve front of queue
     const frontId = q.agents.shift();
     const frontAgent = agents.find(a => a.id === frontId);
     if (isLivingResident(frontAgent) && frontAgent.behaviorState === 'queuing') {
+      if (!MoC.care.acquire(frontAgent, bldgId)) return;
       frontAgent.insideBuilding = bldgId;
       frontAgent.behaviorState = 'at_gp';
       frontAgent.stateTimer = 3 + Math.floor(Math.random() * 3);
@@ -8111,8 +8125,7 @@ function tick(){
   // Both IST and SOLL use clinical triage — Dutch hospitals don't use pure FIFO
   // IST: Basic clinical triage (severity + HP — the way real hospitals work today)
   // SOLL: AI-enhanced triage (Digital Twin data, digital literacy, bias mechanisms)
-  let admissionSlots = MoC.care ? MoC.care.availableStarts(QUEUES.hospital?.agents.length || 0,
-    agents.filter(a => (a.type==='patient'||a.type==='citizen') && a.behaviorState === 'at_hospital' && isLivingResident(a)).length) : (modelTick % 2 === 0 ? 1 : 0);
+  let admissionSlots = MoC.care.availableStarts(QUEUES.hospital?.agents.length || 0);
   while (admissionSlots-- > 0) {
     const hq = QUEUES.hospital;
     if (hq && hq.agents.length > 0) {
@@ -8130,6 +8143,7 @@ function tick(){
       const frontId = hq.agents.shift();
       const frontAgent = agents.find(a => a.id === frontId);
       if (isLivingResident(frontAgent) && frontAgent.behaviorState === 'queuing') {
+        if (!MoC.care.acquire(frontAgent, 'routine')) break;
         // Log triage reorder if agent wasn't already at front
         const hasCritical = frontAgent.conditions?.some(c => c.severity === 'critical');
         if (hasCritical && hq.agents.length > 0) {
@@ -11595,7 +11609,11 @@ function processBurnoutCascade() {
               targetQueue.agents.push(patientId);
               var qPos = getQueuePosition(gpQueueMap[targetGP.id], targetQueue.agents.length - 1);
               var patient = agents.find(function(a) { return a.id === patientId; });
-              if (patient) { patient.tx = qPos.x; patient.ty = qPos.y; }
+              if (patient) {
+                patient.tx = qPos.x; patient.ty = qPos.y;
+                patient.queueBuilding = gpQueueMap[targetGP.id];
+                patient.queueType = 'gp'; patient.gpName = targetGP.name;
+              }
             }
             // Cascade effect: receiving GP gets extra burnout
             var burnoutIncrease = mode === 'IST' ? 0.5 : 0.15;
@@ -12601,30 +12619,142 @@ async function initLLMSubsystem() {
 // ════════════════════════════════════════════════════════════
 (function(){
   const GS = MoC.S;
-  // Immutable outcome-affecting clock change: prior model versions are incompatible and not replayable here.
-  MoC.MODEL_VERSION = 'minister-care-7-elapsed-time';
+  // Finite resources/queued emergencies change outcomes; earlier versions are incompatible.
+  MoC.MODEL_VERSION = 'minister-care-8-finite-resources';
   MoC.REFERENCE_PROTOCOL = 'no-discretionary-action-v1';
   MoC.referencePolicy = MoC.IS_BASELINE;
   MoC.comparisonValidated = true;
   const referralEpisodes = [];
   const activeReferrals = new Map();
+  const resourceUses = [];
+  const activeUses = new Map();
+  const overflowEntries = [];
+  let creditTick = -1;
+  const resident = a => a && (a.type === 'patient' || a.type === 'citizen');
+  function resourceFor(a){
+    if (!resident(a) || !isLivingResident(a) || a.moved) return null;
+    if (a.behaviorState === 'at_gp') return a.insideBuilding || getGPDest(a.gpName).building;
+    if (a.behaviorState === 'at_hospital') return a.emergencyAdmission ? 'emergency' : 'routine';
+    return null;
+  }
   function pendingReferral(a){
     return isLivingResident(a) && !a.moved && (a.behaviorState === 'going_to_hospital' || a.behaviorState === 'emergency'
+      || a.behaviorState === 'emergency_overflow'
       || (a.behaviorState === 'queuing' && a.queueType === 'hospital'));
   }
   MoC.care = {
     episodes: referralEpisodes,
+    resourceUses,
+    slots:function(resource){
+      // Named treatment places, NOT empirical beds or staff headcounts.
+      return resource === 'routine' ? Math.max(1, Math.ceil(GS.specialistCapacity * 2.5)) : 1;
+    },
+    occupied:function(resource){
+      return [...activeUses.values()].filter(use => use.resource === resource).length;
+    },
+    acquire:function(a, resource, initial=false){
+      if (!resident(a) || !isLivingResident(a) || a.moved || activeUses.has(a.id)
+        || this.occupied(resource) >= this.slots(resource)) return false;
+      if (resource === 'routine' && !initial) {
+        if (GS.serviceCredit < 1) return false;
+        GS.serviceCredit -= 1;
+      }
+      const use = {agentId:a.id, resource, startTick:modelTick, initial};
+      activeUses.set(a.id, use); resourceUses.push(use);
+      return true;
+    },
+    release:function(a, outcome, use=activeUses.get(a.id)){
+      if (!use || activeUses.get(a.id) !== use) return false;
+      use.endTick = modelTick; use.outcome = outcome;
+      activeUses.delete(a.id);
+      return true;
+    },
+    reconcile:function(){
+      // Also covers relocation/other exits. A released episode cannot be released twice.
+      for (const [id,use] of activeUses) {
+        const a = agents.find(a => a.id === id);
+        if (resourceFor(a) !== use.resource) {
+          this.release({id}, !a || a.moved ? 'relocated' : !isLivingResident(a) ? 'death' : 'other_exit');
+        }
+      }
+      // Initial scenario occupants (or restored state) use the same finite places.
+      // No start credit is charged for care already underway at initialization.
+      agents.forEach(a => {
+        const resource = resourceFor(a);
+        if (!resource || activeUses.has(a.id)) return;
+        if (this.acquire(a, resource, true)) return;
+        a.insideBuilding = null;
+        if (resource === 'emergency') this.enqueueEmergency(a);
+        else {
+          const building = resource === 'routine' ? 'hospital' : resource;
+          a.behaviorState = 'queuing'; a.queueBuilding = building;
+          a.queueType = resource === 'routine' ? 'hospital' : 'gp';
+          if (!QUEUES[building].agents.includes(a.id)) QUEUES[building].agents.push(a.id);
+        }
+      });
+    },
+    enqueueEmergency:function(a){
+      if (a.behaviorState === 'emergency_overflow') return;
+      Object.values(QUEUES).forEach(q => { q.agents = q.agents.filter(id => id !== a.id); });
+      a.behaviorState = 'emergency_overflow'; a.insideBuilding = null;
+      a.path = []; a.pathIdx = 0; a.pathComplete = true;
+      a.queueType = null; a.queueBuilding = null;
+      a.tx = DESTINATIONS.hospital.entrance.x; a.ty = DESTINATIONS.hospital.entrance.y;
+      overflowEntries.push({agentId:a.id, tick:modelTick});
+      const episode = activeReferrals.get(a.id);
+      if (episode) episode.overflowed = true;
+      logEvent('emergency_overflow', a, 'Waiting for the one emergency treatment place');
+      addHistory(a, 'emergency_overflow', 'Emergency place occupied. Waiting for emergency treatment.');
+    },
+    processEmergencies:function(){
+      // One queue record per living resident: bounded by the finite resident roster,
+      // never an additional treatment place. No emergency is rejected when full.
+      const waiting = agents.filter(a => resident(a) && isLivingResident(a) && !a.moved
+        && (a.behaviorState === 'emergency_overflow' || (a.behaviorState === 'emergency' && a.pathComplete)));
+      waiting.sort((a,b) => (mode === 'SOLL' ? getTriagePriority(b)-getTriagePriority(a)
+        : getBaseTriagePriority(b)-getBaseTriagePriority(a)) || this.elapsed(b)-this.elapsed(a)
+        || a.id.localeCompare(b.id));
+      for (const a of waiting) {
+        if (!this.acquire(a, 'emergency')) { this.enqueueEmergency(a); continue; }
+        a.emergencyAdmission = true; a.insideBuilding = 'hospital'; a.behaviorState = 'at_hospital';
+        a.stateTimer = 5 + Math.floor(Math.random() * 6);
+        erAdmissionCount++;
+        logEvent('admitted', a, 'Emergency treatment place');
+        addHistory(a, 'entered_hospital', 'Emergency treatment started in the one emergency place.');
+        sayA2A('Hospital', a.name, 'ADMITTED', 'Emergency');
+        say('Hospital', `🚑 ${a.name} — emergency treatment started.`, 'alert');
+        createFHIRResource('Encounter', a.id, {class:'emergency_admission',serviceProvider:'Hospital',urgency:'emergency'});
+      }
+    },
+    resources:function(){
+      const result = {};
+      for (const resource of ['gp1_bldg','gp2_bldg','routine','emergency']) {
+        const uses = resourceUses.filter(use => use.resource === resource);
+        const occupancy = this.occupied(resource), slots = this.slots(resource);
+        result[resource] = {slots, occupancy,
+          // Capacity reductions retire occupied places only as their current care ends.
+          retiringSlots:Math.max(0, occupancy-slots),
+          initial:uses.filter(use => use.initial).length,
+          starts:uses.filter(use => !use.initial).length,
+          completions:uses.filter(use => use.outcome === 'completed').length,
+          releases:uses.filter(use => use.endTick !== undefined).length};
+      }
+      return result;
+    },
     elapsed:function(a){ const episode = activeReferrals.get(a.id); return episode ? Math.max(0, (modelTick-episode.startTick)/MoC.TICKS_PER_WEEK) : Math.max(0,a.waitWeeks||0); },
-    availableStarts:function(waiting, occupied){
-      // Nominal capacity is starts/week; this returns realized starts, bounded by accrued credit, demand, and occupancy.
-      const rate = Math.max(0.25, GS.specialistCapacity);
-      const staffedSlots = Math.max(1, Math.ceil(rate * 2.5));
-      GS.serviceCredit = Math.min(Math.max(1, rate / 4), GS.serviceCredit + rate / 4);
-      const count = Math.max(0, Math.min(waiting, Math.floor(GS.serviceCredit), staffedSlots - occupied));
-      GS.serviceCredit -= count;
-      return count;
+    availableStarts:function(waiting){
+      const rate = GS.specialistCapacity;
+      // Accrue once per elapsed tick. Idle/full credit is capped; debit only on
+      // a successful routine acquisition, never for stale queue entries.
+      if (creditTick !== modelTick) {
+        GS.serviceCredit = Math.min(Math.max(1, rate / MoC.TICKS_PER_WEEK),
+          GS.serviceCredit + rate / MoC.TICKS_PER_WEEK);
+        creditTick = modelTick;
+      }
+      return Math.max(0, Math.min(waiting, Math.floor(GS.serviceCredit), this.slots('routine')-this.occupied('routine')));
     },
     sync:function(){
+      this.reconcile();
       agents.forEach(a => {
         let episode = activeReferrals.get(a.id);
         if (!episode && pendingReferral(a)) {
@@ -12632,6 +12762,7 @@ async function initLLMSubsystem() {
             openedTick:modelTick, startTick:modelTick - (a.waitWeeks || 0) * MoC.TICKS_PER_WEEK, status:'waiting' };
           activeReferrals.set(a.id, episode); referralEpisodes.push(episode);
         }
+        if (episode && (a.emergencyAdmission || a.behaviorState === 'emergency_overflow')) episode.emergency = true;
         if (episode && !pendingReferral(a)) {
           episode.endTick = modelTick;
           episode.waitWeeks = Math.max(0, (modelTick - episode.startTick) / MoC.TICKS_PER_WEEK);
@@ -12653,6 +12784,15 @@ async function initLLMSubsystem() {
         otherExits:referralEpisodes.filter(e => e.status === 'other_exit').length,
         referrals:referralEpisodes.length, systemDeaths:systemDeaths(), totalDeaths:GRAVE_MARKERS.length,
         capacity:GS.specialistCapacity, admin:M.IST.admin, budget:GS.budget,
+        resources:this.resources(), resourceInterval:{fromTick:0,toTick:modelTick},
+        emergencyOverflow:agents.filter(a => resident(a) && isLivingResident(a) && !a.moved && a.behaviorState === 'emergency_overflow').length,
+        emergencyOverflowBound:agents.filter(resident).length,
+        emergencyOverflowEntries:overflowEntries.length,
+        emergencyDeathsWaiting:referralEpisodes.filter(e => e.emergency && e.status === 'died_waiting').length,
+        overflowDeathsWaiting:referralEpisodes.filter(e => e.overflowed && e.status === 'died_waiting').length,
+        emergencyStarts:resourceUses.filter(use => use.resource === 'emergency' && !use.initial).length,
+        routineStarts:resourceUses.filter(use => use.resource === 'routine' && !use.initial).length,
+        routineDisplacements:0,
         staffBurnout:agents.filter(a=>a.type==='gp').map(a=>({id:a.id,burnout:a.burnoutLevel||0})) };
     },
     compare:function(player, reference){
@@ -12665,6 +12805,22 @@ async function initLLMSubsystem() {
     }
   };
   MoC.runSnapshots = {};
+  function resourceReportHtml(s){
+    const r = s.resources;
+    const line = (label,value) => '<div class="moc-score-row"><span>'+label+'</span><b>'+value+'</b></div>';
+    return '<div class="moc-resource-report">'
+      + '<p class="moc-sub">Named treatment places (not beds or staff). Throughput: elapsed ticks 0–'+s.tick+'.</p>'
+      + line('GP consultations occupied',r.gp1_bldg.occupancy+'/1 + '+r.gp2_bldg.occupancy+'/1')
+      + line('Routine places occupied',r.routine.occupancy+'/'+r.routine.slots
+        +(r.routine.retiringSlots ? ' · '+r.routine.retiringSlots+' retiring' : ''))
+      + line('Nominal routine starts/week',s.capacity.toFixed(2))
+      + line('Routine starts / completions',r.routine.starts+' / '+r.routine.completions)
+      + line('Emergency place occupied',r.emergency.occupancy+'/1')
+      + line('Emergency overflow waiting / bound',s.emergencyOverflow+' / '+s.emergencyOverflowBound)
+      + line('Emergency starts / completions',r.emergency.starts+' / '+r.emergency.completions)
+      + line('Overflow entries / deaths before treatment',s.emergencyOverflowEntries+' / '+s.overflowDeathsWaiting)
+      + '<p class="moc-sub">Overflow is waiting, not treatment. Bound: one record per named resident. Emergency care uses no routine place or start credit.</p></div>';
+  }
   MoC.referenceAt = function(tick){
     const ref=MoC.baseline, sample=ref?.snapshots?.[tick];
     if (!MoC.comparisonValidated || ref?.protocol!==MoC.REFERENCE_PROTOCOL || ref?.scheduleId!==MoC.environment?.scheduleId
@@ -12679,6 +12835,7 @@ async function initLLMSubsystem() {
   if (MoC.previousRun && (MoC.previousRun.modelVersion!==MoC.MODEL_VERSION || MoC.previousRun.seed!==MoC.seed || MoC.previousRun.scenario!==GS.scenario)) MoC.previousRun=null;
   // Apply scenario modifiers (must run before first tick matters)
   if (MoC.scenario && MoC.scenario.setup) MoC.scenario.setup();
+  MoC.care.sync(); // Account initial care at tick zero, before any displayed snapshot.
   const GENTLE = !!(MoC.scenario && MoC.scenario.gentle);
   // Schedule is exogenous: generation reads seed/scenario length only, never policy or UI randomness.
   const externalKinds = ['flu','grid','shortage'];
@@ -12767,7 +12924,7 @@ async function initLLMSubsystem() {
         +'<div class="moc-score-row"><span>Current referral queue</span><b>'+waitText(player)+' / '+waitText(prior)+'</b></div>';
       else html+='<p class="moc-sub">Your previous attempt ended at tick '+MoC.previousRun.tick+'. No same-date comparison is available here.</p>';
     }
-    return html;
+    return html + resourceReportHtml(player);
   }
   MoC.saveReplay=function(){
     const final=GS._finalSnapshot||MoC.care.snapshot();
@@ -13640,7 +13797,7 @@ async function initLLMSubsystem() {
     if (a.type === 'gp' || a.type === 'specialist') return 'Staff · burnout ' + Math.round(a.burnoutLevel || 0) + '% · ' + (a.sickLeaveTimer > 0 ? 'on sick leave' : 'working');
     const states = {roaming:'At home or in town',going_to_gp:'On the way to the GP',going_to_hospital:'Referred; travelling to hospital',
       queuing:a.queueType === 'hospital' ? 'Waiting for specialist care' : 'Waiting at the GP',at_gp:'At the GP',at_hospital:'Receiving hospital care',
-      recovering:'Recovering',emergency:'Emergency referral',sleeping:'Resting'};
+      recovering:'Recovering',emergency:'Emergency referral',emergency_overflow:'Emergency overflow; waiting for treatment',sleeping:'Resting'};
     return 'Age ' + formatCompletedAge(a.age) + ' · health ' + Math.round(a.hp) + '/100\n' + (states[a.behaviorState] || 'In town')
       + (pendingReferral(a) ? ' · waiting ' + (a.waitWeeks || 0).toFixed(1) + ' weeks' : '');
   }
@@ -13662,6 +13819,7 @@ async function initLLMSubsystem() {
       return 'Today is manageable: ' + queueSize + ' people are waiting here.';
     }
     if (a.behaviorState === 'going_to_hospital') return 'The referral is in. Now I wait to reach the specialist.';
+    if (a.behaviorState === 'emergency_overflow') return 'The emergency place is occupied. I am waiting for treatment.';
     if (a.behaviorState === 'queuing') return 'I am in the queue. I do not know when my turn comes.';
     if (a.behaviorState === 'at_hospital') return 'I reached the hospital. Treatment has finally started.';
     if (a.behaviorState === 'recovering') return 'Treatment has started. I am watching whether my health returns.';
@@ -15667,7 +15825,9 @@ async function initLLMSubsystem() {
       + '</span></div>'
       + '<div class="mrow">' + pixIcon('coin') + ' Budget<b class="' + (GS.budget > 200000 ? 'g' : GS.budget > 50000 ? 'y' : 'r') + '">' + fmtK(GS.budget) + '</b></div>'
       + mandateHtml
+      + '<div class="mfx" id="moc-emergency-overflow">Emergency overflow: '+MoC.care.snapshot().emergencyOverflow+' waiting · 1 treatment place</div>'
       + '<details id="moc-ministry-figures"' + (figuresOpen ? ' open' : '') + '><summary>Town figures</summary>'
+      + resourceReportHtml(MoC.care.snapshot())
       + trustBarRow('people', 'Citizens', GS.trustC)
       + trustBarRow('cross', 'Doctors', GS.trustD)
       + trustBarRow('bank', 'Parliament', GS.trustP)
