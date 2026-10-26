@@ -60,6 +60,10 @@ All fixtures below are named `F04 …` in `tests/minister_browser.test.js`. They
 
 These tests use local HTTP and mocked/blocked publication, never production leaderboard writes. No frontend build step or new dependency is required.
 
+#### Coordinator review follow-up (2026-10-26)
+
+The browser-isolation review finding did not reproduce with the locked Playwright 1.62.1: its `Browser` API declares and emits the `context` event. A new offline regression exercises both `browser.newPage()` and explicit `browser.newContext()` creation, verifies all three cosmetic hosts are fulfilled without network access, and checks page-route precedence. Removing the route listener makes that regression fail with `ERR_INTERNET_DISCONNECTED`; restoring it passes. The isolated worktree restored dependencies with `npm ci` without changing the lockfile. The offline regression and all seven F04 resource fixtures passed together. This is regression evidence, not a clinical-validation or deployment claim.
+
 ## Model 7 timing change
 
 Model 7 was merged through cammeleon66/Cammelot#30 and published on 2026-10-22 through `feature/agentic-overhaul`. Both supported public scenarios were verified after deployment.

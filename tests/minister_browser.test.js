@@ -49,6 +49,30 @@ async function openCouncilActions(page) {
   assert.ok(await page.locator('#moc-shop').count(), 'council must reach funding');
 }
 
+test('Browser fixtures isolate cosmetic requests offline for both context creation paths', { timeout: 30000 }, async () => {
+  const browser = await launchBrowser();
+  try {
+    for (const explicitContext of [false, true]) {
+      const page = explicitContext
+        ? await (await browser.newContext()).newPage()
+        : await browser.newPage();
+      const context = page.context();
+      await context.setOffline(true);
+      for (const host of ['fonts.googleapis.com', 'fonts.gstatic.com', 'plausible.io']) {
+        const response = await page.goto(`https://${host}/fixture-isolation`);
+        assert.equal(response.status(), 200);
+        assert.equal(await response.text(), '', `${host} must be fulfilled without network access`);
+      }
+      await page.route('https://plausible.io/fixture-isolation', route => route.fulfill({ body: 'page override' }));
+      const response = await page.goto('https://plausible.io/fixture-isolation');
+      assert.equal(await response.text(), 'page override', 'page-specific mocks must retain precedence');
+      await context.close();
+    }
+  } finally {
+    await browser.close();
+  }
+});
+
 test('Minister picker offers two responsive game modes', { timeout: 30000 }, async () => {
   const server = await startSiteServer();
   const browser = await launchBrowser();
