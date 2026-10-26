@@ -7,6 +7,45 @@ Reference protocol: `no-discretionary-action-v1`
 
 This is the canonical status list. Older plans describe how the current release was built; their unchecked boxes are not active tasks.
 
+## Model 9: workforce/productivity (F05) — upcoming, not deployed
+
+Issue [#5](https://github.com/cammeleon66/Cammelot/issues/5) is implemented locally as `minister-care-9-workforce-productivity`, based on `ba0c19ba4d6ca06618961327f742e677b44b0322`. **Model 8 remains the verified public model.** This work does not publish, push, open a PR, deploy or modify workflows, settings, backend or production leaderboard state. Review and release belong to the coordinator.
+
+### Mechanism and scope
+
+Aggregate absence and AI productivity were disconnected from GP service on the current base, not merely hidden by hospital bottlenecks. Named GP sick-leave timers instead came from burnout. Model 9 consumes the existing 3–5-unit consultation workload at:
+
+`min(on-duty GPs, total GPs × (1 - absence)) / on-duty GPs × (1 - admin) × AI`
+
+per present GP per tick (zero when none are present). Aggregate absence is a minimum unavailable fraction, with named absences counted toward it, not charged again. The old random admin admission gate is removed; admin reduces clinical work once and still affects the existing overdue-wait drain once. Recruitment retains the nominal routine-rate/credit/place mechanism; AI does not create specialist starts or change disease coefficients. Idle work is not stored, and a practice can complete at most one consultation per tick. These are explicit engineering assumptions, not empirical workforce effects or a guarantee of fewer deaths.
+
+The [model contract](MINISTER_MODEL_CONTRACT.md#f05-implementation-model-9-workforceproductivity-upcoming-not-deployed) traces shop, law, decision/shock and parameter paths through service to metrics. Reporting distinguishes nominal/available GP work, actual GP visits, routine starts and occupancy. Previews share effect projection with execution. Bounds reject invalid effects observably instead of silently clamping them; valid zeros and positive small drain factors survive. Effect arithmetic retains precision instead of rounding to hundredths (the 70%-adopted pilot now produces admin 0.184, displayed as 18%). Scheduled effects/reversals receive the same bounds checking; their coefficients and schedule generation are unchanged.
+
+This is an outcome change and therefore incompatible with model 8 replay/reference/leaderboard results. Protocol `no-discretionary-action-v1` remains unchanged. Clock, horizons, terminal mortality, night GP routing, retirement in care and finite-resource conservation remain regression requirements. No F06/F07 work, score reweighting, scheduler replacement or wholesale rebalance is included.
+
+### F05 local implementation evidence
+
+The actual-path fixture command is `node --test --test-name-pattern='F05' tests/minister_browser.test.js`. Local HTTP, locked Playwright 1.62.1 and the existing Node test runner are used; no new dependency or tooling. Tests block non-GET requests and production writes. The supported `Browser` context-event offline routing is retained.
+
+Before implementation, two minimized tests failed on the unchanged base: absence 10% vs 80% and productivity ×1 vs ×3 each produced **4 starts / 3 completions** in 16 active ticks with six queued residents. An initial 32-tick fixture reached a real game pause at tick 26; reducing it to 16 ticks removed that unrelated interruption rather than bypassing active handlers.
+
+| Fixture | Observed mechanism evidence |
+|---|---|
+| Absence alone, 10% → 80% | Available town GP work/week 7.2 → 1.6; starts 4 → 1; completions 3 → 0 in 16 ticks. Routine rate remains 0.25 and routine starts zero. |
+| AI alone, ×1 → ×3 | GP work/week 8 → 24; starts/completions 4/3 → 6/6. No routine rate change. Not a mortality assertion. |
+| Admin alone, 10% → 80% | GP work/week 7.2 → 1.6; completions 3 → 0. Separate overdue fixture matches the single `(1+admin)` charge and executable HP breakdown within `1e-9`. |
+| Recruitment, 0.25 → 1.25 nominal starts/week | Routine starts 1 → 4; places 1 → 4 over 16 ticks; GP work unchanged. The existing capped-credit rule means this fixture realizes four starts, not an assumed five. |
+| Combined admin 25%, absence 60%, AI ×2 | Both present: 0.6 work per GP per tick; one absent: remaining GP supplies 1.2 work/tick. Town work is 4.8/week in either case. At 25% aggregate absence and one named absence, the remaining GP supplies 1.5 work/tick without a second absence penalty. |
+| Zero and invalid boundaries | Admin 1/absence 1 block starts and pause active work; both named GPs absent give zero work despite high AI. Admin/absence/adoption 0 and healthy severity factor 0 are preserved. Negative/out-of-range/nonfinite inputs and derived overflow reject, with no partial budget or care mutation. Positive drain 0.001 survives; URL replacement is atomic. |
+| Downstream constraint | With the routine place occupied for the fixture, AI ×1 → ×3 gives GP completions 3 → 6 but **zero routine starts in both**; credit remains capped at one. More referrals are not assumed to be better outcomes. |
+| Real purchase/preview | Zero-adoption scribe purchase applies only its declared temporary rollout admin cost, not a hidden benefit. Full-adoption reduction below zero is visibly unavailable and the button disabled. |
+
+The seven F05 tests pass. Every service fixture uses stable RNG, isolated unrelated residents, bounded loops and active player `tick()` processing; `referencePolicy` is setup-only and restored before testing. Existing F04 fixtures run at neutral workforce parameters to isolate their original resource invariants; combined F05 fixtures exercise the new workforce mechanism with the same conservation checks.
+
+The first complete-suite attempt exposed two implementation follow-ups: rejecting the existing `deceased` **condition** state broke reference execution on non-finalizing paths, and an old purchase assertion assumed hundredth rounding. The inherited condition-state factor 1 is now explicit (terminal resident rules unchanged), and the purchase assertion checks exact retained effect precision. The focused F05/reference/preview/replay rerun passed **10/10**.
+
+Final Windows validation: `npm test` **187/187 passed**, 48 suites, zero failures/cancellations/skips (180.36 seconds). This includes all seven F05 fixtures, all seven F04 resource fixtures, offline routing, both supported HTTP host paths, both scenario references, versioned replay/publication mocks, clock, terminal death, night routing and retirement regressions. Supported no-action runs additionally assert that scenario/scheduled effects produce no care-input error. `node --check tests/minister_browser.test.js`, Acorn parsing of the inline Minister script, and `git diff --check` passed. Self-review was local and single-writer; no other agent or workflow was launched. This is repository evidence, not publication or clinical validation.
+
 ## Model 8: finite resources (F04)
 
 Issue [#4](https://github.com/cammeleon66/Cammelot/issues/4) replaces unlimited emergency admission with one separate emergency place and visible queued overflow, and bounds simultaneous GP consultations to one per practice. Routine treatment retains its named finite places and starts/week credit, independent of emergency care. Releases, initial occupancy, starts and completions are separately accounted; reduction of the routine target retires occupied places without evicting residents. See the [implemented resource contract](MINISTER_MODEL_CONTRACT.md#f04-implementation-model-8-finite-resources) and [criterion evidence](#f04-implementation-evidence).

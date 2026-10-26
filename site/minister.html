@@ -1505,6 +1505,7 @@ const MoC = (function(){
     trust: scenario ? scenario.trust : 60,
     dependence: 2,                  // tech dependence points (Cammelot already runs DigiD, Halcyon One, MS365)
     specialistCapacity: 2,          // routine treatment starts/week; explicit gameplay assumption
+    adoptionRate: 0.7,              // named digital-policy effect scaling, fraction
     serviceCredit: 0,
     interventions: [],              // purchased interventions log
     challengeScore: parseInt(hashParams.get('score'), 10) || null,
@@ -4286,16 +4287,57 @@ function transitionDiseaseState(conditionCode, currentState, waitWeeks, treeknor
 
 // HP drain calculation per CLAUDE.md formula:
 // HP_drain = drainRate × (t_wait - T_Treeknorm) × severityMultiplier × (1 + adminBurden)
-const SEVERITY_MULTIPLIER = { healthy:0, mild:0.5, moderate:1.0, severe:2.0, critical:4.0 };
+// Preserve the inherited factor 1 for a condition's deceased state on paths
+// where the existing terminal-condition rule does not finalize the resident.
+const SEVERITY_MULTIPLIER = { healthy:0, mild:0.5, moderate:1.0, severe:2.0, critical:4.0, deceased:1.0 };
+
+// F05 input contract: reject rather than silently substitute/clamp a claim.
+function requireCareNumber(name, value, min, max=Infinity, exclusiveMin=false) {
+  if (!Number.isFinite(value) || value > max || (exclusiveMin ? value <= min : value < min))
+    throw new RangeError('Invalid care input: ' + name);
+  return value;
+}
+function validateCareParameters(p, rate=MoC.S.specialistCapacity, adoption=MoC.S.adoptionRate) {
+  for (const key of ['admin','sick']) requireCareNumber(key,p[key],0,1);
+  for (const key of ['ai','drain']) requireCareNumber(key,p[key],0,Infinity,true);
+  requireCareNumber('tree',p.tree,0);
+  requireCareNumber('capacity',rate,0.25);
+  requireCareNumber('adoption',adoption,0,1);
+  requireCareNumber('routine places',rate * 2.5,0);
+  requireCareNumber('GP nominal work/week',p.ai * MoC.TICKS_PER_WEEK * 2,0);
+  return p;
+}
+function reportCareInputError(error) {
+  MoC.lastInputError = error.message;
+  MoC.careInputErrorCount = (MoC.careInputErrorCount || 0) + 1;
+  if (typeof showToast === 'function') showToast(error.message,4000);
+  return false;
+}
+function gpServiceCapacity(p=M[mode]) {
+  validateCareParameters(p);
+  const gps = agents.filter(a => a.type === 'gp');
+  const present = gps.filter(g => g.sickLeaveTimer <= 0).length;
+  // Named absences count toward the aggregate floor, not on top of it.
+  const available = Math.min(present,gps.length * (1-p.sick));
+  const perPresentTick = present ? (1-p.admin) * p.ai * (available/present) : 0;
+  return {nominalWorkPerWeek:gps.length * MoC.TICKS_PER_WEEK,
+    availableWorkPerWeek:perPresentTick * present * MoC.TICKS_PER_WEEK,
+    perPresentTick, present, providers:gps.length};
+}
 
 function overdueWaitDrainPerTick(waitWeeks, normWeeks, severity, adminBurden) {
+  requireCareNumber('wait weeks',waitWeeks,0);
+  requireCareNumber('norm weeks',normWeeks,0);
   const overdueWeeks = Math.max(0, waitWeeks - normWeeks);
-  const severityMultiplier = SEVERITY_MULTIPLIER[severity] ?? 1.0;
-  return 3 * overdueWeeks * severityMultiplier * (1 + adminBurden) / MoC.TICKS_PER_WEEK;
+  const severityMultiplier = requireCareNumber('severity multiplier ('+severity+')',SEVERITY_MULTIPLIER[severity],0);
+  requireCareNumber('admin',adminBurden,0,1);
+  if (severityMultiplier === 0) return 0;
+  return requireCareNumber('overdue drain',3 * overdueWeeks * severityMultiplier * (1 + adminBurden) / MoC.TICKS_PER_WEEK,0);
 }
 
 function calculateHPDrain(condition, severity, waitWeeks, params, agent) {
   // params = p (the current mode's M.IST or M.SOLL)
+  requireCareNumber('drain',params.drain,0,Infinity,true);
   const db = DISEASE_DB[condition.code];
   if (!db) return 0;
 
@@ -4322,7 +4364,7 @@ function calculateHPDrain(condition, severity, waitWeeks, params, agent) {
     drain *= 0.9; // back-compat for agents without persona
   }
 
-  return drain;
+  return requireCareNumber('HP drain',drain,0);
 }
 
 // Comorbidity multiplier from DISEASE_DB
@@ -4376,9 +4418,11 @@ function buildDrainBreakdown(agent) {
   });
 
   var subtotal = baseDrainTotal + waitPenaltyTotal;
-  var adminExtra = subtotal * p.admin;
+  // Admin is already in overdueWaitDrainPerTick; never add it a second time.
+  var adminExtra = 0;
   var totalBeforeComorb = subtotal + adminExtra;
-  var totalDrain = totalBeforeComorb * comorbMult;
+  var totalDrain = agent.conditions.reduce((sum,cond) =>
+    sum + calculateHPDrain(cond,cond.severity,agent.waitWeeks,p,agent),0) * comorbMult;
 
   // CSS stacked bar segments
   var segTotal = baseDrainTotal + waitPenaltyTotal + adminExtra + (comorbMult > 1 ? totalBeforeComorb * (comorbMult - 1) : 0);
@@ -4390,8 +4434,8 @@ function buildDrainBreakdown(agent) {
 
   var html = '<div class="ac-section"><h4>⚡ HP Drain Analysis</h4>';
   html += rows;
-  html += '<div class="ac-row"><span class="k" style="color:#c62828">Admin burden</span><span class="v" style="color:#c62828">+' +
-    Math.round(p.admin * 100) + '% → +' + adminExtra.toFixed(3) + '/tick</span></div>';
+  html += '<div class="ac-row"><span class="k">Admin burden</span><span class="v">' +
+    Math.round(p.admin * 100) + '% included in overdue wait penalty only</span></div>';
   if (agent.conditions.length >= 2 && comorbMult > 1) {
     html += '<div class="ac-row"><span class="k" style="color:#6a1b9a">Comorbidity</span><span class="v" style="color:#6a1b9a">×' +
       comorbMult.toFixed(1) + ' multiplier</span></div>';
@@ -6852,59 +6896,12 @@ function showTownFeed() {
 
 // ── Sprint S2: C_eff Capacity Bar Chart ──
 function buildCapacityChart() {
-  const pIST = M.IST;
-  const pSOLL = M.SOLL;
-  const cur = M[mode];
-  const sickPct = Math.round(cur.sick * 100);
-  const adminPct = Math.round(cur.admin * 100);
-  const usablePct = Math.max(0, 100 - adminPct - sickPct);
-  const cEff = (MAX_GP_CONSULTS_PER_DAY * (1 - cur.admin - cur.sick) * cur.ai).toFixed(1);
-
-  let chartHTML = `<div class="ac-section"><h4>C<sub>eff</sub> Capacity Breakdown</h4>`;
-
-  if (mode === 'SOLL') {
-    // IST comparison bar
-    const istAdmin = Math.round(pIST.admin * 100);
-    const istSick = Math.round(pIST.sick * 100);
-    const istUsable = Math.max(0, 100 - istAdmin - istSick);
-    const istCEff = (MAX_GP_CONSULTS_PER_DAY * (1 - pIST.admin - pIST.sick) * pIST.ai).toFixed(1);
-    chartHTML += `<div style="margin-bottom:2px;color:rgba(255,255,255,0.5);font-size:9px">IST (current)</div>`;
-    chartHTML += `<div style="display:flex;height:18px;border-radius:4px;overflow:hidden;border:1px solid rgba(255,255,255,0.15);margin-bottom:6px">`;
-    chartHTML += `<div style="width:${istUsable}%;background:#4CAF50;display:flex;align-items:center;justify-content:center;font-size:8px;color:#fff;font-weight:bold">${istUsable}%</div>`;
-    chartHTML += `<div style="width:${istAdmin}%;background:#E53935;display:flex;align-items:center;justify-content:center;font-size:8px;color:#fff;font-weight:bold">${istAdmin}%</div>`;
-    chartHTML += `<div style="width:${istSick}%;background:#FF9800;display:flex;align-items:center;justify-content:center;font-size:8px;color:#fff;font-weight:bold">${istSick}%</div>`;
-    chartHTML += `</div>`;
-    chartHTML += `<div style="font-size:9px;color:rgba(255,255,255,0.4);margin-bottom:8px">C<sub>eff</sub> = ${MAX_GP_CONSULTS_PER_DAY} × (1 - ${istAdmin}% - ${istSick}%) × ${pIST.ai}× = ${istCEff} slots/day</div>`;
-
-    chartHTML += `<div style="margin-bottom:2px;color:rgba(255,255,255,0.5);font-size:9px">SOLL (target)</div>`;
-  }
-
-  // Current mode bar
-  chartHTML += `<div style="display:flex;height:22px;border-radius:4px;overflow:hidden;border:1px solid rgba(255,255,255,0.2);margin-bottom:6px">`;
-  chartHTML += `<div style="width:${usablePct}%;background:#4CAF50;display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;font-weight:bold;transition:width 0.5s">${usablePct}%</div>`;
-  chartHTML += `<div style="width:${adminPct}%;background:#E53935;display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;font-weight:bold;transition:width 0.5s">${adminPct}%</div>`;
-  chartHTML += `<div style="width:${sickPct}%;background:#FF9800;display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;font-weight:bold;transition:width 0.5s">${sickPct}%</div>`;
-  chartHTML += `</div>`;
-
-  // Legend
-  chartHTML += `<div style="display:flex;gap:10px;font-size:9px;margin-bottom:4px">`;
-  chartHTML += `<span><span style="display:inline-block;width:8px;height:8px;background:#4CAF50;border-radius:2px"></span> Usable</span>`;
-  chartHTML += `<span><span style="display:inline-block;width:8px;height:8px;background:#E53935;border-radius:2px"></span> Admin</span>`;
-  chartHTML += `<span><span style="display:inline-block;width:8px;height:8px;background:#FF9800;border-radius:2px"></span> Sick</span>`;
-  chartHTML += `</div>`;
-
-  // Formula
-  chartHTML += `<div style="font-size:10px;color:rgba(255,255,255,0.6);font-family:'JetBrains Mono',monospace">`;
-  chartHTML += `C<sub>eff</sub> = ${MAX_GP_CONSULTS_PER_DAY} × (1 - ${adminPct}% - ${sickPct}%) × ${cur.ai}× = <b style="color:#FFB300">${cEff} slots/day</b>`;
-  chartHTML += `</div>`;
-
-  // AI multiplier badge in SOLL
-  if (mode === 'SOLL') {
-    chartHTML += `<div style="margin-top:4px"><span style="background:rgba(76,175,80,0.25);border:1px solid #4CAF50;border-radius:4px;padding:2px 8px;font-size:10px;color:#4CAF50;font-weight:bold">×${cur.ai} AI</span></div>`;
-  }
-
-  chartHTML += `</div>`;
-  return chartHTML;
+  const c = gpServiceCapacity(), p = M[mode];
+  return `<div class="ac-section"><h4>GP clinical service</h4>
+    <div class="ac-row"><span class="k">Nominal work/week</span><span class="v">${c.nominalWorkPerWeek}</span></div>
+    <div class="ac-row"><span class="k">Available work/week</span><span class="v">${c.availableWorkPerWeek.toFixed(2)}</span></div>
+    <p>${MoC.TICKS_PER_WEEK} × min(${c.present} on duty, ${c.providers} × (1 − ${p.sick})) × (1 − ${p.admin}) × ${p.ai.toFixed(2)}.</p>
+    <p>One consultation per practice, 3–5 clinical work units each. Named absences count toward aggregate absence. No idle work banking; no specialist or disease multiplier.</p></div>`;
 }
 
 // ═══ BUILDING DASHBOARD (Sprint 2) ═══
@@ -6925,7 +6922,7 @@ function selectBuilding(building){
 
     const p=M[mode];
     const adminPct=Math.round(p.admin*100);
-    const effectiveCap=Math.round(MAX_GP_CONSULTS_PER_DAY*(1-p.admin));
+    const effectiveCap=gp.sickLeaveTimer > 0 ? 0 : gpServiceCapacity(p).perPresentTick * MoC.TICKS_PER_WEEK;
     const burnout=calculateBurnout(gp, p);
     const burnLabel=burnout>70?'High 🔴':burnout>40?'Medium ⚠':'Low ✅';
     const burnClass=burnout>70?'bad':burnout>40?'mid':'ok';
@@ -6951,8 +6948,8 @@ function selectBuilding(building){
       <div class="ac-section"><h4>Workload</h4>
         <div class="ac-row"><span class="k">Admin Burden</span><span class="v bad">${adminPct}%</span></div>
         <div class="hp-outer"><div class="hp-inner ${adminPct>20?'r':adminPct>10?'y':'g'}" style="width:${adminPct}%"></div><div class="hp-label">${adminPct}%</div></div>
-        <div class="ac-row"><span class="k">Effective Capacity</span><span class="v">${effectiveCap} / ${MAX_GP_CONSULTS_PER_DAY} daily</span></div>
-        <div class="ac-row"><span class="k">Patients Seen</span><span class="v">${gp.patientsSeenToday||0} today (${gp.totalPatientsSeen||0} total)</span></div>
+        <div class="ac-row"><span class="k">Available clinical work/week</span><span class="v">${effectiveCap.toFixed(2)} work units</span></div>
+        <div class="ac-row"><span class="k">Completed consultations</span><span class="v">${gp.patientsSeenToday||0} this model week (${gp.totalPatientsSeen||0} total)</span></div>
         <div class="ac-row"><span class="k">Referrals Made</span><span class="v">${gp.referralsMade||0}</span></div>
         <div class="ac-row"><span class="k">Queue</span><span class="v ${queueLen>5?'bad':queueLen>2?'mid':'ok'}">${queueLen} waiting</span></div>
         <div class="ac-row"><span class="k">Burnout Risk</span><span class="v ${burnClass}">${burnLabel}</span></div>
@@ -7014,13 +7011,12 @@ function selectBuilding(building){
     specialists.forEach(s=>{
       const spec=s.specialty||s.role;
       const specCap=SPECIALIST_CAPACITY[s.specialty]||{weeklySlots:10,tickSlots:3};
-      const effSlots=Math.round(specCap.weeklySlots*(mode==='SOLL'?p.ai:1));
       const specQueue=waitList.filter(a=>a.conditions.some(c=>{const db=DISEASE_DB[c.code];return db&&db.referralSpecialty===s.specialty;})).length;
       const waitEst=specQueue>0?Math.round(specQueue/specCap.tickSlots*10)/10:0;
       const waitColor=waitEst>=treeWeeks?'bad':waitEst>=treeWeeks/2?'mid':'ok';
       html+=`<div class="ac-row"><span class="k">${s.name}</span><span class="v">${spec}</span></div>
         <div class="ac-row" style="padding-left:12px"><span class="k">Queue / Wait Est</span><span class="v ${waitColor}">${specQueue} / ~${waitEst}w</span></div>
-        <div class="ac-row" style="padding-left:12px"><span class="k">Weekly Slots</span><span class="v">${effSlots}</span></div>`;
+        <div class="ac-row" style="padding-left:12px"><span class="k">Shared routine starts/week</span><span class="v">${MoC.S.specialistCapacity.toFixed(2)} across all specialties; no AI multiplier</span></div>`;
     });
     html+=`</div>`;
 
@@ -7354,6 +7350,8 @@ function finalizeAgentDeath(a){
 
 function tick(){
   if (MoC.paused || MoC.S.over) return;
+  try { validateCareParameters(M[mode]); }
+  catch (error) { reportCareInputError(error); MoC.paused=true; return; }
   cycle++; modelTick++; const p=M[mode];
   MoC.seedTick(modelTick);
   MoC.environment?.advance(modelTick);
@@ -7812,7 +7810,7 @@ function tick(){
         // place remains reserved until completion, transfer or death.
         const providerId = a.insideBuilding === 'gp2_bldg' ? 'gp2' : 'gp1';
         if (agents.find(g => g.id === providerId)?.sickLeaveTimer > 0) break;
-        a.stateTimer--;
+        a.stateTimer -= gpServiceCapacity(p).perPresentTick;
         if(a.stateTimer<=0){
           MoC.care.release(a, 'completed');
           // Find the GP agent for tracking
@@ -8095,8 +8093,9 @@ function tick(){
     const gpSickMap = {'gp1_bldg':'gp1','gp2_bldg':'gp2'};
     const gpForQueue = agents.find(a => a.id === gpSickMap[bldgId]);
     if (!gpForQueue || gpForQueue.sickLeaveTimer > 0 || MoC.care.occupied(bldgId) >= 1) return;
-    // Check admin blocking (random chance based on admin burden)
-    if (Math.random() < p.admin * 0.3) return; // admin delay
+    // Admission needs available clinical work; fractional work advances the
+    // existing 3–5 work-unit consultation, with no banked idle time.
+    if (gpServiceCapacity(p).perPresentTick <= 0) return;
     // Serve front of queue
     const frontId = q.agents.shift();
     const frontAgent = agents.find(a => a.id === frontId);
@@ -8576,11 +8575,8 @@ function setMode(m){
   document.getElementById('bi').className=m==='IST'?'a-ist':'';
   document.getElementById('bs').className=m==='SOLL'?'a-soll':'';
   document.body.classList.toggle('soll',m==='SOLL');
-  // C_eff percentage = (1 - admin - sick) as percentage of total capacity (before AI multiplier)
-  // IST: (1 - 0.30 - 0.08) = 0.62 = 62%
-  // SOLL: (1 - 0.05 - 0.05) = 0.90 → with AI: effective throughput = 0.90 × 1.34 = 1.21 (capped display at 90%)
-  say('SYSTEM',m==='IST'?'IST mode — Current crisis. 62% effective GP capacity (30% lost to admin, 8% sick leave).':'SOLL mode — AI-native future. 90% base capacity × 1.34 AI multiplier.','sys');
-  document.getElementById('hE').textContent=m==='IST'?'⚕ 62%':'⚕ 83%';
+  say('SYSTEM',m+' parameters: '+gpServiceCapacity().availableWorkPerWeek.toFixed(2)+' GP clinical work units/week; realized visits depend on demand and consultation duration.','sys');
+  document.getElementById('hE').textContent='⚕ '+gpServiceCapacity().availableWorkPerWeek.toFixed(2)+'/wk';
   document.getElementById('hE').className='n '+(m==='IST'?'r':'g');
   document.getElementById('oA').textContent=Math.round(M[m].admin*100)+'%';
   document.getElementById('oS').textContent=Math.round(M[m].sick*100)+'%';
@@ -8647,6 +8643,8 @@ function activateCustomMode(){
 }
 
 function applyPlaygroundPreset(preset){
+  try { validateCareParameters(preset); }
+  catch (error) { return reportCareInputError(error); }
   M[mode].admin=preset.admin;
   M[mode].sick=preset.sick;
   M[mode].tree=preset.tree;
@@ -8714,12 +8712,14 @@ function applyURLParams(){
     if(embedMode==='soll'||embedMode==='SOLL'){mode='SOLL';}
     else if(embedMode==='ist'||embedMode==='IST'){mode='IST';}
   }
-  if(params.has('admin')){
-    M[mode].admin=parseFloat(params.get('admin'))||M[mode].admin;
-    M[mode].sick=parseFloat(params.get('sick'))||M[mode].sick;
-    M[mode].tree=parseInt(params.get('tree'),10)||M[mode].tree;
-    M[mode].ai=parseFloat(params.get('ai'))||M[mode].ai;
-    M[mode].drain=parseFloat(params.get('drain'))||M[mode].drain;
+  if(['admin','sick','tree','ai','drain'].some(key => params.has(key))){
+    const next = {...M[mode]};
+    for (const key of ['admin','sick','tree','ai','drain']) {
+      if (params.has(key)) next[key] = params.get(key).trim() === '' ? NaN : Number(params.get(key));
+    }
+    try { validateCareParameters(next); }
+    catch (error) { return reportCareInputError(error); }
+    Object.assign(M[mode],next);
     playgroundActive=true;
     document.getElementById('bi').className='';
     document.getElementById('bs').className='';
@@ -8771,6 +8771,8 @@ function showPlayground(){
       var val=parseFloat(e.target.value);
       if(!key)return;
       if(key==='tree')val=parseInt(e.target.value,10);
+      try { validateCareParameters({...M[mode],[key]:val}); }
+      catch (error) { reportCareInputError(error); updatePlaygroundSliders(); return; }
       M[mode][key]=val;
       // Update badge
       var def=PG_SLIDER_DEFS.find(function(d){return d.key===key;});
@@ -9861,7 +9863,7 @@ function buildComparisonHTML() {
         '<tr><td>Treeknorm (weeks)</td><td class="sr">' + ist.tree + 'w</td><td class="sg">' + soll.tree + 'w</td><td class="sg">-' + (ist.tree-soll.tree) + 'w</td></tr>' +
         '<tr><td>AI Multiplier</td><td>' + ist.ai + '×</td><td class="sg">' + soll.ai + '×</td><td class="sg">+' + ((soll.ai-ist.ai)*100).toFixed(0) + '%</td></tr>' +
         '<tr><td>HP Drain Rate</td><td class="sr">' + ist.drain + '×</td><td class="sg">' + soll.drain + '×</td><td class="sg">-' + ((ist.drain-soll.drain)*100).toFixed(0) + '%</td></tr>' +
-        '<tr><td>Effective Capacity</td><td class="sr">62%</td><td class="sg">83%</td><td class="sg">+21%</td></tr>' +
+        '<tr><td>GP work units/week</td><td>' + gpServiceCapacity(ist).availableWorkPerWeek.toFixed(2) + '</td><td>' + gpServiceCapacity(soll).availableWorkPerWeek.toFixed(2) + '</td><td>Parameter comparison, not realized visits</td></tr>' +
       '</table>' +
     '</div>';
 }
@@ -10020,7 +10022,7 @@ function showMethodology(){
 
     '<details><summary style="font-weight:700;font-size:12px;cursor:pointer;margin-bottom:4px">🔬 Simulation Formulas</summary>' +
     '<div style="font-family:monospace;font-size:10px;background:rgba(0,0,0,.06);padding:6px;border-radius:4px;margin:4px 0">' +
-    'C_eff = C_total × (1 - L_admin - V_sick) × E_ai<br><br>' +
+    'GP work/week = 4 × min(on-duty GPs, total GPs × (1 - absence)) × (1 - admin) × GP productivity<br>Each consultation needs 3–5 work units. No stored idle work or specialist multiplier.<br><br>' +
     'HP_drain = drainRate × (waitWeeks - tree) × severityMult × (1 + adminBurden)<br><br>' +
     'Gini = standard formula on wait time distribution</div></details>' +
 
@@ -10055,7 +10057,7 @@ function buildStatsHTML(){
 
   // GP utilization
   const gps=agents.filter(a=>a.type==='gp');
-  const effectiveCap=Math.round(MAX_GP_CONSULTS_PER_DAY*(1-p.admin));
+  const effectiveCap=gpServiceCapacity(p).availableWorkPerWeek;
 
   // Hospital
   const bedsOcc=atHosp.length;
@@ -10106,8 +10108,7 @@ function buildStatsHTML(){
       <hr class="stats-divider">
       <div class="stats-group"><h4>GP Utilization</h4>
         ${gps.map(g=>{
-          const pct=effectiveCap>0?Math.round((g.patientsSeenToday||0)/effectiveCap*100):0;
-          return `<div class="stats-row"><span class="sk">${g.name}</span><span class="sv">${pct}% (${g.patientsSeenToday||0}/${effectiveCap} slots)</span></div>`;
+          return `<div class="stats-row"><span class="sk">${g.name}</span><span class="sv">${g.totalPatientsSeen||0} completed consultations</span></div>`;
         }).join('')}
       </div>
 
@@ -10129,7 +10130,7 @@ function buildStatsHTML(){
         <div class="stats-row"><span class="sk">Total System Cost</span><span class="sv sr" style="font-size:13px">€${totalCost.toLocaleString()}</span></div>
       </div>
 
-      <div style="text-align:center;padding:8px 0 4px;font-size:9px;color:var(--ink2)">Mode: ${mode} · C_eff: ${mode==='IST'?'62':'83'}% · Admin: ${Math.round(p.admin*100)}%</div>
+      <div style="text-align:center;padding:8px 0 4px;font-size:9px;color:var(--ink2)">Mode: ${mode} · Available GP work/week: ${effectiveCap.toFixed(2)} · Admin: ${Math.round(p.admin*100)}%</div>
 
       ${buildROIHTML()}
       ${buildERPressureHTML()}
@@ -10160,9 +10161,7 @@ function updateUI(){
   var inHosp=agents.filter(function(a){return a.insideBuilding==='hospital';}).length;
   var waiting=agents.filter(function(a){return a.waitWeeks>0&&a.hp>0;});
   var avgWait=waiting.length>0?(waiting.reduce(function(s,a){return s+a.waitWeeks;},0)/waiting.length).toFixed(1):'0';
-  var eff=mode==='IST'?'62':'83';
-  var effBase = Math.round((1 - M[mode].admin - M[mode].sick) * 100);
-  var effDisplay = mode === 'IST' ? effBase + '%' : effBase + '% ×' + M[mode].ai.toFixed(1);
+  var effDisplay = gpServiceCapacity().availableWorkPerWeek.toFixed(2) + ' work/wk';
 
   // Population
   var hpEl=document.getElementById('hP');
@@ -10191,7 +10190,7 @@ function updateUI(){
 
   // Efficiency
   document.getElementById('hE').textContent='⚕ '+effDisplay;
-  document.getElementById('hE').className='n '+(parseInt(eff)>75?'g':parseInt(eff)>50?'y':'r');
+  document.getElementById('hE').className='n';
 
   document.getElementById('oF').textContent=FHIR_STORE.length;
   document.getElementById('oW').textContent='€'+Math.round(S.waste).toLocaleString();
@@ -10568,7 +10567,7 @@ const METRIC_TOOLTIPS = {
   'hP': '👥 Living Citizens: Currently alive out of the starting population. Number in parentheses shows citizens in hospital.',
   'hG': '💀 Deaths: Citizens lost. Includes both natural deaths and system failures (preventable deaths from waiting too long).',
   'hW': '⏳ Average Wait Time: How long citizens wait for specialist care. The legal maximum (Treeknorm) is 4 weeks.',
-  'hE': '⚙ Effective Capacity: How much of GP time actually goes to patients. The rest is admin work, sick leave, etc.',
+  'hE': 'GP clinical work units/week after administration, absence and productivity. Not realized visits or specialist starts.',
   'oA': 'Admin Burden — Dutch GPs spend this much time on administrative tasks instead of treating patients.',
   'oS': 'Sick Leave — Percentage of healthcare capacity lost to staff illness (ziekteverzuim).',
   'oT': 'Treeknorm — The legal maximum waiting time for specialist care in the Netherlands.',
@@ -10585,8 +10584,8 @@ const LABEL_TOOLTIPS = {
   'Ghosts': '💀 Deaths: Citizens who have died. Hover the Stats panel to see system vs natural breakdown.',
   'Avg Wait': '⏳ Average Wait Time: How long citizens wait for specialist care. The legal maximum (Treeknorm) is 4 weeks.',
   'Wait': '⏳ Average Wait Time: How long citizens wait for specialist care. The Treeknorm says under 4 weeks.',
-  'Capacity': '⚙ Effective Capacity: How much of GP time actually goes to patients. The rest is admin work, sick leave, etc.',
-  'C_eff': '⚙ Effective Capacity: Effective capacity = Total × (1 - Admin - Sick) × AI factor.'
+  'Capacity': 'GP service work is separate from routine starts/week and finite treatment places.',
+  'C_eff': 'GP work/week = 4 × min(on-duty GPs, total GPs × (1 - absence)) × (1 - admin) × GP productivity.'
 };
 
 let tooltipEl = null;
@@ -11827,8 +11826,8 @@ const TOURS = {
     desc: "Compare current reality with an AI-native healthcare future.",
     steps: [
       { text: "You\u2019re watching IST mode \u2014 the current Dutch healthcare system. GPs are stretched thin between patients and paperwork.", highlight: '#bi' },
-      { text: "In IST mode, GPs lose roughly 30% of their time to administration. That means effective capacity is only about 62%.", highlight: '#hE' },
-      { text: "Click SOLL to see what AI-native healthcare could look like. Admin drops to 5%, and effective capacity jumps to 83%.", highlight: '#bs' },
+      { text: "Administration and absence reduce GP clinical work. The counter reports available work units per model week, not completed visits.", highlight: '#hE' },
+      { text: "The SOLL preset changes model parameters, including GP productivity. It is an assumption comparison, not evidence of better outcomes.", highlight: '#bs' },
       { text: "Watch the wait times fall. AI triage helps ensure patients are seen within the Treeknorm \u2014 the 4-week legal maximum.", highlight: '#hW' },
       { text: "Same population, same diseases \u2014 but better outcomes. More treatments completed, fewer citizens falling through the cracks.", highlight: '#cv' },
       { text: "Toggle between IST and SOLL anytime using these buttons. The difference in outcomes makes the case for healthcare AI.", highlight: '.mode-tog' }
@@ -12620,7 +12619,7 @@ async function initLLMSubsystem() {
 (function(){
   const GS = MoC.S;
   // Finite resources/queued emergencies change outcomes; earlier versions are incompatible.
-  MoC.MODEL_VERSION = 'minister-care-8-finite-resources';
+  MoC.MODEL_VERSION = 'minister-care-9-workforce-productivity';
   MoC.REFERENCE_PROTOCOL = 'no-discretionary-action-v1';
   MoC.referencePolicy = MoC.IS_BASELINE;
   MoC.comparisonValidated = true;
@@ -12647,6 +12646,10 @@ async function initLLMSubsystem() {
     resourceUses,
     slots:function(resource){
       // Named treatment places, NOT empirical beds or staff headcounts.
+      if (resource === 'routine') {
+        requireCareNumber('capacity',GS.specialistCapacity,0.25);
+        requireCareNumber('routine places',GS.specialistCapacity*2.5,0);
+      }
       return resource === 'routine' ? Math.max(1, Math.ceil(GS.specialistCapacity * 2.5)) : 1;
     },
     occupied:function(resource){
@@ -12744,6 +12747,7 @@ async function initLLMSubsystem() {
     elapsed:function(a){ const episode = activeReferrals.get(a.id); return episode ? Math.max(0, (modelTick-episode.startTick)/MoC.TICKS_PER_WEEK) : Math.max(0,a.waitWeeks||0); },
     availableStarts:function(waiting){
       const rate = GS.specialistCapacity;
+      validateCareParameters(M[mode]);
       // Accrue once per elapsed tick. Idle/full credit is capped; debit only on
       // a successful routine acquisition, never for stale queue entries.
       if (creditTick !== modelTick) {
@@ -12784,6 +12788,7 @@ async function initLLMSubsystem() {
         otherExits:referralEpisodes.filter(e => e.status === 'other_exit').length,
         referrals:referralEpisodes.length, systemDeaths:systemDeaths(), totalDeaths:GRAVE_MARKERS.length,
         capacity:GS.specialistCapacity, admin:M.IST.admin, budget:GS.budget,
+        gpService:gpServiceCapacity(),
         resources:this.resources(), resourceInterval:{fromTick:0,toTick:modelTick},
         emergencyOverflow:agents.filter(a => resident(a) && isLivingResident(a) && !a.moved && a.behaviorState === 'emergency_overflow').length,
         emergencyOverflowBound:agents.filter(resident).length,
@@ -12811,6 +12816,10 @@ async function initLLMSubsystem() {
     return '<div class="moc-resource-report">'
       + '<p class="moc-sub">Named treatment places (not beds or staff). Throughput: elapsed ticks 0–'+s.tick+'.</p>'
       + line('GP consultations occupied',r.gp1_bldg.occupancy+'/1 + '+r.gp2_bldg.occupancy+'/1')
+      + line('Nominal GP work units/week',s.gpService.nominalWorkPerWeek.toFixed(2))
+      + line('Available GP clinical work/week',s.gpService.availableWorkPerWeek.toFixed(2))
+      + line('GP starts / completions',(r.gp1_bldg.starts+r.gp2_bldg.starts)+' / '+(r.gp1_bldg.completions+r.gp2_bldg.completions))
+      + '<p class="moc-sub">Each GP consultation needs 3–5 work units in one place. Admin, absence and GP productivity change available work, not specialist starts. Idle work is not stored; at most one completion per practice per tick.</p>'
       + line('Routine places occupied',r.routine.occupancy+'/'+r.routine.slots
         +(r.routine.retiringSlots ? ' · '+r.routine.retiringSlots+' retiring' : ''))
       + line('Nominal routine starts/week',s.capacity.toFixed(2))
@@ -12856,15 +12865,18 @@ async function initLLMSubsystem() {
       if (tick % MoC.TICKS_PER_YEAR === 0 && tick < MoC.TICKS_PER_YEAR * Math.ceil(MoC.TOTAL_QUARTERS / 4)) {
         const year=Math.floor(tick/MoC.TICKS_PER_YEAR)+1;
         const increase=0.04*(year<=2?0.5:1)*(GS.owned?.prevention?0.5:1);
-        M.IST.drain=Math.round(M.IST.drain*(1+increase)*100)/100;
-        M.IST.sick=Math.round((M.IST.sick+0.003*(year<=2?0.5:1)) * 1000)/1000;
+        try {
+          const next=projectedCareEffect({drainMult:1+increase,sick:0.003*(year<=2?0.5:1)});
+          Object.assign(M.IST,next.p);
+        } catch (error) { reportCareInputError(error); }
       }
       for (let i=activeExternal.length-1;i>=0;i--) {
         const active=activeExternal[i];
         if (tick>=active.endTick) {
-          M.IST.drain /= active.drainFactor;
-          M.IST.sick = Math.max(0.02,M.IST.sick-active.sickDelta);
-          GS.specialistCapacity = Math.max(0.25,GS.specialistCapacity-active.capacityDelta);
+          try {
+            const next=projectedCareEffect({drainMult:1/active.drainFactor,sick:-active.sickDelta,capacity:-active.capacityDelta});
+            Object.assign(M.IST,next.p); GS.specialistCapacity=next.capacity;
+          } catch (error) { reportCareInputError(error); }
           activeExternal.splice(i,1);
         }
       }
@@ -12875,8 +12887,14 @@ async function initLLMSubsystem() {
         const sickDelta=event.kind==='flu' ? 0.04*s*protection : 0;
         const loss=event.kind==='grid' ? 0.5*s*(1+GS.dependence/10)*protection : event.kind==='shortage' ? 0.5*s : 0;
         const previous=GS.specialistCapacity;
-        GS.specialistCapacity=Math.max(0.25,previous-loss);
-        M.IST.drain*=drainFactor; M.IST.sick+=sickDelta;
+        try {
+          const next=projectedCareEffect({capacity:-loss,drainMult:drainFactor,sick:sickDelta});
+          Object.assign(M.IST,next.p); GS.specialistCapacity=next.capacity;
+        } catch (error) {
+          reportCareInputError(error);
+          externalLog.push({...event,unavailable:error.message});
+          return;
+        }
         const impact={...event,drainFactor,sickDelta,capacityDelta:GS.specialistCapacity-previous};
         activeExternal.push(impact); externalLog.push(impact);
         const name={flu:'Flu wave',grid:'Regional power disruption',shortage:'Regional staffing shortage'}[event.kind];
@@ -13035,7 +13053,25 @@ async function initLLMSubsystem() {
 
   // ── Effect applicator ──
   // fx: {budget, trust, trustC, trustD, trustP, dep, admin, sick, tree, ai, drainMult}
+  function projectedCareEffect(fx){
+    const p = {...M.IST};
+    let capacity = GS.specialistCapacity;
+    for (const key of ['admin','sick','ai','capacity','drainMult']) {
+      if (!Object.prototype.hasOwnProperty.call(fx,key)) continue;
+      requireCareNumber(key+' effect',fx[key],-Infinity);
+      if (key === 'capacity') capacity += fx[key];
+      else if (key === 'drainMult') {
+        requireCareNumber(key,fx[key],0,Infinity,true);
+        p.drain *= fx[key];
+      } else p[key] += fx[key];
+    }
+    validateCareParameters(p,capacity);
+    return {p,capacity};
+  }
   function applyFx(fx, label){
+    let next;
+    try { next = projectedCareEffect(fx); }
+    catch (error) { return reportCareInputError(error); }
     if (fx.budget) {
       GS.budget = GS.budget + fx.budget;
       GS._cashflowThisQ = (GS._cashflowThisQ || 0) + fx.budget; // G15: cashflow tracking
@@ -13043,16 +13079,14 @@ async function initLLMSubsystem() {
     if (fx.trust) MoC.adjustTrust(fx.trust);
     if (fx.trustC || fx.trustD || fx.trustP) adjustStakeholders(fx.trustC, fx.trustD, fx.trustP);
     if (fx.dep) GS.dependence = Math.max(0, GS.dependence + fx.dep);
-    if (fx.admin) M.IST.admin = Math.max(0.03, Math.round((M.IST.admin + fx.admin) * 100) / 100);
-    if (fx.sick) M.IST.sick = Math.max(0.02, Math.round((M.IST.sick + fx.sick) * 100) / 100);
-    if (fx.capacity) GS.specialistCapacity = Math.max(0.25, GS.specialistCapacity + fx.capacity);
-    if (fx.ai) M.IST.ai = Math.round((M.IST.ai + fx.ai) * 100) / 100;
-    if (fx.drainMult) M.IST.drain = Math.round(M.IST.drain * fx.drainMult * 100) / 100;
+    Object.assign(M.IST,next.p);
+    GS.specialistCapacity = next.capacity;
     if (fx.mantelzorg) GS.mantelzorg = Math.max(0, Math.min(100, (GS.mantelzorg || 30) + fx.mantelzorg)); // G15
     if (fx.frag) GS.fragmentation = Math.max(0, (GS.fragmentation || 0) + fx.frag); // G17
     if (fx.platform) GS.platformMaturity = Math.min(2, (GS.platformMaturity || 0) + fx.platform); // G17
     if (label && typeof say === 'function') say('MINISTRY', label, 'sys');
     refreshMeters();
+    return true;
   }
 
   // ── Interventions catalogue (GAME_DESIGN.md 4.8) ──
@@ -13065,7 +13099,7 @@ async function initLLMSubsystem() {
       desc:'Extend documentation support. Adoption limits the immediate benefit; adds dependence.' },
     { id:'hire', name:'\ud83e\ude7a Recruit specialists', cost:80000, costStep:20000,
       fx:{capacity:1, trustD:3}, max:3,
-      desc:'One additional routine treatment start per week. Active next tick; limited by staffed treatment slots. Later hires cost more.' },
+      desc:'Adds 1 nominal routine start/week and corresponding routine treatment places. Active next tick; actual starts need demand and credit. No GP productivity change. Later hires cost more.' },
     { id:'a2a', name:'\ud83d\udd17 Referral mesh', cost:60000, requires:'scribes2',
       fx:{capacity:1.5, dep:3}, max:1,
       desc:'Referral scheduling adds 1.5 treatment starts/week at full adoption. Requires scribe rollout; adds digital dependence.' },
@@ -13097,7 +13131,7 @@ async function initLLMSubsystem() {
     // G17: Point Solution Paradox — the build-vs-buy-vs-platform tension
     { id:'pilotgrant', name:'\ud83d\udcc4 AI Pilot Grant', cost:30000,
       fx:{trustP:4, frag:2}, max:3,
-      desc:'Standalone pilot. Adds 2 silos; first purchase adds up to 4 parliament trust. No clinical effect.' },
+      desc:'Standalone pilot: 2 silos and up to 4 parliament trust on first purchase. No direct clinical benefit; low-adoption rollout and silo thresholds can add temporary GP paperwork and burnout.' },
     { id:'platform', name:'\ud83c\udfd7 Health Data Platform', cost:120000, requires:'scribes1',
       fx:{admin:-0.05, frag:-3, platform:1}, max:1,
       desc:'Shared data layer. Paperwork -5 points; silos -3; platform +1. Requires the scribe pilot.' },
@@ -13127,6 +13161,8 @@ async function initLLMSubsystem() {
   }
   const BUY_CAP = 2; // implementation capacity per quarter
   function canBuy(item){
+    try { projectedCareEffect(effectivePolicy(item)); }
+    catch (error) { return false; }
     const owned = GS.owned[item.id] || 0;
     // G12: bruised mandate reduces effective buy cap to 1
     const effectiveCap = (GS._bruisedMandate > 0) ? 1 : BUY_CAP;
@@ -13163,16 +13199,17 @@ async function initLLMSubsystem() {
     }
   }
   function effectivePolicy(item){
+    requireCareNumber('adoption',GS.adoptionRate,0,1);
     const fx = Object.assign({}, item.fx);
     const digitalRollout = ['scribes1','scribes2','a2a','twin','platform','platformai','pilotgrant'].includes(item.id);
     if (['scribes1','scribes2','a2a','twin','platformai'].includes(item.id)) {
-      const rate = GS.adoptionRate ?? 0.7;
+      const rate = GS.adoptionRate;
       if (fx.admin) fx.admin *= rate;
       if (fx.drainMult) fx.drainMult = 1 - (1 - fx.drainMult) * rate;
       if (fx.ai) fx.ai *= rate;
       if (fx.capacity) fx.capacity *= rate;
     }
-    if (digitalRollout && (GS.adoptionRate || 0.7) < 0.85) {
+    if (digitalRollout && GS.adoptionRate < 0.85) {
       fx.admin = (fx.admin || 0) + 0.01;
       fx._rolloutAdmin = 0.01;
     }
@@ -13202,13 +13239,13 @@ async function initLLMSubsystem() {
     GS._observation = { itemId:item.id, name:item.name, cost, before:beforePolicy };
     // G19: changeprog directly raises the adoption rate
     if (item.id === 'changeprog') {
-      GS.adoptionRate = Math.min(1.0, (GS.adoptionRate || 0.7) + 0.15);
+      GS.adoptionRate = Math.min(1.0, GS.adoptionRate + 0.15);
       FX.pop('Adoption now ' + Math.round(GS.adoptionRate * 100) + '%', '#7bc67b');
     }
     const digitalRollout = ['scribes1','scribes2','a2a','twin','platform','platformai','pilotgrant'].includes(item.id);
     let rolloutNote = '';
     if (digitalRollout) {
-      const adoption = GS.adoptionRate || 0.7;
+      const adoption = GS.adoptionRate;
       const strain = Math.max(0, Math.round((1 - adoption) * 12));
       if (strain > 0) {
         agents.filter(function(agent){ return agent.type === 'gp'; }).forEach(function(gp){
@@ -13321,7 +13358,7 @@ async function initLLMSubsystem() {
   // ── Timed & delayed effects ──
   function applyTimedFx(fx, quarters, label){
     const previousCapacity = GS.specialistCapacity;
-    applyFx(fx, label);
+    if (!applyFx(fx, label)) return;
     const inverse = {};
     if (fx.admin) inverse.admin = -fx.admin;
     if (fx.sick) inverse.sick = -fx.sick;
@@ -13627,7 +13664,7 @@ async function initLLMSubsystem() {
       { id:'dig1', name:'Cloud-First Records Act', cost:0, fx:{admin:-0.02, dep:1},
         desc:'All records move to Halcyon One. Admin -2%, +1 dependence. Irreversible.' },
       { id:'dig2', name:'AI Triage Gate', cost:30000, fx:{capacity:0.5, dep:2, trust:-2},
-        desc:'Algorithm screens GP requests. +0.5 treatment starts/week, +2 dependence, Trust -2. Irreversible.' },
+        desc:'Authored scheduling rule: +0.5 nominal routine starts/week, +2 dependence, Trust -2. Not a GP request-screening mechanism. Irreversible.' },
       { id:'dig3', name:'AI-Gated Specialist Access', cost:0, fx:{capacity:1, dep:2},
         desc:'Algorithm required for referral. +1 treatment start/week, +2 dependence. Risks digital exclusion. Irreversible.', beat:'digigate' }
     ] },
@@ -14098,7 +14135,7 @@ async function initLLMSubsystem() {
     add('Digital risk',fragility()+'%',GS.dependence>=7);
     const gps=agents.filter(function(agent){return agent.type==='gp';});
     const burnout=gps.length?Math.round(gps.reduce(function(sum,gp){return sum+(gp.burnoutLevel||0);},0)/gps.length):0;
-    add('Adoption',Math.round((GS.adoptionRate||0.7)*100)+'%',(GS.adoptionRate||0.7)<0.85);
+    add('Adoption',Math.round(GS.adoptionRate*100)+'%',GS.adoptionRate<0.85);
     add('GP burnout',burnout+'%',burnout>=65);
     add('Silos',GS.fragmentation||0,(GS.fragmentation||0)>=3);
     return '<section class="moc-priority-strip"><h4>PRIORITIES BEFORE YOU SPEND</h4><div class="moc-priority-list">'+priorities.join('')+'</div></section>';
@@ -14110,12 +14147,15 @@ async function initLLMSubsystem() {
     return match ? Number(match[1])*1000 : 0;
   }
   function optionAttrs(option){
-    const cost=optionCost(option),blocked=cost>GS.budget;
-    return {cost,blocked,html:blocked?' disabled aria-disabled="true"':''};
+    let invalid = '';
+    try { if (option?.fx) projectedCareEffect(option.fx); }
+    catch (error) { invalid = error.message; }
+    const cost=optionCost(option),blocked=cost>GS.budget || !!invalid;
+    return {cost,blocked,invalid,html:blocked?' disabled aria-disabled="true"':''};
   }
   function unavailableHtml(option){
     const state=optionAttrs(option);
-    return state.blocked?'<span class="moc-unaffordable">Unavailable: needs '+fmtK(state.cost)+', budget '+fmtK(GS.budget)+'</span>':'';
+    return state.blocked?'<span class="moc-unaffordable">Unavailable: '+(state.invalid || 'needs '+fmtK(state.cost)+', budget '+fmtK(GS.budget))+'</span>':'';
   }
   // ── State of the System panel (so choices are never blind) ──
   function sysCls(v, goodLow, warnAt, badAt){
@@ -14124,7 +14164,7 @@ async function initLLMSubsystem() {
     return v >= badAt ? 'g' : v >= warnAt ? 'y' : 'r';
   }
   function systemPanelHtml(){
-    const ceff = Math.round((1 - M.IST.admin - M.IST.sick) * M.IST.ai * 100);
+    const gpCapacity = gpServiceCapacity();
     const gps = agents.filter(function(agent){ return agent.type === 'gp'; });
     const avgBurnout = gps.length ? Math.round(gps.reduce(function(sum,gp){ return sum + (gp.burnoutLevel || 0); },0) / gps.length) : 0;
     const cashflow = GS._cashflowThisQ || 0;
@@ -14136,10 +14176,10 @@ async function initLLMSubsystem() {
       [pixIcon('clock') + ' Current referral wait', MoC.care.snapshot().meanWait.toFixed(1) + ' wk', sysCls(MoC.care.snapshot().meanWait, true, 6, 10)],
       [pixIcon('bed') + ' Sick leave', Math.round(M.IST.sick * 100) + '%', sysCls(M.IST.sick, true, 0.05, 0.09)],
       [pixIcon('chip') + ' AI multiplier', M.IST.ai.toFixed(2) + '\u00d7', M.IST.ai > 1.15 ? 'g' : M.IST.ai > 1.0 ? 'y' : 'r'],
-      [pixIcon('cross') + ' Capacity', ceff + '%', sysCls(ceff, false, 70, 85)],
+      [pixIcon('cross') + ' GP clinical work/week', gpCapacity.availableWorkPerWeek.toFixed(2) + ' (nominal ' + gpCapacity.nominalWorkPerWeek + ')', ''],
       [pixIcon('brheart') + ' HP drain', M.IST.drain.toFixed(2) + '\u00d7', sysCls(M.IST.drain, true, 0.7, 1.0)],
       [pixIcon('plug') + ' Dependence', GS.dependence + ' pts', sysCls(GS.dependence, true, 3, 6)],
-      ['📚 Adoption', Math.round((GS.adoptionRate || 0.7) * 100) + '%', sysCls((GS.adoptionRate || 0.7) * 100, false, 70, 85)],
+      ['📚 Adoption', Math.round(GS.adoptionRate * 100) + '%', sysCls(GS.adoptionRate * 100, false, 70, 85)],
       [pixIcon('cross') + ' GP burnout', avgBurnout + '%', sysCls(avgBurnout, true, 35, 65)],
       [pixIcon('people') + ' Carer pressure', (GS.mantelzorg || 30) + '%', sysCls(GS.mantelzorg || 30, true, 50, 70)], // G23: warning earlier
       ['\ud83e\udde9 AI Silos', (GS.fragmentation || 0) + ' active', sysCls(GS.fragmentation || 0, true, 2, 5)], // G17
@@ -14160,13 +14200,16 @@ async function initLLMSubsystem() {
   // ── Concrete now->after preview per intervention ──
   // ── Impact preview as readable chips (green = better, red = worse) ──
   function fxPreview(fx){
+    let next;
+    try { next = projectedCareEffect(fx); }
+    catch (error) { return '<span class="moc-unaffordable">Unavailable: '+error.message+'</span>'; }
     const chips = [];
     // G18-B: plain-language tooltips so noobs know what each chip means
     const CHIP_TIPS = {
       Admin: 'Admin burden: lower means doctors spend more time on patients, not paperwork',
       Sick: 'Sick leave rate: high sick leave reduces effective GP capacity across town',
       Wait: 'Referral wait (Treeknorm): beyond the limit, HP drains faster toward death',
-      AI: 'AI multiplier: boosts care capacity and cuts admin time across all providers',
+      AI: 'GP productivity: scales remaining clinical work only; no extra admin reduction or specialist starts',
       Decline: 'HP drain rate: how fast citizen health falls while waiting for a referral',
       Fragile: 'Digital dependence: higher values mean hacks and outages cascade harder',
       Citizens: 'Citizen trust: below 40 people avoid care until crisis, driving up deaths',
@@ -14177,9 +14220,9 @@ async function initLLMSubsystem() {
       const tip = CHIP_TIPS[label] || '';
       chips.push('<span class="moc-chip ' + (better ? 'good' : 'bad') + '"' + (tip ? ' title="' + tip + '"' : '') + '>' + (icon ? pixIcon(icon) + ' ' : '') + label + ' ' + from + ' \u2192 ' + to + '</span>');
     }
-    if (fx.admin) { const to = Math.max(3, Math.round((M.IST.admin + fx.admin) * 100)); chip('scroll', 'Admin', Math.round(M.IST.admin * 100) + '%', to + '%', fx.admin < 0); }
-    if (fx.sick) { const to = Math.max(2, Math.round((M.IST.sick + fx.sick) * 100)); chip('bed', 'Sick', Math.round(M.IST.sick * 100) + '%', to + '%', fx.sick < 0); }
-    if (fx.capacity) { chip('clock', 'Starts/week', GS.specialistCapacity.toFixed(2), Math.max(0.25, GS.specialistCapacity + fx.capacity).toFixed(2), fx.capacity > 0); }
+    if (fx.admin) { chip('scroll', 'Admin', Math.round(M.IST.admin * 100) + '%', Math.round(next.p.admin*100) + '%', fx.admin < 0); }
+    if (fx.sick) { chip('bed', 'Sick', Math.round(M.IST.sick * 100) + '%', Math.round(next.p.sick*100) + '%', fx.sick < 0); }
+    if (fx.capacity) { chip('clock', 'Starts/week', GS.specialistCapacity.toFixed(2), next.capacity.toFixed(2), fx.capacity > 0); }
     if (fx.ai) { chip('chip', 'AI', M.IST.ai.toFixed(2) + '\u00d7', (M.IST.ai + fx.ai).toFixed(2) + '\u00d7', fx.ai > 0); }
     if (fx.drainMult) { chip('brheart', 'Decline', M.IST.drain.toFixed(2) + '\u00d7', (M.IST.drain * fx.drainMult).toFixed(2) + '\u00d7', fx.drainMult < 1); }
     if (fx.dep) { chip('plug', 'Fragile', GS.dependence, Math.max(0, GS.dependence + fx.dep), fx.dep < 0); }
@@ -14225,7 +14268,7 @@ async function initLLMSubsystem() {
       }
       else if (item.fx.dep > 0 && GS.quarter < GS.techFreezeUntil) btn = '<button class="moc-buy" disabled>\u2696 Frozen by parliament</button>';
       else if ((GS.buysThisCouncil || 0) >= ((GS._bruisedMandate > 0) ? 1 : BUY_CAP)) btn = '<button class="moc-buy" disabled>' + (GS._bruisedMandate > 0 ? '\ud83e\ude79 Bruised mandate: 1 slot only' : 'No slots left this quarter') + '</button>';
-      else btn = '<button class="moc-buy" data-buy="' + item.id + '"' + (GS.budget < shopCost(item) ? ' disabled' : '') + '>Buy ' + fmtK(shopCost(item)) + '</button>';
+      else btn = '<button class="moc-buy" data-buy="' + item.id + '"' + (!canBuy(item) ? ' disabled' : '') + '>Buy ' + fmtK(shopCost(item)) + '</button>';
       if (wizardMode && maxed) {
         return '<div class="moc-wiz-law-collapsed"><b>' + item.name + '</b><span class="moc-owned">\u2713 Active' + (item.max > 1 ? ' \u00d7' + owned : '') + '</span></div>';
       }
@@ -14324,7 +14367,7 @@ async function initLLMSubsystem() {
       applyTimedFx({sick:0.06, admin:0.05}, 1, 'DOCTOR STRIKE - practices run on skeleton staff');
       Audio5.klaxon(); FX.shake();
       GS.pendingBanners = GS.pendingBanners || [];
-      GS.pendingBanners.push({ head:'🚨 GP STRIKE', body:'Doctor trust is below 22. Routine capacity is reduced. Recover above 35 by next council; at 15 the term ends.', soft:false });
+      GS.pendingBanners.push({ head:'🚨 GP STRIKE', body:'Doctor trust is below 22. GP clinical work is reduced by absence and paperwork; routine specialist capacity is unchanged. Recover above 35 by next council; at 15 the term ends.', soft:false });
       showPolicyConsequences('doctor strike', {trustD:-5}, 'strike');
     } else if (GS.activeStates.struck) {
       if (GS.trustD >= 35) {
@@ -14673,7 +14716,9 @@ async function initLLMSubsystem() {
             b.addEventListener('click', function(){
               if (decided) return;
               const c = evt.choices[parseInt(b.getAttribute('data-evtopt'), 10)];
+              const errorsBefore=MoC.careInputErrorCount || 0;
               c.run();
+              if ((MoC.careInputErrorCount || 0)!==errorsBefore) return;
               GS.interventions.push({ q: q, label: evt.name.replace(/^\S+\s/, '') + ': ' + c.label, cost: 0 });
               showPolicyConsequences(c.label, c.fx || {}, null);
               markDecided(b);
@@ -14685,7 +14730,7 @@ async function initLLMSubsystem() {
           function decide(opt, btn){
             if (decided) return;
             const fx = opt.fxFn ? opt.fxFn() : opt.fx;
-            applyFx(fx, 'Council decision: ' + opt.label);
+            if (!applyFx(fx, 'Council decision: ' + opt.label)) return;
             GS.interventions.push({ q: q, label: 'Decision: ' + opt.label, cost: 0 });
             showPolicyConsequences(opt.label, fx || {}, null);
             markDecided(btn);
@@ -14723,7 +14768,7 @@ async function initLLMSubsystem() {
             + '<span class="fx">' + law.desc + '</span>'
             + fxPreview(law.fx)
             + '<button class="moc-buy" data-law="' + law.id + '"'
-            + (GS.budget < law.cost ? ' disabled' : '') + (lawPassedThisCouncil ? ' disabled' : '') + '>'
+            + (GS.budget < law.cost || optionAttrs(law).invalid ? ' disabled' : '') + (lawPassedThisCouncil ? ' disabled' : '') + '>'
             + (lawPassedThisCouncil ? '\u2713 Enacted this quarter' : 'Enact' + (law.cost ? ' ' + fmtK(law.cost) : ''))
             + '</button></div>';
         }
@@ -14748,6 +14793,8 @@ async function initLLMSubsystem() {
               LAW_TRACKS[tk].laws.forEach(function(l){ if (l.id === lawId) law = l; });
             });
             if (!law || GS.budget < law.cost) return;
+            try { projectedCareEffect(law.fx); }
+            catch (error) { reportCareInputError(error); return; }
             lawPassedThisCouncil = true;
             if (law.cost) GS.budget -= law.cost;
             GS.laws[law.id] = q;
@@ -14799,7 +14846,7 @@ async function initLLMSubsystem() {
     const lenFactor = Math.min(2.5, 40 / Math.max(1, MoC.TOTAL_QUARTERS));
     // G19: adoption penalty — if 2+ tech items owned but adoption < 80%
     const techOwned = ['scribes1','scribes2','a2a','twin','platformai'].filter(function(id){ return GS.owned && GS.owned[id] >= 1; }).length;
-    const adoptionPenalty = ((GS.adoptionRate || 0.7) < 0.8 && techOwned >= 2) ? Math.round((0.8 - (GS.adoptionRate || 0.7)) * 120) : 0;
+    const adoptionPenalty = (GS.adoptionRate < 0.8 && techOwned >= 2) ? Math.round((0.8 - GS.adoptionRate) * 120) : 0;
     // G20: bias penalty — each unmitigated exclusion event costs 50pts
     const biasPenalty = (GS._biasDeaths || 0) * 50;
     // G17/G19: dependence penalty/bonus
@@ -15602,7 +15649,9 @@ async function initLLMSubsystem() {
     function cleanup(){ el.remove(); flashActive = false; if (!councilOpen && !GS.over) resumeSim(); }
     function decide(option){
       const before = flashSnapshot(face);
+      const errorsBefore=MoC.careInputErrorCount || 0;
       option.run(face); refreshMeters(); renderMinistry(); renderTownWatch();
+      if ((MoC.careInputErrorCount || 0)!==errorsBefore) return;
       const changes = flashChanges(before, flashSnapshot(face));
       el.innerHTML = '<h4>' + flash.t + '</h4><div class="moc-sub">Decision applied</div>'
         + '<div class="ft">' + option.l + '</div><div class="moc-flash-result">'
@@ -16094,8 +16143,7 @@ async function initLLMSubsystem() {
       const year = Math.ceil(q / 4);
       const earlyDampen = year <= 2 ? 0.5 : 1; // gradual onset first 2 years
       const preventDampen = GS.owned.prevention ? 0.5 : 1;
-      M.IST.drain = Math.round(M.IST.drain * (1 + 0.04 * preventDampen * earlyDampen) * 100) / 100;
-      M.IST.sick = Math.round((M.IST.sick + 0.003 * preventDampen * earlyDampen) * 1000) / 1000;
+      if (!applyFx({drainMult:1+0.04*preventDampen*earlyDampen,sick:0.003*preventDampen*earlyDampen})) return MoC.lastInputError;
       const annualRise = (0.04 * preventDampen * earlyDampen * 100).toFixed(0);
       return 'Year ' + year + ' aging update: waiting deterioration +' + annualRise + '%. '
         + (GS.owned.prevention ? 'Prevention halves this model increase.' : 'Prevention would halve this model increase.');

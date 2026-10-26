@@ -77,6 +77,56 @@ The “Verified current behavior” section above records the original model-5 a
 
 These outcome-affecting rules require model 8. Replay keys, reference matching and leaderboard filters use that new model identity; model 7 results must not be compared or ranked as equivalent. The reference-policy protocol is unchanged. F02's elapsed clock, startup display offset and terminal mortality ordering remain intact. This is software conservation evidence, not calibration, validation of the one-place assumption, or a prediction of improved mortality. F05 workforce tuning and F07 effect corrections are not implemented here.
 
+## F05 implementation: model 9 workforce/productivity (upcoming, not deployed)
+
+The working executable is `minister-care-9-workforce-productivity`. **The verified public release remains model 8.** This section supersedes the model-5 audit and model-8 deferral only for workforce/productivity semantics. Protocol `no-discretionary-action-v1`, schedule generation, matching rules, scenario inputs and horizons are unchanged. These are bounded engineering assumptions, not empirical effectiveness estimates, clinical validation or a technology preference.
+
+### Executed GP mechanism and non-double-counting assumption
+
+Model 8's aggregate absence and AI fields did not reach GP processing: with fixed RNG and six queued residents, 16 actual ticks produced four starts/three completions both at absence 10% versus 80% and productivity ×1 versus ×3. Named GP sick-leave timers instead came from burnout. The old GP admission gate randomly blocked with probability `admin × 0.3`, then every active consultation consumed one tick regardless of aggregate absence/productivity.
+
+Model 9 keeps the two one-place GP practices and the existing random **3–5-unit consultation workload**. Each active consultation now consumes clinical work rather than one unconditional timer unit:
+
+```
+N = number of named GPs (currently 2)
+P = number whose sickLeaveTimer is zero
+available provider-equivalents = min(P, N × (1 - aggregate absence))
+work per on-duty GP per tick =
+    P > 0 ? available provider-equivalents / P × (1 - admin) × AI productivity : 0
+nominal GP work/week = 4 × N
+available GP clinical work/week = 4 × P × work per on-duty GP per tick
+```
+
+**Absence is a town-wide minimum unavailable fraction.** Named burnout absences count toward that floor; they are not multiplied by a second aggregate absence penalty. For example, with one of two GPs absent and aggregate absence 25%, the remaining GP is not penalized again. At aggregate absence 60%, only 0.8 provider-equivalents remain available across the town. This overlap assumption is deliberately simple; it is not a fitted workforce model. Burnout accumulation, recovery, timer duration and queue redistribution are unchanged.
+
+Admin reduces the remaining work once; the old random admission-admin gate is removed. Admission requires positive available work and a free GP place. Active work stops at admin 1, absence 1 or named provider absence while retaining the consultation place. Productivity multiplies GP work only, not admin savings again, not hospital starts and not disease progression. Idle or excess work is **not banked**; one consultation can complete per practice per tick at most, with a new admission after release. Fractional work can lengthen the consultation across many ticks. This is not a full scheduler: very high productivity encounters a tick/concurrency ceiling, and absent demand, travel, downstream places and routine credit can prevent additional throughput.
+
+### Surfaced controls → state → service → measured output
+
+All shop effects pass through `effectivePolicy` → `projectedCareEffect` → `applyFx`; law/council/flash/timed effects use the same effect applicator. Scheduled shocks use the same projection/validation before state mutation. Playground presets, sliders and URL parameters validate before replacing parameters (legacy presets are not additional supported Minister scenarios).
+
+| Control / named sources | Executed state and process | Player-visible measurement / limits |
+|---|---|---|
+| Paperwork: EchoScribe pilot/full rollout, Health Data Platform, Platform AI Applications; Cloud-First Records and Task Differentiation laws; admin-bearing decisions/temporary rollout and silo costs; admin slider/URL | `M.IST.admin` → `gpServiceCapacity` → active `at_gp.stateTimer` work consumption and positive-work queue gate. Also existing `overdueWaitDrainPerTick` multiplier `(1+admin)`, once, on overdue drain only. | Admin %, available GP work/week, GP starts/completions and queue; referral wait/HP drain downstream. Does **not** change specialist capacity. HP breakdown no longer adds an extra admin charge absent from execution. |
+| Absence: GP Retention Fund, Regional Staffing Pool; morale/strike/flu/aging effects; absence slider/URL | `M.IST.sick` → aggregate-floor calculation above; named GP timers still pause their own service. | Aggregate absence %, on-duty service work, GP realized starts/completions; not hospital starts or specialist places. |
+| Productivity: EchoScribe full rollout and AI-bearing decisions/outages; AI slider/URL | `M.IST.ai` → remaining GP work × multiplier, after admin and aggregate/named absence overlap. Existing political/event thresholds remain. | GP work/week and realized visits; no guaranteed mortality benefit. No implied cross-provider or disease multiplier. |
+| Recruitment | `capacity:+1` → `GS.specialistCapacity` → existing routine service credit (`rate/4` per tick, capped at `max(1,rate/4)`) and `ceil(rate×2.5)` routine places. | Nominal starts/week, actual routine starts/completions, occupancy and retiring places. GP work is unchanged. |
+| Referral mesh; AI Triage Gate / AI-Gated Specialist Access laws; capacity-bearing decisions/shocks | Explicit authored **routine rate** changes (mesh +1.5 at full adoption; laws +0.5/+1), not consequences of the AI productivity multiplier. The AI Triage Gate description no longer asserts an implemented GP request-screening mechanism. | Same routine rate/credit/place metrics as recruitment. No new specialist-rate mechanism or outcome coefficient is introduced in F05. |
+| Adoption / Change Management Programme | `GS.adoptionRate` scales named admin/AI/routine-rate deltas for `scribes1`, `scribes2`, `a2a`, `twin`, `platformai`; drain factor becomes `1-(1-factor)×adoption`. No global adoption capacity factor. Change management retains its authored +0.15 increase up to full adoption. | Preview uses exactly the effective effect; 0 adoption means 0 named benefit, not fallback 0.7. The separate existing temporary rollout paperwork (+0.01 below 0.85) and burnout strain still apply. `platform` and `pilotgrant` have rollout costs but are not in the adoption-scaled-benefit list. Pilot copy discloses these costs rather than claiming no clinical effect. |
+| Drain: Mirrorware twins, More Time for the Patient, Platform AI Applications, Community Health Workers, drain-bearing decisions/shocks and slider/URL | Positive `M.IST.drain` multiplier on passive disease HP drain in `calculateHPDrain`; existing overdue-wait, treatment/persona and comorbidity rules retain their separate roles. | HP-drain factor, per-resident breakdown, HP and model-classified deaths. It is **not** a GP/hospital capacity multiplier. |
+
+Care snapshots now include `gpService` (nominal/available work per week, per-present-provider work per tick and provider counts). The care detail report separately shows GP starts/completions, routine starts/completions, occupancy and nominal routine rate. Resource counters retain the cumulative elapsed-tick-0-to-snapshot interval and `initial + starts = occupancy + releases`. GP chart, practice panel, council system panel and HUD use the executed work calculation rather than the disconnected “62%/83%” or “slots/day” arithmetic. Display rounding is not an extra model effect.
+
+### Bounds, zeros, and changed numerical semantics
+
+- Admin/absence/adoption are finite fractions `[0,1]`; nominal routine rate is finite `>=0.25`; AI and drain multipliers are finite `>0`. Derived work/place/drain arithmetic must also remain representable and finite. Effect deltas must be finite; a drain effect factor must be positive. Wait/norm inputs are finite nonnegative weeks.
+- Legitimate zero admin, absence and adoption survive URL parsing, presets, policy effects and displays. Zero disease severity factor (`healthy`) yields zero overdue drain; no `||` substitution. The existing severity factors remain healthy 0, mild 0.5, moderate 1, severe 2, critical 4. The inherited fallback factor **1 for `deceased` condition state** is now explicit to preserve existing non-finalizing condition paths; terminal resident mortality ordering is not changed. Unknown severities are rejected.
+- Projection throws `RangeError("Invalid care input: …")`. UI/effect boundaries expose the same message through `MoC.lastInputError` and a toast, return failure and do not apply that effect's care, budget or trust changes. Invalid shop/law/council offers are unavailable; purchase cost/ownership is not recorded for an invalid purchase. Invalid direct model state pauses before tick advancement. Low-level service/drain validation throws the same observable error. URL parameter replacement is atomic.
+- Removed the silent 3% admin / 2% absence floors and policy-effect rounding to hundredths. Values retain arithmetic precision (e.g. 70%-adopted pilot with rollout cost changes 0.30 to **0.184**, displayed as 18%). Positive drain 0.001 is not rounded to zero. Out-of-bounds reductions are **unavailable/rejected**, not partial benefits clamped to a floor.
+- Scheduled workforce/rate/drain effects and their reversals validate too: a shock whose requested result would violate bounds is recorded as unavailable rather than silently capped at 0.25; rejected effects have no inverse installed. A reversal that conflicts with intervening policy changes is rejected observably, not clamped. Annual workforce/drain changes likewise retain precision. Schedule generation/comparison policy and existing effect coefficients are unchanged; these boundary/precision changes are nevertheless outcome-affecting and included in model 9.
+
+No model-8 record is reused: existing versioned replay, reference and leaderboard filters pick up model 9. No protocol bump is needed because matching/comparison rules are unchanged. F06/F07, empirical calibration, balance tuning, backend/leaderboard changes and deployment are outside this implementation. See [local F05 evidence](MINISTER_RELEASE_STATUS.md#model-9-workforceproductivity-f05--upcoming-not-deployed).
+
 ## Glossary
 
 - **Model version:** immutable identifier for a particular outcome-affecting model and policy implementation.

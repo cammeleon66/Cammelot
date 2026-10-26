@@ -221,7 +221,7 @@ test('Elapsed model clock uses quarter-week ticks and exact calendar boundaries'
       }
     });
     assert.deepEqual(outcome.initial,{cycle:30,elapsed:0,ticksPerWeek:4,ticksPerDay:4/7,ticksPerQuarter:52,ticksPerYear:208,
-      modelVersion:'minister-care-8-finite-resources'});
+      modelVersion:'minister-care-9-workforce-productivity'});
     assert.match(outcome.openingCopy.story,/Seven allocation councils remain, from Q2 through Q8/);
     assert.match(outcome.openingCopy.brief,/Seven allocation councils from Q2 through Q8/);
     assert.match(outcome.openingCopy.brief,/opening quarter has no purchase window/);
@@ -505,7 +505,7 @@ test('Clinical replay is independent of drawing and baseline batching', { timeou
 
 // Resource fixtures use the actual tick, movement, admission and terminal paths.
 // No reference-policy bypass is left enabled while exercising the player handlers.
-async function withResourceTown(run) {
+async function withResourceTown(run, query='') {
   const server = await startSiteServer(), browser = await launchBrowser(), page = await browser.newPage();
   const writes = [];
   await page.route('**/*', route => {
@@ -516,7 +516,7 @@ async function withResourceTown(run) {
     return route.continue();
   });
   try {
-    await page.goto(`http://127.0.0.1:${server.address().port}/minister.html#scn=cabinetcrisis&seed=2468`, {waitUntil:'domcontentloaded'});
+    await page.goto(`http://127.0.0.1:${server.address().port}/minister.html${query}#scn=cabinetcrisis&seed=2468`, {waitUntil:'domcontentloaded'});
     await page.evaluate(() => {
       clearInterval(autoTimer); autoTimer = null; MoC.audio.setMuted(true);
       const original = {referencePolicy:MoC.referencePolicy,seedTick:MoC.seedTick,
@@ -528,6 +528,8 @@ async function withResourceTown(run) {
       Object.values(QUEUES).forEach(q => { q.agents = []; });
       MoC.care.sync();
       MoC.S.specialistCapacity = 0.25; MoC.S.serviceCredit = 0;
+      // Neutral workforce isolates resource conservation from F05 service speed.
+      Object.assign(M.IST,{admin:0,sick:0,ai:1});
       agents.filter(a => a.type === 'gp').forEach(g => Object.assign(g,{sickLeaveTimer:0,burnoutLevel:0}));
       MoC.seedTick = () => { Math.random = () => 0.5; };
       MoC.environment.advance = () => {};
@@ -584,6 +586,269 @@ async function withResourceTown(run) {
     await browser.close(); await new Promise(resolve => server.close(resolve));
   }
 }
+
+async function workforceTrace(parameters) {
+  let result;
+  await withResourceTown(async page => {
+    result = await page.evaluate(parameters => {
+      Object.assign(M.IST, {admin:0,sick:0,ai:1}, parameters);
+      const f = resourceFixture;
+      for (let i=0;i<6;i++) f.queue(i, 'gp1_bldg');
+      f.advance(16);
+      const s = MoC.care.snapshot();
+      return {starts:s.resources.gp1_bldg.starts,
+        completions:s.resources.gp1_bldg.completions, work:s.gpService.availableWorkPerWeek,
+        routineRate:s.capacity, routineStarts:s.routineStarts};
+    }, parameters);
+  });
+  return result;
+}
+
+test('F05 aggregate absence reduces actual GP service', {timeout:30000}, async t => {
+  const low = await workforceTrace({sick:0.1}), high = await workforceTrace({sick:0.8});
+  assert.ok(low.completions > high.completions, JSON.stringify({low,high}));
+  assert.equal(low.routineRate,high.routineRate);
+  assert.equal(low.routineStarts,0);
+  t.diagnostic(JSON.stringify({low,high}));
+});
+
+test('F05 productivity increases actual unconstrained GP service', {timeout:30000}, async t => {
+  const base = await workforceTrace({ai:1}), productive = await workforceTrace({ai:3});
+  assert.ok(productive.completions > base.completions, JSON.stringify({base,productive}));
+  assert.equal(productive.work,base.work*3);
+  assert.equal(productive.routineRate,base.routineRate);
+  t.diagnostic(JSON.stringify({base,productive}));
+});
+
+test('F05 administration changes actual GP work and overdue drain only once', {timeout:30000}, async t => {
+  const low = await workforceTrace({admin:0.1}), high = await workforceTrace({admin:0.8});
+  assert.ok(low.completions > high.completions, JSON.stringify({low,high}));
+  assert.equal(low.routineRate,high.routineRate);
+  await withResourceTown(async page => {
+    const result = await page.evaluate(() => {
+      const cond = {code:'I25',severity:'moderate'}, p={...M.IST,admin:0.5};
+      const a=resourceFixture.activate(0,{conditions:[cond],personality:'stoic',waitWeeks:14});
+      const noAdmin=calculateHPDrain(cond,'moderate',14,{...p,admin:0},a);
+      const withAdmin=calculateHPDrain(cond,'moderate',14,p,a);
+      Object.assign(M.IST,p);
+      return {extra:withAdmin-noAdmin, expected:3*2*0.5/4,
+        drain:withAdmin, html:buildDrainBreakdown(a),
+        healthy:overdueWaitDrainPerTick(14,12,'healthy',0.5),
+        deceased:overdueWaitDrainPerTick(14,12,'deceased',0.5)};
+    });
+    assert.ok(Math.abs(result.extra-result.expected)<1e-9);
+    assert.equal(result.healthy,0,'healthy severity multiplier zero must not become one');
+    assert.equal(result.deceased,2.25,'preserve the existing non-finalizing condition-state factor');
+    assert.ok(result.html.includes(result.drain.toFixed(3)+' HP/tick'));
+    assert.match(result.html,/included in overdue wait penalty only/);
+  });
+  t.diagnostic(JSON.stringify({low,high}));
+});
+
+test('F05 combined workforce effects count named absences once and preserve zero service', {timeout:30000}, async () => {
+  await withResourceTown(async page => {
+    const result = await page.evaluate(() => {
+      const f=resourceFixture, gp1=agents.find(a=>a.id==='gp1'), gp2=agents.find(a=>a.id==='gp2');
+      const a=f.activate(0,{behaviorState:'at_gp',insideBuilding:'gp1_bldg',stateTimer:100});
+      const b=f.activate(1,{behaviorState:'at_gp',insideBuilding:'gp2_bldg',stateTimer:100});
+      Object.assign(M.IST,{admin:0.25,sick:0.6,ai:2});
+      MoC.care.sync(); f.advance();
+      const both={a:a.stateTimer,b:b.stateTimer,work:MoC.care.snapshot().gpService.availableWorkPerWeek};
+      gp2.sickLeaveTimer=10;
+      const before=a.stateTimer; f.advance();
+      const one={delta:before-a.stateTimer,b:b.stateTimer,work:gpServiceCapacity().availableWorkPerWeek};
+      M.IST.sick=0.25; // one named absence already exceeds the aggregate floor
+      const beforeNamed=a.stateTimer; f.advance();
+      const named=beforeNamed-a.stateTimer;
+      M.IST.sick=1;
+      const stopped=a.stateTimer; f.advance();
+      const fullAbsence=a.stateTimer===stopped;
+      M.IST.sick=0; M.IST.admin=1; f.advance();
+      const fullAdmin=a.stateTimer===stopped;
+      gp1.sickLeaveTimer=10; M.IST.admin=0; M.IST.ai=1e6;
+      f.advance();
+      const allAbsent=gpServiceCapacity().availableWorkPerWeek;
+      return {both,one,named,fullAbsence,fullAdmin,allAbsent};
+    });
+    assert.ok(Math.abs(result.both.a-99.4)<1e-9);
+    assert.ok(Math.abs(result.both.b-99.4)<1e-9);
+    assert.ok(Math.abs(result.both.work-4.8)<1e-9);
+    assert.ok(Math.abs(result.one.delta-1.2)<1e-9);
+    assert.equal(result.one.b,result.both.b);
+    assert.ok(Math.abs(result.one.work-4.8)<1e-9);
+    assert.equal(result.named,1.5,'named half-roster absence is not charged another 25%');
+    assert.equal(result.fullAbsence,true);
+    assert.equal(result.fullAdmin,true);
+    assert.equal(result.allAbsent,0);
+  });
+  for (const parameters of [{sick:1},{admin:1}]) {
+    const trace=await workforceTrace(parameters);
+    assert.equal(trace.starts,0);
+    assert.equal(trace.completions,0);
+    assert.equal(trace.work,0);
+  }
+});
+
+test('F05 recruitment changes routine starts and places but a downstream constraint can absorb GP gains', {timeout:30000}, async t => {
+  const traces=[];
+  for (const capacity of [0.25,1.25]) {
+    await withResourceTown(async page => {
+      traces.push(await page.evaluate(capacity => {
+        const f=resourceFixture;
+        _mocDebug.applyFx({capacity:capacity-MoC.S.specialistCapacity});
+        for(let i=0;i<6;i++) f.queue(i,'hospital',{referredToHospital:true});
+        MoC.care.sync(); f.advance(16);
+        const s=MoC.care.snapshot();
+        return {starts:s.routineStarts,places:s.resources.routine.slots,work:s.gpService.availableWorkPerWeek};
+      },capacity));
+    },'?debug=1');
+  }
+  assert.equal(traces[0].starts,1);
+  assert.equal(traces[1].starts,4,'existing capped routine credit yields one start per four ticks at 1.25/week');
+  assert.equal(traces[0].places,1);
+  assert.equal(traces[1].places,4);
+  assert.equal(traces[0].work,traces[1].work);
+  const constrained=[];
+  for(const ai of [1,3]) {
+    await withResourceTown(async page => {
+      constrained.push(await page.evaluate(ai => {
+        M.IST.ai=ai;
+        const f=resourceFixture;
+        f.activate(0,{behaviorState:'at_hospital',insideBuilding:'hospital',stateTimer:100});
+        for(let i=1;i<7;i++) f.queue(i,'gp1_bldg',{hp:55,
+          conditions:[{code:'I25',name:'Heart disease',severity:'moderate'}]});
+        MoC.care.sync();
+        // Real consultation/referral paths; remove only geographic travel as a separate bottleneck.
+        for(let i=0;i<16;i++){
+          f.people.filter(a=>a.behaviorState==='going_to_hospital').forEach(a=>{
+            a.path=[]; a.pathIdx=0; a.pathComplete=true;
+          });
+          f.advance();
+        }
+        const s=MoC.care.snapshot();
+        return {gp:s.resources.gp1_bldg.completions,routine:s.routineStarts,
+          waiting:s.waiting,credit:MoC.S.serviceCredit};
+      },ai));
+    });
+  }
+  assert.ok(constrained[1].gp>constrained[0].gp);
+  assert.equal(constrained[0].routine,0);
+  assert.equal(constrained[1].routine,0,'full downstream routine place prevents starts despite GP gains');
+  assert.equal(constrained[0].credit,1);
+  assert.equal(constrained[1].credit,1);
+  t.diagnostic(JSON.stringify({hiring:traces,constrained}));
+});
+
+test('F05 bounds reject atomically, retain legitimate zeros and preview adoption mechanisms', {timeout:30000}, async () => {
+  await withResourceTown(async page => {
+    const result=await page.evaluate(() => {
+      const errors=[];
+      const check=(fn)=>{try {fn();return false;}catch(e){errors.push(e.message);return e instanceof RangeError;}};
+      const p={...M.IST};
+      const invalid=[
+        ...['admin','sick'].flatMap(key=>[-0.01,1.01,NaN,Infinity].map(v=>()=>validateCareParameters({...p,[key]:v}))),
+        ...['ai','drain'].flatMap(key=>[0,-1,NaN,Infinity].map(v=>()=>validateCareParameters({...p,[key]:v}))),
+        ...[0,0.249,Infinity,NaN,Number.MAX_VALUE].map(v=>()=>validateCareParameters(p,v)),
+        ...[-0.01,1.01,NaN,Infinity].map(v=>()=>validateCareParameters(p,0.25,v)),
+        ()=>validateCareParameters({...p,ai:Number.MAX_VALUE}),
+        ()=>overdueWaitDrainPerTick(14,12,'unknown',0)
+      ].map(fn=>check(fn));
+      validateCareParameters({...p,admin:0,sick:0,ai:Number.MIN_VALUE,drain:Number.MIN_VALUE},0.25,0);
+      const before={...M.IST},budget=MoC.S.budget;
+      const rejected=[{admin:-0.01},{sick:1.01},{capacity:-0.01},{ai:NaN},{drainMult:0}]
+        .map(fx=>_mocDebug.applyFx({...fx,budget:100})===false);
+      const atomic=JSON.stringify(before)===JSON.stringify(M.IST)&&budget===MoC.S.budget;
+      MoC.S.adoptionRate=0;
+      const zero=MoC.previewPolicy('scribes2');
+      const zeroMesh=MoC.previewPolicy('a2a'),zeroTwin=MoC.previewPolicy('twin');
+      MoC.S.adoptionRate=1;
+      const full=MoC.previewPolicy('scribes2');
+      MoC.S.adoptionRate=0.5;
+      const half=MoC.previewPolicy('scribes2');
+      Object.assign(M.IST,{admin:0.3,sick:0.1,ai:1,drain:1});
+      const applied=_mocDebug.applyFx(half);
+      const after={admin:M.IST.admin,ai:M.IST.ai,rate:MoC.S.specialistCapacity,drain:M.IST.drain};
+      // Exact zero outcomes remain zero, with no 3%/2% floor or rounding.
+      const zeroApplied=_mocDebug.applyFx({admin:-M.IST.admin,sick:-M.IST.sick});
+      const zeros={admin:M.IST.admin,sick:M.IST.sick};
+      const tiny=_mocDebug.applyFx({drainMult:0.001});
+      const tinyDrain=M.IST.drain;
+      const url=location.href;
+      history.replaceState(null,'','?admin=0&sick=0&ai=1.5&drain=0.001'+location.hash);
+      applyURLParams();
+      const urlZeros={admin:M.IST.admin,sick:M.IST.sick,ai:M.IST.ai,drain:M.IST.drain};
+      history.replaceState(null,'','?admin=0.3&sick=NaN'+location.hash);
+      const urlBefore=JSON.stringify(M.IST);
+      applyURLParams();
+      const urlAtomic=urlBefore===JSON.stringify(M.IST);
+      history.replaceState(null,'',url);
+      // Invalid direct state cannot advance time or allocate service.
+      M.IST.sick=Infinity;
+      const tickBefore=modelTick; tick();
+      const stalled=modelTick===tickBefore&&MoC.paused;
+      M.IST.sick=0;
+      return {invalid,errors,rejected,atomic,zero,zeroMesh,zeroTwin,full,half,applied,after,
+        zeroApplied,zeros,tiny,tinyDrain,urlZeros,urlAtomic,stalled,error:MoC.lastInputError};
+    });
+    assert.ok(result.invalid.every(Boolean));
+    assert.ok(result.errors.every(message=>message.startsWith('Invalid care input:')));
+    assert.ok(result.rejected.every(Boolean));
+    assert.equal(result.atomic,true);
+    assert.equal(result.zero.ai,0);
+    assert.equal(result.zero.admin,0.01,'zero adoption retains declared temporary rollout paperwork');
+    assert.equal(result.zeroMesh.capacity,0);
+    assert.equal(result.zeroTwin.drainMult,1);
+    assert.equal(result.full.ai,0.1);
+    assert.equal(result.full.admin,-0.07);
+    assert.equal(result.half.ai,0.05);
+    assert.ok(Math.abs(result.half.admin+0.025)<1e-9);
+    assert.equal(result.applied,true);
+    assert.ok(Math.abs(result.after.admin-0.275)<1e-9);
+    assert.equal(result.after.ai,1.05);
+    assert.equal(result.after.rate,0.25);
+    assert.equal(result.after.drain,1);
+    assert.equal(result.zeroApplied,true);
+    assert.deepEqual(result.zeros,{admin:0,sick:0});
+    assert.equal(result.tiny,true);
+    assert.equal(result.tinyDrain,0.001);
+    assert.deepEqual(result.urlZeros,{admin:0,sick:0,ai:1.5,drain:0.001});
+    assert.equal(result.urlAtomic,true);
+    assert.equal(result.stalled,true);
+    assert.match(result.error,/Invalid care input: sick/);
+  },'?debug=1');
+});
+
+test('F05 zero-adoption shop preview executes its named effects and invalid offers are unavailable', {timeout:30000}, async () => {
+  await withResourceTown(async page => {
+    page.setDefaultTimeout(4000);
+    await page.evaluate(() => {
+      Object.assign(M.IST,{admin:0.3,sick:0.1,ai:1});
+      MoC.S.adoptionRate=0; MoC.S.budget=1000000;
+      document.getElementById('play-overlay')?.remove();
+      _mocForceCouncil(2);
+    });
+    await openCouncilActions(page);
+    const before=await page.evaluate(()=>({p:{...M.IST},fx:MoC.previewPolicy('scribes1'),rate:MoC.S.specialistCapacity}));
+    await page.locator('[data-buy="scribes1"]').click();
+    const after=await page.evaluate(()=>({p:{...M.IST},rate:MoC.S.specialistCapacity,owned:MoC.S.owned.scribes1}));
+    assert.equal(after.owned,1);
+    assert.ok(Math.abs(after.p.admin-before.p.admin-before.fx.admin)<1e-9);
+    assert.equal(after.p.ai,before.p.ai);
+    assert.equal(after.rate,before.rate);
+    assert.match(await page.evaluate(()=>MoC.S._policyReceipt),/Care outcomes are not guaranteed/);
+    // Full adoption at zero paperwork would make another reduction invalid.
+    // Re-open the real council UI so availability is computed from that state.
+    await page.evaluate(() => {
+      document.getElementById('moc-council')?.remove();
+      M.IST.admin=0; MoC.S.adoptionRate=1; MoC.S.buysThisCouncil=0;
+      _mocForceCouncil(3);
+    });
+    await openCouncilActions(page);
+    const offer=page.locator('.moc-item').filter({has:page.locator('[data-buy="scribes2"]')});
+    assert.equal(await page.locator('[data-buy="scribes2"]').isDisabled(),true);
+    assert.match(await offer.innerText(),/Unavailable: Invalid care input: admin/);
+  });
+});
 
 test('F04 eight emergencies share one place with bounded visible overflow and no routine displacement', {timeout:30000}, async () => {
   await withResourceTown(async page => {
@@ -1134,11 +1399,14 @@ test('Shared conditions and no-action reference agree at the same dates', { time
         }
         const checkpoints=Object.fromEntries(Object.entries(MoC.runSnapshots).filter(([tick])=>Number(tick)%52===0||Number(tick)===75||Number(tick)===target));
         return {schedule:MoC.environment?.schedule, log:MoC.environment?.log, snapshots:checkpoints,
-          traceHash,tick75,policies:MoC.S.interventions, cycle:modelTick, error:document.querySelector('#moc-council')?.innerText};
+          traceHash,tick75,policies:MoC.S.interventions, cycle:modelTick, inputError:MoC.lastInputError,
+          error:document.querySelector('#moc-council')?.innerText};
       });
       await context.close(); return result;
     }
     const reference=await run(true), player=await run(false);
+    assert.equal(reference.inputError,undefined,'supported scenario inputs and scheduled effects must remain valid');
+    assert.equal(player.inputError,undefined);
     assert.ok(reference.schedule?.length, 'both paths must have a declared external schedule');
     assert.deepEqual(player.schedule,reference.schedule);
     assert.deepEqual(player.log,reference.log);
@@ -1152,6 +1420,8 @@ test('Shared conditions and no-action reference agree at the same dates', { time
     const fullReference=await run(true,1357,'campaign');
     const fullPlayer=await run(false,1357,'campaign');
     assert.equal(fullReference.cycle,2080);
+    assert.equal(fullReference.inputError,undefined);
+    assert.equal(fullPlayer.inputError,undefined);
     assert.equal(fullPlayer.traceHash,fullReference.traceHash,'ten-year clinical traces must match');
     assert.deepEqual(Object.keys(fullPlayer.snapshots),Object.keys(fullReference.snapshots));
     for(const tick of Object.keys(fullReference.snapshots)) assert.deepEqual(fullPlayer.snapshots[tick],fullReference.snapshots[tick],'ten-year snapshot at tick '+tick);
@@ -1260,7 +1530,8 @@ test('Care reports preserve adverse outcomes and previews match purchases', { ti
     assert.match(await card.evaluate(el=>el.closest('.moc-item').innerText), /30% → 18%/);
     const burnoutBefore=await page.evaluate(()=>agents.filter(a=>a.type==='gp').map(a=>a.burnoutLevel||0));
     await card.click();
-    assert.equal(await page.evaluate(()=>M.IST.admin),0.18);
+    assert.ok(Math.abs(await page.evaluate(()=>M.IST.admin)-0.184)<1e-9,
+      'model9 retains adoption-scaled effect precision; percent copy rounds for display only');
     assert.match(await page.locator('#moc-policy-receipt').innerText(),/30% → 18%/);
     const rollout=await page.evaluate(()=>({burnout:agents.filter(a=>a.type==='gp').map(a=>a.burnoutLevel||0),strain:MoC.S.rolloutStrain,adoption:MoC.S.adoptionRate}));
     assert.ok(rollout.burnout.every((value,index)=>value>burnoutBefore[index]));
@@ -1311,11 +1582,11 @@ test('Early results match the reference date and replay preserves the prior atte
     });
     assert.equal(forged,true);
     await page.locator('#moc-again').click();
-    await page.waitForURL(/&v=minister-care-8-finite-resources/);
+    await page.waitForURL(/&v=minister-care-9-workforce-productivity/);
     await page.locator('#moc-takeoffice').waitFor();
     assert.match(await page.locator('#moc-previous-attempt').innerText(),/tick 75/);
     assert.equal(await page.evaluate(()=>MoC.previousRun.final.tick),75);
-    assert.equal(await page.evaluate(()=>MoC.previousRun.modelVersion), 'minister-care-8-finite-resources');
+    assert.equal(await page.evaluate(()=>MoC.previousRun.modelVersion), 'minister-care-9-workforce-productivity');
     assert.deepEqual(await page.evaluate(()=>MoC.previousRun.externalSchedule),await page.evaluate(()=>MoC.environment.schedule));
     assert.equal(await page.evaluate(()=>MoC.audio.isMuted()),true);
     // Controlled outcome fixture: political survival must not conceal worse care.
@@ -1390,7 +1661,7 @@ test('Completed runs publish automatically with a public or generated name', { t
     assert.equal(await page.locator('#moc-community-name,#moc-submit-score').count(),0,'publication is automatic, not an optional form');
     assert.equal(submitted.username,'');
     assert.equal(submitted.seed,2468);
-    assert.equal(submitted.modelVersion,'minister-care-8-finite-resources');
+    assert.equal(submitted.modelVersion,'minister-care-9-workforce-productivity');
     assert.equal(submitted.endTick,75);
     assert.equal(typeof submitted.summary.meanWait,'number');
     assert.match(await page.locator('#moc-community-status').innerText(),/Published as Minister Silver Heron 468 · rank 2/);
