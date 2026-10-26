@@ -1,6 +1,6 @@
 # Minister model contract
 
-**Status:** Selected engineering target contract; not clinical validation. **Audited baseline:** [`bb6df6490ceb56e68cc8922ae167660ac6079b18`](https://github.com/cammeleon66/Cammelot/commit/bb6df6490ceb56e68cc8922ae167660ac6079b18), model `minister-care-5-rollout`. **Verified deployed model:** `minister-care-7-elapsed-time`. **Upcoming repository executable:** `minister-care-8-finite-resources` (not deployed). **Paired-reference protocol:** `no-discretionary-action-v1`.
+**Status:** Selected engineering target contract; not clinical validation. **Audited baseline:** [`bb6df6490ceb56e68cc8922ae167660ac6079b18`](https://github.com/cammeleon66/Cammelot/commit/bb6df6490ceb56e68cc8922ae167660ac6079b18), model `minister-care-5-rollout`. **Verified deployed model:** `minister-care-8-finite-resources` ([publication evidence](MINISTER_RELEASE_STATUS.md#verified-model-8-publication)). **Paired-reference protocol:** `no-discretionary-action-v1`.
 
 This contract describes the Minister policy game only. Verified behavior below is distinct from selected target rules. The target rules are bounded engineering choices for subsequent implementation, not evidence of clinical validity, calibrated parameters, or claims that outcomes will improve. The audit summary and browser evidence in issue [#1](https://github.com/cammeleon66/Cammelot/issues/1) are the supplied evidence; no private audit artifacts are assumed.
 
@@ -63,9 +63,9 @@ These are bounded engineering decisions for subsequent work. They are selected t
 
 F01 selects these semantics and records ownership; it does not implement these follow-on changes or claim that any dependent issue is complete.
 
-## F04 implementation: upcoming model 8, not deployed
+## F04 implementation: model 8 finite resources
 
-The “Verified current behavior” section above records the original model-5 audit, not the new executable's resource rules. Model 7 publication remains the verified production state. Model 8 implements the finite-resource target as follows; [focused evidence](MINISTER_RELEASE_STATUS.md#f04-implementation-evidence) records reproduction and regression criteria.
+The “Verified current behavior” section above records the original model-5 audit, not the new executable's resource rules. Model 8 publication was verified on 2026-10-26. Model 8 implements the finite-resource target as follows; [focused evidence](MINISTER_RELEASE_STATUS.md#f04-implementation-evidence) records reproduction and regression criteria.
 
 - **Named resources:** one concurrent consultation at each of `gp1_bldg` and `gp2_bldg`, `ceil(specialistCapacity × 2.5)` routine hospital treatment places (minimum one), and **one separate emergency treatment place**. These are gameplay places, not empirical beds or staffing estimates. Infrastructure staff do not occupy resident treatment places.
 - **Routine credit:** accrue `specialistCapacity / 4` starts per elapsed tick, once per tick, capped at `max(1, specialistCapacity / 4)`; spend one credit only on an actual routine admission. Full occupancy, absent demand and stale/duplicate queue entries cannot create extra credit. Recruitment retains its existing starts/week mapping; F04 does not retune workforce or policy effects.

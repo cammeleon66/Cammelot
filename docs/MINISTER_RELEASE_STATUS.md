@@ -2,17 +2,16 @@
 
 Updated: 2026-10-26
 Public game: https://cammelot.org/minister.html
-Verified public model: `minister-care-7-elapsed-time` (publication evidence below)
-Upcoming repository model: `minister-care-8-finite-resources` — implementation only, **not deployed**
+Verified public model: `minister-care-8-finite-resources` (publication evidence below)
 Reference protocol: `no-discretionary-action-v1`
 
 This is the canonical status list. Older plans describe how the current release was built; their unchecked boxes are not active tasks.
 
-## Upcoming model 8: finite resources (F04)
+## Model 8: finite resources (F04)
 
-Issue [#4](https://github.com/cammeleon66/Cammelot/issues/4) replaces unlimited emergency admission with one separate emergency place and visible queued overflow, and bounds simultaneous GP consultations to one per practice. Routine treatment retains its named finite places and starts/week credit, independent of emergency care. Releases, initial occupancy, starts and completions are separately accounted; reduction of the routine target retires occupied places without evicting residents. See the [implemented resource contract](MINISTER_MODEL_CONTRACT.md#f04-implementation-upcoming-model-8-not-deployed) and [criterion evidence](#f04-implementation-evidence).
+Issue [#4](https://github.com/cammeleon66/Cammelot/issues/4) replaces unlimited emergency admission with one separate emergency place and visible queued overflow, and bounds simultaneous GP consultations to one per practice. Routine treatment retains its named finite places and starts/week credit, independent of emergency care. Releases, initial occupancy, starts and completions are separately accounted; reduction of the routine target retires occupied places without evicting residents. See the [implemented resource contract](MINISTER_MODEL_CONTRACT.md#f04-implementation-model-8-finite-resources) and [criterion evidence](#f04-implementation-evidence).
 
-This changes outcomes and is incompatible with model 7 replay/reference/leaderboard records. No release, workflow, backend, production leaderboard or repository-setting change is included. Model 7 remains the verified public executable. The one-place rule and overflow outcomes are unvalidated gameplay assumptions, not calibration or a claim of lower mortality. F05 workforce/productivity tuning and F07 effects remain separate work.
+This changes outcomes and is incompatible with model 7 replay/reference/leaderboard records. The implementation changed no workflow, backend, production leaderboard or repository settings; the coordinator published it through the existing gated branch after review. Model 8 is the verified public executable. The one-place rule and overflow outcomes are unvalidated gameplay assumptions, not calibration or a claim of lower mortality. F05 workforce/productivity tuning and F07 effects remain separate work.
 
 Local implementation evidence: Minister browser/supported-host tests **37/37 passed**; `npm test` **179/179 passed** using system Chromium and temporary existing test dependencies (the locked Azure mirror was unavailable). This is repository validation, not publication evidence; see the focused evidence below for exact limitations.
 
@@ -43,7 +42,7 @@ All fixtures below are named `F04 …` in `tests/minister_browser.test.js`. They
 | Terminal release and shrinking resources | Whole-roster emergency fixture: death during treatment releases exactly once and admits the next emergency on the same observed tick, without recording a completion or death-before-treatment. Routine capacity reduction from three places to one exposes two retiring occupied places; no new start until existing care frees the target place. |
 | Common deterioration rule, not an overflow-specific penalty | An overdue overflow resident loses the amount calculated by the existing untreated HP-drain/comorbidity rule at its elapsed referral wait (tolerance `1e-9`). No emergency-only mortality coefficient is added. |
 | Preserve timing/terminal invariants | Existing regressions retain four ticks/week, 52/quarter, 208/year, display offset 30, Cabinet Crisis 416 ticks, Full Term 2,080 ticks, night-GP journeys, retirement during care, terminal disease/background deaths and exactly-once death finalization. |
-| Incompatible version and focused release status | Model 8 identity is used by existing replay/reference/leaderboard machinery and browser assertions. Model/release docs explicitly mark it upcoming, not deployed. No calibration or improved-mortality claim. |
+| Incompatible version and focused release status | Model 8 identity is used by existing replay/reference/leaderboard machinery and browser assertions. Implementation evidence was recorded before publication; verified publication is recorded separately below. No calibration or improved-mortality claim. |
 
 #### Validation environment and commands
 
@@ -63,6 +62,8 @@ These tests use local HTTP and mocked/blocked publication, never production lead
 #### Coordinator review follow-up (2026-10-26)
 
 The browser-isolation review finding did not reproduce with the locked Playwright 1.62.1: its `Browser` API declares and emits the `context` event. A new offline regression exercises both `browser.newPage()` and explicit `browser.newContext()` creation, verifies all three cosmetic hosts are fulfilled without network access, and checks page-route precedence. Removing the route listener makes that regression fail with `ERR_INTERNET_DISCONNECTED`; restoring it passes. The isolated worktree restored dependencies with `npm ci` without changing the lockfile. The offline regression and all seven F04 resource fixtures passed together. This is regression evidence, not a clinical-validation or deployment claim.
+
+The complete repository suite passed **180/180** on Windows at reviewed source `c351bf3`. Independent Standards and Spec reviews found no significant issues. The required `Validate` check passed for that source before the protected merge.
 
 ## Model 7 timing change
 
@@ -130,13 +131,21 @@ The `github-pages` environment must allow only `feature/agentic-overhaul`. The f
 - Live browser verification completed same-origin model 7 references for seed 2468 in Cabinet Crisis (416 snapshots, final tick 416) and The Full Term (2,080 snapshots, final tick 2,080). Both player openings remained at elapsed tick zero with four ticks/week, 52/quarter and 208/year.
 - No browser errors, same-origin HTTP errors or score submissions were observed. External requests and non-GET requests were blocked; leaderboard reads were stubbed. This verifies the static game/reference path, not production leaderboard writes, clinical validity or physical-device behavior.
 
+### Verified model 8 publication
+
+- Protected master merge: `708ece881ac8545d5e866e1ff0620140cdf133d6` through [PR32](https://github.com/cammeleon66/Cammelot/pull/32); release: `38074e3d2c21caabe6834ebfcc2ebaa9cff220bc`, preserving `feature/agentic-overhaul` history.
+- [Pages run 40318807708](https://github.com/cammeleon66/Cammelot/actions/runs/40318807708) passed on 2026-10-26: `validate / test` completed before deployment began. The release tree matched the reviewed source.
+- Public `/minister.html` SHA-256 matched the canonical release blob: `5b7dd20877f38732f6020119d62e8b1ea0ec4e599c0f3718279241c3934cfa7c`. Comparison used Git blob bytes, not Windows checkout line endings.
+- Live browser verification completed same-origin model 8 references for seed 2468 in Cabinet Crisis (416 snapshots, final tick 416) and The Full Term (2,080 snapshots, final tick 2,080). Scenario, model, protocol and schedule identities matched; both player openings remained at elapsed tick zero with four ticks/week, 52/quarter and 208/year.
+- No browser errors, same-origin HTTP errors or score submissions were observed. External requests were fulfilled locally, non-GET requests were blocked, and leaderboard reads were stubbed. This verifies the static game/reference path, not leaderboard writes, clinical validity or physical-device behavior.
+
 ## Remaining agent work
 
 These improve evidence and quality; they do not mean the currently deployed game or leaderboard is offline.
 
 - [x] Complete the active-copy pass: council newspaper, escalation banners, aging/flu updates and confidence-vote choices now report actual mechanics without invented testimonials or moralizing verdicts.
 - [ ] Complete balance validation: the versioned Cabinet Crisis correction produced 11/400 narrow re-elections (2.75%) across five development seeds and every purchase family; freeze it and validate on unseen holdout seeds.
-- [x] Reproduce the legacy emergency/GP admission violations and implement finite resources in upcoming model 8; not a deployment claim.
+- [x] Reproduce the legacy emergency/GP admission violations, implement finite resources in model 8, and verify publication as recorded above.
 
 ## Human validation
 
@@ -205,7 +214,7 @@ Do not lower every target or add arbitrary bonuses. Use the trust ledger from st
 
 ### 5. Audit the remaining care-model risk
 
-- Completed in upcoming model 8: trace the bypass, enforce one emergency place with visible overflow and independent routine resources.
+- Completed in published model 8: trace the bypass, enforce one emergency place with visible overflow and independent routine resources.
 - Active-path fixtures cover simultaneous emergency/routine demand, GP concurrency and absence, terminal releases, re-entry, routine credit and shrinking capacity.
 - Retain cautious `model-classified system deaths` language until domain review.
 
