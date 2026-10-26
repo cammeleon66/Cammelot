@@ -6,7 +6,14 @@ import { extname, join, normalize } from 'node:path';
 import { chromium } from 'playwright-chromium';
 
 const SITE_ROOT = join(process.cwd(), 'site');
-const launchBrowser = () => chromium.launch({ headless: true, args: ['--mute-audio'] });
+const launchBrowser = async () => {
+  const browser = await chromium.launch({ headless: true, args: ['--mute-audio'] });
+  // Cosmetic third-party assets must not make local care regressions depend on
+  // internet access. Page-specific leaderboard mocks retain precedence.
+  browser.on('context', context => context.route(/https:\/\/(fonts\.googleapis\.com|fonts\.gstatic\.com|plausible\.io)\//,
+    route => route.fulfill({status:200,body:''})));
+  return browser;
+};
 const MIME_TYPES = {
   '.html': 'text/html',
   '.json': 'application/json',
@@ -41,6 +48,30 @@ async function openCouncilActions(page) {
   }
   assert.ok(await page.locator('#moc-shop').count(), 'council must reach funding');
 }
+
+test('Browser fixtures isolate cosmetic requests offline for both context creation paths', { timeout: 30000 }, async () => {
+  const browser = await launchBrowser();
+  try {
+    for (const explicitContext of [false, true]) {
+      const page = explicitContext
+        ? await (await browser.newContext()).newPage()
+        : await browser.newPage();
+      const context = page.context();
+      await context.setOffline(true);
+      for (const host of ['fonts.googleapis.com', 'fonts.gstatic.com', 'plausible.io']) {
+        const response = await page.goto(`https://${host}/fixture-isolation`);
+        assert.equal(response.status(), 200);
+        assert.equal(await response.text(), '', `${host} must be fulfilled without network access`);
+      }
+      await page.route('https://plausible.io/fixture-isolation', route => route.fulfill({ body: 'page override' }));
+      const response = await page.goto('https://plausible.io/fixture-isolation');
+      assert.equal(await response.text(), 'page override', 'page-specific mocks must retain precedence');
+      await context.close();
+    }
+  } finally {
+    await browser.close();
+  }
+});
 
 test('Minister picker offers two responsive game modes', { timeout: 30000 }, async () => {
   const server = await startSiteServer();
@@ -190,7 +221,7 @@ test('Elapsed model clock uses quarter-week ticks and exact calendar boundaries'
       }
     });
     assert.deepEqual(outcome.initial,{cycle:30,elapsed:0,ticksPerWeek:4,ticksPerDay:4/7,ticksPerQuarter:52,ticksPerYear:208,
-      modelVersion:'minister-care-7-elapsed-time'});
+      modelVersion:'minister-care-8-finite-resources'});
     assert.match(outcome.openingCopy.story,/Seven allocation councils remain, from Q2 through Q8/);
     assert.match(outcome.openingCopy.brief,/Seven allocation councils from Q2 through Q8/);
     assert.match(outcome.openingCopy.brief,/opening quarter has no purchase window/);
@@ -472,6 +503,363 @@ test('Clinical replay is independent of drawing and baseline batching', { timeou
   }
 });
 
+// Resource fixtures use the actual tick, movement, admission and terminal paths.
+// No reference-policy bypass is left enabled while exercising the player handlers.
+async function withResourceTown(run) {
+  const server = await startSiteServer(), browser = await launchBrowser(), page = await browser.newPage();
+  const writes = [];
+  await page.route('**/*', route => {
+    const request = route.request();
+    if (request.method() !== 'GET') { writes.push(request.url()); return route.abort(); }
+    if (!request.url().startsWith(`http://127.0.0.1:${server.address().port}/`))
+      return route.fulfill({status:200,contentType:'application/json',body:'[]'});
+    return route.continue();
+  });
+  try {
+    await page.goto(`http://127.0.0.1:${server.address().port}/minister.html#scn=cabinetcrisis&seed=2468`, {waitUntil:'domcontentloaded'});
+    await page.evaluate(() => {
+      clearInterval(autoTimer); autoTimer = null; MoC.audio.setMuted(true);
+      const original = {referencePolicy:MoC.referencePolicy,seedTick:MoC.seedTick,
+        advance:MoC.environment.advance,transition:window.transitionDiseaseState,random:Math.random};
+      MoC.referencePolicy = true; // setup only; never a handler bypass under test
+      const people = agents.filter(a => a.type === 'patient' || a.type === 'citizen');
+      people.forEach(a => Object.assign(a, {moved:true,insideBuilding:'fixture-isolation',behaviorState:'roaming',
+        hp:100,state:'managed',conditions:[],queueType:null,queueBuilding:null}));
+      Object.values(QUEUES).forEach(q => { q.agents = []; });
+      MoC.care.sync();
+      MoC.S.specialistCapacity = 0.25; MoC.S.serviceCredit = 0;
+      agents.filter(a => a.type === 'gp').forEach(g => Object.assign(g,{sickLeaveTimer:0,burnoutLevel:0}));
+      MoC.seedTick = () => { Math.random = () => 0.5; };
+      MoC.environment.advance = () => {};
+      window.transitionDiseaseState = (code,state) => state;
+      const samples = [];
+      window.resourceFixture = {
+        people, samples,
+        activate(index, props={}) {
+          const a = people[index];
+          Object.assign(a,{moved:false,insideBuilding:null,behaviorState:'roaming',state:'managed',hp:100,
+            age:40,_ageStart:40,_ageElapsedTicks:0,conditions:[],path:[],pathIdx:0,pathComplete:true,
+            queueType:null,queueBuilding:null,waitWeeks:0,referredToHospital:false,emergencyAdmission:false,
+            deathFinalized:false,healingTicksLeft:0,queueLeaveTimer:0,systemAnxiety:0,
+            lifeStage:'adult',persona:null,personality:'stoic',x:DESTINATIONS.hospital.entrance.x,
+            y:DESTINATIONS.hospital.entrance.y,tx:DESTINATIONS.hospital.entrance.x,ty:DESTINATIONS.hospital.entrance.y,
+            ...props});
+          return a;
+        },
+        queue(index, building, props={}) {
+          const a = this.activate(index,{behaviorState:'queuing',queueType:building==='hospital'?'hospital':'gp',
+            queueBuilding:building,gpName:building==='gp2_bldg'?agents.find(g=>g.id==='gp2').name:agents.find(g=>g.id==='gp1').name,
+            ...props});
+          QUEUES[building].agents.push(a.id);
+          return a;
+        },
+        advance(count=1) {
+          if (count > 48) throw new Error('Resource fixture tick budget exceeded');
+          for (let i=0;i<count;i++) {
+            const before=modelTick; tick();
+            if (modelTick!==before+1) throw new Error(`Resource fixture stalled at tick ${modelTick}`);
+            const s=MoC.care.snapshot();
+            for (const r of Object.values(s.resources)) {
+              if (r.initial+r.starts!==r.occupancy+r.releases || r.occupancy>r.slots+r.retiringSlots
+                || r.completions>r.releases || r.occupancy<0) throw new Error('Resource conservation failed');
+            }
+            if (s.emergencyOverflow>s.emergencyOverflowBound) throw new Error('Overflow bound exceeded');
+            samples.push(s);
+          }
+          return samples.at(-1);
+        },
+        restore() {
+          MoC.seedTick=original.seedTick; MoC.environment.advance=original.advance;
+          window.transitionDiseaseState=original.transition; Math.random=original.random;
+          MoC.referencePolicy=original.referencePolicy;
+        }
+      };
+      MoC.referencePolicy = original.referencePolicy;
+      MoC.paused = false;
+    });
+    await run(page);
+    assert.deepEqual(writes, [], 'resource tests must not publish results');
+  } finally {
+    await page.evaluate(() => window.resourceFixture?.restore()).catch(() => {});
+    await browser.close(); await new Promise(resolve => server.close(resolve));
+  }
+}
+
+test('F04 eight emergencies share one place with bounded visible overflow and no routine displacement', {timeout:30000}, async () => {
+  await withResourceTown(async page => {
+    const result = await page.evaluate(() => {
+      const f=resourceFixture;
+      for (let i=0;i<8;i++) f.activate(i,{behaviorState:'emergency',hp:80,waitWeeks:13,emergencyAdmission:true,referredToHospital:true});
+      f.queue(8,'hospital');
+      MoC.S.serviceCredit=1;
+      const first=f.advance();
+      const overflow=f.people.filter(a=>a.behaviorState==='emergency_overflow');
+      const waiting=overflow[0];
+      waiting.conditions=[{code:'I25',name:'Fixture',severity:'moderate'}];
+      const episode=MoC.care.episodes.findLast(e=>e.agentId===waiting.id&&e.status==='waiting');
+      const expectedWait=(modelTick+1-episode.startTick)/MoC.TICKS_PER_WEEK;
+      const expectedDrain=calculateHPDrain(waiting.conditions[0],'moderate',expectedWait,M.IST,waiting)
+        *getComorbidityMultiplier(waiting.conditions);
+      const beforeHP=waiting.hp;
+      const second=f.advance();
+      const observedDrain=beforeHP-waiting.hp, observedWait=waiting.waitWeeks;
+      waiting.hp=0;
+      const active=f.people.find(a=>a.behaviorState==='at_hospital'&&a.emergencyAdmission);
+      active.stateTimer=1;
+      const third=f.advance();
+      const endUse=MoC.care.resourceUses.find(u=>u.agentId===active.id);
+      const replacement=MoC.care.resourceUses.find(u=>u.resource==='emergency'&&u!==endUse);
+      MoC.refreshMinistry();
+      return {first,second,third,observedDrain,expectedDrain,observedWait,expectedWait,
+        deadEpisode:episode.status,releaseTick:endUse.endTick,replacementTick:replacement.startTick,
+        visible:document.querySelector('#moc-emergency-overflow').textContent,
+        details:document.querySelector('.moc-resource-report').textContent,referencePolicy:MoC.referencePolicy,roster:f.people.length};
+    });
+    assert.equal(result.referencePolicy,false);
+    assert.equal(result.first.resources.routine.slots,1);
+    assert.equal(result.first.resources.emergency.occupancy,1);
+    assert.equal(result.first.emergencyStarts,1);
+    assert.equal(result.first.routineStarts,1,'separate emergency care must not spend routine start credit');
+    assert.equal(result.first.emergencyOverflow,7);
+    assert.equal(result.first.emergencyOverflowEntries,7,'only blocked arrivals count as overflow entries');
+    assert.equal(result.first.waiting,7);
+    assert.equal(result.first.emergencyOverflowBound,result.roster,'overflow is bounded by one entry per resident, not extra treatment places');
+    assert.equal(result.second.emergencyOverflowEntries,7,'waiting does not duplicate overflow entries');
+    assert.ok(Math.abs(result.observedDrain-result.expectedDrain)<1e-9,
+      `overflow uses the existing untreated HP rule: observed ${result.observedDrain}, expected ${result.expectedDrain}, wait ${result.observedWait}/${result.expectedWait}`);
+    assert.ok(Math.abs(result.observedWait-result.expectedWait)<1e-9);
+    assert.equal(result.third.emergencyStarts,2);
+    assert.equal(result.third.resources.emergency.completions,1);
+    assert.equal(result.third.emergencyOverflow,5);
+    assert.equal(result.deadEpisode,'died_waiting');
+    assert.equal(result.third.emergencyDeathsWaiting,1);
+    assert.equal(result.third.overflowDeathsWaiting,1);
+    assert.equal(result.releaseTick,result.replacementTick,'release is reusable on its observed completion tick');
+    assert.equal(result.third.routineStarts,1);
+    assert.equal(result.third.routineDisplacements,0);
+    assert.match(result.visible,/Emergency overflow: 5 waiting/);
+    assert.match(result.details,/Emergency starts \/ completions2 \/ 1/);
+  });
+});
+
+test('F04 simultaneous GP arrivals respect both providers, absence, completion, death and re-entry', {timeout:30000}, async () => {
+  await withResourceTown(async page => {
+    const r = await page.evaluate(() => {
+      const f=resourceFixture,gp=agents.find(g=>g.id==='gp1');
+      for (let i=0;i<3;i++) f.queue(i,'gp1_bldg',{behaviorState:'going_to_gp'});
+      f.queue(3,'gp2_bldg',{behaviorState:'going_to_gp'});
+      const first=f.advance(),a=f.people[0];
+      const oldUse=MoC.care.resourceUses.find(u=>u.agentId===a.id);
+      const firstTimer=a.stateTimer;
+      gp.sickLeaveTimer=3;
+      const absent=f.advance(3),pausedTimer=a.stateTimer;
+      a.stateTimer=1;
+      const completed=f.advance();
+      const duplicate=MoC.care.release(a,'completed',oldUse);
+      Object.assign(a,{behaviorState:'going_to_gp',insideBuilding:null,path:[],pathComplete:true});
+      const second=f.people[1];
+      second.hp=0;
+      const death=f.advance();
+      const releases=death.resources.gp1_bldg.releases;
+      finalizeAgentDeath(second);finalizeAgentDeath(second);
+      f.people[2].stateTimer=1;
+      const reentry=f.advance();
+      const staleRelease=MoC.care.release(a,'completed',oldUse);
+      return {first,absent,completed,death,reentry,firstTimer,pausedTimer,duplicate,staleRelease,releases,
+        uses:MoC.care.resourceUses.filter(u=>u.agentId===a.id),final:MoC.care.resources(),
+        location:a.insideBuilding,behavior:a.behaviorState};
+    });
+    assert.equal(r.first.resources.gp1_bldg.occupancy,1);
+    assert.equal(r.first.resources.gp2_bldg.occupancy,1);
+    assert.equal(r.first.resources.gp1_bldg.starts,1);
+    assert.equal(r.absent.resources.gp1_bldg.starts,1,'no overlapping start during absence');
+    assert.equal(r.pausedTimer,r.firstTimer,'absence pauses active GP service without dropping its occupied place');
+    assert.equal(r.completed.resources.gp1_bldg.completions,1);
+    assert.equal(r.completed.resources.gp1_bldg.starts,2,'completion reallocates in the same tick');
+    assert.equal(r.death.resources.gp1_bldg.starts,3);
+    assert.equal(r.reentry.resources.gp1_bldg.starts,4);
+    assert.equal(r.final.gp1_bldg.releases,r.releases+1,'repeated death cleanup does not release twice');
+    assert.equal(r.duplicate,false);
+    assert.equal(r.staleRelease,false,'a previous visit release cannot free a new visit');
+    assert.equal(r.uses.length,2);
+    assert.equal(r.uses[0].outcome,'completed');
+    assert.equal(r.uses[1].endTick,undefined);
+    assert.equal(r.final.gp1_bldg.occupancy,1);
+    assert.equal(r.location,'gp1_bldg','dawn must preserve the active GP place');
+    assert.equal(r.behavior,'at_gp');
+  });
+});
+
+test('F04 whole-roster emergency demand has unique overflow and terminal treatment death reallocates once', {timeout:30000}, async () => {
+  await withResourceTown(async page => {
+    const r=await page.evaluate(()=>{
+      const f=resourceFixture;
+      f.people.forEach((a,i)=>f.activate(i,{behaviorState:'emergency',emergencyAdmission:true,referredToHospital:true}));
+      const full=f.advance();
+      MoC.care.processEmergencies();MoC.care.processEmergencies();
+      const repeated=MoC.care.snapshot();
+      const active=f.people.find(a=>a.behaviorState==='at_hospital');
+      active.hp=0;
+      const death=f.advance();
+      finalizeAgentDeath(active);finalizeAgentDeath(active);
+      const final=MoC.care.snapshot();
+      return {full,repeated,death,final,roster:f.people.length,
+        uses:MoC.care.resourceUses.filter(u=>u.resource==='emergency')};
+    });
+    assert.equal(r.full.emergencyOverflow,r.roster-1);
+    assert.equal(r.full.emergencyOverflowBound,r.roster);
+    assert.equal(r.full.emergencyOverflowEntries,r.roster-1);
+    assert.equal(r.repeated.emergencyOverflowEntries,r.full.emergencyOverflowEntries);
+    assert.equal(r.repeated.emergencyStarts,1);
+    assert.equal(r.death.emergencyStarts,2);
+    assert.equal(r.death.resources.emergency.occupancy,1);
+    assert.equal(r.final.resources.emergency.releases,1);
+    assert.equal(r.final.resources.emergency.completions,0,'death releases a place but is not a completion');
+    assert.equal(r.final.emergencyDeathsWaiting,0,'a treatment death is not a death before treatment');
+    assert.equal(r.uses[0].outcome,'death');
+    assert.equal(r.uses[0].endTick,r.uses[1].startTick,'terminal cleanup precedes the next admission');
+  });
+});
+
+test('F04 full routine occupancy conserves capped credit and reallocates by clinical priority', {timeout:30000}, async () => {
+  await withResourceTown(async page => {
+    const r = await page.evaluate(() => {
+      const f=resourceFixture;
+      const holder=f.activate(0,{behaviorState:'at_hospital',insideBuilding:'hospital',stateTimer:8});
+      const routine=f.queue(1,'hospital');
+      const urgent=f.queue(2,'hospital',{conditions:[{code:'I25',name:'Fixture',severity:'severe'}],hp:80});
+      QUEUES.hospital.agents.push(routine.id,urgent.id,'stale-id');
+      MoC.S.serviceCredit=1;
+      agents.filter(a=>a.type==='gp').forEach(g=>{g.sickLeaveTimer=20;});
+      const full=f.advance(),creditFull=MoC.S.serviceCredit;
+      MoC.care.availableStarts(2);MoC.care.availableStarts(2);
+      const creditRepeated=MoC.S.serviceCredit;
+      holder.stateTimer=1;
+      const discharged=f.advance(),creditUsed=MoC.S.serviceCredit;
+      const admitted=urgent.behaviorState;
+      urgent.hp=0;
+      const dead=f.advance(),fractional=MoC.S.serviceCredit;
+      const releaseCount=dead.resources.routine.releases;
+      finalizeAgentDeath(urgent);finalizeAgentDeath(urgent);
+      // At 0.25 starts/week it takes 16 ticks to accrue the next start.
+      const beforeNext=f.advance(14);
+      const next=f.advance();
+      return {full,creditFull,creditRepeated,discharged,creditUsed,admitted,dead,fractional,releaseCount,
+        beforeNext,next,lastBehavior:routine.behaviorState,uses:MoC.care.resourceUses};
+    });
+    assert.equal(r.full.resources.routine.occupancy,1);
+    assert.equal(r.full.routineStarts,0,'initial ongoing care consumes occupancy, not new service credit');
+    assert.equal(r.creditFull,1);
+    assert.equal(r.creditRepeated,1,'repeated capacity reads cannot accrue more credit in the same tick');
+    assert.equal(r.discharged.resources.routine.completions,1);
+    assert.equal(r.discharged.routineStarts,1);
+    assert.equal(r.admitted,'at_hospital','more urgent routine resident goes ahead of the FIFO front');
+    assert.equal(r.creditUsed,0);
+    assert.equal(r.dead.routineStarts,1,'a freed slot alone cannot manufacture start credit');
+    assert.ok(Math.abs(r.fractional-0.0625)<1e-12);
+    assert.equal(r.beforeNext.routineStarts,1);
+    assert.equal(r.next.routineStarts,2);
+    assert.equal(r.next.resources.routine.releases,r.releaseCount);
+    assert.equal(r.lastBehavior,'at_hospital');
+    assert.equal(r.next.resources.routine.occupancy,1);
+  });
+});
+
+test('F04 escalation transfers GP and already-referred residents into emergency priority without erasing waits', {timeout:30000}, async () => {
+  await withResourceTown(async page => {
+    const r = await page.evaluate(() => {
+      const f=resourceFixture,critical={code:'I25',name:'Fixture',severity:'critical'};
+      const gpPatient=f.activate(0,{behaviorState:'at_gp',insideBuilding:'gp1_bldg',stateTimer:8,hp:20,conditions:[{...critical}]});
+      f.queue(1,'gp1_bldg');
+      const referred=f.queue(2,'hospital',{hp:20,conditions:[{...critical}],waitWeeks:5,referredToHospital:true});
+      const emergency=f.activate(3,{behaviorState:'at_hospital',insideBuilding:'hospital',stateTimer:8,emergencyAdmission:true});
+      f.queue(4,'hospital');
+      MoC.S.serviceCredit=1;
+      const first=f.advance(),episode=MoC.care.episodes.findLast(e=>e.agentId===referred.id&&e.status==='waiting');
+      const before={id:episode.id,startTick:episode.startTick,status:episode.status,wait:MoC.care.elapsed(referred)};
+      emergency.stateTimer=1;
+      const second=f.advance();
+      return {first,second,before,after:{id:episode.id,startTick:episode.startTick,status:episode.status,wait:episode.waitWeeks},
+        gpUse:MoC.care.resourceUses.find(u=>u.agentId===gpPatient.id&&u.resource==='gp1_bldg'),
+        referredBehavior:referred.behaviorState,gpBehavior:gpPatient.behaviorState,
+        emergencyUses:MoC.care.resourceUses.filter(u=>u.resource==='emergency')};
+    });
+    assert.equal(r.first.resources.gp1_bldg.releases,1);
+    assert.equal(r.gpUse.outcome,'transfer');
+    assert.equal(r.first.resources.gp1_bldg.occupancy,1,'escalation frees the GP for its next arrival');
+    assert.equal(r.first.emergencyOverflow,2);
+    assert.equal(r.first.routineStarts,1,'unrelated routine demand retains its separate resource');
+    assert.equal(r.before.wait,5,'escalation retains the pre-existing referral episode');
+    assert.equal(r.before.status,'waiting');
+    assert.equal(r.referredBehavior,'at_hospital','waiting emergency with higher clinical priority takes the freed emergency place');
+    assert.equal(r.gpBehavior,'emergency_overflow');
+    assert.equal(r.after.id,r.before.id);
+    assert.equal(r.after.startTick,r.before.startTick);
+    assert.equal(r.after.status,'treatment_started');
+    assert.ok(Math.abs(r.after.wait-5.25)<1e-9);
+    assert.equal(r.second.routineDisplacements,0);
+    assert.equal(r.emergencyUses[0].endTick,r.emergencyUses[1].startTick);
+  });
+});
+
+test('F04 resource shrink retires occupied places without eviction or extra starts', {timeout:30000}, async () => {
+  await withResourceTown(async page => {
+    const r=await page.evaluate(()=>{
+      const f=resourceFixture;
+      MoC.S.specialistCapacity=1;
+      for(let i=0;i<3;i++)f.activate(i,{behaviorState:'at_hospital',insideBuilding:'hospital',stateTimer:8});
+      f.queue(3,'hospital');
+      MoC.S.serviceCredit=1;
+      const initial=f.advance();
+      MoC.S.specialistCapacity=0.25;
+      const reduced=f.advance();
+      f.people[0].stateTimer=1;f.people[1].stateTimer=1;
+      const partial=f.advance();
+      f.people[2].stateTimer=1;
+      const reallocated=f.advance();
+      return {initial,reduced,partial,reallocated};
+    });
+    assert.equal(r.initial.resources.routine.occupancy,3);
+    assert.equal(r.reduced.resources.routine.slots,1);
+    assert.equal(r.reduced.resources.routine.occupancy,3);
+    assert.equal(r.reduced.resources.routine.retiringSlots,2,'only already occupied places are temporarily retained');
+    assert.equal(r.reduced.routineStarts,0);
+    assert.equal(r.partial.resources.routine.occupancy,1);
+    assert.equal(r.partial.routineStarts,0,'no start until occupancy falls below the new target');
+    assert.equal(r.reallocated.resources.routine.completions,3);
+    assert.equal(r.reallocated.resources.routine.retiringSlots,0);
+    assert.equal(r.reallocated.resources.routine.occupancy,1);
+    assert.equal(r.reallocated.routineStarts,1);
+  });
+});
+
+test('F04 burnout queue transfers retain destination and cannot overlap the receiving GP', {timeout:30000}, async () => {
+  await withResourceTown(async page => {
+    const r=await page.evaluate(()=>{
+      const f=resourceFixture,gp1=agents.find(g=>g.id==='gp1'),gp2=agents.find(g=>g.id==='gp2');
+      const holder=f.activate(0,{behaviorState:'at_gp',insideBuilding:'gp2_bldg',gpName:gp2.name,stateTimer:8});
+      const incoming=f.queue(1,'gp1_bldg');
+      f.activate(2,{behaviorState:'at_gp',insideBuilding:'gp1_bldg',gpName:gp1.name,stateTimer:8});
+      gp1.burnoutLevel=95;
+      // The real burnout handler transfers the queued resident after service.
+      const first=f.advance();
+      const transferred={building:incoming.queueBuilding,name:incoming.gpName,type:incoming.queueType,
+        inDestination:QUEUES.gp2_bldg.agents.includes(incoming.id)};
+      const second=f.advance();
+      holder.stateTimer=1;
+      const third=f.advance();
+      return {first,second,third,transferred,expectedName:gp2.name,behavior:incoming.behaviorState,building:incoming.insideBuilding};
+    });
+    assert.deepEqual(r.transferred,{building:'gp2_bldg',name:r.expectedName,type:'gp',inDestination:true});
+    assert.equal(r.second.resources.gp2_bldg.occupancy,1);
+    assert.equal(r.second.resources.gp2_bldg.starts,0,'the receiving GP is still occupied by its initial consultation');
+    assert.equal(r.third.resources.gp2_bldg.starts,1);
+    assert.equal(r.third.resources.gp2_bldg.completions,1);
+    assert.equal(r.behavior,'at_gp');
+    assert.equal(r.building,'gp2_bldg');
+  });
+});
+
 test('Recruitment adds treatment capacity without changing the clinical norm', { timeout: 30000 }, async () => {
   const server = await startSiteServer();
   const browser = await launchBrowser();
@@ -488,16 +876,7 @@ test('Recruitment adds treatment capacity without changing the clinical norm', {
     assert.equal(after.norm, 12);
     assert.equal(after.drain, before.drain);
     assert.equal(after.capacity, before.capacity + 1);
-    const starts = await page.evaluate(() => {
-      function simulate(capacity) {
-        MoC.S.specialistCapacity = capacity; MoC.S.serviceCredit = 0;
-        let waiting = 4, treated = 0;
-        for (let t=0;t<8;t++) { const slots=MoC.care.availableStarts(waiting,0); waiting-=slots; treated+=slots; }
-        return treated;
-      }
-      return [simulate(1), simulate(2)];
-    });
-    assert.deepEqual(starts, [2,4]);
+    // Actual credit/occupancy-limited starts are exercised by the F04 fixtures.
   } finally {
     await browser.close();
     await new Promise(resolve => server.close(resolve));
@@ -595,7 +974,7 @@ test('Previously finalized deaths are cleaned before movement and hospital capac
       QUEUES.hospital.agents=[patient.id,living.id];
       const originalSync=MoC.care.sync;
       let careSyncs=0;
-      MoC.care.sync=function(){careSyncs++;return originalSync();};
+      MoC.care.sync=function(){careSyncs++;return originalSync.call(MoC.care);};
       MoC.care.sync();
       finalizeAgentDeath(patient);
       const syncsAfterFinalization=careSyncs;
@@ -932,11 +1311,11 @@ test('Early results match the reference date and replay preserves the prior atte
     });
     assert.equal(forged,true);
     await page.locator('#moc-again').click();
-    await page.waitForURL(/&v=minister-care-7-elapsed-time/);
+    await page.waitForURL(/&v=minister-care-8-finite-resources/);
     await page.locator('#moc-takeoffice').waitFor();
     assert.match(await page.locator('#moc-previous-attempt').innerText(),/tick 75/);
     assert.equal(await page.evaluate(()=>MoC.previousRun.final.tick),75);
-    assert.equal(await page.evaluate(()=>MoC.previousRun.modelVersion), 'minister-care-7-elapsed-time');
+    assert.equal(await page.evaluate(()=>MoC.previousRun.modelVersion), 'minister-care-8-finite-resources');
     assert.deepEqual(await page.evaluate(()=>MoC.previousRun.externalSchedule),await page.evaluate(()=>MoC.environment.schedule));
     assert.equal(await page.evaluate(()=>MoC.audio.isMuted()),true);
     // Controlled outcome fixture: political survival must not conceal worse care.
@@ -1011,7 +1390,7 @@ test('Completed runs publish automatically with a public or generated name', { t
     assert.equal(await page.locator('#moc-community-name,#moc-submit-score').count(),0,'publication is automatic, not an optional form');
     assert.equal(submitted.username,'');
     assert.equal(submitted.seed,2468);
-    assert.equal(submitted.modelVersion,'minister-care-7-elapsed-time');
+    assert.equal(submitted.modelVersion,'minister-care-8-finite-resources');
     assert.equal(submitted.endTick,75);
     assert.equal(typeof submitted.summary.meanWait,'number');
     assert.match(await page.locator('#moc-community-status').innerText(),/Published as Minister Silver Heron 468 · rank 2/);
