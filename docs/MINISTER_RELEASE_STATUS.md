@@ -2,18 +2,20 @@
 
 Updated: 2026-10-22
 Public game: https://cammelot.org/minister.html
-Repository model: `minister-care-6-terminal-mortality` (deployment is verified separately from merge)
+Repository and verified public model: `minister-care-7-elapsed-time` (publication evidence below)
 Reference protocol: `no-discretionary-action-v1`
 
 This is the canonical status list. Older plans describe how the current release was built; their unchecked boxes are not active tasks.
 
-## Upcoming model 7 timing change (not yet published)
+## Model 7 timing change
 
-The current source change versions the elapsed-time behavior as `minister-care-7-elapsed-time`; it is not a claim that model 7 is live. Until a reviewed release is published, the deployed game remains the model version identified above.
+Model 7 was merged through cammeleon66/Cammelot#30 and published on 2026-10-22 through `feature/agentic-overhaul`. Both supported public scenarios were verified after deployment.
 
 Model 7 uses one elapsed clock: four ticks per week, 52 ticks per quarter, and 208 ticks per model year. The initial displayed cycle of 30 is only a presentation offset. These timing semantics change scenario outcomes, so model 6 and model 7 results are incompatible and must not be compared or ranked as equivalent.
 
 The annual mortality input conversion is mathematical bookkeeping, not clinical validation. The `48/5000` annual baseline, age multipliers, and 3 HP/week overdue-wait drain remain unvalidated model assumptions; neither the conversion nor the elapsed-time repair validates mortality probabilities or clinical coefficients.
+
+Cabinet Crisis ends after 416 elapsed ticks, with seven allocation councils at Q2-Q8; The Full Term ends after 2,080 ticks. Aging uses fractional model years internally and completed years in resident-facing text. Regression coverage includes GP journeys across night ticks and retirement during GP or hospital treatment.
 
 ## Live and verified
 
@@ -62,6 +64,14 @@ Development PRs target `master`, whose required `Minister backlog checks / Valid
 The Pages workflow triggers only on publishing-branch changes to `site/` or its deployment/CI workflows. Its `validate` job reuses `.github/workflows/ci.yml` to install dependencies and Chromium and run `npm test` on the release commit. The `deploy` job has `needs: validate`, so failed or cancelled validation prevents artifact upload and deployment. The job also checks the publishing ref; only that job receives Pages and OIDC write permissions. There is no ungated manual deployment trigger.
 
 The `github-pages` environment must allow only `feature/agentic-overhaul`. The failed `master` deployment `39807566702` reflected a branch-target mismatch, not a broken feature-branch configuration. The original environment allowlist was restored, and release `5261e337aa3adaae7bfeab89a9872c0de1018be7` deployed successfully in run `39811223426`; its public Minister bytes and browser/reference model identity were verified. Branch and environment protection are repository settings; verify them separately from this source file.
+
+### Verified model 7 publication
+
+- Protected master merge: `9b52bfe3cdfab232ab73d50b24b9606b9804dc5f`; release: `98cb5e0c002ba96110d4d9600691232284717144`.
+- [Pages run 39829114600](https://github.com/cammeleon66/Cammelot/actions/runs/39829114600) passed: `validate / test` completed before deployment began. The release tree matched the reviewed source exactly.
+- Public `/minister.html` SHA-256 matched the release bytes: `e2294793de8ff356166058c1f87dbdedad7837c16064f414919b312f4ac4aac9`.
+- Live browser verification completed same-origin model 7 references for seed 2468 in Cabinet Crisis (416 snapshots, final tick 416) and The Full Term (2,080 snapshots, final tick 2,080). Both player openings remained at elapsed tick zero with four ticks/week, 52/quarter and 208/year.
+- No browser errors, same-origin HTTP errors or score submissions were observed. External requests and non-GET requests were blocked; leaderboard reads were stubbed. This verifies the static game/reference path, not production leaderboard writes, clinical validity or physical-device behavior.
 
 ## Remaining agent work
 
