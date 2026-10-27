@@ -8139,7 +8139,12 @@ function tick(){
         // IST: basic clinical triage (severity + HP only, no AI augmentation)
         return getBaseTriagePriority(agB) - getBaseTriagePriority(agA);
       });
-      const frontId = hq.agents.shift();
+      const eligibleIndex = hq.agents.findIndex(id => {
+        const a = agents.find(a => a.id === id);
+        return a && MoC.care.accessRemaining(a) === 0;
+      });
+      if (eligibleIndex < 0) break;
+      const frontId = hq.agents.splice(eligibleIndex, 1)[0];
       const frontAgent = agents.find(a => a.id === frontId);
       if (isLivingResident(frontAgent) && frontAgent.behaviorState === 'queuing') {
         if (!MoC.care.acquire(frontAgent, 'routine')) break;
@@ -12619,12 +12624,13 @@ async function initLLMSubsystem() {
 (function(){
   const GS = MoC.S;
   // Finite resources/queued emergencies change outcomes; earlier versions are incompatible.
-  MoC.MODEL_VERSION = 'minister-care-9-workforce-productivity';
+  MoC.MODEL_VERSION = 'minister-care-10-access-time-replay';
   MoC.REFERENCE_PROTOCOL = 'no-discretionary-action-v1';
   MoC.referencePolicy = MoC.IS_BASELINE;
   MoC.comparisonValidated = true;
   const referralEpisodes = [];
   const activeReferrals = new Map();
+  const accessEvents = [];
   const resourceUses = [];
   const activeUses = new Map();
   const overflowEntries = [];
@@ -12643,6 +12649,41 @@ async function initLLMSubsystem() {
   }
   MoC.care = {
     episodes: referralEpisodes,
+    accessEvents,
+    accessRemaining:function(a){
+      const e = activeReferrals.get(a.id);
+      return e ? Math.max(0,...(e.accessHolds || []).filter(h=>h.status==='active')
+        .map(h=>(h.untilTick-modelTick)/MoC.TICKS_PER_WEEK)) : 0;
+    },
+    exclude:function(a,id,reason){
+      if (GS.over || accessEvents.some(e=>e.id===id)) return false;
+      this.sync();
+      const episode=activeReferrals.get(a.id);
+      const event={id,agentId:a.id,tick:modelTick,reason,
+        outcome:episode?'held':'no_active_referral',episodeId:episode?.id || null};
+      accessEvents.push(event);
+      if (episode) {
+        const untilTick=modelTick+this.accessRemaining(a)*MoC.TICKS_PER_WEEK+6*MoC.TICKS_PER_WEEK;
+        (episode.accessHolds ||= []).push({...event,untilTick,status:'active'});
+      }
+      GS._biasDeaths=(GS._biasDeaths || 0)+1;
+      const text=reason+(episode ? ': specialist access held for six additional weeks; elapsed wait unchanged.'
+        : ': no active referral; no wait or future referral created.');
+      logEvent('access_exclusion',a,text); addHistory(a,'access_exclusion',text);
+      return true;
+    },
+    mitigateAccess:function(a,reason){
+      if (GS.over) return;
+      for (const e of activeReferrals.values()) {
+        if (a && e.agentId!==a.id) continue;
+        for (const h of e.accessHolds || []) if (h.status==='active' && h.untilTick>modelTick) {
+          h.status='mitigated'; h.endTick=modelTick; h.endReason=reason;
+          const person=agents.find(p=>p.id===e.agentId);
+          accessEvents.push({id:h.id+':mitigated',agentId:e.agentId,episodeId:e.id,tick:modelTick,reason,outcome:'mitigated'});
+          logEvent('access_mitigated',person,reason); addHistory(person,'access_mitigated',reason);
+        }
+      }
+    },
     resourceUses,
     slots:function(resource){
       // Named treatment places, NOT empirical beds or staff headcounts.
@@ -12658,6 +12699,7 @@ async function initLLMSubsystem() {
     acquire:function(a, resource, initial=false){
       if (!resident(a) || !isLivingResident(a) || a.moved || activeUses.has(a.id)
         || this.occupied(resource) >= this.slots(resource)) return false;
+      if (!initial && (resource==='routine' || resource==='emergency') && this.accessRemaining(a)>0) return false;
       if (resource === 'routine' && !initial) {
         if (GS.serviceCredit < 1) return false;
         GS.serviceCredit -= 1;
@@ -12707,7 +12749,9 @@ async function initLLMSubsystem() {
       const episode = activeReferrals.get(a.id);
       if (episode) episode.overflowed = true;
       logEvent('emergency_overflow', a, 'Waiting for the one emergency treatment place');
-      addHistory(a, 'emergency_overflow', 'Emergency place occupied. Waiting for emergency treatment.');
+      addHistory(a, 'emergency_overflow', this.accessRemaining(a)>0
+        ? 'Specialist access hold active. Waiting for emergency treatment eligibility.'
+        : 'Emergency place occupied. Waiting for emergency treatment.');
     },
     processEmergencies:function(){
       // One queue record per living resident: bounded by the finite resident roster,
@@ -12767,11 +12811,21 @@ async function initLLMSubsystem() {
           activeReferrals.set(a.id, episode); referralEpisodes.push(episode);
         }
         if (episode && (a.emergencyAdmission || a.behaviorState === 'emergency_overflow')) episode.emergency = true;
+        if (episode) for (const hold of episode.accessHolds || []) {
+          if (hold.status==='active' && modelTick>=hold.untilTick) {
+            hold.status='expired'; hold.endTick=hold.untilTick; hold.endReason='Declared access delay elapsed';
+            accessEvents.push({id:hold.id+':expired',agentId:a.id,episodeId:episode.id,
+              tick:hold.untilTick,reason:hold.endReason,outcome:'expired'});
+          }
+        }
         if (episode && !pendingReferral(a)) {
           episode.endTick = modelTick;
           episode.waitWeeks = Math.max(0, (modelTick - episode.startTick) / MoC.TICKS_PER_WEEK);
           episode.status = a.hp <= 0 || a.state === 'dead' ? 'died_waiting' : a.moved ? 'relocated'
             : a.behaviorState === 'at_hospital' ? 'treatment_started' : 'other_exit';
+          for (const hold of episode.accessHolds || []) if (hold.status==='active') {
+            hold.status='closed'; hold.endTick=modelTick; hold.endReason=episode.status;
+          }
           activeReferrals.delete(a.id);
         }
       });
@@ -12781,6 +12835,8 @@ async function initLLMSubsystem() {
       const waits = waiting.map(a => MoC.care.elapsed(a));
       return { modelVersion:MoC.MODEL_VERSION, seed:MoC.seed, scenario:GS.scenario, tick:modelTick,
         waiting:waiting.length, meanWait:waits.length ? waits.reduce((a,b) => a+b,0)/waits.length : 0,
+        accessHeld:waiting.filter(a=>this.accessRemaining(a)>0).length,
+        accessDelayWeeks:waiting.reduce((sum,a)=>sum+this.accessRemaining(a),0),
         longestWait:Math.max(0,...waits), overdue:waits.filter(w => w > 12).length,
         treatments:referralEpisodes.filter(e => e.status === 'treatment_started').length,
         deathsWaiting:referralEpisodes.filter(e => e.status === 'died_waiting').length,
@@ -13280,7 +13336,7 @@ async function initLLMSubsystem() {
     // G20: Digital Inclusion Officer — requires AI Triage Gate law to be active
     { id:'inclofficer', name:'\ud83e\udd1d Digital Inclusion Officer', cost:30000, requiresLaw:'dig2',
       fx:{trustC:3}, max:1,
-      desc:'Support for digital-only pathways. Citizen trust +3; stops recurring access exclusion. Requires AI Triage Gate.' },
+      desc:'Citizen trust +3; releases current access holds and stops recurring exclusion. Requires AI Triage Gate.' },
     // G23: Carer Support Programme — relieves mantelzorg pressure
     { id:'carersupport', name:'\ud83e\udec2 Carer Support Programme', cost:35000,
       fx:{trustC:2, mantelzorg:-15}, max:2,
@@ -13377,6 +13433,7 @@ async function initLLMSubsystem() {
     GS.interventions.push({ q: GS.quarter, label: item.name.replace(/^\S+\s/, ''), cost: cost });
     commitCarePlan(plan);
     GS.interventions[GS.interventions.length - 1].tick = modelTick;
+    if (item.id === 'inclofficer') MoC.care.mitigateAccess(null,'Digital Inclusion Officer: manual access restored');
     GS.interventions[GS.interventions.length - 1].effectiveFx = effectiveFx;
     GS._observation = { itemId:item.id, name:item.name, cost, before:beforePolicy };
     // G19: changeprog directly raises the adoption rate
@@ -13974,7 +14031,8 @@ async function initLLMSubsystem() {
       queuing:a.queueType === 'hospital' ? 'Waiting for specialist care' : 'Waiting at the GP',at_gp:'At the GP',at_hospital:'Receiving hospital care',
       recovering:'Recovering',emergency:'Emergency referral',emergency_overflow:'Emergency overflow; waiting for treatment',sleeping:'Resting'};
     return 'Age ' + formatCompletedAge(a.age) + ' · health ' + Math.round(a.hp) + '/100\n' + (states[a.behaviorState] || 'In town')
-      + (pendingReferral(a) ? ' · waiting ' + (a.waitWeeks || 0).toFixed(1) + ' weeks' : '');
+      + (pendingReferral(a) ? ' · waiting ' + (a.waitWeeks || 0).toFixed(1) + ' weeks'
+        + (MoC.care.accessRemaining(a)>0 ? ' · access hold: '+MoC.care.accessRemaining(a).toFixed(1)+' weeks remaining' : '') : '');
   }
   function followThought(a){
     if (!a) return '';
@@ -14583,10 +14641,14 @@ async function initLLMSubsystem() {
       if (face) {
         beat = {
           text: face.name + ' (' + formatCompletedAge(face.age) + ') stands at the town hall counter. Your AI-Gated Specialist Access requires a digital identity. ' + face.name.split(' ')[0] + ' has never owned one. "I have been seeing Dr. Bakker for thirty years. Now a computer says I do not exist."',
-          a:{ label:'Grant manual exceptions at the counter', fx:{admin:0.02}, note:'A human backstop: admin +2% (permanent)' },
+          a:{ label:'Grant manual exceptions at the counter', fx:{admin:0.02},
+              after:function(){ MoC.care.mitigateAccess(face,'Manual exception granted'); },
+              note:'Admin +2% (permanent); releases this resident’s current access hold' },
           b:{ label:'Hold the line: the gate applies to everyone',
-              fx:{trust:-4}, after:function(){ face.waitWeeks = (face.waitWeeks || 0) + 6; GS._biasDeaths = (GS._biasDeaths || 0) + 1; },
-              note:'Trust -4 \u00b7 ' + face.name.split(' ')[0] + ' waits 6 extra weeks \u00b7 Exclusion logged' }
+              fx:{trust:-4}, after:function(){ MoC.care.exclude(face,'digigate:'+q+':'+face.id,'Digital identity gate'); },
+              note:'Trust -4 · Exclusion logged · ' + (pendingReferral(face)
+                ? 'Specialist access (including emergency) held for 6 additional weeks; elapsed wait unchanged'
+                : 'No active referral: no wait added or future referral created') }
         };
       }
     }
@@ -15261,6 +15323,7 @@ async function initLLMSubsystem() {
     const careResult = MoC.care.snapshot();
     html += '<div class="moc-score-row"><span>Admin burden reduced</span><b>' + r.adminGain + ' pts (now ' + Math.round(M.IST.admin * 100) + '%)</b></div>';
     html += '<div class="moc-score-row"><span>Current referral queue / fixed model norm</span><b>' + (careResult.waiting ? careResult.meanWait.toFixed(1)+'w' : 'No one waiting') + ' / 12w</b></div>';
+    html += '<div class="moc-score-row"><span>Access holds / remaining imposed weeks (sum)</span><b>' + careResult.accessHeld + ' / ' + careResult.accessDelayWeeks.toFixed(1) + 'w</b></div>';
     html += '<div class="moc-score-row"><span>Deaths before treatment</span><b>' + careResult.deathsWaiting + '</b></div>';
     html += '<div class="moc-score-row"><span>Final trust / fragility</span><b>' + GS.trust + ' / ' + fragility() + '</b></div>';
     if ((GS.fragmentation || 0) > 2) { // G17: show frag penalty only when it actually costs something

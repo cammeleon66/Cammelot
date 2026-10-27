@@ -9,6 +9,25 @@ This is the canonical status list. Older plans describe how the current release 
 
 ## Model 9: workforce/productivity (F05)
 
+## Upcoming model 10 foundation fixes — UNRELEASED
+
+Implementation branch `fix/foundation-time-and-replay`, base
+`86d53e02ed5dc4bb5c8a2c26782a5008f831923d`; single writer in the isolated Windows
+worktree. No publication, backend, settings or leaderboard writes.
+
+F06 baseline command: `node --test --test-name-pattern='F06' tests/minister_browser.test.js`.
+Before runtime changes the real council callback failed **10 !== 4**: six weeks
+were invented in the resident field, absent from authoritative elapsed time.
+The episode now carries an idempotent future hold; see the model contract for
+no-referral and mitigation rules. Targeted `F06|F04` run: **10/10 passed**
+(17.29s), including expiry at 24 ticks, treatment completion, emergency eligibility,
+duplicate synchronization/dispatch, absent referral and all exit classifications.
+Existing finite-resource regressions pass. Model identity is
+`minister-care-10-access-time-replay`; reference protocol unchanged.
+F07/F08 implementation and full-suite evidence follow before handoff.
+
+## Model 9 implementation and publication (historical)
+
 Issue [#5](https://github.com/cammeleon66/Cammelot/issues/5) is implemented and published as `minister-care-9-workforce-productivity`, based on `ba0c19ba4d6ca06618961327f742e677b44b0322`. **Model 9 is the verified public model.** The coordinator reviewed and published it through the existing gated workflow; no workflows, settings, backend or production leaderboard state were changed. Publication evidence is recorded separately below.
 
 ### Mechanism and scope

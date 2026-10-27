@@ -145,6 +145,36 @@ No model-8 record is reused: existing versioned replay, reference and leaderboar
 
 ## Glossary
 
+## Upcoming model 10 — access, logical effects and replay (UNRELEASED)
+
+Working identity: `minister-care-10-access-time-replay`. Public model 9 and reference
+protocol `no-discretionary-action-v1` remain unchanged. This is prepublication
+software evidence, not clinical calibration or an outcome-improvement claim.
+
+### F06: exclusion belongs to the referral episode
+
+The actual digital-gate council callback changed `waitWeeks` from 4 to 10 while
+the episode still reported 4. Model 10 instead records an identified six-week
+**future access hold**, preserving referral start and elapsed history. Repeated
+events extend the remaining hold; repeated dispatch of the same event ID does
+not. Synchronization and later ticks cannot erase it. Both routine and emergency
+admission honor it; an emergency remains in visible overflow, not a fictional
+treatment place. Eligible routine residents behind a held resident can enter.
+This intentionally models the authored access exclusion, not diagnostic accuracy
+or a new clinical-priority model.
+
+The story selects an older named resident, not necessarily someone referred.
+With no active referral, record exclusion and its existing political/score
+consequence, but impose **no wait and no future referral**. This smallest rule
+does not manufacture a clinical episode. Manual exceptions release the named
+resident's existing holds; an Inclusion Officer releases all current holds and
+prevents recurring events. Neither erases elapsed wait or past exclusion counts.
+Expiry is at `event tick + 24` (plus existing remaining hold); treatment start,
+death, relocation and other exit close the same episode and preserve hold history.
+Reports separate elapsed weeks from remaining imposed weeks.
+
+## Glossary (continued)
+
 - **Model version:** immutable identifier for a particular outcome-affecting model and policy implementation.
 - **Protocol version:** identifier for the paired-reference policy and comparison rules.
 - **Nominal capacity:** declared service rate before demand and resource constraints are applied.

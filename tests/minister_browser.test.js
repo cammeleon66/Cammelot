@@ -221,7 +221,7 @@ test('Elapsed model clock uses quarter-week ticks and exact calendar boundaries'
       }
     });
     assert.deepEqual(outcome.initial,{cycle:30,elapsed:0,ticksPerWeek:4,ticksPerDay:4/7,ticksPerQuarter:52,ticksPerYear:208,
-      modelVersion:'minister-care-9-workforce-productivity'});
+      modelVersion:'minister-care-10-access-time-replay'});
     assert.match(outcome.openingCopy.story,/Seven allocation councils remain, from Q2 through Q8/);
     assert.match(outcome.openingCopy.brief,/Seven allocation councils from Q2 through Q8/);
     assert.match(outcome.openingCopy.brief,/opening quarter has no purchase window/);
@@ -605,6 +605,113 @@ async function workforceTrace(parameters) {
   return result;
 }
 
+async function openExclusionCouncil(page, referred=true) {
+  await page.evaluate(referred => {
+    const a = referred ? resourceFixture.queue(0,'hospital',{waitWeeks:4,referredToHospital:true})
+      : resourceFixture.activate(0);
+    MoC.S._face=a;
+    Object.assign(MoC.S,{pendingBeat:'digigate',quarter:2,trustC:70,trustD:70,trustP:70});
+    document.getElementById('play-overlay')?.remove();
+    MoC.care.sync();
+    window.exclusionEpisode=MoC.care.episodes.findLast(e=>e.agentId===a.id);
+    _mocForceCouncil(2);
+  },referred);
+  await page.locator('#moc-wiz-next').click();
+}
+
+test('F06 exclusion holds the actual referral without fabricating elapsed history', {timeout:30000}, async () => {
+  await withResourceTown(async page => {
+    await openExclusionCouncil(page);
+    // Keep the original callback to exercise duplicate dispatch as well as a real click.
+    await page.evaluate(()=>window.exclusionButton=[...document.querySelectorAll('button')]
+      .find(b=>b.textContent.includes('Hold the line')));
+    await page.evaluate(()=>exclusionButton.click());
+    const result=await page.evaluate(()=>{
+      const a=resourceFixture.people[0], e=exclusionEpisode;
+      const callbackWait=a.waitWeeks;
+      exclusionButton.click();
+      MoC.care.sync(); MoC.care.sync();
+      const elapsed=MoC.care.elapsed(a);
+      MoC.paused=false;
+      resourceFixture.advance(1);
+      return {callbackWait,elapsed,behavior:a.behaviorState,start:e.startTick,
+        holds:e.accessHolds,bias:MoC.S._biasDeaths};
+    });
+
+    assert.equal(result.elapsed,4,'elapsed wait must remain the real four weeks');
+    assert.equal(result.callbackWait,4,'exclusion must not invent six weeks of elapsed history');
+    assert.equal(result.behavior,'queuing','the actual routine gate must honor the hold');
+    assert.equal(result.holds.length,1,'duplicate callback must not create another hold');
+    assert.equal(result.holds[0].untilTick-result.holds[0].tick,24);
+    assert.equal(result.bias,1);
+  });
+});
+
+test('F06 access expiry, emergency gating, mitigation and exits conserve episode chronology', {timeout:30000}, async () => {
+      await withResourceTown(async page => {
+        await openExclusionCouncil(page);
+        await page.evaluate(()=>[...document.querySelectorAll('button')].find(b=>b.textContent.includes('Hold the line')).click());
+        const result=await page.evaluate(()=>{
+          const a=resourceFixture.people[0], e=exclusionEpisode;
+          const start=e.startTick;
+          MoC.paused=false;
+          resourceFixture.advance(23);
+          const before={state:a.behaviorState,remaining:MoC.care.accessRemaining(a),wait:MoC.care.elapsed(a)};
+          resourceFixture.advance(1);
+          MoC.care.sync();
+          const admitted={state:a.behaviorState,wait:e.waitWeeks,status:e.status,hold:e.accessHolds[0].status,start:e.startTick};
+          resourceFixture.advance(12);
+          const completed=MoC.care.snapshot().resources.routine.completions;
+          const b=resourceFixture.activate(1,{behaviorState:'emergency',emergencyAdmission:true,waitWeeks:4});
+          MoC.care.sync();
+          MoC.care.exclude(b,'emergency-test','Digital identity gate');
+          MoC.care.processEmergencies(); MoC.care.sync();
+          const emergencyBefore=b.behaviorState;
+          MoC.care.mitigateAccess(b,'Manual exception granted');
+          MoC.care.processEmergencies(); MoC.care.sync();
+          const emergencyAfter=b.behaviorState;
+          const exits=[];
+          for (const [i,outcome] of [[2,'died_waiting'],[3,'relocated'],[4,'other_exit']]) {
+            const c=resourceFixture.queue(i,'hospital',{waitWeeks:4});
+            MoC.care.sync(); MoC.care.exclude(c,'exit:'+i,'Digital identity gate');
+            if (outcome==='died_waiting') {c.hp=0;c.state='dead';}
+            else if(outcome==='relocated') c.moved=true;
+            else c.behaviorState='roaming';
+            MoC.care.sync(); MoC.care.sync();
+            const episode=MoC.care.episodes.findLast(x=>x.agentId===c.id);
+            exits.push({status:episode.status,wait:episode.waitWeeks,hold:episode.accessHolds[0].status});
+          }
+          return {start,before,admitted,completed,emergencyBefore,emergencyAfter,exits};
+        });
+        assert.deepEqual(result.before,{state:'queuing',remaining:0.25,wait:9.75});
+        assert.deepEqual(result.admitted,{state:'at_hospital',wait:10,status:'treatment_started',hold:'expired',start:result.start});
+        assert.equal(result.completed,1);
+        assert.equal(result.emergencyBefore,'emergency_overflow');
+        assert.equal(result.emergencyAfter,'at_hospital');
+        assert.deepEqual(result.exits,['died_waiting','relocated','other_exit'].map(status=>({status,wait:4,hold:'closed'})));
+      });
+    });
+
+    test('F06 absent referral is recorded without manufacturing a future wait', {timeout:30000}, async () => {
+      await withResourceTown(async page => {
+        await openExclusionCouncil(page,false);
+        await page.evaluate(()=>[...document.querySelectorAll('button')].find(b=>b.textContent.includes('Hold the line')).click());
+        const result=await page.evaluate(()=>{
+          const a=resourceFixture.people[0];
+          const count=MoC.care.episodes.length;
+          MoC.care.sync();
+          const event=MoC.care.accessEvents.at(-1),wait=a.waitWeeks;
+          a.behaviorState='going_to_hospital';a.referredToHospital=true;
+          MoC.care.sync();
+          return {event,wait,created:MoC.care.episodes.length-count,remaining:MoC.care.accessRemaining(a),
+            elapsed:MoC.care.elapsed(a)};
+        });
+        assert.equal(result.event.outcome,'no_active_referral');
+        assert.equal(result.event.episodeId,null);
+        assert.equal(result.wait,0); assert.equal(result.remaining,0);assert.equal(result.elapsed,0);
+        assert.equal(result.created,1);
+      });
+    });
 test('F05 aggregate absence reduces actual GP service', {timeout:30000}, async t => {
   const low = await workforceTrace({sick:0.1}), high = await workforceTrace({sick:0.8});
   assert.ok(low.completions > high.completions, JSON.stringify({low,high}));
@@ -2173,11 +2280,11 @@ test('Early results match the reference date and replay preserves the prior atte
     });
     assert.equal(forged,true);
     await page.locator('#moc-again').click();
-    await page.waitForURL(/&v=minister-care-9-workforce-productivity/);
+    await page.waitForURL(/&v=minister-care-10-access-time-replay/);
     await page.locator('#moc-takeoffice').waitFor();
     assert.match(await page.locator('#moc-previous-attempt').innerText(),/tick 75/);
     assert.equal(await page.evaluate(()=>MoC.previousRun.final.tick),75);
-    assert.equal(await page.evaluate(()=>MoC.previousRun.modelVersion), 'minister-care-9-workforce-productivity');
+    assert.equal(await page.evaluate(()=>MoC.previousRun.modelVersion), 'minister-care-10-access-time-replay');
     assert.deepEqual(await page.evaluate(()=>MoC.previousRun.externalSchedule),await page.evaluate(()=>MoC.environment.schedule));
     assert.equal(await page.evaluate(()=>MoC.audio.isMuted()),true);
     // Controlled outcome fixture: political survival must not conceal worse care.
@@ -2252,7 +2359,7 @@ test('Completed runs publish automatically with a public or generated name', { t
     assert.equal(await page.locator('#moc-community-name,#moc-submit-score').count(),0,'publication is automatic, not an optional form');
     assert.equal(submitted.username,'');
     assert.equal(submitted.seed,2468);
-    assert.equal(submitted.modelVersion,'minister-care-9-workforce-productivity');
+    assert.equal(submitted.modelVersion,'minister-care-10-access-time-replay');
     assert.equal(submitted.endTick,75);
     assert.equal(typeof submitted.summary.meanWait,'number');
     assert.match(await page.locator('#moc-community-status').innerText(),/Published as Minister Silver Heron 468 · rank 2/);
