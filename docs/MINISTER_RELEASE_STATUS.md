@@ -2,16 +2,17 @@
 
 Updated: 2026-10-27
 Public game: https://cammelot.org/minister.html
-Verified public model: `minister-care-9-workforce-productivity` (publication evidence below)
+Verified public model: `minister-care-10-access-time-replay` (publication evidence below)
 Reference protocol: `no-discretionary-action-v1`
 
 This is the canonical status list. Older plans describe how the current release was built; their unchecked boxes are not active tasks.
 
-## Upcoming model 10 foundation fixes — UNRELEASED
+## Model 10 foundation fixes
 
 Implementation branch `fix/foundation-time-and-replay`, base
 `86d53e02ed5dc4bb5c8a2c26782a5008f831923d`; single writer in the isolated Windows
-worktree. No deployment, settings changes or production backend/leaderboard writes.
+worktree. The coordinator published the reviewed result through the existing
+gated workflow; no settings changes or production backend/leaderboard writes.
 
 F06 baseline command: `node --test --test-name-pattern='F06' tests/minister_browser.test.js`.
 Before runtime changes the real council callback failed **10 !== 4**: six weeks
@@ -123,9 +124,9 @@ The existing random-player-name uniqueness flake was not encountered in the
 completed full-suite summaries, not changed, and is not guaranteed absent.
 Only `site/minister.html`, `tests/minister_browser.test.js`, this release status
 and `MINISTER_MODEL_CONTRACT.md` changed for these three stages.
-Implementation remains **UNRELEASED**; public model 9 is unchanged. The coordinator
-owns final review and release. These local results are not publication evidence,
-clinical calibration, an outcome-improvement claim or universal replay causality.
+The coordinator completed final review and publication as recorded below. These
+local results are separate from publication evidence and do not establish
+clinical calibration, outcome improvement or universal replay causality.
 
 ### Coordinator review: replay leaves saved attempts unchanged
 
@@ -144,9 +145,35 @@ refreshes; the strike-prefix replay also passes. Frame readiness uses timer
 polling because the render-independence fixture deliberately disables animation
 frames. Final exact-source CI and review clearance are recorded on the PR.
 
+### Verified model 10 publication
+
+- Protected master merge: `6fc0da8e82767c7d129cce62f68c326d1307eef3` through
+  [PR36](https://github.com/cammeleon66/Cammelot/pull/36); release:
+  `68c97e033069c986e7242ccecd2cb711d0d8d530`, preserving the publishing branch's
+  history and matching reviewed source `eac893eccb530d023dd5c2bfadf346d896c4b415`.
+- Final Standards and Spec reviews have no outstanding findings. The required
+  exact-source `Validate` check passed before merge; publication repeated the
+  full regression gate rather than relying solely on the earlier run.
+- [Pages run 40507517011](https://github.com/cammeleon66/Cammelot/actions/runs/40507517011)
+  passed on its first attempt on 2026-10-27. Validation completed at 12:59:29 UTC,
+  before deployment began at 12:59:32 UTC.
+- Public `/minister.html` SHA-256 matched the canonical Git blob:
+  `637c9a09ec5247ad2ed8d1829cae5f18581dc333f97dff57cf20385e24bf7fea`.
+- Both live same-origin **no-action references** completed: Cabinet Crisis
+  416 ticks and Full Term 2,080 ticks, seed 2468. Scenario, model, protocol and
+  schedule matched; player openings remained at tick zero with the 4/52/208 clock.
+  This is distinct from the discretionary replay evidence above: its Full Term
+  run ended at the actual election at tick 988, not the full 2,080-tick horizon.
+- No browser, same-origin HTTP or care-input errors occurred in players or
+  references. External requests were fulfilled locally, non-GET requests blocked
+  and leaderboard reads stubbed; no scores were submitted. Physical devices,
+  production leaderboard writes and clinical effectiveness are not claimed.
+- Issues 6, 7 and 8 are closed. All nine simulation-foundation backlog issues
+  are complete; remaining public-release and research work is still separate.
+
 ## Model 9: workforce/productivity (F05)
 
-Issue [#5](https://github.com/cammeleon66/Cammelot/issues/5) is implemented and published as `minister-care-9-workforce-productivity`, based on `ba0c19ba4d6ca06618961327f742e677b44b0322`. **Model 9 is the verified public model.** The coordinator reviewed and published it through the existing gated workflow; no workflows, settings, backend or production leaderboard state were changed. Publication evidence is recorded separately below.
+Issue [#5](https://github.com/cammeleon66/Cammelot/issues/5) was implemented and published as `minister-care-9-workforce-productivity`, based on `ba0c19ba4d6ca06618961327f742e677b44b0322`. Model 9 was the verified public model before model 10. The coordinator reviewed and published it through the existing gated workflow; no workflows, settings, backend or production leaderboard state were changed. Publication evidence is recorded separately below.
 
 ### Mechanism and scope
 
@@ -241,7 +268,7 @@ Final-source Windows verification at `238c750a838dd56d8692677236b6ee3d9f2983a1`:
 
 Issue [#4](https://github.com/cammeleon66/Cammelot/issues/4) replaces unlimited emergency admission with one separate emergency place and visible queued overflow, and bounds simultaneous GP consultations to one per practice. Routine treatment retains its named finite places and starts/week credit, independent of emergency care. Releases, initial occupancy, starts and completions are separately accounted; reduction of the routine target retires occupied places without evicting residents. See the [implemented resource contract](MINISTER_MODEL_CONTRACT.md#f04-implementation-model-8-finite-resources) and [criterion evidence](#f04-implementation-evidence).
 
-This changes outcomes and is incompatible with model 7 replay/reference/leaderboard records. The implementation changed no workflow, backend, production leaderboard or repository settings; the coordinator published it through the existing gated branch after review. Model 8 was the verified public executable before model 9. The one-place rule and overflow outcomes are unvalidated gameplay assumptions, not calibration or a claim of lower mortality. F05 is recorded above; F07 effects remain separate work.
+This changes outcomes and is incompatible with model 7 replay/reference/leaderboard records. The implementation changed no workflow, backend, production leaderboard or repository settings; the coordinator published it through the existing gated branch after review. Model 8 was the verified public executable before model 9. The one-place rule and overflow outcomes are unvalidated gameplay assumptions, not calibration or a claim of lower mortality. F05 and F07 are recorded above.
 
 Local implementation evidence: Minister browser/supported-host tests **37/37 passed**; `npm test` **179/179 passed** using system Chromium and temporary existing test dependencies (the locked Azure mirror was unavailable). This is repository validation, not publication evidence; see the focused evidence below for exact limitations.
 
