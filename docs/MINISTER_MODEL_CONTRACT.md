@@ -143,6 +143,175 @@ Due quarter effects are projected as one ordered batch against the remaining sch
 
 No model-8 record is reused: existing versioned replay, reference and leaderboard filters pick up model 9. No protocol bump is needed because matching/comparison rules are unchanged. F06/F07, empirical calibration, balance tuning and backend/leaderboard changes remain outside this implementation. See [F05 evidence](MINISTER_RELEASE_STATUS.md#model-9-workforceproductivity-f05) and the separate [verified publication](MINISTER_RELEASE_STATUS.md#verified-model-9-publication).
 
+## Upcoming model 10 — access, logical effects and replay (UNRELEASED)
+
+Working identity: `minister-care-10-access-time-replay`. Public model 9 and reference
+protocol `no-discretionary-action-v1` remain unchanged. This is prepublication
+software evidence, not clinical calibration or an outcome-improvement claim.
+
+### F06: exclusion belongs to the referral episode
+
+The actual digital-gate council callback changed `waitWeeks` from 4 to 10 while
+the episode still reported 4. Model 10 instead records an identified six-week
+**future access hold**, preserving referral start and elapsed history. Repeated
+events extend the remaining hold; repeated dispatch of the same event ID does
+not. Synchronization and later ticks cannot erase it. Both routine and emergency
+admission honor it; an emergency remains in visible overflow, not a fictional
+treatment place. Eligible routine residents behind a held resident can enter.
+This intentionally models the authored access exclusion, not diagnostic accuracy
+or a new clinical-priority model.
+
+The story selects an older named resident, not necessarily someone referred.
+With no active referral, record exclusion and its existing political/score
+consequence, but impose **no wait and no future referral**. This smallest rule
+does not manufacture a clinical episode. Manual exceptions release the named
+resident's existing holds; an Inclusion Officer releases all current holds and
+prevents pending/recurring events. Neither erases elapsed wait or past exclusion counts.
+Expiry is at `event tick + 24` (plus existing remaining hold); treatment start,
+death, relocation and other exit close the same episode and preserve hold history.
+Reports separate elapsed weeks from remaining imposed weeks.
+
+### F07: logical delayed effects and terminal settlement
+
+The strike's “wait them out” choice previously reduced doctor trust six points
+after four wall-clock seconds even while council was paused. It now has an
+identified, exactly-once consequence due **four elapsed ticks / one model week**
+after the choice, processed before quarter/terminal handling. This is the chosen
+logical delay, not a conversion from reading speed or an empirical strike duration.
+Its immediate +2-point absence is ongoing as before; political changes are not
+temporary care effects. Duplicate scheduling is inert. Reset reloads a fresh term.
+
+Existing temporary care effects continue to reverse their declared additive or
+multiplicative changes in the F05 validated boundary, not by restoring an old
+whole-state snapshot. Permanent changes survive stacked expiry; no clamped
+political inverse is invented. Quarter effects remain strictly before the horizon;
+external inverses remain executable on the terminal tick. Pending sub-quarter
+effects are canceled at termination with reason/time; pending quarter deliveries
+and reversals are marked canceled, without reversing care after the result.
+Election loss and fourth-household protest end synchronously at the triggering
+boundary, not after an animation timeout.
+
+Fragility objective failure is sampled on policy effects and ticks, not by rendering
+`check()`. Objective settlement is once per objective, including terminal settlement.
+Stale decision/vote/manifesto callbacks and effect APIs cannot mutate ended gameplay.
+Published score payload is retained for retries; a late matching reference may
+still populate comparison detail under the unchanged reference protocol.
+
+Async audit: remaining timers/animation frames implement audio, visual effects,
+layout, tooltips, onboarding/clock driving, baseline tick batching and optional
+publication. Clock drivers still execute guarded integer ticks. The name-completion
+sweep now runs synchronously at initialization rather than consuming RNG after
+1.5 seconds. Offline cognition is not initialized in this build; its dormant async
+completion/fallback is nevertheless terminal-guarded. Clipboard, soundtrack and
+leaderboard promises do not feed clinical or political state. Legacy IndexedDB
+helpers are not a supported Minister restore path. This is not a general job service.
+
+### F08: complete local command/event record and executable replay
+
+The previous `saveReplay` record was a comparison artifact, not an executable
+command log: a real mid-quarter case-manager request spent €5,000 without adding
+a decision or cash reason to that artifact. Model 10 retains **Try another
+approach** as a previous-attempt comparison and adds a separate complete export
+and executable replay. No online event store, leaderboard verification service or
+mid-term restore mechanism is introduced.
+
+**Separate identities**
+
+- `schema: minister-command-record-1` describes the export envelope.
+- `eventSchema: minister-domain-event-1` describes observed domain events.
+- `replayVersion: minister-command-replay-1` describes command interpretation.
+- `modelVersion: minister-care-10-access-time-replay` identifies the outcome rules.
+- `executableId` is SHA-256 of the entire inline executable script, including its
+  data tables and handlers. It is not a Git commit hash, a signature or a server
+  attestation. Even two interim checkouts bearing model 10 reject one another
+  when their executable bytes differ.
+- `protocol: no-discretionary-action-v1` and the complete generated external
+  schedule retain the existing paired-reference contract. No matching rule changed.
+
+**Envelope and initial inputs.** Recording starts immediately before the normal
+`launchSimulation` opening advances, at elapsed tick zero. The record includes
+scenario, seed, horizon, initial parameters, mode, query string, whether a manifesto
+was declared and its chosen indices, the initial agreed state, external schedule,
+ordered commands/events, final agreed state, ending tick/reason and completeness.
+Population, conditions and authored coefficients are regenerated by the exact
+executable and seed; the regenerated initial state must equal the recorded state
+before any replay tick. Recorded snapshots are **never installed as model state**.
+Public name, audio, viewport and previous-attempt browser storage do not supply
+clinical inputs; replay does not publish under a recorded name.
+
+**Commands.** Each has a stable sequence ID, total ordering number, elapsed tick,
+kind (`purchase`, `law`, `decision`, `request`, `confidence`, `navigation`), a
+whitelisted control identifier, current council/request context, reason/choice
+text, before/after state checksums and outcome. Navigation is retained because
+the current council stage determines command availability. The recorder observes
+the actual synchronous handlers in event capture/bubble order; the replay invokes
+those same controls, not a second implementation of policies. A command-specific
+seed is supplied before execution; the existing council-specific RNG remains
+deterministic. Outcomes distinguish applied, no-effect and rejected commands.
+Disabled offers are not executed commands; attempts to dispatch unavailable
+controls are visibly refused. Empty effects/declines remain explicit records.
+
+**Events.** Every event has an ID, total order, logical tick, kind, reason and
+optional originating command ID. The record retains clinical events; policy cost
+and applied plans; scheduled/canceled strike effects; objective settlement;
+environment onset/expiry and annual pressure; and before/after changes at each
+command and completed tick. Changes include budget, trust, live score, care
+parameters, schedules, policy/law ownership, political flags and named residents'
+HP, care state, waits, workload and exits. Tick changes name the clinical,
+environment and quarter-rule boundary; more specific authored effects carry
+their own labels. Agreement checks additionally cover exact care snapshots,
+resident ages/conditions/positions/paths and social timers, queues, referral/hold
+history, resource visits and environmental impacts. Checksums are compact
+regression checks, not cryptographic proof of authentic play.
+
+**Replay execution and rejection.** Start on a fresh matching scenario/seed at
+tick zero and import through “Replay a complete command record”, or call
+`MoC.record.run(record)`. It validates all version identities, executable hash,
+initial inputs/schedule, bounded command/event ordering and the command vocabulary.
+It advances actual integer `tick()` calls only while no model-owned council,
+request or interstitial is blocking, then validates the available command/context
+and before-state. The exact executed outcome, complete event trace and final
+agreed snapshot must match. Errors are visible as **Replay refused**, pause
+execution and do not silently substitute defaults. A divergence after valid
+earlier commands leaves that failed replay paused; it is not rolled back or
+continued. Reload a fresh town before retrying. Repeated replay in the same
+already-used page is rejected.
+
+**Export versus display.** Export downloads all commands and events without
+truncation, including late resident requests and automatic changes. The
+previous-attempt storage artifact embeds the same full record; quota failures
+remain visible through its existing failure message, never by dropping entries.
+Human-readable handover and local top-run summaries may remain short. File import
+is bounded to 32 MiB; API validation bounds commands to 20,000 and events to
+200,000, in addition to the scenario's tick horizon.
+
+**Limits and external conditions.** Only the two public Minister player scenarios
+and this exact available executable are supported. World mode changes,
+mid-term playground overrides, debug/direct state edits, optional future
+nondeterministic clinical services and historical executables not supplied here
+are not reconstructed. Known mid-term playground/World controls explicitly mark
+an export unsupported; other altered state is rejected by initial/trace checks.
+This is replay from initial inputs, not arbitrary mid-term save/restore.
+The static website does not initialize its dormant LLM subsystem.
+
+The shared external schedule is paired by seed/scenario. Realized shock impacts
+may legitimately depend on prevention, resilience and dependence; dilemmas,
+requests, strike/morale consequences, clinical paths and endings may depend on
+policy/state. The record neither makes those endogenous events “paired” nor
+claims seed-only causality. Scalar leaderboard scores incorporate separately
+arriving reference data; agreement here is on the documented gameplay/clinical
+snapshots, live score and ending, not network timing or leaderboard rank. Late
+matching reference presentation remains allowed, but replay suppresses both
+remote publication and new local leaderboard entries.
+
+Prepublication evidence covers Cabinet Crisis through tick 416; a Full Term run
+ending at its actual tick-988 election (before its 2,080-tick horizon); and a
+seed-2 strike through tick 108. It is not evidence that every command sequence,
+every seed or a full 2,080-tick discretionary campaign has been replay-tested.
+Existing full-horizon no-action/reference regressions remain separate evidence.
+None of these software invariants implies clinical calibration, improved mortality
+or universal causal attribution.
+
 ## Glossary
 
 - **Model version:** immutable identifier for a particular outcome-affecting model and policy implementation.

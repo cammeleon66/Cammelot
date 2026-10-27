@@ -1788,6 +1788,7 @@ function findWaypointPath(fromIdx, toIdx) {
 const EVENT_LOG = []; // { cycle: elapsed tick, type, agentId, agentName, detail, hp, timestamp }
 
 function logEvent(type, agent, detail) {
+  MoC.record?.note('clinical:'+type,detail || type,{agentId:agent.id,hp:agent.hp});
   EVENT_LOG.push({
     cycle: modelTick,
     type,
@@ -4308,6 +4309,7 @@ function validateCareParameters(p, rate=MoC.S.specialistCapacity, adoption=MoC.S
   return p;
 }
 function reportCareInputError(error) {
+  MoC.record?.note('rejected',error.message);
   MoC.lastInputError = error.message;
   MoC.careInputErrorCount = (MoC.careInputErrorCount || 0) + 1;
   if (typeof showToast === 'function') showToast(error.message,4000);
@@ -7352,6 +7354,7 @@ function tick(){
   if (MoC.paused || MoC.S.over) return;
   try { validateCareParameters(M[mode]); }
   catch (error) { reportCareInputError(error); MoC.paused=true; return; }
+  const recordBefore=MoC.record?.before();
   cycle++; modelTick++; const p=M[mode];
   MoC.seedTick(modelTick);
   MoC.environment?.advance(modelTick);
@@ -8139,7 +8142,12 @@ function tick(){
         // IST: basic clinical triage (severity + HP only, no AI augmentation)
         return getBaseTriagePriority(agB) - getBaseTriagePriority(agA);
       });
-      const frontId = hq.agents.shift();
+      const eligibleIndex = hq.agents.findIndex(id => {
+        const a = agents.find(a => a.id === id);
+        return a && MoC.care.accessRemaining(a) === 0;
+      });
+      if (eligibleIndex < 0) break;
+      const frontId = hq.agents.splice(eligibleIndex, 1)[0];
       const frontAgent = agents.find(a => a.id === frontId);
       if (isLivingResident(frontAgent) && frontAgent.behaviorState === 'queuing') {
         if (!MoC.care.acquire(frontAgent, 'routine')) break;
@@ -8487,6 +8495,7 @@ function tick(){
   MoC.care?.sync();
   if (MoC.care) MoC.runSnapshots[modelTick] = MoC.care.snapshot();
   MoC.onTick(modelTick);
+  MoC.record?.after('tick','Elapsed tick: clinical care, environment and quarter rules',recordBefore);
 }
 
 function batch(n){for(let i=0;i<n;i++)tick();}
@@ -8565,6 +8574,8 @@ function resetSim(){
 }
 
 function setMode(m){
+  if (MoC.S.over) return;
+  MoC.record?.invalidate('Mid-term World mode changes are outside Minister command replay');
   mode=m;
   // Sprint S1: Trigger mode transition animation
   modeTransitionTimer = 30;
@@ -8643,6 +8654,8 @@ function activateCustomMode(){
 }
 
 function applyPlaygroundPreset(preset){
+  if (MoC.S.over) return false;
+  MoC.record?.invalidate('Mid-term playground overrides are outside Minister command replay');
   try { validateCareParameters(preset); }
   catch (error) { return reportCareInputError(error); }
   M[mode].admin=preset.admin;
@@ -8766,6 +8779,7 @@ function showPlayground(){
   var slidersContainer=panel.querySelector('.pg-sliders');
   if(slidersContainer){
     slidersContainer.addEventListener('input',function(e){
+      if(MoC.S.over)return;
       if(e.target.type!=='range')return;
       var key=e.target.getAttribute('data-pg-key');
       var val=parseFloat(e.target.value);
@@ -10773,6 +10787,7 @@ function updateWizardStep() {
 }
 
 function nextWizardStep() {
+  if (MoC.S.over) return;
   wizardStep++;
   if (wizardStep >= WIZARD_STEPS.length) {
     closeWizard();
@@ -10877,6 +10892,7 @@ window.addEventListener('resize',()=>{userZoomed=false;zoom=1;render();});
 function launchSimulation() {
   if (window._mocGameStarted || autoTimer || MoC.S.over || MoC.isBlocked?.()) return;
   if (!MoC.scenario && !MoC.IS_BASELINE) return; // MoC: waiting for scenario pick
+  MoC.record?.begin();
   MoC.paused = false;
   window._mocGameStarted = true;
   document.body.classList.remove('moc-walkthrough-active');
@@ -10979,6 +10995,8 @@ document.getElementById('agent-detail').addEventListener('click', function(e) {
   // Sprint 22: Playground panel delegation
   var presetBtn = e.target.closest('[data-pg-preset]');
   if (presetBtn) {
+    if (MoC.S.over) return;
+    MoC.record?.invalidate('Mid-term playground override');
     var preset = presetBtn.getAttribute('data-pg-preset');
     if (preset === 'ist') applyPlaygroundPreset(M_ORIG.IST);
     else if (preset === 'soll') applyPlaygroundPreset(M_ORIG.SOLL);
@@ -12423,12 +12441,11 @@ class CognitiveManager {
       try {
         const prompt = buildCognitivePrompt(item.agent, item.trigger);
         const response = await this.llmClient.think(item.agent, prompt);
-        executeLLMAction(item.agent, response, item.trigger);
+        if (!MoC.S.over) executeLLMAction(item.agent, response, item.trigger);
       } catch (err) {
         console.error('[Cognitive] Error for ' + item.agent.id + ':', err);
         // Fallback to automaton
-        agentReflect(item.agent);
-        agentPlan(item.agent);
+        if (!MoC.S.over) { agentReflect(item.agent); agentPlan(item.agent); }
       } finally {
         this.inFlight--;
       }
@@ -12619,12 +12636,13 @@ async function initLLMSubsystem() {
 (function(){
   const GS = MoC.S;
   // Finite resources/queued emergencies change outcomes; earlier versions are incompatible.
-  MoC.MODEL_VERSION = 'minister-care-9-workforce-productivity';
+  MoC.MODEL_VERSION = 'minister-care-10-access-time-replay';
   MoC.REFERENCE_PROTOCOL = 'no-discretionary-action-v1';
   MoC.referencePolicy = MoC.IS_BASELINE;
   MoC.comparisonValidated = true;
   const referralEpisodes = [];
   const activeReferrals = new Map();
+  const accessEvents = [];
   const resourceUses = [];
   const activeUses = new Map();
   const overflowEntries = [];
@@ -12643,6 +12661,41 @@ async function initLLMSubsystem() {
   }
   MoC.care = {
     episodes: referralEpisodes,
+    accessEvents,
+    accessRemaining:function(a){
+      const e = activeReferrals.get(a.id);
+      return e ? Math.max(0,...(e.accessHolds || []).filter(h=>h.status==='active')
+        .map(h=>(h.untilTick-modelTick)/MoC.TICKS_PER_WEEK)) : 0;
+    },
+    exclude:function(a,id,reason){
+      if (GS.over || accessEvents.some(e=>e.id===id)) return false;
+      this.sync();
+      const episode=activeReferrals.get(a.id);
+      const event={id,agentId:a.id,tick:modelTick,reason,
+        outcome:episode?'held':'no_active_referral',episodeId:episode?.id || null};
+      accessEvents.push(event);
+      if (episode) {
+        const untilTick=modelTick+this.accessRemaining(a)*MoC.TICKS_PER_WEEK+6*MoC.TICKS_PER_WEEK;
+        (episode.accessHolds ||= []).push({...event,untilTick,status:'active'});
+      }
+      GS._biasDeaths=(GS._biasDeaths || 0)+1;
+      const text=reason+(episode ? ': specialist access held for six additional weeks; elapsed wait unchanged.'
+        : ': no active referral; no wait or future referral created.');
+      logEvent('access_exclusion',a,text); addHistory(a,'access_exclusion',text);
+      return true;
+    },
+    mitigateAccess:function(a,reason){
+      if (GS.over) return;
+      for (const e of activeReferrals.values()) {
+        if (a && e.agentId!==a.id) continue;
+        for (const h of e.accessHolds || []) if (h.status==='active' && h.untilTick>modelTick) {
+          h.status='mitigated'; h.endTick=modelTick; h.endReason=reason;
+          const person=agents.find(p=>p.id===e.agentId);
+          accessEvents.push({id:h.id+':mitigated',agentId:e.agentId,episodeId:e.id,tick:modelTick,reason,outcome:'mitigated'});
+          logEvent('access_mitigated',person,reason); addHistory(person,'access_mitigated',reason);
+        }
+      }
+    },
     resourceUses,
     slots:function(resource){
       // Named treatment places, NOT empirical beds or staff headcounts.
@@ -12658,6 +12711,7 @@ async function initLLMSubsystem() {
     acquire:function(a, resource, initial=false){
       if (!resident(a) || !isLivingResident(a) || a.moved || activeUses.has(a.id)
         || this.occupied(resource) >= this.slots(resource)) return false;
+      if (!initial && (resource==='routine' || resource==='emergency') && this.accessRemaining(a)>0) return false;
       if (resource === 'routine' && !initial) {
         if (GS.serviceCredit < 1) return false;
         GS.serviceCredit -= 1;
@@ -12707,7 +12761,9 @@ async function initLLMSubsystem() {
       const episode = activeReferrals.get(a.id);
       if (episode) episode.overflowed = true;
       logEvent('emergency_overflow', a, 'Waiting for the one emergency treatment place');
-      addHistory(a, 'emergency_overflow', 'Emergency place occupied. Waiting for emergency treatment.');
+      addHistory(a, 'emergency_overflow', this.accessRemaining(a)>0
+        ? 'Specialist access hold active. Waiting for emergency treatment eligibility.'
+        : 'Emergency place occupied. Waiting for emergency treatment.');
     },
     processEmergencies:function(){
       // One queue record per living resident: bounded by the finite resident roster,
@@ -12767,11 +12823,21 @@ async function initLLMSubsystem() {
           activeReferrals.set(a.id, episode); referralEpisodes.push(episode);
         }
         if (episode && (a.emergencyAdmission || a.behaviorState === 'emergency_overflow')) episode.emergency = true;
+        if (episode) for (const hold of episode.accessHolds || []) {
+          if (hold.status==='active' && modelTick>=hold.untilTick) {
+            hold.status='expired'; hold.endTick=hold.untilTick; hold.endReason='Declared access delay elapsed';
+            accessEvents.push({id:hold.id+':expired',agentId:a.id,episodeId:episode.id,
+              tick:hold.untilTick,reason:hold.endReason,outcome:'expired'});
+          }
+        }
         if (episode && !pendingReferral(a)) {
           episode.endTick = modelTick;
           episode.waitWeeks = Math.max(0, (modelTick - episode.startTick) / MoC.TICKS_PER_WEEK);
           episode.status = a.hp <= 0 || a.state === 'dead' ? 'died_waiting' : a.moved ? 'relocated'
             : a.behaviorState === 'at_hospital' ? 'treatment_started' : 'other_exit';
+          for (const hold of episode.accessHolds || []) if (hold.status==='active') {
+            hold.status='closed'; hold.endTick=modelTick; hold.endReason=episode.status;
+          }
           activeReferrals.delete(a.id);
         }
       });
@@ -12781,6 +12847,8 @@ async function initLLMSubsystem() {
       const waits = waiting.map(a => MoC.care.elapsed(a));
       return { modelVersion:MoC.MODEL_VERSION, seed:MoC.seed, scenario:GS.scenario, tick:modelTick,
         waiting:waiting.length, meanWait:waits.length ? waits.reduce((a,b) => a+b,0)/waits.length : 0,
+        accessHeld:waiting.filter(a=>this.accessRemaining(a)>0).length,
+        accessDelayWeeks:waiting.reduce((sum,a)=>sum+this.accessRemaining(a),0),
         longestWait:Math.max(0,...waits), overdue:waits.filter(w => w > 12).length,
         treatments:referralEpisodes.filter(e => e.status === 'treatment_started').length,
         deathsWaiting:referralEpisodes.filter(e => e.status === 'died_waiting').length,
@@ -12868,6 +12936,7 @@ async function initLLMSubsystem() {
         try {
           const next=projectedCareEffect({drainMult:1+increase,sick:0.003*(year<=2?0.5:1)});
           Object.assign(M.IST,next.p);
+          MoC.record?.note('automatic','Annual care pressure',{year,drainFactor:1+increase,sickDelta:0.003*(year<=2?0.5:1)});
         } catch (error) { reportCareInputError(error); }
       }
       for (let i=activeExternal.length-1;i>=0;i--) {
@@ -12878,6 +12947,7 @@ async function initLLMSubsystem() {
               careSchedule(GS.timedFx,GS.delayed,activeExternal.filter(e=>e!==active)));
             Object.assign(M.IST,next.p); GS.specialistCapacity=next.capacity;
             activeExternal.splice(i,1);
+            MoC.record?.note('external-expiry','Scheduled environmental effect ended',active);
           } catch (error) { reportCareInputError(error); }
         }
       }
@@ -12899,6 +12969,7 @@ async function initLLMSubsystem() {
         }
         const impact={...event,drainFactor,sickDelta,capacityDelta:GS.specialistCapacity-previous};
         activeExternal.push(impact); externalLog.push(impact);
+        MoC.record?.note('external','Scheduled environmental effect applied',impact);
         const name={flu:'Flu wave',grid:'Regional power disruption',shortage:'Regional staffing shortage'}[event.kind];
         GS.eventLog.push({q:Math.floor(tick/MoC.QUARTER_TICKS)+1,name});
         GS.pendingBanners=GS.pendingBanners||[];
@@ -12951,7 +13022,8 @@ async function initLLMSubsystem() {
     const record={modelVersion:MoC.MODEL_VERSION,protocol:MoC.REFERENCE_PROTOCOL,seed:MoC.seed,scenario:GS.scenario,tick:final.tick,
       politicalReason:GS.endReason,final,snapshots:{...MoC.runSnapshots,[final.tick]:final},
       decisions:GS.interventions,choices:GS.decisionLog||[],election:GS.electionSnapshot||null,
-      externalSchedule:MoC.environment.schedule,externalImpacts:MoC.environment.log};
+      externalSchedule:MoC.environment.schedule,externalImpacts:MoC.environment.log,
+      commandRecord:MoC.record?.export()};
     try {localStorage.setItem(MoC.replayKey,JSON.stringify(record));return true;} catch(e){return false;}
   };
 
@@ -12964,6 +13036,7 @@ async function initLLMSubsystem() {
     MoC.updateHUD();
   }
   function adjustStakeholders(dc, dd, dp){
+    if (GS.endReason) return;
     GS.trustC = clamp01(GS.trustC + (dc || 0));
     GS.trustD = clamp01(GS.trustD + (dd || 0));
     GS.trustP = clamp01(GS.trustP + (dp || 0));
@@ -12979,6 +13052,31 @@ async function initLLMSubsystem() {
   GS.eventLog = [];       // {q, name} for the judgment screen
   GS.timedFx = [];        // {inverse, untilQ, label}
   GS.delayed = [];        // {atQ, fx, label}
+  // Only the authored strike consequence needs sub-quarter delivery.
+  // Records remain after dispatch/cancellation; reset is a fresh page/term.
+  GS.logicalEffects = [];
+  MoC.logicalEffects = {
+    strike:function(){
+      const id='strike-consequence:'+GS.quarter;
+      if (GS.over || GS.logicalEffects.some(e=>e.id===id)) return false;
+      GS.logicalEffects.push({id,tick:modelTick,dueTick:modelTick+MoC.TICKS_PER_WEEK,
+        fx:{trustD:-6},reason:'Strike ends bitter',status:'pending'});
+      MoC.record?.note('scheduled','Strike political consequence due in four ticks',GS.logicalEffects.at(-1));
+      return true;
+    },
+    advance:function(){
+      if (GS.over) return;
+      for (const effect of GS.logicalEffects) if (effect.status==='pending' && effect.dueTick<=modelTick) {
+        if (applyFx(effect.fx,effect.reason)) { effect.status='applied';effect.endTick=modelTick; }
+      }
+    },
+    cancel:function(){
+      for (const effect of GS.logicalEffects) if (effect.status==='pending') {
+        effect.status='cancelled';effect.endTick=modelTick;effect.endReason='Term ended before delivery';
+        MoC.record?.note('cancelled',effect.endReason,effect);
+      }
+    }
+  };
   GS.techFreezeUntil = 0; // parliament freeze on dep-adding purchases
   GS.pendingBeat = null;  // scripted named-citizen beat queued for next council
   GS.lastEventQ = {};     // eventId -> quarter (cooldowns)
@@ -13175,6 +13273,7 @@ async function initLLMSubsystem() {
     if (fx.trust) MoC.adjustTrust(fx.trust);
     if (fx.trustC || fx.trustD || fx.trustP) adjustStakeholders(fx.trustC, fx.trustD, fx.trustP);
     if (fx.dep) GS.dependence = Math.max(0, GS.dependence + fx.dep);
+    if (GS.objective?._ok !== undefined && fragility()>=50) GS.objective._ok=false;
     Object.assign(M.IST,next.p);
     GS.specialistCapacity = next.capacity;
     if (fx.mantelzorg) GS.mantelzorg = Math.max(0, Math.min(100, (GS.mantelzorg || 30) + fx.mantelzorg)); // G15
@@ -13182,13 +13281,17 @@ async function initLLMSubsystem() {
     if (fx.platform) GS.platformMaturity = Math.min(2, (GS.platformMaturity || 0) + fx.platform); // G17
   }
   function commitCarePlan(plan){
+    const recordBefore=MoC.record?.before();
     GS.budget-=plan.cost;
     for (const step of plan.steps) commitFx(step.fx,step.next);
     GS.timedFx.push(...plan.timed); GS.delayed.push(...plan.delayed);
     for (const step of plan.steps) if (step.label) say('MINISTRY',step.label,'sys');
+    MoC.record?.after('effect',plan.steps.map(s=>s.label || 'Declared policy effect').join('; '),recordBefore,
+      {cost:plan.cost,steps:plan.steps.map(s=>({fx:s.fx,label:s.label})),timed:plan.timed,delayed:plan.delayed});
     refreshMeters();
   }
   function applyCarePlan(plan, funded=false){
+    if (GS.endReason) return false;
     let projected;
     try { projected=projectCarePlan(plan,funded); }
     catch (error) { return reportCareInputError(error); }
@@ -13215,6 +13318,7 @@ async function initLLMSubsystem() {
     return option.fxChoices ? option.fxChoices.map(fx=>({steps:[{fx}]})) : [choicePlan(option)];
   }
   function applyChoice(option){
+    if (GS.over) return false;
     try { for (const plan of choicePlans(option)) projectCarePlan(plan,true); }
     catch (error) { return reportCareInputError(error); }
     const plan=choicePlan(option);
@@ -13280,7 +13384,7 @@ async function initLLMSubsystem() {
     // G20: Digital Inclusion Officer — requires AI Triage Gate law to be active
     { id:'inclofficer', name:'\ud83e\udd1d Digital Inclusion Officer', cost:30000, requiresLaw:'dig2',
       fx:{trustC:3}, max:1,
-      desc:'Support for digital-only pathways. Citizen trust +3; stops recurring access exclusion. Requires AI Triage Gate.' },
+      desc:'Citizen trust +3; releases current access holds and stops recurring exclusion. Requires AI Triage Gate.' },
     // G23: Carer Support Programme — relieves mantelzorg pressure
     { id:'carersupport', name:'\ud83e\udec2 Carer Support Programme', cost:35000,
       fx:{trustC:2, mantelzorg:-15}, max:2,
@@ -13295,6 +13399,7 @@ async function initLLMSubsystem() {
   }
   const BUY_CAP = 2; // implementation capacity per quarter
   function canBuy(item){
+    if (GS.over) return false;
     try { projectCarePlan(shopPlan(item),true); }
     catch (error) { return false; }
     const owned = GS.owned[item.id] || 0;
@@ -13377,6 +13482,7 @@ async function initLLMSubsystem() {
     GS.interventions.push({ q: GS.quarter, label: item.name.replace(/^\S+\s/, ''), cost: cost });
     commitCarePlan(plan);
     GS.interventions[GS.interventions.length - 1].tick = modelTick;
+    if (item.id === 'inclofficer') MoC.care.mitigateAccess(null,'Digital Inclusion Officer: manual access restored');
     GS.interventions[GS.interventions.length - 1].effectiveFx = effectiveFx;
     GS._observation = { itemId:item.id, name:item.name, cost, before:beforePolicy };
     // G19: changeprog directly raises the adoption rate
@@ -13500,6 +13606,7 @@ async function initLLMSubsystem() {
     return applyCarePlan({steps:[{fx,quarters,label,source}]});
   }
   function processQuarterEffects(q){
+    if (GS.over) return [];
     const expired=GS.timedFx.filter(t=>q>=t.untilQ), due=GS.delayed.filter(d=>q>=d.atQ);
     const remainingTimed=GS.timedFx.filter(t=>q<t.untilQ),remainingDelayed=GS.delayed.filter(d=>q<d.atQ);
     let plan;
@@ -13914,10 +14021,12 @@ async function initLLMSubsystem() {
       a:{ label:'Top up the full 40%', fx:{budget:-55000, trustD:5}, note:'-\u20ac55K \u00b7 Doctors +5 \u00b7 Saturday access maintained' },
       b:{ label:'Offer 20%, negotiate the rest', chance:0.5, fxChoices:[{trustD:2,budget:-28000},{trustD:-4,capacity:-0.5}], note:'50/50: deal at -\u20ac28K (Doctors +2) or capacity -0.5/week, Doctors -4' },
       c:{ label:'Reject: not a municipal responsibility', fx:{trustD:-6, trustP:3}, note:'Doctors -6 \u00b7 Parliament +3 (fiscal discipline)' } },
-    { id:'gpstrike', text:'GP assistants announce a two-day workload strike. Non-emergency access is disrupted.',
+    { id:'gpstrike', text:'GP assistants announce a workload strike. Choose a response to the staffing and political pressure.',
       a:{ label:'Emergency mediator, grant a 10% bonus', fx:{budget:-45000, trustD:8, trustC:2, sick:-0.01}, note:'-\u20ac45K \u00b7 Doctors +8 \u00b7 Citizens +2 \u00b7 sick -1%' },
       b:{ label:'Publicly condemn the strike', fx:{trustD:-10, trustC:-3, trustP:4}, note:'Doctors -10 \u00b7 Citizens -3 \u00b7 Parliament +4' },
-      c:{ label:'Let it run, wait them out', fx:{sick:0.02,trustC:-5}, after:function(){ setTimeout(function(){ adjustStakeholders(0,-6,0); say('MINISTRY','Strike ends bitter','sys'); refreshMeters(); },4000); }, note:'Sick +2% \u00b7 Citizens -5 \u00b7 Doctors -6 after' } },
+      c:{ label:'Let it run, wait them out', fx:{sick:0.02,trustC:-5},
+        after:function(){ MoC.logicalEffects.strike(); },
+        note:'Sick +2% (ongoing) · Citizens -5 · Doctors -6 after 1 model week (4 ticks); canceled if term ends first' } },
     // G15: Mantelzorg / informal carer dilemma — biggest Dutch care gap
     { id:'mantelzorg', text:'One in five informal carers is at risk of burnout. Home-care waits rose for four quarters.',
       a:{ label:'Formalise: pay informal carers a stipend', fx:{budget:-25000, trustC:5, mantelzorg:-10}, note:'-\u20ac25K \u00b7 Citizens +5 \u00b7 Carer pressure -10' },
@@ -13974,7 +14083,8 @@ async function initLLMSubsystem() {
       queuing:a.queueType === 'hospital' ? 'Waiting for specialist care' : 'Waiting at the GP',at_gp:'At the GP',at_hospital:'Receiving hospital care',
       recovering:'Recovering',emergency:'Emergency referral',emergency_overflow:'Emergency overflow; waiting for treatment',sleeping:'Resting'};
     return 'Age ' + formatCompletedAge(a.age) + ' · health ' + Math.round(a.hp) + '/100\n' + (states[a.behaviorState] || 'In town')
-      + (pendingReferral(a) ? ' · waiting ' + (a.waitWeeks || 0).toFixed(1) + ' weeks' : '');
+      + (pendingReferral(a) ? ' · waiting ' + (a.waitWeeks || 0).toFixed(1) + ' weeks'
+        + (MoC.care.accessRemaining(a)>0 ? ' · access hold: '+MoC.care.accessRemaining(a).toFixed(1)+' weeks remaining' : '') : '');
   }
   function followThought(a){
     if (!a) return '';
@@ -14048,7 +14158,7 @@ async function initLLMSubsystem() {
       banner = document.createElement('div'); banner.id = 'moc-council-ready-banner'; banner.setAttribute('role', 'status');
       document.getElementById('game-wrap')?.appendChild(banner);
     }
-    banner.innerHTML = '<strong>COUNCIL READY</strong><span>Quarter ' + q + ' is complete. The town is paused.</span><button>OPEN COUNCIL</button>';
+    banner.innerHTML = '<strong>COUNCIL READY</strong><span>Quarter ' + q + ' is complete. The town is paused.</span><button id="moc-council-ready">OPEN COUNCIL</button>';
     banner.querySelector('button').onclick = openPendingCouncil;
   }
   function renderTownWatch(){
@@ -14559,7 +14669,8 @@ async function initLLMSubsystem() {
         GS._lowTrustCQ = 0;
         if (movedCount >= 4 && !GS.over) {
           GS.pendingBanners.push({ head:'📢 FOURTH HOUSEHOLD LEAVES', body:'The relocation limit is reached. The term ends in public protest.', soft:false });
-          setTimeout(function(){ if (!GS.over) endTerm('protest'); }, 1200);
+          endTerm('protest');
+          return;
         }
       }
     }
@@ -14573,6 +14684,10 @@ async function initLLMSubsystem() {
 
     // Scripted beat takes priority; else event; else dilemma
     let beat = null;
+    if (GS.pendingBeat === 'digigate' && GS.owned.inclofficer) {
+      GS.pendingBeat=null;
+      MoC.record?.note('access-mitigation','Inclusion Officer prevents pending digital-gate exclusion');
+    }
     if (GS.pendingBeat === 'digigate') {
       GS.pendingBeat = null;
       GS._digigateRecurs = true;
@@ -14583,10 +14698,14 @@ async function initLLMSubsystem() {
       if (face) {
         beat = {
           text: face.name + ' (' + formatCompletedAge(face.age) + ') stands at the town hall counter. Your AI-Gated Specialist Access requires a digital identity. ' + face.name.split(' ')[0] + ' has never owned one. "I have been seeing Dr. Bakker for thirty years. Now a computer says I do not exist."',
-          a:{ label:'Grant manual exceptions at the counter', fx:{admin:0.02}, note:'A human backstop: admin +2% (permanent)' },
+          a:{ label:'Grant manual exceptions at the counter', fx:{admin:0.02},
+              after:function(){ MoC.care.mitigateAccess(face,'Manual exception granted'); },
+              note:'Admin +2% (permanent); releases this resident’s current access hold' },
           b:{ label:'Hold the line: the gate applies to everyone',
-              fx:{trust:-4}, after:function(){ face.waitWeeks = (face.waitWeeks || 0) + 6; GS._biasDeaths = (GS._biasDeaths || 0) + 1; },
-              note:'Trust -4 \u00b7 ' + face.name.split(' ')[0] + ' waits 6 extra weeks \u00b7 Exclusion logged' }
+              fx:{trust:-4}, after:function(){ MoC.care.exclude(face,'digigate:'+q+':'+face.id,'Digital identity gate'); },
+              note:'Trust -4 · Exclusion logged · ' + (pendingReferral(face)
+                ? 'Specialist access (including emergency) held for 6 additional weeks; elapsed wait unchanged'
+                : 'No active referral: no wait added or future referral created') }
         };
       }
     }
@@ -14625,6 +14744,7 @@ async function initLLMSubsystem() {
     // === Wizard shell ===
     const ov = document.createElement('div');
     ov.className = 'moc-overlay'; ov.id = 'moc-council';
+    ov.dataset.recordContext='council:'+q+':'+(beat?'beat:'+GS._digigateLastQ:evt?.id || dilemma?.id || 'quiet');
     ov.innerHTML = '<div class="moc-box">'
       + '<h2>\ud83c\udfdb Quarterly Council \u2014 Q' + qq + ', Year ' + year + '</h2>'
       + '<div class="moc-sub">Time is paused. No need to rush.</div><button id="moc-inspect-town">Inspect town</button>'
@@ -14939,7 +15059,7 @@ async function initLLMSubsystem() {
             Object.keys(LAW_TRACKS).forEach(function(tk){
               LAW_TRACKS[tk].laws.forEach(function(l){ if (l.id === lawId) law = l; });
             });
-            if (!law || GS.budget < law.cost) return;
+            if (GS.over || !law || GS.laws[law.id] || GS.budget < law.cost) return;
             let plan;
             try { plan=projectCarePlan({cost:law.cost,steps:[{fx:law.fx,label:'Law enacted: '+law.name}]},true); }
             catch (error) { reportCareInputError(error); return; }
@@ -14994,7 +15114,7 @@ async function initLLMSubsystem() {
     // G19: adoption penalty — if 2+ tech items owned but adoption < 80%
     const techOwned = ['scribes1','scribes2','a2a','twin','platformai'].filter(function(id){ return GS.owned && GS.owned[id] >= 1; }).length;
     const adoptionPenalty = (GS.adoptionRate < 0.8 && techOwned >= 2) ? Math.round((0.8 - GS.adoptionRate) * 120) : 0;
-    // G20: bias penalty — each unmitigated exclusion event costs 50pts
+    // Historical exclusion decisions cost 50pts; mitigation does not erase history.
     const biasPenalty = (GS._biasDeaths || 0) * 50;
     // G17/G19: dependence penalty/bonus
     const dep = GS.dependence || 0;
@@ -15021,6 +15141,7 @@ async function initLLMSubsystem() {
   }
   function saveJSON(key, v){ try { localStorage.setItem(key, JSON.stringify(v)); } catch(e){} }
   function recordRun(r, reason){
+    if (MoC.record?.replaying) return {runs:[],streak:{count:0}};
     const runs = loadJSON('moc_runs_' + MoC.MODEL_VERSION, []);
     runs.push({ date: new Date().toISOString().slice(0, 10), seed: MoC.seed, scenario: GS.scenario, modelVersion:MoC.MODEL_VERSION,endTick:modelTick,
       score: r.score, sd: r.sd, livesSaved: r.livesSaved, reason: reason, verdict: verdict(r, reason) });
@@ -15106,13 +15227,17 @@ async function initLLMSubsystem() {
 
   function endTerm(reason){
     if (GS.endReason) return;
+    settleYearObjective();
+    MoC.logicalEffects.cancel();
+    for (const effect of [...GS.timedFx,...GS.delayed]) {
+      effect.cancelledAt=modelTick; effect.endReason='Term ended; no post-term delivery or reversal';
+    }
     GS.endReason = reason;
     GS.over = true;
     pauseSim();
     MoC.care.sync();
     GS._finalSnapshot=MoC.care.snapshot();
     MoC.runSnapshots[modelTick]=GS._finalSnapshot;
-    settleYearObjective();
     const objEl = document.getElementById('moc-objective'); if (objEl) setTimeout(function(){ objEl.remove(); }, 4000);
     if (reason === 'served') Audio5.jingle(); else Audio5.dirge();
     drawMinister(ministerMood());
@@ -15228,9 +15353,7 @@ async function initLLMSubsystem() {
       const hit = yrs.filter(function(y){ return y.achieved; }).length;
       html += '<h3>\ud83c\udfaf Year objectives \u2014 ' + hit + ' of ' + yrs.length + ' met</h3>';
       html += '<div class="moc-sub" style="line-height:2">';
-      // Year 10 result (settled by endTerm call above) — add it if not already in _yearResults
-      const year10Settled = yrs.find(function(y){ return y.year >= Math.ceil(MoC.TOTAL_QUARTERS / 4); });
-      if (GS.lastYearResult && !year10Settled) yrs.push(GS.lastYearResult);
+      // Rendering never mutates settled objective history, including early endings.
       yrs.forEach(function(y){
         html += (y.achieved ? '\u2705' : '\u274c') + ' <b>Year ' + y.year + ':</b> ' + y.text
           + (y.achieved ? ' <span style="color:#7bc67b">+' + y.bonus + ' pts</span>' : ' <span style="color:#e05858">missed</span>') + '<br>';
@@ -15261,6 +15384,7 @@ async function initLLMSubsystem() {
     const careResult = MoC.care.snapshot();
     html += '<div class="moc-score-row"><span>Admin burden reduced</span><b>' + r.adminGain + ' pts (now ' + Math.round(M.IST.admin * 100) + '%)</b></div>';
     html += '<div class="moc-score-row"><span>Current referral queue / fixed model norm</span><b>' + (careResult.waiting ? careResult.meanWait.toFixed(1)+'w' : 'No one waiting') + ' / 12w</b></div>';
+    html += '<div class="moc-score-row"><span>Access holds / remaining imposed weeks (sum)</span><b>' + careResult.accessHeld + ' / ' + careResult.accessDelayWeeks.toFixed(1) + 'w</b></div>';
     html += '<div class="moc-score-row"><span>Deaths before treatment</span><b>' + careResult.deathsWaiting + '</b></div>';
     html += '<div class="moc-score-row"><span>Final trust / fragility</span><b>' + GS.trust + ' / ' + fragility() + '</b></div>';
     if ((GS.fragmentation || 0) > 2) { // G17: show frag penalty only when it actually costs something
@@ -15270,7 +15394,7 @@ async function initLLMSubsystem() {
     }
     // G19/G20/G21: new score rows
     if (r.adoptionPenalty > 0) html += '<div class="moc-score-row"><span>Low adoption penalty (tools unused by staff)</span><b style="color:#e07050">\u2212' + r.adoptionPenalty + ' pts</b></div>';
-    if (r.biasPenalty > 0) html += '<div class="moc-score-row"><span>Digital exclusion events (' + (GS._biasDeaths||0) + ' unmitigated)</span><b style="color:#e07050">\u2212' + r.biasPenalty + ' pts</b></div>';
+    if (r.biasPenalty > 0) html += '<div class="moc-score-row"><span>Digital exclusion decisions (' + (GS._biasDeaths||0) + ' logged)</span><b style="color:#e07050">\u2212' + r.biasPenalty + ' pts</b></div>';
     if (r.depPenalty > 0) html += '<div class="moc-score-row"><span>High dependence risk (dep ' + (GS.dependence||0) + ' \u2265 7)</span><b style="color:#e07050">\u2212' + r.depPenalty + ' pts</b></div>';
     if (r.depBonus > 0) html += '<div class="moc-score-row"><span>Resilient dependence (dep ' + (GS.dependence||0) + ' \u2264 3)</span><b style="color:#7bc67b">+' + r.depBonus + ' pts</b></div>';
     if (r.platformBonus > 0) html += '<div class="moc-score-row"><span>Platform coherence (platform + AI on shared data)</span><b style="color:#7bc67b">+' + r.platformBonus + ' pts</b></div>';
@@ -15289,7 +15413,8 @@ async function initLLMSubsystem() {
     html += dataRevealHtml();
     html += '<details class="moc-result-details"><summary>Copy result</summary><div class="moc-share" id="moc-sharetext">' + shareText.replace(/</g, '&lt;') + '</div>';
     html += '<div style="text-align:center;line-height:2.4"><button class="moc-buy" id="moc-copy" style="padding:9px 20px;font-size:12.5px">\ud83d\udccb Copy result</button></div></details>';
-    html += '<div style="text-align:center;line-height:2.4"><button class="moc-buy" id="moc-again" style="padding:9px 20px;font-size:12.5px">Try another approach</button><p id="moc-replay-status" role="status"></p></div></div>';
+    html += '<div style="text-align:center;line-height:2.4"><button class="moc-buy" id="moc-again" style="padding:9px 20px;font-size:12.5px">Try another approach</button>'
+      + '<button class="moc-buy" id="moc-export-record">Export complete command record</button><p id="moc-replay-status" role="status"></p></div></div>';
     ov.innerHTML = html;
     document.body.appendChild(ov);
     GS._rebuildShare = buildShareText;
@@ -15326,6 +15451,11 @@ async function initLLMSubsystem() {
       } catch(e) { throw new Error('standings unavailable'); }
     }
     async function publishCompletedRun(force){
+      if (MoC.record?.replaying) {
+        const status=document.getElementById('moc-community-status');
+        if (status) status.textContent='Replay: publication disabled. This is not a new submission.';
+        return;
+      }
       const status=document.getElementById('moc-community-status');
       if(GS._communityPublishStarted)return;
       if(!force&&!MoC.referenceAt(modelTick)){
@@ -15335,7 +15465,7 @@ async function initLLMSubsystem() {
       GS._communityPublishStarted=true;
       status.textContent='Publishing completed run…';
       try {
-        const finalScore=computeScore(MoC.baseline);
+        const finalScore=GS._publishedScore || (GS._publishedScore=computeScore(MoC.baseline));
         const scoreElement=document.getElementById('moc-scoreval');if(scoreElement)scoreElement.textContent=finalScore.score;
         const response=await fetch(communityApi,{method:'POST',headers:{'content-type':'application/json'},
           body:JSON.stringify(leaderboardPayload(publicName,finalScore))});
@@ -15361,12 +15491,16 @@ async function initLLMSubsystem() {
       location.hash='scn='+GS.scenario+'&seed='+MoC.seed+'&v='+MoC.MODEL_VERSION;
       location.reload();
     });
+    document.getElementById('moc-export-record').onclick=function(){MoC.record.download();};
   }
   // Late-arriving baseline updates the open end screen
   function updateEndScreenBaseline(){
     const bv = document.getElementById('moc-baseval');
     if (!MoC.referenceAt(modelTick)) return;
     const r = computeScore(MoC.baseline);
+    // Keep the submitted scalar immutable, but retain the existing protocol's
+    // late same-date comparison/sharing refresh.
+    if (GS._publishedScore) r.score=GS._publishedScore.score;
     const comparison=document.getElementById('moc-care-comparison');
     if(comparison) comparison.innerHTML=careComparisonHtml();
     if (bv) bv.textContent = r.baseSd;
@@ -15374,6 +15508,7 @@ async function initLLMSubsystem() {
     const sv = document.getElementById('moc-scoreval'); if (sv) sv.textContent = r.score;
     const st = document.getElementById('moc-sharetext');
     if (st && GS._rebuildShare) st.textContent = GS._rebuildShare(r);
+    if (MoC.record?.replaying) return;
     const runs=loadJSON('moc_runs_'+MoC.MODEL_VERSION,[]);
     const saved=runs.find(run=>run.seed===MoC.seed && run.scenario===GS.scenario && run.endTick===modelTick);
     if(saved){saved.score=r.score;saved.livesSaved=r.livesSaved;saveJSON('moc_runs_'+MoC.MODEL_VERSION,runs);}
@@ -15608,7 +15743,7 @@ async function initLLMSubsystem() {
     { text:'End the year with Trust <b>\u2265 55</b>', bonus:80, start:function(){}, check:function(){ return GS.trust >= 55; } },
     { text:'Get current referral waits to <b>\u2264 8 weeks</b>', bonus:100, start:function(){}, check:function(){ return MoC.care.snapshot().meanWait <= 8; } },
     { text:'Keep Fragility <b>below 50</b> all year', bonus:80,
-      start:function(){ this._ok = true; }, check:function(){ if (fragility() >= 50) this._ok = false; return this._ok; } },
+      start:function(){ this._ok = fragility()<50; }, check:function(){ return this._ok; } },
     { text:'No more than <b>1</b> preventable death this year', bonus:90,
       start:function(){ this._sd = systemDeaths(); }, check:function(){ return systemDeaths() - this._sd <= 1; } }
   ];
@@ -15618,7 +15753,7 @@ async function initLLMSubsystem() {
     return el;
   }
   function newYearObjective(year){
-    if (MoC.IS_BASELINE) return;
+    if (MoC.IS_BASELINE || GS.over) return;
     const obj = OBJECTIVES[(MoC.seed + year * 3) % OBJECTIVES.length];
     GS.objective = Object.create(obj);
     GS.objective.start();
@@ -15640,10 +15775,11 @@ async function initLLMSubsystem() {
                  : '<span style="color:var(--m-red);font-weight:700">\u2717 FAILING</span>');
   }
   function settleYearObjective(){
-    if (!GS.objective || MoC.IS_BASELINE) return null;
+    if (!GS.objective || MoC.IS_BASELINE || GS.endReason || GS.objective._settled) return null;
     const el = objectiveBar();
     el.style.borderColor = '';
     const obj = GS.objective;
+    obj._settled=true;
     if (obj.check()) {
       GS.liveScore += obj.bonus;
       const hs = document.getElementById('hScore'); if (hs) hs.textContent = GS.liveScore;
@@ -15658,6 +15794,7 @@ async function initLLMSubsystem() {
     // G16: push to _yearResults for legacy screen
     GS._yearResults = GS._yearResults || [];
     GS._yearResults.push(GS.lastYearResult);
+    MoC.record?.note('objective','Year objective settled once',GS.lastYearResult);
     return GS.lastYearResult;
   }
 
@@ -15788,17 +15925,21 @@ async function initLLMSubsystem() {
     Audio5.blip(880);
     const el = document.createElement('div');
     el.className = 'moc-flash';
+    el.dataset.recordContext='request:'+GS.quarter+':'+FLASH_POOL.indexOf(flash)+':'+(face.id || 'none');
     el.innerHTML = '<h4>' + flash.t + '</h4><div class="moc-sub">Time is paused.</div>'
       + '<div class="ft">' + flash.d(face) + '</div>'
       + '<button id="moc-fa"'+optionAttrs(flash.a).html+'>' + flash.a.l + unavailableHtml(flash.a) + '</button>'
       + '<button id="moc-fb"'+optionAttrs(flash.b).html+'>' + flash.b.l + unavailableHtml(flash.b) + '</button>';
     document.body.appendChild(el);
     function cleanup(){ el.remove(); flashActive = false; if (!councilOpen && !GS.over) resumeSim(); }
+    let decided=false;
     function decide(option){
+      if (GS.over || decided) return;
       const before = flashSnapshot(face);
       if (optionAttrs(option).blocked) return;
       if (option.run) option.run(face);
       else if (!applyChoice(option)) return;
+      decided=true;
       refreshMeters(); renderMinistry(); renderTownWatch();
       const changes = flashChanges(before, flashSnapshot(face));
       el.innerHTML = '<h4>' + flash.t + '</h4><div class="moc-sub">Decision applied</div>'
@@ -16346,8 +16487,11 @@ async function initLLMSubsystem() {
         + '<button class="moc-opt" data-vote="defy">Call the vote now<span class="fx">50/50: all trust +15 or term ends</span></button>'
         + '</div></div>';
       document.body.appendChild(ov);
+      let voted=false;
       ov.querySelectorAll('[data-vote]').forEach(function(b){
         b.addEventListener('click', function(){
+          if (GS.over || voted) return;
+          voted=true;
           const v = b.getAttribute('data-vote');
           ov.remove();
           if (v === 'promise') {
@@ -16391,6 +16535,7 @@ async function initLLMSubsystem() {
     ];
     GS.PROMISES = PROMISES; // bridge: openCouncil is in outer IIFE scope and cannot see this closure
     function showManifesto(){
+      if (GS.over) return;
       if (MoC.TOTAL_QUARTERS < 16) { launchSimulation(); return; } // no election in sprints
       if (GS._manifestoShown) return; // guard: never show twice
       GS._manifestoShown = true; // prevents _mfCheck from firing it again
@@ -16410,6 +16555,7 @@ async function initLLMSubsystem() {
       MoC.paused = true;
       ov.querySelectorAll('[data-promise]').forEach(function(b){
         b.addEventListener('click', function(){
+          if (GS.over || !ov.isConnected) return;
           const i = parseInt(b.getAttribute('data-promise'), 10);
           const idx = GS.promises.indexOf(i);
           if (idx >= 0) { GS.promises.splice(idx, 1); b.style.borderColor = ''; b.style.background = ''; }
@@ -16418,6 +16564,7 @@ async function initLLMSubsystem() {
         });
       });
       document.getElementById('moc-manifesto-done').addEventListener('click', function(){
+        if (GS.over || !ov.isConnected) return;
         ov.remove();
         MoC.paused = false;
         say('MINISTRY', 'Manifesto signed: ' + GS.promises.map(function(i){ return PROMISES[i].text; }).join(' + '), 'sys');
@@ -16521,7 +16668,7 @@ async function initLLMSubsystem() {
       GS.electionSnapshot={tick:modelTick,result:ev,promises:GS.promises.map(i=>({id:_promises[i].id,met:_promises[i].check()}))};
       if (!ev.passes) {
         GS._electionResult = 'failed';
-        setTimeout(function(){ endTerm('election'); }, 400);
+        endTerm('election');
         const failReasons = ev.reasons.map(function(r){ return '• ' + r; }).join('<br>');
         return {
           head:'⏳ ELECTION NIGHT: DEFEAT',
@@ -16618,6 +16765,7 @@ async function initLLMSubsystem() {
     }
 
     MoC.onQuarter = function(q){
+      if (GS.over) return;
       const aging = q>1 && (q-1)%4===0 ? 'Age-related care pressure increased. The same change applies to the reference, adjusted for prevention.' : null;
       if (MoC.referencePolicy) {
         // Declared control: no purchases/laws/optional decisions; existing care and shared shocks continue.
@@ -16638,6 +16786,7 @@ async function initLLMSubsystem() {
       // Flu timing and severity are supplied by the shared environment schedule.
       stepCascades(q);
       const el = electionCheck(q); if (el) GS.pendingBanners.push(el);
+      if (GS.over) return;
       // No discretionary intervention is a valid strategy. Deaths come from the clinical lifecycle only.
       // G15: Quarterly deficit pain — can\'t govern when bankrupt
       if (GS.budget < 0 && !GS.over) {
@@ -16735,8 +16884,12 @@ async function initLLMSubsystem() {
     };
     const _coreOnTick = MoC.onTick;
     MoC.onTick = function(c){
+      if (GS.over) return;
+      MoC.logicalEffects.advance();
+      if (GS.objective?._ok !== undefined && fragility()>=50) GS.objective._ok=false;
       watchDeaths();
       _coreOnTick(c);
+      if (GS.over) return;
       if (!MoC.referencePolicy) maybeFlash();
       if (c % 20 === 0) updateLivesHud();
       if (c % 5 === 0) renderMinistry();
@@ -16792,16 +16945,17 @@ async function initLLMSubsystem() {
         newYearObjective(1);
         renderMinistry();
         // Everyone in town has a name — sweep any nameless walkers (visitors, workers)
-        setTimeout(function(){
-          if (typeof agents === 'undefined') return;
+        (function(){
+          if (typeof agents === 'undefined' || GS.over) return;
           agents.forEach(function(a){
             if (a.name || a.state === 'dead') return;
             const pool = (a.gender === 'F') ? FIRST_NAMES_F : FIRST_NAMES_M;
             a.name = pool[Math.floor(Math.random() * pool.length)] + ' ' + SURNAMES[Math.floor(Math.random() * SURNAMES.length)];
           });
-        }, 1500);
+        })();
         // G9c: manifesto after the tour finishes (hook into first sim launch)
         const _mfCheck = setInterval(function(){
+          if (GS.over) { clearInterval(_mfCheck); return; }
           if (GS._manifestoShown) { clearInterval(_mfCheck); return; } // already shown manually
           if (window._mocGameStarted && !GS._manifestoShown) {
             GS._manifestoShown = true;
@@ -16834,6 +16988,280 @@ async function initLLMSubsystem() {
       refreshMeters();
     });
   }
+
+  // F08: a local command record, not a save-state loader or online event store.
+  // Commands replay the same live controls/handlers; effects are observed, never
+  // assigned from recorded snapshots. Rendering and wall-clock pauses are omitted.
+  const RECORD_SCHEMA='minister-command-record-1', EVENT_SCHEMA='minister-domain-event-1',
+    REPLAY_VERSION='minister-command-replay-1';
+  const scriptBytes=new TextEncoder().encode(document.currentScript.textContent);
+  const executableReady=crypto.subtle.digest('SHA-256',scriptBytes).then(bytes=>
+    [...new Uint8Array(bytes)].map(v=>v.toString(16).padStart(2,'0')).join(''));
+  let executableId=null;
+  executableReady.then(id=>{ executableId=id; });
+  const copy=value=>JSON.parse(JSON.stringify(value));
+  const govKeys=['quarter','budget','trust','trustC','trustD','trustP','dependence','specialistCapacity',
+    'adoptionRate','serviceCredit','liveScore','mantelzorg','fragmentation','platformMaturity',
+    'owned','laws','promises','activeStates','cascades','timedFx','delayed','logicalEffects',
+    'techFreezeUntil','pendingBeat','_biasDeaths','_lowTrustCQ','_relocatedHouseholds','_strikeUnresolvedQ',
+    '_digigateRecurs','_digigateLastQ','_bruisedMandate','_lawsThisAct','_lastAct','_voteHeld',
+    '_promiseDebt','_electionHeld','_electionResult','_cabinetResult','electionSnapshot',
+    '_yearResults','flashSeen','dilemmasSeen','eventsFired','lastEventQ','buysThisCouncil',
+    '_sinceQuiet','_dilemmaOrder','_sdLastQ','_sdScoreLast','_cashflowThisQ','_councilDue','endReason','over'];
+  function recordMetrics(){
+    return {parameters:{...M.IST},government:Object.fromEntries(govKeys
+      .filter(k=>GS[k]!==undefined).map(k=>[k,GS[k]])),
+      objective:GS.objective ? {year:GS.objective._year,ok:GS.objective._ok,sd:GS.objective._sd,
+        settled:!!GS.objective._settled} : null,
+      residents:Object.fromEntries(agents.filter(resident).map(a=>[a.id,
+        {hp:a.hp,state:a.state,behavior:a.behaviorState,wait:a.waitWeeks,inside:a.insideBuilding,
+          workload:a.stateTimer,moved:!!a.moved}]))};
+  }
+  function recordSnapshot(){
+    return copy({...recordMetrics(),care:MoC.care.snapshot(),
+      clinical:agents.map(a=>({id:a.id,name:a.name,age:a.age,hp:a.hp,state:a.state,moved:!!a.moved,
+        conditions:a.conditions,behavior:a.behaviorState,wait:a.waitWeeks,inside:a.insideBuilding,
+        x:a.x,y:a.y,path:a.path,pathIdx:a.pathIdx,stateTimer:a.stateTimer,
+        burnout:a.burnoutLevel,absence:a.sickLeaveTimer,chat:a.chatTimer,grief:a.grievingTimer,
+        anxiety:a.systemAnxiety,referred:a.referredToHospital,emergency:a.emergencyAdmission})),
+      queues:Object.fromEntries(Object.entries(QUEUES).map(([id,q])=>[id,q.agents])),
+      episodes:MoC.care.episodes,resources:MoC.care.resourceUses,access:MoC.care.accessEvents,
+      environment:MoC.environment.log});
+  }
+  // State hash is a compact regression checksum, NOT a signature or proof of authenticity.
+  function recordHash(value){ return String(hashCode(JSON.stringify(value))); }
+  const recordSelectors=['#moc-town-council','#moc-council-ready','#moc-wiz-next','#moc-wiz-back',
+    '#moc-shop-more','#moc-opt-a','#moc-opt-b','#moc-opt-c','#moc-defer-decision',
+    '#moc-fa','#moc-fb','#moc-flash-continue','#moc-yearend-btn',
+    '[data-buy]','[data-law]','[data-evtopt]','[data-vote]'];
+  const validSelector=selector=>typeof selector==='string' && (recordSelectors
+    .filter(s=>s.startsWith('#')).includes(selector) ||
+    /^\[data-(buy|law|evtopt|vote)="[a-zA-Z0-9_-]+"\]$/.test(selector));
+  function commandSelector(button){
+    for (const attr of ['data-buy','data-law','data-evtopt','data-vote'])
+      if (button.hasAttribute(attr)) return '['+attr+'="'+button.getAttribute(attr)+'"]';
+    return '#'+button.id;
+  }
+  function commandContext(button){
+    const root=button.closest('#moc-council,.moc-flash,#moc-vote');
+    return root?.dataset.recordContext || (root?.id || 'town')+':'+GS.quarter;
+  }
+  function commandKind(button){
+    return button.hasAttribute('data-buy')?'purchase':button.hasAttribute('data-law')?'law'
+      :button.closest('.moc-flash')?'request':button.hasAttribute('data-vote')?'confidence'
+      :button.matches('[data-evtopt],#moc-opt-a,#moc-opt-b,#moc-opt-c,#moc-defer-decision')?'decision':'navigation';
+  }
+  let commandRecord=null, sequence=0, pendingCommand=null;
+  function recordError(message){
+    MoC.paused=true;
+    if (autoTimer) {clearInterval(autoTimer);autoTimer=null;}
+    MoC.record.lastError='Replay refused: '+message;
+    let el=document.getElementById('moc-record-status');
+    if (!el) {el=document.createElement('p');el.id='moc-record-status';el.setAttribute('role','alert');document.body.appendChild(el);}
+    el.textContent=MoC.record.lastError;
+    throw new Error(MoC.record.lastError);
+  }
+  MoC.record={
+    schema:RECORD_SCHEMA,replayVersion:REPLAY_VERSION,replaying:false,lastError:null,
+    ready:executableReady,
+    snapshot:recordSnapshot,
+    invalidate:function(reason){
+      if (commandRecord) {commandRecord.unsupported=reason;this.note('unsupported',reason);}
+    },
+    begin:function(){
+      if (commandRecord || MoC.IS_BASELINE) return;
+      if (modelTick!==0) return recordError('recording must begin at elapsed tick zero');
+      sequence=0;
+      commandRecord={schema:RECORD_SCHEMA,eventSchema:EVENT_SCHEMA,replayVersion:REPLAY_VERSION,modelVersion:MoC.MODEL_VERSION,
+        executableId,protocol:MoC.REFERENCE_PROTOCOL,
+        inputs:{scenario:GS.scenario,seed:MoC.seed,parameters:{...M.IST},promises:GS.promises || [],
+          promisesDeclared:GS.promises!==undefined,
+          horizon:MoC.TOTAL_QUARTERS*MoC.QUARTER_TICKS,mode,query:location.search},
+        initial:recordSnapshot(),externalSchedule:copy(MoC.environment.schedule),
+        commands:[],events:[]};
+      if (!['cabinetcrisis','campaign'].includes(GS.scenario) || MoC.referencePolicy)
+        this.invalidate('Only the two public Minister player scenarios are supported');
+    },
+    before:function(){ return commandRecord ? copy(recordMetrics()) : null; },
+    note:function(kind,reason,data={}){
+      if (!commandRecord) return;
+      if (kind==='rejected' && pendingCommand) pendingCommand.rejection=reason;
+      commandRecord.events.push({id:'event-'+(++sequence),order:sequence,tick:modelTick,kind,reason,
+        commandId:pendingCommand?.id || null,data:copy(data)});
+    },
+    after:function(kind,reason,before,data={}){
+      if (!before || !commandRecord) return;
+      const after=copy(recordMetrics()),changes={};
+      for (const group of Object.keys(after)) {
+        if (group==='objective') {
+          if (JSON.stringify(before[group])!==JSON.stringify(after[group])) changes[group]={from:before[group],to:after[group]};
+        } else for (const key of new Set([...Object.keys(before[group]),...Object.keys(after[group])]))
+          if (JSON.stringify(before[group][key])!==JSON.stringify(after[group][key]))
+            changes[group+'.'+key]={from:before[group][key] ?? null,to:after[group][key] ?? null};
+      }
+      this.note(kind,reason,{...data,changes,stateHash:recordHash(recordSnapshot())});
+    },
+    export:function(){
+      if (!commandRecord) return null;
+      return copy({...commandRecord,executableId,final:recordSnapshot(),tick:modelTick,
+        ending:GS.endReason || null,complete:!!GS.endReason});
+    },
+    download:async function(){
+      await this.ready;
+      const record=this.export();
+      if (!record) return recordError('start a term before exporting');
+      const blob=new Blob([JSON.stringify(record)],{type:'application/json'});
+      const url=URL.createObjectURL(blob),link=document.createElement('a');
+      link.href=url;link.download='minister-'+GS.scenario+'-'+MoC.seed+'-'+modelTick+'-record.json';
+      link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+    },
+    dispatch:function(selector){
+      // Only a fixed vocabulary of game controls, never arbitrary imported JS/selectors.
+      if (!validSelector(selector))
+        return recordError('unknown command '+selector);
+      const button=document.querySelector(selector);
+      if (!button || button.disabled || !button.isConnected || GS.over)
+        return recordError('command unavailable: '+selector);
+      button.click();
+    },
+    run:async function(input,{renderEvery=0,pauseMs=0}={}){
+      await executableReady;
+      let record;
+      try { record=typeof input==='string'?JSON.parse(input):copy(input); }
+      catch { return recordError('invalid JSON'); }
+      if (!record || record.schema!==RECORD_SCHEMA || record.eventSchema!==EVENT_SCHEMA || record.replayVersion!==REPLAY_VERSION ||
+          record.modelVersion!==MoC.MODEL_VERSION || record.executableId!==executableId ||
+          record.protocol!==MoC.REFERENCE_PROTOCOL)
+        return recordError('incompatible schema, replay, model, protocol or executable');
+      if (record.unsupported) return recordError(record.unsupported);
+      if (modelTick!==0 || commandRecord || GS.over) return recordError('open a fresh matching town at tick zero');
+      if (record.inputs?.scenario!==GS.scenario || record.inputs.seed!==MoC.seed ||
+          record.inputs.horizon!==MoC.TOTAL_QUARTERS*MoC.QUARTER_TICKS ||
+          record.inputs.mode!==mode || record.inputs.query!==location.search ||
+          JSON.stringify(record.inputs.parameters)!==JSON.stringify(M.IST) ||
+          JSON.stringify(record.externalSchedule)!==JSON.stringify(MoC.environment.schedule))
+        return recordError('initial inputs or external schedule differ; open the recorded scenario/seed/URL');
+      if (!Array.isArray(record.commands) || record.commands.length>20000 || !Array.isArray(record.events) ||
+          record.events.length>200000 ||
+          !Number.isInteger(record.tick) || record.tick<10 || record.tick>record.inputs.horizon ||
+          record.complete!==!!record.ending || record.final?.care?.tick!==record.tick ||
+          !Array.isArray(record.inputs.promises) || new Set(record.inputs.promises).size!==record.inputs.promises.length ||
+          record.inputs.promises.some(i=>!Number.isInteger(i)||i<0||i>=GS.PROMISES.length))
+        return recordError('invalid command record');
+      let previousTick=0,previousOrder=0;
+      for (let i=0;i<record.commands.length;i++) {
+        const c=record.commands[i];
+        if (c.id!=='command-'+(i+1) || !Number.isInteger(c.tick) || c.tick<previousTick ||
+            c.tick>record.tick || !Number.isInteger(c.order) || c.order<=previousOrder ||
+            !validSelector(c.selector) || typeof c.context!=='string')
+          return recordError('invalid command ordering');
+        previousTick=c.tick;previousOrder=c.order;
+      }
+      const orders=new Set(record.commands.map(c=>c.order));
+      previousOrder=0;previousTick=0;
+      for (const e of record.events) {
+        if (!Number.isInteger(e.order) || e.order<=previousOrder || orders.has(e.order) ||
+            e.id!=='event-'+e.order || !Number.isInteger(e.tick) || e.tick<previousTick || e.tick>record.tick ||
+            typeof e.kind!=='string' || typeof e.reason!=='string')
+          return recordError('invalid event ordering/schema');
+        orders.add(e.order);previousOrder=e.order;previousTick=e.tick;
+      }
+      this.replaying=true;this.lastError=null;
+      GS.promises=copy(record.inputs.promises);
+      // Absent promises and an empty manifesto have different election semantics.
+      if (!record.inputs.promisesDeclared) delete GS.promises;
+      GS._manifestoShown=true;
+      document.querySelectorAll('#play-overlay,#welcome-card,#moc-manifesto').forEach(el=>el.remove());
+      this.begin();
+      if (JSON.stringify(commandRecord.initial)!==JSON.stringify(record.initial))
+        return recordError('initial state differs (unsupported overrides or unavailable historical executable)');
+      launchSimulation();
+      if (autoTimer) {clearInterval(autoTimer);autoTimer=null;}
+      const advance=async target=>{
+        let budget=record.inputs.horizon+1;
+        while (modelTick<target && budget-->0) {
+          if (GS.over || MoC.isBlocked() || flashActive) return recordError('command missing at tick '+modelTick);
+          MoC.paused=false;
+          const before=modelTick;tick();
+          if (modelTick!==before+1) return recordError('logical clock stalled');
+          if (renderEvery && modelTick%renderEvery===0) render();
+          if (pauseMs && modelTick%52===0) await new Promise(resolve=>setTimeout(resolve,pauseMs));
+        }
+        if (modelTick!==target) return recordError('invalid target tick');
+      };
+      for (const expected of record.commands) {
+        await advance(expected.tick);
+        const button=document.querySelector(expected.selector);
+        if (!button || commandContext(button)!==expected.context ||
+            recordHash(recordSnapshot())!==expected.beforeHash)
+          return recordError('command context/state differs for '+expected.id);
+        this.dispatch(expected.selector);
+        if (autoTimer) {clearInterval(autoTimer);autoTimer=null;}
+        const actual=commandRecord.commands.at(-1);
+        if (JSON.stringify(actual)!==JSON.stringify(expected))
+          return recordError('command outcome differs for '+expected.id);
+      }
+      await advance(record.tick);
+      MoC.paused=true;
+      const actual=this.export();
+      if (actual.ending!==record.ending || JSON.stringify(actual.final)!==JSON.stringify(record.final) ||
+          JSON.stringify(actual.events)!==JSON.stringify(record.events))
+        return recordError('event trace or final snapshot differs');
+      return {tick:modelTick,ending:actual.ending,commands:actual.commands.length,events:actual.events.length,
+        snapshot:actual.final};
+    }
+  };
+  window.addEventListener('click',event=>{
+    if (!commandRecord || GS.over || pendingCommand) return;
+    const button=event.target.closest?.(recordSelectors.join(','));
+    if (!button || button.disabled) return;
+    const command={id:'command-'+(commandRecord.commands.length+1),order:++sequence,tick:modelTick,
+      kind:commandKind(button),selector:commandSelector(button),context:commandContext(button),
+      reason:button.textContent.trim(),beforeHash:recordHash(recordSnapshot())};
+    pendingCommand=command;event._ministerCommand=command;
+    event._ministerBefore=MoC.record.before();
+    commandRecord.commands.push(command);
+    // Independent command RNG: no dependence on elapsed reading/render time.
+    Math.random=MoC.mulberry32((MoC.seed ^ Math.imul(modelTick,0x504f4c) ^ hashCode(command.context+command.selector))>>>0);
+  },true);
+  window.addEventListener('click',event=>{
+    const command=event._ministerCommand;
+    if (!command) return;
+    const afterHash=recordHash(recordSnapshot());
+    command.afterHash=afterHash;
+    command.outcome=command.rejection?'rejected':afterHash===command.beforeHash?'no_effect':'applied';
+    MoC.record.after('command',command.reason,event._ministerBefore,{outcome:command.outcome});
+    pendingCommand=null;
+  });
+  document.addEventListener('input',event=>{
+    if (event.target.matches?.('[data-pg-key]')) MoC.record.invalidate('Mid-term playground slider override');
+  },true);
+  document.addEventListener('DOMContentLoaded',()=>{
+    if (MoC.IS_BASELINE || !MoC.scenario) return;
+    const panel=document.createElement('details');
+    const summary=document.createElement('summary');summary.textContent='Replay a complete command record';
+    const help=document.createElement('p');help.className='moc-sub';
+    help.textContent='Open the recorded scenario and seed at tick zero. Only this exact executable is supported. Replay never publishes a score; Try another approach is a separate comparison.';
+    const input=document.createElement('input');input.type='file';input.accept='.json,application/json';
+    input.setAttribute('aria-label','Import Minister command record');
+    input.onchange=async()=>{
+      const file=input.files[0];if(!file)return;
+      try {
+        if(file.size>32*1024*1024)return recordError('record exceeds 32 MiB');
+        const result=await MoC.record.run(await file.text());
+        help.textContent='Replay verified through tick '+result.tick+'; '+result.commands+' commands. No score submitted.';
+      } catch(error) {
+        // Keep the rejection visible even if onboarding was removed before divergence.
+        let status=document.getElementById('moc-record-status');
+        if(!status){status=document.createElement('p');status.id='moc-record-status';document.body.appendChild(status);}
+        status.setAttribute('role','alert');status.textContent=error.message;
+      }
+    };
+    panel.append(summary,help,input);document.querySelector('#play-overlay .moc-box')?.appendChild(panel);
+    const exportButton=document.createElement('button');exportButton.className='cb';
+    exportButton.textContent='Export record';exportButton.onclick=()=>MoC.record.download();
+    document.getElementById('cbar')?.appendChild(exportButton);
+  });
 })();
 
 </script>
