@@ -1505,6 +1505,7 @@ const MoC = (function(){
     trust: scenario ? scenario.trust : 60,
     dependence: 2,                  // tech dependence points (Cammelot already runs DigiD, Halcyon One, MS365)
     specialistCapacity: 2,          // routine treatment starts/week; explicit gameplay assumption
+    adoptionRate: 0.7,              // named digital-policy effect scaling, fraction
     serviceCredit: 0,
     interventions: [],              // purchased interventions log
     challengeScore: parseInt(hashParams.get('score'), 10) || null,
@@ -4286,16 +4287,57 @@ function transitionDiseaseState(conditionCode, currentState, waitWeeks, treeknor
 
 // HP drain calculation per CLAUDE.md formula:
 // HP_drain = drainRate × (t_wait - T_Treeknorm) × severityMultiplier × (1 + adminBurden)
-const SEVERITY_MULTIPLIER = { healthy:0, mild:0.5, moderate:1.0, severe:2.0, critical:4.0 };
+// Preserve the inherited factor 1 for a condition's deceased state on paths
+// where the existing terminal-condition rule does not finalize the resident.
+const SEVERITY_MULTIPLIER = { healthy:0, mild:0.5, moderate:1.0, severe:2.0, critical:4.0, deceased:1.0 };
+
+// F05 input contract: reject rather than silently substitute/clamp a claim.
+function requireCareNumber(name, value, min, max=Infinity, exclusiveMin=false) {
+  if (!Number.isFinite(value) || value > max || (exclusiveMin ? value <= min : value < min))
+    throw new RangeError('Invalid care input: ' + name);
+  return value;
+}
+function validateCareParameters(p, rate=MoC.S.specialistCapacity, adoption=MoC.S.adoptionRate) {
+  for (const key of ['admin','sick']) requireCareNumber(key,p[key],0,1);
+  for (const key of ['ai','drain']) requireCareNumber(key,p[key],0,Infinity,true);
+  requireCareNumber('tree',p.tree,0);
+  requireCareNumber('capacity',rate,0.25);
+  requireCareNumber('adoption',adoption,0,1);
+  requireCareNumber('routine places',rate * 2.5,0);
+  requireCareNumber('GP nominal work/week',p.ai * MoC.TICKS_PER_WEEK * 2,0);
+  return p;
+}
+function reportCareInputError(error) {
+  MoC.lastInputError = error.message;
+  MoC.careInputErrorCount = (MoC.careInputErrorCount || 0) + 1;
+  if (typeof showToast === 'function') showToast(error.message,4000);
+  return false;
+}
+function gpServiceCapacity(p=M[mode]) {
+  validateCareParameters(p);
+  const gps = agents.filter(a => a.type === 'gp');
+  const present = gps.filter(g => g.sickLeaveTimer <= 0).length;
+  // Named absences count toward the aggregate floor, not on top of it.
+  const available = Math.min(present,gps.length * (1-p.sick));
+  const perPresentTick = present ? (1-p.admin) * p.ai * (available/present) : 0;
+  return {nominalWorkPerWeek:gps.length * MoC.TICKS_PER_WEEK,
+    availableWorkPerWeek:perPresentTick * present * MoC.TICKS_PER_WEEK,
+    perPresentTick, present, providers:gps.length};
+}
 
 function overdueWaitDrainPerTick(waitWeeks, normWeeks, severity, adminBurden) {
+  requireCareNumber('wait weeks',waitWeeks,0);
+  requireCareNumber('norm weeks',normWeeks,0);
   const overdueWeeks = Math.max(0, waitWeeks - normWeeks);
-  const severityMultiplier = SEVERITY_MULTIPLIER[severity] ?? 1.0;
-  return 3 * overdueWeeks * severityMultiplier * (1 + adminBurden) / MoC.TICKS_PER_WEEK;
+  const severityMultiplier = requireCareNumber('severity multiplier ('+severity+')',SEVERITY_MULTIPLIER[severity],0);
+  requireCareNumber('admin',adminBurden,0,1);
+  if (severityMultiplier === 0) return 0;
+  return requireCareNumber('overdue drain',3 * overdueWeeks * severityMultiplier * (1 + adminBurden) / MoC.TICKS_PER_WEEK,0);
 }
 
 function calculateHPDrain(condition, severity, waitWeeks, params, agent) {
   // params = p (the current mode's M.IST or M.SOLL)
+  requireCareNumber('drain',params.drain,0,Infinity,true);
   const db = DISEASE_DB[condition.code];
   if (!db) return 0;
 
@@ -4322,7 +4364,7 @@ function calculateHPDrain(condition, severity, waitWeeks, params, agent) {
     drain *= 0.9; // back-compat for agents without persona
   }
 
-  return drain;
+  return requireCareNumber('HP drain',drain,0);
 }
 
 // Comorbidity multiplier from DISEASE_DB
@@ -4376,9 +4418,11 @@ function buildDrainBreakdown(agent) {
   });
 
   var subtotal = baseDrainTotal + waitPenaltyTotal;
-  var adminExtra = subtotal * p.admin;
+  // Admin is already in overdueWaitDrainPerTick; never add it a second time.
+  var adminExtra = 0;
   var totalBeforeComorb = subtotal + adminExtra;
-  var totalDrain = totalBeforeComorb * comorbMult;
+  var totalDrain = agent.conditions.reduce((sum,cond) =>
+    sum + calculateHPDrain(cond,cond.severity,agent.waitWeeks,p,agent),0) * comorbMult;
 
   // CSS stacked bar segments
   var segTotal = baseDrainTotal + waitPenaltyTotal + adminExtra + (comorbMult > 1 ? totalBeforeComorb * (comorbMult - 1) : 0);
@@ -4390,8 +4434,8 @@ function buildDrainBreakdown(agent) {
 
   var html = '<div class="ac-section"><h4>⚡ HP Drain Analysis</h4>';
   html += rows;
-  html += '<div class="ac-row"><span class="k" style="color:#c62828">Admin burden</span><span class="v" style="color:#c62828">+' +
-    Math.round(p.admin * 100) + '% → +' + adminExtra.toFixed(3) + '/tick</span></div>';
+  html += '<div class="ac-row"><span class="k">Admin burden</span><span class="v">' +
+    Math.round(p.admin * 100) + '% included in overdue wait penalty only</span></div>';
   if (agent.conditions.length >= 2 && comorbMult > 1) {
     html += '<div class="ac-row"><span class="k" style="color:#6a1b9a">Comorbidity</span><span class="v" style="color:#6a1b9a">×' +
       comorbMult.toFixed(1) + ' multiplier</span></div>';
@@ -6852,59 +6896,12 @@ function showTownFeed() {
 
 // ── Sprint S2: C_eff Capacity Bar Chart ──
 function buildCapacityChart() {
-  const pIST = M.IST;
-  const pSOLL = M.SOLL;
-  const cur = M[mode];
-  const sickPct = Math.round(cur.sick * 100);
-  const adminPct = Math.round(cur.admin * 100);
-  const usablePct = Math.max(0, 100 - adminPct - sickPct);
-  const cEff = (MAX_GP_CONSULTS_PER_DAY * (1 - cur.admin - cur.sick) * cur.ai).toFixed(1);
-
-  let chartHTML = `<div class="ac-section"><h4>C<sub>eff</sub> Capacity Breakdown</h4>`;
-
-  if (mode === 'SOLL') {
-    // IST comparison bar
-    const istAdmin = Math.round(pIST.admin * 100);
-    const istSick = Math.round(pIST.sick * 100);
-    const istUsable = Math.max(0, 100 - istAdmin - istSick);
-    const istCEff = (MAX_GP_CONSULTS_PER_DAY * (1 - pIST.admin - pIST.sick) * pIST.ai).toFixed(1);
-    chartHTML += `<div style="margin-bottom:2px;color:rgba(255,255,255,0.5);font-size:9px">IST (current)</div>`;
-    chartHTML += `<div style="display:flex;height:18px;border-radius:4px;overflow:hidden;border:1px solid rgba(255,255,255,0.15);margin-bottom:6px">`;
-    chartHTML += `<div style="width:${istUsable}%;background:#4CAF50;display:flex;align-items:center;justify-content:center;font-size:8px;color:#fff;font-weight:bold">${istUsable}%</div>`;
-    chartHTML += `<div style="width:${istAdmin}%;background:#E53935;display:flex;align-items:center;justify-content:center;font-size:8px;color:#fff;font-weight:bold">${istAdmin}%</div>`;
-    chartHTML += `<div style="width:${istSick}%;background:#FF9800;display:flex;align-items:center;justify-content:center;font-size:8px;color:#fff;font-weight:bold">${istSick}%</div>`;
-    chartHTML += `</div>`;
-    chartHTML += `<div style="font-size:9px;color:rgba(255,255,255,0.4);margin-bottom:8px">C<sub>eff</sub> = ${MAX_GP_CONSULTS_PER_DAY} × (1 - ${istAdmin}% - ${istSick}%) × ${pIST.ai}× = ${istCEff} slots/day</div>`;
-
-    chartHTML += `<div style="margin-bottom:2px;color:rgba(255,255,255,0.5);font-size:9px">SOLL (target)</div>`;
-  }
-
-  // Current mode bar
-  chartHTML += `<div style="display:flex;height:22px;border-radius:4px;overflow:hidden;border:1px solid rgba(255,255,255,0.2);margin-bottom:6px">`;
-  chartHTML += `<div style="width:${usablePct}%;background:#4CAF50;display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;font-weight:bold;transition:width 0.5s">${usablePct}%</div>`;
-  chartHTML += `<div style="width:${adminPct}%;background:#E53935;display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;font-weight:bold;transition:width 0.5s">${adminPct}%</div>`;
-  chartHTML += `<div style="width:${sickPct}%;background:#FF9800;display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;font-weight:bold;transition:width 0.5s">${sickPct}%</div>`;
-  chartHTML += `</div>`;
-
-  // Legend
-  chartHTML += `<div style="display:flex;gap:10px;font-size:9px;margin-bottom:4px">`;
-  chartHTML += `<span><span style="display:inline-block;width:8px;height:8px;background:#4CAF50;border-radius:2px"></span> Usable</span>`;
-  chartHTML += `<span><span style="display:inline-block;width:8px;height:8px;background:#E53935;border-radius:2px"></span> Admin</span>`;
-  chartHTML += `<span><span style="display:inline-block;width:8px;height:8px;background:#FF9800;border-radius:2px"></span> Sick</span>`;
-  chartHTML += `</div>`;
-
-  // Formula
-  chartHTML += `<div style="font-size:10px;color:rgba(255,255,255,0.6);font-family:'JetBrains Mono',monospace">`;
-  chartHTML += `C<sub>eff</sub> = ${MAX_GP_CONSULTS_PER_DAY} × (1 - ${adminPct}% - ${sickPct}%) × ${cur.ai}× = <b style="color:#FFB300">${cEff} slots/day</b>`;
-  chartHTML += `</div>`;
-
-  // AI multiplier badge in SOLL
-  if (mode === 'SOLL') {
-    chartHTML += `<div style="margin-top:4px"><span style="background:rgba(76,175,80,0.25);border:1px solid #4CAF50;border-radius:4px;padding:2px 8px;font-size:10px;color:#4CAF50;font-weight:bold">×${cur.ai} AI</span></div>`;
-  }
-
-  chartHTML += `</div>`;
-  return chartHTML;
+  const c = gpServiceCapacity(), p = M[mode];
+  return `<div class="ac-section"><h4>GP clinical service</h4>
+    <div class="ac-row"><span class="k">Nominal work/week</span><span class="v">${c.nominalWorkPerWeek}</span></div>
+    <div class="ac-row"><span class="k">Available work/week</span><span class="v">${c.availableWorkPerWeek.toFixed(2)}</span></div>
+    <p>${MoC.TICKS_PER_WEEK} × min(${c.present} on duty, ${c.providers} × (1 − ${p.sick})) × (1 − ${p.admin}) × ${p.ai.toFixed(2)}.</p>
+    <p>One consultation per practice, 3–5 clinical work units each. Named absences count toward aggregate absence. No idle work banking; no specialist or disease multiplier.</p></div>`;
 }
 
 // ═══ BUILDING DASHBOARD (Sprint 2) ═══
@@ -6925,7 +6922,7 @@ function selectBuilding(building){
 
     const p=M[mode];
     const adminPct=Math.round(p.admin*100);
-    const effectiveCap=Math.round(MAX_GP_CONSULTS_PER_DAY*(1-p.admin));
+    const effectiveCap=gp.sickLeaveTimer > 0 ? 0 : gpServiceCapacity(p).perPresentTick * MoC.TICKS_PER_WEEK;
     const burnout=calculateBurnout(gp, p);
     const burnLabel=burnout>70?'High 🔴':burnout>40?'Medium ⚠':'Low ✅';
     const burnClass=burnout>70?'bad':burnout>40?'mid':'ok';
@@ -6951,8 +6948,8 @@ function selectBuilding(building){
       <div class="ac-section"><h4>Workload</h4>
         <div class="ac-row"><span class="k">Admin Burden</span><span class="v bad">${adminPct}%</span></div>
         <div class="hp-outer"><div class="hp-inner ${adminPct>20?'r':adminPct>10?'y':'g'}" style="width:${adminPct}%"></div><div class="hp-label">${adminPct}%</div></div>
-        <div class="ac-row"><span class="k">Effective Capacity</span><span class="v">${effectiveCap} / ${MAX_GP_CONSULTS_PER_DAY} daily</span></div>
-        <div class="ac-row"><span class="k">Patients Seen</span><span class="v">${gp.patientsSeenToday||0} today (${gp.totalPatientsSeen||0} total)</span></div>
+        <div class="ac-row"><span class="k">Available clinical work/week</span><span class="v">${effectiveCap.toFixed(2)} work units</span></div>
+        <div class="ac-row"><span class="k">Completed consultations</span><span class="v">${gp.patientsSeenToday||0} this model week (${gp.totalPatientsSeen||0} total)</span></div>
         <div class="ac-row"><span class="k">Referrals Made</span><span class="v">${gp.referralsMade||0}</span></div>
         <div class="ac-row"><span class="k">Queue</span><span class="v ${queueLen>5?'bad':queueLen>2?'mid':'ok'}">${queueLen} waiting</span></div>
         <div class="ac-row"><span class="k">Burnout Risk</span><span class="v ${burnClass}">${burnLabel}</span></div>
@@ -7014,13 +7011,12 @@ function selectBuilding(building){
     specialists.forEach(s=>{
       const spec=s.specialty||s.role;
       const specCap=SPECIALIST_CAPACITY[s.specialty]||{weeklySlots:10,tickSlots:3};
-      const effSlots=Math.round(specCap.weeklySlots*(mode==='SOLL'?p.ai:1));
       const specQueue=waitList.filter(a=>a.conditions.some(c=>{const db=DISEASE_DB[c.code];return db&&db.referralSpecialty===s.specialty;})).length;
       const waitEst=specQueue>0?Math.round(specQueue/specCap.tickSlots*10)/10:0;
       const waitColor=waitEst>=treeWeeks?'bad':waitEst>=treeWeeks/2?'mid':'ok';
       html+=`<div class="ac-row"><span class="k">${s.name}</span><span class="v">${spec}</span></div>
         <div class="ac-row" style="padding-left:12px"><span class="k">Queue / Wait Est</span><span class="v ${waitColor}">${specQueue} / ~${waitEst}w</span></div>
-        <div class="ac-row" style="padding-left:12px"><span class="k">Weekly Slots</span><span class="v">${effSlots}</span></div>`;
+        <div class="ac-row" style="padding-left:12px"><span class="k">Shared routine starts/week</span><span class="v">${MoC.S.specialistCapacity.toFixed(2)} across all specialties; no AI multiplier</span></div>`;
     });
     html+=`</div>`;
 
@@ -7354,6 +7350,8 @@ function finalizeAgentDeath(a){
 
 function tick(){
   if (MoC.paused || MoC.S.over) return;
+  try { validateCareParameters(M[mode]); }
+  catch (error) { reportCareInputError(error); MoC.paused=true; return; }
   cycle++; modelTick++; const p=M[mode];
   MoC.seedTick(modelTick);
   MoC.environment?.advance(modelTick);
@@ -7812,7 +7810,7 @@ function tick(){
         // place remains reserved until completion, transfer or death.
         const providerId = a.insideBuilding === 'gp2_bldg' ? 'gp2' : 'gp1';
         if (agents.find(g => g.id === providerId)?.sickLeaveTimer > 0) break;
-        a.stateTimer--;
+        a.stateTimer -= gpServiceCapacity(p).perPresentTick;
         if(a.stateTimer<=0){
           MoC.care.release(a, 'completed');
           // Find the GP agent for tracking
@@ -8095,8 +8093,9 @@ function tick(){
     const gpSickMap = {'gp1_bldg':'gp1','gp2_bldg':'gp2'};
     const gpForQueue = agents.find(a => a.id === gpSickMap[bldgId]);
     if (!gpForQueue || gpForQueue.sickLeaveTimer > 0 || MoC.care.occupied(bldgId) >= 1) return;
-    // Check admin blocking (random chance based on admin burden)
-    if (Math.random() < p.admin * 0.3) return; // admin delay
+    // Admission needs available clinical work; fractional work advances the
+    // existing 3–5 work-unit consultation, with no banked idle time.
+    if (gpServiceCapacity(p).perPresentTick <= 0) return;
     // Serve front of queue
     const frontId = q.agents.shift();
     const frontAgent = agents.find(a => a.id === frontId);
@@ -8576,11 +8575,8 @@ function setMode(m){
   document.getElementById('bi').className=m==='IST'?'a-ist':'';
   document.getElementById('bs').className=m==='SOLL'?'a-soll':'';
   document.body.classList.toggle('soll',m==='SOLL');
-  // C_eff percentage = (1 - admin - sick) as percentage of total capacity (before AI multiplier)
-  // IST: (1 - 0.30 - 0.08) = 0.62 = 62%
-  // SOLL: (1 - 0.05 - 0.05) = 0.90 → with AI: effective throughput = 0.90 × 1.34 = 1.21 (capped display at 90%)
-  say('SYSTEM',m==='IST'?'IST mode — Current crisis. 62% effective GP capacity (30% lost to admin, 8% sick leave).':'SOLL mode — AI-native future. 90% base capacity × 1.34 AI multiplier.','sys');
-  document.getElementById('hE').textContent=m==='IST'?'⚕ 62%':'⚕ 83%';
+  say('SYSTEM',m+' parameters: '+gpServiceCapacity().availableWorkPerWeek.toFixed(2)+' GP clinical work units/week; realized visits depend on demand and consultation duration.','sys');
+  document.getElementById('hE').textContent='⚕ '+gpServiceCapacity().availableWorkPerWeek.toFixed(2)+'/wk';
   document.getElementById('hE').className='n '+(m==='IST'?'r':'g');
   document.getElementById('oA').textContent=Math.round(M[m].admin*100)+'%';
   document.getElementById('oS').textContent=Math.round(M[m].sick*100)+'%';
@@ -8647,6 +8643,8 @@ function activateCustomMode(){
 }
 
 function applyPlaygroundPreset(preset){
+  try { validateCareParameters(preset); }
+  catch (error) { return reportCareInputError(error); }
   M[mode].admin=preset.admin;
   M[mode].sick=preset.sick;
   M[mode].tree=preset.tree;
@@ -8714,12 +8712,14 @@ function applyURLParams(){
     if(embedMode==='soll'||embedMode==='SOLL'){mode='SOLL';}
     else if(embedMode==='ist'||embedMode==='IST'){mode='IST';}
   }
-  if(params.has('admin')){
-    M[mode].admin=parseFloat(params.get('admin'))||M[mode].admin;
-    M[mode].sick=parseFloat(params.get('sick'))||M[mode].sick;
-    M[mode].tree=parseInt(params.get('tree'),10)||M[mode].tree;
-    M[mode].ai=parseFloat(params.get('ai'))||M[mode].ai;
-    M[mode].drain=parseFloat(params.get('drain'))||M[mode].drain;
+  if(['admin','sick','tree','ai','drain'].some(key => params.has(key))){
+    const next = {...M[mode]};
+    for (const key of ['admin','sick','tree','ai','drain']) {
+      if (params.has(key)) next[key] = params.get(key).trim() === '' ? NaN : Number(params.get(key));
+    }
+    try { validateCareParameters(next); }
+    catch (error) { return reportCareInputError(error); }
+    Object.assign(M[mode],next);
     playgroundActive=true;
     document.getElementById('bi').className='';
     document.getElementById('bs').className='';
@@ -8771,6 +8771,8 @@ function showPlayground(){
       var val=parseFloat(e.target.value);
       if(!key)return;
       if(key==='tree')val=parseInt(e.target.value,10);
+      try { validateCareParameters({...M[mode],[key]:val}); }
+      catch (error) { reportCareInputError(error); updatePlaygroundSliders(); return; }
       M[mode][key]=val;
       // Update badge
       var def=PG_SLIDER_DEFS.find(function(d){return d.key===key;});
@@ -9861,7 +9863,7 @@ function buildComparisonHTML() {
         '<tr><td>Treeknorm (weeks)</td><td class="sr">' + ist.tree + 'w</td><td class="sg">' + soll.tree + 'w</td><td class="sg">-' + (ist.tree-soll.tree) + 'w</td></tr>' +
         '<tr><td>AI Multiplier</td><td>' + ist.ai + '×</td><td class="sg">' + soll.ai + '×</td><td class="sg">+' + ((soll.ai-ist.ai)*100).toFixed(0) + '%</td></tr>' +
         '<tr><td>HP Drain Rate</td><td class="sr">' + ist.drain + '×</td><td class="sg">' + soll.drain + '×</td><td class="sg">-' + ((ist.drain-soll.drain)*100).toFixed(0) + '%</td></tr>' +
-        '<tr><td>Effective Capacity</td><td class="sr">62%</td><td class="sg">83%</td><td class="sg">+21%</td></tr>' +
+        '<tr><td>GP work units/week</td><td>' + gpServiceCapacity(ist).availableWorkPerWeek.toFixed(2) + '</td><td>' + gpServiceCapacity(soll).availableWorkPerWeek.toFixed(2) + '</td><td>Parameter comparison, not realized visits</td></tr>' +
       '</table>' +
     '</div>';
 }
@@ -10020,7 +10022,7 @@ function showMethodology(){
 
     '<details><summary style="font-weight:700;font-size:12px;cursor:pointer;margin-bottom:4px">🔬 Simulation Formulas</summary>' +
     '<div style="font-family:monospace;font-size:10px;background:rgba(0,0,0,.06);padding:6px;border-radius:4px;margin:4px 0">' +
-    'C_eff = C_total × (1 - L_admin - V_sick) × E_ai<br><br>' +
+    'GP work/week = 4 × min(on-duty GPs, total GPs × (1 - absence)) × (1 - admin) × GP productivity<br>Each consultation needs 3–5 work units. No stored idle work or specialist multiplier.<br><br>' +
     'HP_drain = drainRate × (waitWeeks - tree) × severityMult × (1 + adminBurden)<br><br>' +
     'Gini = standard formula on wait time distribution</div></details>' +
 
@@ -10055,7 +10057,7 @@ function buildStatsHTML(){
 
   // GP utilization
   const gps=agents.filter(a=>a.type==='gp');
-  const effectiveCap=Math.round(MAX_GP_CONSULTS_PER_DAY*(1-p.admin));
+  const effectiveCap=gpServiceCapacity(p).availableWorkPerWeek;
 
   // Hospital
   const bedsOcc=atHosp.length;
@@ -10106,8 +10108,7 @@ function buildStatsHTML(){
       <hr class="stats-divider">
       <div class="stats-group"><h4>GP Utilization</h4>
         ${gps.map(g=>{
-          const pct=effectiveCap>0?Math.round((g.patientsSeenToday||0)/effectiveCap*100):0;
-          return `<div class="stats-row"><span class="sk">${g.name}</span><span class="sv">${pct}% (${g.patientsSeenToday||0}/${effectiveCap} slots)</span></div>`;
+          return `<div class="stats-row"><span class="sk">${g.name}</span><span class="sv">${g.totalPatientsSeen||0} completed consultations</span></div>`;
         }).join('')}
       </div>
 
@@ -10129,7 +10130,7 @@ function buildStatsHTML(){
         <div class="stats-row"><span class="sk">Total System Cost</span><span class="sv sr" style="font-size:13px">€${totalCost.toLocaleString()}</span></div>
       </div>
 
-      <div style="text-align:center;padding:8px 0 4px;font-size:9px;color:var(--ink2)">Mode: ${mode} · C_eff: ${mode==='IST'?'62':'83'}% · Admin: ${Math.round(p.admin*100)}%</div>
+      <div style="text-align:center;padding:8px 0 4px;font-size:9px;color:var(--ink2)">Mode: ${mode} · Available GP work/week: ${effectiveCap.toFixed(2)} · Admin: ${Math.round(p.admin*100)}%</div>
 
       ${buildROIHTML()}
       ${buildERPressureHTML()}
@@ -10160,9 +10161,7 @@ function updateUI(){
   var inHosp=agents.filter(function(a){return a.insideBuilding==='hospital';}).length;
   var waiting=agents.filter(function(a){return a.waitWeeks>0&&a.hp>0;});
   var avgWait=waiting.length>0?(waiting.reduce(function(s,a){return s+a.waitWeeks;},0)/waiting.length).toFixed(1):'0';
-  var eff=mode==='IST'?'62':'83';
-  var effBase = Math.round((1 - M[mode].admin - M[mode].sick) * 100);
-  var effDisplay = mode === 'IST' ? effBase + '%' : effBase + '% ×' + M[mode].ai.toFixed(1);
+  var effDisplay = gpServiceCapacity().availableWorkPerWeek.toFixed(2) + ' work/wk';
 
   // Population
   var hpEl=document.getElementById('hP');
@@ -10191,7 +10190,7 @@ function updateUI(){
 
   // Efficiency
   document.getElementById('hE').textContent='⚕ '+effDisplay;
-  document.getElementById('hE').className='n '+(parseInt(eff)>75?'g':parseInt(eff)>50?'y':'r');
+  document.getElementById('hE').className='n';
 
   document.getElementById('oF').textContent=FHIR_STORE.length;
   document.getElementById('oW').textContent='€'+Math.round(S.waste).toLocaleString();
@@ -10568,7 +10567,7 @@ const METRIC_TOOLTIPS = {
   'hP': '👥 Living Citizens: Currently alive out of the starting population. Number in parentheses shows citizens in hospital.',
   'hG': '💀 Deaths: Citizens lost. Includes both natural deaths and system failures (preventable deaths from waiting too long).',
   'hW': '⏳ Average Wait Time: How long citizens wait for specialist care. The legal maximum (Treeknorm) is 4 weeks.',
-  'hE': '⚙ Effective Capacity: How much of GP time actually goes to patients. The rest is admin work, sick leave, etc.',
+  'hE': 'GP clinical work units/week after administration, absence and productivity. Not realized visits or specialist starts.',
   'oA': 'Admin Burden — Dutch GPs spend this much time on administrative tasks instead of treating patients.',
   'oS': 'Sick Leave — Percentage of healthcare capacity lost to staff illness (ziekteverzuim).',
   'oT': 'Treeknorm — The legal maximum waiting time for specialist care in the Netherlands.',
@@ -10585,8 +10584,8 @@ const LABEL_TOOLTIPS = {
   'Ghosts': '💀 Deaths: Citizens who have died. Hover the Stats panel to see system vs natural breakdown.',
   'Avg Wait': '⏳ Average Wait Time: How long citizens wait for specialist care. The legal maximum (Treeknorm) is 4 weeks.',
   'Wait': '⏳ Average Wait Time: How long citizens wait for specialist care. The Treeknorm says under 4 weeks.',
-  'Capacity': '⚙ Effective Capacity: How much of GP time actually goes to patients. The rest is admin work, sick leave, etc.',
-  'C_eff': '⚙ Effective Capacity: Effective capacity = Total × (1 - Admin - Sick) × AI factor.'
+  'Capacity': 'GP service work is separate from routine starts/week and finite treatment places.',
+  'C_eff': 'GP work/week = 4 × min(on-duty GPs, total GPs × (1 - absence)) × (1 - admin) × GP productivity.'
 };
 
 let tooltipEl = null;
@@ -11827,8 +11826,8 @@ const TOURS = {
     desc: "Compare current reality with an AI-native healthcare future.",
     steps: [
       { text: "You\u2019re watching IST mode \u2014 the current Dutch healthcare system. GPs are stretched thin between patients and paperwork.", highlight: '#bi' },
-      { text: "In IST mode, GPs lose roughly 30% of their time to administration. That means effective capacity is only about 62%.", highlight: '#hE' },
-      { text: "Click SOLL to see what AI-native healthcare could look like. Admin drops to 5%, and effective capacity jumps to 83%.", highlight: '#bs' },
+      { text: "Administration and absence reduce GP clinical work. The counter reports available work units per model week, not completed visits.", highlight: '#hE' },
+      { text: "The SOLL preset changes model parameters, including GP productivity. It is an assumption comparison, not evidence of better outcomes.", highlight: '#bs' },
       { text: "Watch the wait times fall. AI triage helps ensure patients are seen within the Treeknorm \u2014 the 4-week legal maximum.", highlight: '#hW' },
       { text: "Same population, same diseases \u2014 but better outcomes. More treatments completed, fewer citizens falling through the cracks.", highlight: '#cv' },
       { text: "Toggle between IST and SOLL anytime using these buttons. The difference in outcomes makes the case for healthcare AI.", highlight: '.mode-tog' }
@@ -12620,7 +12619,7 @@ async function initLLMSubsystem() {
 (function(){
   const GS = MoC.S;
   // Finite resources/queued emergencies change outcomes; earlier versions are incompatible.
-  MoC.MODEL_VERSION = 'minister-care-8-finite-resources';
+  MoC.MODEL_VERSION = 'minister-care-9-workforce-productivity';
   MoC.REFERENCE_PROTOCOL = 'no-discretionary-action-v1';
   MoC.referencePolicy = MoC.IS_BASELINE;
   MoC.comparisonValidated = true;
@@ -12647,6 +12646,10 @@ async function initLLMSubsystem() {
     resourceUses,
     slots:function(resource){
       // Named treatment places, NOT empirical beds or staff headcounts.
+      if (resource === 'routine') {
+        requireCareNumber('capacity',GS.specialistCapacity,0.25);
+        requireCareNumber('routine places',GS.specialistCapacity*2.5,0);
+      }
       return resource === 'routine' ? Math.max(1, Math.ceil(GS.specialistCapacity * 2.5)) : 1;
     },
     occupied:function(resource){
@@ -12744,6 +12747,7 @@ async function initLLMSubsystem() {
     elapsed:function(a){ const episode = activeReferrals.get(a.id); return episode ? Math.max(0, (modelTick-episode.startTick)/MoC.TICKS_PER_WEEK) : Math.max(0,a.waitWeeks||0); },
     availableStarts:function(waiting){
       const rate = GS.specialistCapacity;
+      validateCareParameters(M[mode]);
       // Accrue once per elapsed tick. Idle/full credit is capped; debit only on
       // a successful routine acquisition, never for stale queue entries.
       if (creditTick !== modelTick) {
@@ -12784,6 +12788,7 @@ async function initLLMSubsystem() {
         otherExits:referralEpisodes.filter(e => e.status === 'other_exit').length,
         referrals:referralEpisodes.length, systemDeaths:systemDeaths(), totalDeaths:GRAVE_MARKERS.length,
         capacity:GS.specialistCapacity, admin:M.IST.admin, budget:GS.budget,
+        gpService:gpServiceCapacity(),
         resources:this.resources(), resourceInterval:{fromTick:0,toTick:modelTick},
         emergencyOverflow:agents.filter(a => resident(a) && isLivingResident(a) && !a.moved && a.behaviorState === 'emergency_overflow').length,
         emergencyOverflowBound:agents.filter(resident).length,
@@ -12811,6 +12816,10 @@ async function initLLMSubsystem() {
     return '<div class="moc-resource-report">'
       + '<p class="moc-sub">Named treatment places (not beds or staff). Throughput: elapsed ticks 0–'+s.tick+'.</p>'
       + line('GP consultations occupied',r.gp1_bldg.occupancy+'/1 + '+r.gp2_bldg.occupancy+'/1')
+      + line('Nominal GP work units/week',s.gpService.nominalWorkPerWeek.toFixed(2))
+      + line('Available GP clinical work/week',s.gpService.availableWorkPerWeek.toFixed(2))
+      + line('GP starts / completions',(r.gp1_bldg.starts+r.gp2_bldg.starts)+' / '+(r.gp1_bldg.completions+r.gp2_bldg.completions))
+      + '<p class="moc-sub">Each GP consultation needs 3–5 work units in one place. Admin, absence and GP productivity change available work, not specialist starts. Idle work is not stored; at most one completion per practice per tick.</p>'
       + line('Routine places occupied',r.routine.occupancy+'/'+r.routine.slots
         +(r.routine.retiringSlots ? ' · '+r.routine.retiringSlots+' retiring' : ''))
       + line('Nominal routine starts/week',s.capacity.toFixed(2))
@@ -12856,16 +12865,20 @@ async function initLLMSubsystem() {
       if (tick % MoC.TICKS_PER_YEAR === 0 && tick < MoC.TICKS_PER_YEAR * Math.ceil(MoC.TOTAL_QUARTERS / 4)) {
         const year=Math.floor(tick/MoC.TICKS_PER_YEAR)+1;
         const increase=0.04*(year<=2?0.5:1)*(GS.owned?.prevention?0.5:1);
-        M.IST.drain=Math.round(M.IST.drain*(1+increase)*100)/100;
-        M.IST.sick=Math.round((M.IST.sick+0.003*(year<=2?0.5:1)) * 1000)/1000;
+        try {
+          const next=projectedCareEffect({drainMult:1+increase,sick:0.003*(year<=2?0.5:1)});
+          Object.assign(M.IST,next.p);
+        } catch (error) { reportCareInputError(error); }
       }
       for (let i=activeExternal.length-1;i>=0;i--) {
         const active=activeExternal[i];
         if (tick>=active.endTick) {
-          M.IST.drain /= active.drainFactor;
-          M.IST.sick = Math.max(0.02,M.IST.sick-active.sickDelta);
-          GS.specialistCapacity = Math.max(0.25,GS.specialistCapacity-active.capacityDelta);
-          activeExternal.splice(i,1);
+          try {
+            const next=projectedCareEffect({drainMult:1/active.drainFactor,sick:-active.sickDelta,capacity:-active.capacityDelta},undefined,
+              careSchedule(GS.timedFx,GS.delayed,activeExternal.filter(e=>e!==active)));
+            Object.assign(M.IST,next.p); GS.specialistCapacity=next.capacity;
+            activeExternal.splice(i,1);
+          } catch (error) { reportCareInputError(error); }
         }
       }
       externalSchedule.filter(e=>e.tick===tick).forEach(event=>{
@@ -12875,8 +12888,15 @@ async function initLLMSubsystem() {
         const sickDelta=event.kind==='flu' ? 0.04*s*protection : 0;
         const loss=event.kind==='grid' ? 0.5*s*(1+GS.dependence/10)*protection : event.kind==='shortage' ? 0.5*s : 0;
         const previous=GS.specialistCapacity;
-        GS.specialistCapacity=Math.max(0.25,previous-loss);
-        M.IST.drain*=drainFactor; M.IST.sick+=sickDelta;
+        try {
+          const next=projectedCareEffect({capacity:-loss,drainMult:drainFactor,sick:sickDelta},undefined,
+            careSchedule(GS.timedFx,GS.delayed,[...activeExternal,{...event,drainFactor,sickDelta,capacityDelta:-loss}]));
+          Object.assign(M.IST,next.p); GS.specialistCapacity=next.capacity;
+        } catch (error) {
+          reportCareInputError(error);
+          externalLog.push({...event,unavailable:error.message});
+          return;
+        }
         const impact={...event,drainFactor,sickDelta,capacityDelta:GS.specialistCapacity-previous};
         activeExternal.push(impact); externalLog.push(impact);
         const name={flu:'Flu wave',grid:'Regional power disruption',shortage:'Regional staffing shortage'}[event.kind];
@@ -13035,7 +13055,119 @@ async function initLLMSubsystem() {
 
   // ── Effect applicator ──
   // fx: {budget, trust, trustC, trustD, trustP, dep, admin, sick, tree, ai, drainMult}
-  function applyFx(fx, label){
+  const CONDITIONAL_CARE = {
+    docWTR:{fx:{sick:0.02},inverse:{sick:-0.02}},
+    citAvoid:{fx:{drainMult:1.12},inverse:{drainMult:1/1.12}}
+  };
+  function careConditions(){ return Object.keys(CONDITIONAL_CARE).filter(key=>GS.activeStates?.[key]); }
+  function careSchedule(timed=GS.timedFx, delayed=GS.delayed, external=activeExternal){
+    const terminal=MoC.TOTAL_QUARTERS*MoC.QUARTER_TICKS;
+    return [
+      ...external.map(e=>({tick:e.endTick,order:0,fx:{drainMult:1/e.drainFactor,sick:-e.sickDelta,capacity:-e.capacityDelta},label:e.id})),
+      ...(timed || []).map(e=>({tick:(e.untilQ-1)*MoC.QUARTER_TICKS,order:1,fx:e.inverse,label:e.label})),
+      ...(delayed || []).map(e=>({tick:(e.atQ-1)*MoC.QUARTER_TICKS,order:2,fx:e.fx,label:e.label}))
+    // Environment runs before onTick/onTermEnd; the terminal quarter callback
+    // is preempted by onTermEnd. Keep records, but reserve only executable work.
+    ].filter(e=>e.order===0 ? e.tick<=terminal : e.tick<terminal)
+      .sort((a,b)=>a.tick-b.tick || a.order-b.order);
+  }
+  function validateCareSchedule(state, scheduled, funded=false, conditions=careConditions()){
+    const timeline=[...scheduled];
+    if (conditions.length) {
+      for (let q=Math.max(2,GS.quarter+1);q<=MoC.TOTAL_QUARTERS;q++)
+        timeline.push({tick:(q-1)*MoC.QUARTER_TICKS,order:0.5,recovery:true});
+    }
+    timeline.sort((a,b)=>a.tick-b.tick || a.order-b.order);
+    // At most four views: each of the two active morale effects may still be
+    // active or have recovered. Their additive/multiplicative inverses commute
+    // with dated care effects; check every prefix, not merely the final balance.
+    const states=new Map([[0,state]]);
+    for (const effect of timeline) {
+      if (effect.recovery) {
+        conditions.forEach((key,i)=>{
+          for (const [mask,current] of [...states]) {
+            if (mask & (1<<i)) continue;
+            const recovered=projectedCareEffect(CONDITIONAL_CARE[key].inverse,current,false);
+            if (!states.has(mask | (1<<i))) states.set(mask | (1<<i),recovered);
+          }
+        });
+      } else {
+        for (const [mask,current] of states) {
+          try {
+            const next=projectedCareEffect(effect.fx,current,false);
+            if (funded) requireCareNumber('scheduled budget',next.budget,Math.min(0,GS.budget));
+            states.set(mask,next);
+          } catch (error) {
+            throw new RangeError(error.message+' (scheduled: '+effect.label+')');
+          }
+        }
+      }
+    }
+  }
+  function careSum(value, delta, min, max=Infinity){
+    const sum=value+delta;
+    // Only arithmetic crossing a closed bound by <=4 machine epsilons.
+    // Raw inputs, zero-to-negative effects and meaningful overshoots still fail.
+    if (delta && Number.isFinite(sum) && value>=min && value<=max) {
+      for (const bound of [min,max]) {
+        if (Number.isFinite(bound) && value!==bound &&
+            (bound===min ? sum<bound : sum>bound) &&
+            Math.abs(sum-bound)<=4*Number.EPSILON*Math.max(1,Math.abs(bound))) return bound;
+      }
+    }
+    return sum;
+  }
+  function projectedCareEffect(fx, state={p:M.IST,capacity:GS.specialistCapacity,budget:GS.budget}, future=true){
+    validateCareParameters(state.p,state.capacity);
+    const p = {...state.p};
+    let capacity = state.capacity;
+    for (const key of ['admin','sick','ai','capacity','drainMult']) {
+      if (!Object.prototype.hasOwnProperty.call(fx,key)) continue;
+      requireCareNumber(key+' effect',fx[key],-Infinity);
+      if (key === 'capacity') capacity = careSum(capacity,fx[key],0.25);
+      else if (key === 'drainMult') {
+        requireCareNumber(key,fx[key],0,Infinity,true);
+        p.drain *= fx[key];
+      } else p[key] = key==='admin' || key==='sick' ? careSum(p[key],fx[key],0,1) : p[key]+fx[key];
+    }
+    validateCareParameters(p,capacity);
+    const budget=state.budget+(fx.budget ?? 0);
+    requireCareNumber('budget',budget,-Infinity);
+    const next={p,capacity,budget};
+    if (future) validateCareSchedule(next,Array.isArray(future)?future:careSchedule());
+    return next;
+  }
+  // Plans are data, never speculative execution of callbacks. Project every
+  // immediate step plus the dated reversals/deliveries before the first write.
+  function projectCarePlan(plan, funded=false, scheduled=careSchedule(), conditions=careConditions()){
+    const cost=requireCareNumber('cost',plan.cost ?? 0,0);
+    let state={p:M.IST,capacity:GS.specialistCapacity,budget:GS.budget-cost};
+    if (funded) requireCareNumber('budget',state.budget,Math.min(0,GS.budget));
+    const steps=[],timed=[...(plan.timed || [])],delayed=[];
+    for (const step of plan.steps) {
+      if (step.delay !== undefined) {
+        requireCareNumber('effect delay',step.delay,0);
+        delayed.push({atQ:GS.quarter+step.delay,fx:step.fx,label:step.label});
+        continue;
+      }
+      const previous=state;
+      state=projectedCareEffect(step.fx,state,false);
+      if (funded) requireCareNumber('budget',state.budget,Math.min(0,GS.budget));
+      steps.push({...step,next:state});
+      if (step.quarters !== undefined) {
+        requireCareNumber('effect duration',step.quarters,0,Infinity,true);
+        const inverse={};
+        for (const key of ['admin','sick','ai']) if (step.fx[key]) inverse[key]=-step.fx[key];
+        if (step.fx.capacity) inverse.capacity=previous.capacity-state.capacity;
+        if (step.fx.drainMult) inverse.drainMult=1/step.fx.drainMult;
+        timed.push({inverse,untilQ:GS.quarter+step.quarters,label:step.label,...(step.source?{source:step.source}:{})});
+      }
+    }
+    const future=[...scheduled,...careSchedule(timed,delayed,[])].sort((a,b)=>a.tick-b.tick || a.order-b.order);
+    validateCareSchedule(state,future,funded,conditions);
+    return {cost,steps,timed,delayed};
+  }
+  function commitFx(fx, next){
     if (fx.budget) {
       GS.budget = GS.budget + fx.budget;
       GS._cashflowThisQ = (GS._cashflowThisQ || 0) + fx.budget; // G15: cashflow tracking
@@ -13043,16 +13175,52 @@ async function initLLMSubsystem() {
     if (fx.trust) MoC.adjustTrust(fx.trust);
     if (fx.trustC || fx.trustD || fx.trustP) adjustStakeholders(fx.trustC, fx.trustD, fx.trustP);
     if (fx.dep) GS.dependence = Math.max(0, GS.dependence + fx.dep);
-    if (fx.admin) M.IST.admin = Math.max(0.03, Math.round((M.IST.admin + fx.admin) * 100) / 100);
-    if (fx.sick) M.IST.sick = Math.max(0.02, Math.round((M.IST.sick + fx.sick) * 100) / 100);
-    if (fx.capacity) GS.specialistCapacity = Math.max(0.25, GS.specialistCapacity + fx.capacity);
-    if (fx.ai) M.IST.ai = Math.round((M.IST.ai + fx.ai) * 100) / 100;
-    if (fx.drainMult) M.IST.drain = Math.round(M.IST.drain * fx.drainMult * 100) / 100;
+    Object.assign(M.IST,next.p);
+    GS.specialistCapacity = next.capacity;
     if (fx.mantelzorg) GS.mantelzorg = Math.max(0, Math.min(100, (GS.mantelzorg || 30) + fx.mantelzorg)); // G15
     if (fx.frag) GS.fragmentation = Math.max(0, (GS.fragmentation || 0) + fx.frag); // G17
     if (fx.platform) GS.platformMaturity = Math.min(2, (GS.platformMaturity || 0) + fx.platform); // G17
-    if (label && typeof say === 'function') say('MINISTRY', label, 'sys');
+  }
+  function commitCarePlan(plan){
+    GS.budget-=plan.cost;
+    for (const step of plan.steps) commitFx(step.fx,step.next);
+    GS.timedFx.push(...plan.timed); GS.delayed.push(...plan.delayed);
+    for (const step of plan.steps) if (step.label) say('MINISTRY',step.label,'sys');
     refreshMeters();
+  }
+  function applyCarePlan(plan, funded=false){
+    let projected;
+    try { projected=projectCarePlan(plan,funded); }
+    catch (error) { return reportCareInputError(error); }
+    commitCarePlan(projected);
+    return true;
+  }
+  function applyFx(fx, label){ return applyCarePlan({steps:[{fx,label}]}); }
+  function applyConditionalCare(key, active, label){
+    const conditions=careConditions().filter(k=>k!==key);
+    if (active) conditions.push(key);
+    let plan;
+    try {
+      plan=projectCarePlan({steps:[{fx:CONDITIONAL_CARE[key][active?'fx':'inverse'],label}]},
+        false,careSchedule(),conditions);
+    } catch (error) { return reportCareInputError(error); }
+    commitCarePlan(plan);
+    GS.activeStates[key]=active;
+    return true;
+  }
+  function choicePlan(option){
+    return option.plan ? option.plan() : {cost:option.cost,steps:[{fx:option.fxChoices ? option.fxChoices[Math.random()<option.chance?0:1] : option.fxFn ? option.fxFn() : option.fx || {},label:option.label}]};
+  }
+  function choicePlans(option){
+    return option.fxChoices ? option.fxChoices.map(fx=>({steps:[{fx}]})) : [choicePlan(option)];
+  }
+  function applyChoice(option){
+    try { for (const plan of choicePlans(option)) projectCarePlan(plan,true); }
+    catch (error) { return reportCareInputError(error); }
+    const plan=choicePlan(option);
+    if (!applyCarePlan(plan,true)) return false;
+    if (option.after) option.after();
+    return plan;
   }
 
   // ── Interventions catalogue (GAME_DESIGN.md 4.8) ──
@@ -13065,7 +13233,7 @@ async function initLLMSubsystem() {
       desc:'Extend documentation support. Adoption limits the immediate benefit; adds dependence.' },
     { id:'hire', name:'\ud83e\ude7a Recruit specialists', cost:80000, costStep:20000,
       fx:{capacity:1, trustD:3}, max:3,
-      desc:'One additional routine treatment start per week. Active next tick; limited by staffed treatment slots. Later hires cost more.' },
+      desc:'Adds 1 nominal routine start/week and corresponding routine treatment places. Active next tick; actual starts need demand and credit. No GP productivity change. Later hires cost more.' },
     { id:'a2a', name:'\ud83d\udd17 Referral mesh', cost:60000, requires:'scribes2',
       fx:{capacity:1.5, dep:3}, max:1,
       desc:'Referral scheduling adds 1.5 treatment starts/week at full adoption. Requires scribe rollout; adds digital dependence.' },
@@ -13097,7 +13265,7 @@ async function initLLMSubsystem() {
     // G17: Point Solution Paradox — the build-vs-buy-vs-platform tension
     { id:'pilotgrant', name:'\ud83d\udcc4 AI Pilot Grant', cost:30000,
       fx:{trustP:4, frag:2}, max:3,
-      desc:'Standalone pilot. Adds 2 silos; first purchase adds up to 4 parliament trust. No clinical effect.' },
+      desc:'Standalone pilot: 2 silos and up to 4 parliament trust on first purchase. No direct clinical benefit; low-adoption rollout and silo thresholds can add temporary GP paperwork and burnout.' },
     { id:'platform', name:'\ud83c\udfd7 Health Data Platform', cost:120000, requires:'scribes1',
       fx:{admin:-0.05, frag:-3, platform:1}, max:1,
       desc:'Shared data layer. Paperwork -5 points; silos -3; platform +1. Requires the scribe pilot.' },
@@ -13127,6 +13295,8 @@ async function initLLMSubsystem() {
   }
   const BUY_CAP = 2; // implementation capacity per quarter
   function canBuy(item){
+    try { projectCarePlan(shopPlan(item),true); }
+    catch (error) { return false; }
     const owned = GS.owned[item.id] || 0;
     // G12: bruised mandate reduces effective buy cap to 1
     const effectiveCap = (GS._bruisedMandate > 0) ? 1 : BUY_CAP;
@@ -13163,16 +13333,17 @@ async function initLLMSubsystem() {
     }
   }
   function effectivePolicy(item){
+    requireCareNumber('adoption',GS.adoptionRate,0,1);
     const fx = Object.assign({}, item.fx);
     const digitalRollout = ['scribes1','scribes2','a2a','twin','platform','platformai','pilotgrant'].includes(item.id);
     if (['scribes1','scribes2','a2a','twin','platformai'].includes(item.id)) {
-      const rate = GS.adoptionRate ?? 0.7;
+      const rate = GS.adoptionRate;
       if (fx.admin) fx.admin *= rate;
       if (fx.drainMult) fx.drainMult = 1 - (1 - fx.drainMult) * rate;
       if (fx.ai) fx.ai *= rate;
       if (fx.capacity) fx.capacity *= rate;
     }
-    if (digitalRollout && (GS.adoptionRate || 0.7) < 0.85) {
+    if (digitalRollout && GS.adoptionRate < 0.85) {
       fx.admin = (fx.admin || 0) + 0.01;
       fx._rolloutAdmin = 0.01;
     }
@@ -13185,30 +13356,38 @@ async function initLLMSubsystem() {
     return fx;
   }
   MoC.previewPolicy = function(id){ const item = SHOP.find(item => item.id === id); return item ? effectivePolicy(item) : null; };
+  function shopPlan(item){
+    const fx=effectivePolicy(item),timed=[];
+    if (fx._rolloutAdmin) timed.push({inverse:{admin:-fx._rolloutAdmin},untilQ:GS.quarter+1,label:'Digital rollout: training and workflow setup'});
+    if (fx._siloAdmin) timed.push({inverse:{admin:-fx._siloAdmin},untilQ:GS.quarter+2,label:'Silo coordination: duplicate data and workflow reconciliation'});
+    return {steps:[{fx,label:'Purchased: '+item.name+' ('+fmtK(shopCost(item))+')'}],cost:shopCost(item),timed};
+  }
   function buy(item){
     if (!canBuy(item)) return;
+    let plan;
+    try { plan=projectCarePlan(shopPlan(item),true); }
+    catch (error) { reportCareInputError(error); return; }
     const beforePolicy = MoC.care.snapshot();
     const dependenceBefore = GS.dependence;
     const effectiveFx = effectivePolicy(item);
     const fragmentationBefore = GS.fragmentation || 0;
     const cost = shopCost(item);
-    GS.budget -= cost;
     GS.buysThisCouncil = (GS.buysThisCouncil || 0) + 1;
     GS.owned[item.id] = (GS.owned[item.id] || 0) + 1;
     GS.interventions.push({ q: GS.quarter, label: item.name.replace(/^\S+\s/, ''), cost: cost });
-    applyFx(effectiveFx, 'Purchased: ' + item.name + ' (' + fmtK(cost) + ')');
+    commitCarePlan(plan);
     GS.interventions[GS.interventions.length - 1].tick = modelTick;
     GS.interventions[GS.interventions.length - 1].effectiveFx = effectiveFx;
     GS._observation = { itemId:item.id, name:item.name, cost, before:beforePolicy };
     // G19: changeprog directly raises the adoption rate
     if (item.id === 'changeprog') {
-      GS.adoptionRate = Math.min(1.0, (GS.adoptionRate || 0.7) + 0.15);
+      GS.adoptionRate = Math.min(1.0, GS.adoptionRate + 0.15);
       FX.pop('Adoption now ' + Math.round(GS.adoptionRate * 100) + '%', '#7bc67b');
     }
     const digitalRollout = ['scribes1','scribes2','a2a','twin','platform','platformai','pilotgrant'].includes(item.id);
     let rolloutNote = '';
     if (digitalRollout) {
-      const adoption = GS.adoptionRate || 0.7;
+      const adoption = GS.adoptionRate;
       const strain = Math.max(0, Math.round((1 - adoption) * 12));
       if (strain > 0) {
         agents.filter(function(agent){ return agent.type === 'gp'; }).forEach(function(gp){
@@ -13217,11 +13396,9 @@ async function initLLMSubsystem() {
         });
         GS.rolloutStrain = (GS.rolloutStrain || 0) + strain;
         rolloutNote = ' · rollout strain +' + strain + ' GP burnout';
-        if (effectiveFx._rolloutAdmin) GS.timedFx.push({inverse:{admin:-effectiveFx._rolloutAdmin},untilQ:GS.quarter+1,label:'Digital rollout: training and workflow setup'});
       }
     }
     if (fragmentationBefore < 3 && (GS.fragmentation || 0) >= 3) {
-      if (effectiveFx._siloAdmin) GS.timedFx.push({inverse:{admin:-effectiveFx._siloAdmin},untilQ:GS.quarter+2,label:'Silo coordination: duplicate data and workflow reconciliation'});
       rolloutNote += ' · silo coordination +2 paperwork points for 2 quarters';
     }
     // G18-D: first pilotgrant — make fragmentation cost visible before it bites (flag prevents double-fire)
@@ -13319,26 +13496,25 @@ async function initLLMSubsystem() {
   const EVENT_REACTIONS = { cyber:[], outage:[], meds:[], yearWin:[], yearLoss:[], election:[], flu:[] };
 
   // ── Timed & delayed effects ──
-  function applyTimedFx(fx, quarters, label){
-    const previousCapacity = GS.specialistCapacity;
-    applyFx(fx, label);
-    const inverse = {};
-    if (fx.admin) inverse.admin = -fx.admin;
-    if (fx.sick) inverse.sick = -fx.sick;
-    if (fx.capacity) inverse.capacity = previousCapacity - GS.specialistCapacity;
-    if (fx.ai) inverse.ai = -fx.ai;
-    if (fx.drainMult) inverse.drainMult = 1 / fx.drainMult;
-    if (Object.keys(inverse).length)
-      GS.timedFx.push({ inverse: inverse, untilQ: GS.quarter + quarters, label: label });
+  function applyTimedFx(fx, quarters, label, source){
+    return applyCarePlan({steps:[{fx,quarters,label,source}]});
   }
   function processQuarterEffects(q){
-    GS.timedFx = GS.timedFx.filter(function(t){
-      if (q >= t.untilQ) { applyFx(t.inverse, 'Effect ended: ' + t.label); return false; }
-      return true;
-    });
-    const due = GS.delayed.filter(function(d){ return q >= d.atQ; });
-    GS.delayed = GS.delayed.filter(function(d){ return q < d.atQ; });
-    due.forEach(function(d){ applyFx(d.fx, d.label); });
+    const expired=GS.timedFx.filter(t=>q>=t.untilQ), due=GS.delayed.filter(d=>q>=d.atQ);
+    const remainingTimed=GS.timedFx.filter(t=>q<t.untilQ),remainingDelayed=GS.delayed.filter(d=>q<d.atQ);
+    let plan;
+    try {
+      plan=projectCarePlan({steps:careSchedule(expired,due,[]).map(e=>({
+        fx:e.fx,label:e.order===1?'Effect ended: '+e.label:e.label
+      }))},false,careSchedule(remainingTimed,remainingDelayed));
+    } catch (error) {
+      // Retain pending work on invalid restored state; never discard an inverse
+      // or delivery, and never block the council's explicit deferral path.
+      reportCareInputError(error);
+      return [];
+    }
+    GS.timedFx=remainingTimed; GS.delayed=remainingDelayed;
+    commitCarePlan(plan);
     return due;
   }
 
@@ -13391,20 +13567,26 @@ async function initLLMSubsystem() {
       },
       choices:[
         { label:'Negotiate quietly', note:'-\u20ac50K \u00b7 Parliament -8 (secrecy) \u00b7 disruption scales with your dependence',
-          run:function(){
+          plan:function(){
             const s = impactScale();
-            applyFx({budget:-50000, trustP:-8, trustC:-1}, (GS._cyberCurrent || 'Ransomware') + ': paid for silence.');
-            applyTimedFx({admin: (GS.owned.security ? 0.05 : 0.10) * s}, s >= 1.5 ? 2 : 1, 'Ransomware disruption (paper fallback)');
-            if (GS.dependence >= 8) applyFx({capacity:-0.5}, 'Ransomware recovery: capacity reduced');
+            return {steps:[
+              {fx:{budget:-50000,trustP:-8,trustC:-1},label:(GS._cyberCurrent || 'Ransomware')+': paid for silence.'},
+              {fx:{admin:(GS.owned.security ? 0.05 : 0.10)*s},quarters:s>=1.5?2:1,label:'Ransomware disruption (paper fallback)'},
+              ...(GS.dependence>=8?[{fx:{capacity:-0.5},label:'Ransomware recovery: capacity reduced'}]:[])
+            ]};
+          }, after:function(){
             townSay(['"I heard the health system got hacked. They\u2019re not saying anything official.", said Veenstra.', '"Why is my portal offline for two weeks and no one will explain? Something happened."']);
           } },
         { label:'Refuse and disclose everything', note:'Citizens -8 now, +6 later (honesty) \u00b7 longer disruption \u00b7 doctors respect it',
-          run:function(){
+          plan:function(){
             const s = impactScale();
-            applyFx({trustC:-8, trustD:2, trustP:-2}, (GS._cyberCurrent || 'Ransomware') + ': refused. Full public disclosure.');
-            applyTimedFx({admin: (GS.owned.security ? 0.06 : 0.12) * s}, GS.owned.security ? 1 : 2, 'Ransomware disruption (paper fallback)');
-            if (GS.dependence >= 8) applyFx({capacity:-0.5}, 'Ransomware recovery: capacity reduced');
-            GS.delayed.push({ atQ: GS.quarter + 2, fx:{trustC:6, trustP:4}, label:'The town remembers your honesty during the ransomware crisis.' });
+            return {steps:[
+              {fx:{trustC:-8,trustD:2,trustP:-2},label:(GS._cyberCurrent || 'Ransomware')+': refused. Full public disclosure.'},
+              {fx:{admin:(GS.owned.security ? 0.06 : 0.12)*s},quarters:GS.owned.security?1:2,label:'Ransomware disruption (paper fallback)'},
+              ...(GS.dependence>=8?[{fx:{capacity:-0.5},label:'Ransomware recovery: capacity reduced'}]:[]),
+              {fx:{trustC:6,trustP:4},delay:2,label:'The town remembers your honesty during the ransomware crisis.'}
+            ]};
+          }, after:function(){
             const depQuote = GS.dependence >= 8
               ? '"Everything is down. The portal, the referrals, the prescriptions. My whole health record is in criminal hands and the minister just announced it on TV.", said Van Dijk.'
               : '"The minister told us straight. Hackers got in. I appreciate the honesty, even if I don\u2019t like the news."';
@@ -13448,20 +13630,20 @@ async function initLLMSubsystem() {
       text:function(){ return 'A brutal flu season. The IC is at 104% capacity and the regional coordinator is on the phone: "Minister, we need a decision <i>tonight</i>."'; },
       choices:[
         { label:'Push the staff harder', note:'Sick leave +3% for 2 quarters \u00b7 Doctors -6',
-          run:function(){ applyTimedFx({sick:0.03}, 2, 'Code Black: staff overworked'); applyFx({trustD:-6}, 'The staff will remember this.'); } },
+          plan:function(){ return {steps:[{fx:{sick:0.03},quarters:2,label:'Code Black: staff overworked'},{fx:{trustD:-6},label:'The staff will remember this.'}]}; } },
         { label:'Transfer patients across the region', note:'Drain +15% for a quarter \u00b7 Citizens -4',
-          run:function(){ applyTimedFx({drainMult:1.15}, 1, 'Code Black: patients transferred'); applyFx({trustC:-4}, 'Families drive 90 minutes to visit.'); } }
+          plan:function(){ return {steps:[{fx:{drainMult:1.15},quarters:1,label:'Code Black: patients transferred'},{fx:{trustC:-4},label:'Families drive 90 minutes to visit.'}]}; } }
       ] },
     { id:'meds', name:'\ud83d\udc8a Medicine shortage', once:true,
       weight:function(){ return GS.quarter >= 6 ? 12 : 0; },
       text:function(){ return 'A record shortage: 340 patients cannot fill their prescriptions this month. The pharmacist has three bad options and needs you to pick one.'; },
       choices:[
         { label:'Therapeutic substitution', note:'GPs spend time switching medication: admin +3% for a quarter',
-          run:function(){ applyTimedFx({admin:0.03}, 1, 'Medicine shortage: substitution workload'); } },
+          plan:function(){ return {steps:[{fx:{admin:0.03},quarters:1,label:'Medicine shortage: substitution workload'}]}; } },
         { label:'Emergency import', note:'-\u20ac20K',
-          run:function(){ applyFx({budget:-20000}, 'Medicine shortage: emergency import.'); } },
+          fx:{budget:-20000} },
         { label:'Rationing protocol', note:'Trust -5',
-          run:function(){ applyFx({trust:-5}, 'Medicine shortage: rationing. The queue outside the pharmacy makes the evening news.'); } }
+          fx:{trust:-5} }
       ] },
     { id:'edclosure', name:'\ud83d\udea8 Regional ED closes at night', once:true,
       weight:function(){ return GS.quarter >= 10 ? 8 : 0; },
@@ -13523,9 +13705,9 @@ async function initLLMSubsystem() {
       text:function(){ return 'Three council factions request an open review of spending, waiting and care outcomes.'; },
       choices:[
         { label:'Full accountability session \u2014 open the books', note:'Parliament +6 \u00b7 Citizens +2 \u00b7 signals transparency',
-          run:function(){ applyFx({trustP:6, trustC:2}, 'Interpellatie: volle transparantie. Coalitie gerustgesteld.'); townSay(['"First time I understood what my council actually does.", said Van Dijk.', '"The minister showed up, answered questions, and didn\u2019t dodge once. That\u2019s something."']); } },
+          fx:{trustP:6,trustC:2}, after:function(){ townSay(['"First time I understood what my council actually does.", said Van Dijk.', '"The minister showed up, answered questions, and didn\u2019t dodge once. That\u2019s something."']); } },
         { label:'Defend the record, deflect the questions', note:'Parliament \u22122 \u00b7 opposition grows louder',
-          run:function(){ applyFx({trustP:-2}, 'Interpellatie: ontwijkend antwoord. Oppositie scherper.'); townSay(['"Same old. Questions in, non-answers out.", sighed Jansen.', '"They had every chance to explain themselves. They chose not to."']); } }
+          fx:{trustP:-2}, after:function(){ townSay(['"Same old. Questions in, non-answers out.", sighed Jansen.', '"They had every chance to explain themselves. They chose not to."']); } }
       ] },
     // G17: Point Solution Paradox events
     { id:'algodubbelop', name:'\ud83d\udd04 Algorithm Reinvented (Again)', once:true,
@@ -13533,20 +13715,20 @@ async function initLLMSubsystem() {
       text:function(){ return 'A proposed discharge tool overlaps with Mirrorware. It uses a separate data pipeline.'; },
       choices:[
         { label:'Halt the new tool, mandate integration', note:'Fragmentation -1 \u00b7 Parliament +2',
-          run:function(){ applyFx({frag:-1, trustP:2}, 'Halted duplicate algorithm, mandated integration'); townSay(['"Someone finally said: wait, we already have that.", said Van Dijk.', '"A victory for coordination. Rare in this municipality."']); } },
+          fx:{frag:-1,trustP:2}, after:function(){ townSay(['"Someone finally said: wait, we already have that.", said Van Dijk.', '"A victory for coordination. Rare in this municipality."']); } },
         { label:'Let both run \u2014 clinical choice is valuable', note:'Fragmentation +1 \u00b7 Admin +2%',
-          run:function(){ applyFx({frag:1, admin:0.02}, 'Dual tools authorised: coexistence policy'); townSay(['"Two systems, same patient, different advice. I pick the one I like.", said Jansen.', '"Clinical choice means nobody ever agrees on one standard."']); } }
+          fx:{frag:1,admin:0.02}, after:function(){ townSay(['"Two systems, same patient, different advice. I pick the one I like.", said Jansen.', '"Clinical choice means nobody ever agrees on one standard."']); } }
       ] },
     { id:'researchgrant', name:'\ud83d\udcb6 Research Grant: How Do You Invest?', once:true,
       weight:function(){ return GS.quarter >= 6 && GS.quarter <= 20 ? 16 : 0; },
       text:function(){ return 'An unrestricted \u20ac80K research grant is available. Choose its use.'; },
       choices:[
         { label:'Quick AI pilot: early sepsis detection', note:'+\u20ac30K \u00b7 Fragmentation +2 \u00b7 Parliament +3',
-          run:function(){ applyFx({budget:30000, frag:2, trustP:3}, 'Research grant: AI pilot funded'); townSay(['"New sepsis AI at the hospital. Impressive brochure.", said Veenstra.', '"Another pilot. Let\u2019s see if this one reaches practice."']); } },
+          fx:{budget:30000,frag:2,trustP:3}, after:function(){ townSay(['"New sepsis AI at the hospital. Impressive brochure.", said Veenstra.', '"Another pilot. Let\u2019s see if this one reaches practice."']); } },
         { label:'Platform investment: shared data infrastructure', note:'+\u20ac80K \u00b7 Platform +1 \u00b7 Fragmentation -2',
-          run:function(){ applyFx({budget:80000, platform:1, frag:-2}, 'Research grant: platform investment'); townSay(['"The data infrastructure got a serious upgrade. Not glamorous, but it actually works.", said Dr. Bakker.', '"Less duplication, better signal. About time."']); } },
+          fx:{budget:80000,platform:1,frag:-2}, after:function(){ townSay(['"The data infrastructure got a serious upgrade. Not glamorous, but it actually works.", said Dr. Bakker.', '"Less duplication, better signal. About time."']); } },
         { label:'GP recruitment and retention', note:'+\u20ac80K · Doctors +5 · +0.5 treatment starts/week',
-          run:function(){ applyFx({budget:80000, trustD:5, capacity:0.5}, 'Research grant: recruitment capacity'); } }
+          fx:{budget:80000,trustD:5,capacity:0.5} }
       ] },
     { id:'platformdividend', name:'\ud83c\udf10 Platform Dividend', once:true,
       weight:function(){ return (GS.platformMaturity || 0) >= 1 && GS.quarter >= (GS._fasttrackDeclined ? 14 : 16) ? 25 : 0; }, // G22: 2q earlier if FastTrack was declined
@@ -13568,13 +13750,12 @@ async function initLLMSubsystem() {
       text:function(){ return 'FastTrack offers a six-week AI deployment outside the shared platform. It adds a separate data pipeline.'; },
       choices:[
         { label:'Take the deal', note:'Parliament +6 \u00b7 Fragmentation +2 \u00b7 Platform AI costs +50% later',
-          run:function(){
-            applyFx({trustP:6, frag:2}, 'FastTrack deal: AI layer bypasses platform, election-ready press release');
+          fx:{trustP:6,frag:2}, after:function(){
             GS._fasttrackTaken = true;
             townSay(['"FastTrack\u2019s new AI feature is live. The demo was impressive. The waiting list is still the same.", said Van Dijk.', '"Quick win. Every politician\u2019s favourite technology."']);
           } },
         { label:'Not now. Stay the course.', note:'Nothing now \u00b7 Platform dividend fires 2 quarters earlier',
-          run:function(){
+          fx:{}, after:function(){
             GS._fasttrackDeclined = true;
             GS.pendingBanners = GS.pendingBanners || [];
             GS.pendingBanners.push({ head: '\ud83c\udfd7 FASTTRACK DECLINED', body: 'No immediate effect. The scheduled platform milestone moves two quarters earlier.', soft: true });
@@ -13627,7 +13808,7 @@ async function initLLMSubsystem() {
       { id:'dig1', name:'Cloud-First Records Act', cost:0, fx:{admin:-0.02, dep:1},
         desc:'All records move to Halcyon One. Admin -2%, +1 dependence. Irreversible.' },
       { id:'dig2', name:'AI Triage Gate', cost:30000, fx:{capacity:0.5, dep:2, trust:-2},
-        desc:'Algorithm screens GP requests. +0.5 treatment starts/week, +2 dependence, Trust -2. Irreversible.' },
+        desc:'Authored scheduling rule: +0.5 nominal routine starts/week, +2 dependence, Trust -2. Not a GP request-screening mechanism. Irreversible.' },
       { id:'dig3', name:'AI-Gated Specialist Access', cost:0, fx:{capacity:1, dep:2},
         desc:'Algorithm required for referral. +1 treatment start/week, +2 dependence. Risks digital exclusion. Irreversible.', beat:'digigate' }
     ] },
@@ -13695,7 +13876,7 @@ async function initLLMSubsystem() {
       b:{ label:'Subsidise it to stay open', fx:{budget:-35000, trustC:5}, note:'-\u20ac35K \u00b7 Citizens +5' } },
     { id:'algo', text:'A vendor offers an appointment-triage algorithm. Public bias auditing is optional.',
       a:{ label:'Deploy with public audit board', fx:{budget:-15000, capacity:0.5, dep:1, trustC:2}, note:'-\u20ac15K · +0.5 starts/week · +1 dep · Citizens +2' },
-      b:{ label:'Deploy fast, audit later', fxFn:function(){ return Math.random() < 0.4 ? {capacity:0.5, dep:1, trustC:-9, trustP:-5} : {capacity:0.5, dep:1}; }, note:'+0.5 starts/week · +1 dep · 40% chance of a bias scandal' } },
+      b:{ label:'Deploy fast, audit later', chance:0.4, fxChoices:[{capacity:0.5,dep:1,trustC:-9,trustP:-5},{capacity:0.5,dep:1}], note:'+0.5 starts/week · +1 dep · 40% chance of a bias scandal' } },
     { id:'grid', text:'The planned data centre has no grid connection until 2030. Diesel generation is available.',
       a:{ label:'Run the generators', fx:{trustC:-4, dep:1}, note:'Citizens -4 · Dependence +1' },
       b:{ label:'Delay the data centre', fx:{ai:-0.03}, note:'AI capacity multiplier -0.03' } },
@@ -13716,10 +13897,10 @@ async function initLLMSubsystem() {
       b:{ label:'Stay neutral, protect jobs', fx:{trustC:2, trustP:-2}, note:'Citizens +2 \u00b7 Parliament -2' } },
     { id:'sabbatical', text:'Dr. Bakker requests a three-month sabbatical because of workload.',
       a:{ label:'Grant it, hire a locum', fx:{budget:-20000, trustD:5, sick:-0.01}, note:'-\u20ac20K \u00b7 Doctors +5 \u00b7 sick -1%' },
-      b:{ label:'Ask them to push through', fxFn:function(){ return Math.random() < 0.35 ? {sick:0.03, trustD:-8} : {trustD:-3}; }, note:'Doctors -3 \u00b7 35% risk of a burnout wave' } },
+      b:{ label:'Ask them to push through', chance:0.35, fxChoices:[{sick:0.03,trustD:-8},{trustD:-3}], note:'Doctors -3 \u00b7 35% risk of a burnout wave' } },
     // G13: 5 new dilemmas — MIVD threat, Long COVID, refugee influx, NZa tariff, GP strike
     { id:'mivd', text:'MIVD reports six months of hostile network mapping. It recommends a confidential emergency patch; the Health Council requests disclosure.',
-      a:{ label:'Quiet patch + silence', fxFn:function(){ applyFx({dep:-1, trustP:3}, 'MIVD patch accepted'); townSay(['"Something weird happened to the hospital wifi but no one will say what.", said Marjolein.', '"Classic government. Fix it in secret.", grumbled Veenstra.']); return {}; }, note:'Dependence -1 \u00b7 Parliament +3 \u00b7 citizens suspicious' },
+      a:{ label:'Quiet patch + silence', fx:{dep:-1,trustP:3}, after:function(){ townSay(['"Something weird happened to the hospital wifi but no one will say what.", said Marjolein.', '"Classic government. Fix it in secret.", grumbled Veenstra.']); }, note:'Dependence -1 \u00b7 Parliament +3 \u00b7 citizens suspicious' },
       b:{ label:'Go public, full transparency', fx:{trustC:5, trustP:-4, dep:1}, note:'Citizens +5 \u00b7 Parliament -4 \u00b7 attackers now know you know (+1 dep)' } },
     { id:'longcovid', text:'Forty-seven Long COVID patients have waited fourteen months for a specialist pathway.',
       a:{ label:'Open a dedicated Long COVID clinic', fx:{budget:-70000, trustC:6, trustD:3, sick:-0.008}, note:'-\u20ac70K \u00b7 Citizens +6 \u00b7 Doctors +3 \u00b7 sick -0.8%' },
@@ -13731,12 +13912,12 @@ async function initLLMSubsystem() {
       c:{ label:'Refer to regional asylum health service', fx:{trustC:-3, trustP:2}, note:'Cammelot off the hook \u00b7 Citizens -3 \u00b7 Parliament +2' } },
     { id:'nzatariff', text:'NZa revises GP tariffs upward, covering 60% of the extra costs. Practices want the remaining 40% from the municipality. "Without it, two practices will close their Saturday morning slots."',
       a:{ label:'Top up the full 40%', fx:{budget:-55000, trustD:5}, note:'-\u20ac55K \u00b7 Doctors +5 \u00b7 Saturday access maintained' },
-      b:{ label:'Offer 20%, negotiate the rest', fxFn:function(){ const ok=Math.random()<0.5; applyFx(ok?{trustD:2,budget:-28000}:{trustD:-4,capacity:-0.5}, ok?'Deal reached':'Talks collapsed'); return {}; }, note:'50/50: deal at -\u20ac28K (Doctors +2) or capacity -0.5/week, Doctors -4' },
+      b:{ label:'Offer 20%, negotiate the rest', chance:0.5, fxChoices:[{trustD:2,budget:-28000},{trustD:-4,capacity:-0.5}], note:'50/50: deal at -\u20ac28K (Doctors +2) or capacity -0.5/week, Doctors -4' },
       c:{ label:'Reject: not a municipal responsibility', fx:{trustD:-6, trustP:3}, note:'Doctors -6 \u00b7 Parliament +3 (fiscal discipline)' } },
     { id:'gpstrike', text:'GP assistants announce a two-day workload strike. Non-emergency access is disrupted.',
       a:{ label:'Emergency mediator, grant a 10% bonus', fx:{budget:-45000, trustD:8, trustC:2, sick:-0.01}, note:'-\u20ac45K \u00b7 Doctors +8 \u00b7 Citizens +2 \u00b7 sick -1%' },
       b:{ label:'Publicly condemn the strike', fx:{trustD:-10, trustC:-3, trustP:4}, note:'Doctors -10 \u00b7 Citizens -3 \u00b7 Parliament +4' },
-      c:{ label:'Let it run, wait them out', fxFn:function(){ applyFx({sick:0.02, trustC:-5}, 'Strike drags on'); setTimeout(function(){ applyFx({trustD:-6}, 'Strike ends bitter'); }, 4000); return {}; }, note:'Sick +2% \u00b7 Citizens -5 \u00b7 Doctors -6 after' } },
+      c:{ label:'Let it run, wait them out', fx:{sick:0.02,trustC:-5}, after:function(){ setTimeout(function(){ adjustStakeholders(0,-6,0); say('MINISTRY','Strike ends bitter','sys'); refreshMeters(); },4000); }, note:'Sick +2% \u00b7 Citizens -5 \u00b7 Doctors -6 after' } },
     // G15: Mantelzorg / informal carer dilemma — biggest Dutch care gap
     { id:'mantelzorg', text:'One in five informal carers is at risk of burnout. Home-care waits rose for four quarters.',
       a:{ label:'Formalise: pay informal carers a stipend', fx:{budget:-25000, trustC:5, mantelzorg:-10}, note:'-\u20ac25K \u00b7 Citizens +5 \u00b7 Carer pressure -10' },
@@ -13745,27 +13926,21 @@ async function initLLMSubsystem() {
     // G17: Point Solution Paradox dilemmas
     { id:'buildorbuy', text:'A triage tool costs \u20ac40K/year and can launch in six weeks. An internal build costs \u20ac70K and takes eighteen months. The published pilot accuracy is not a Cammelot outcome.',
       a:{ label:'Buy the startup tool, deploy fast', fx:{budget:-40000, trustP:3, frag:2}, note:'-\u20ac40K/yr \u00b7 Parliament +3 (decisive) \u00b7 Fragmentation +2' },
-      b:{ label:'Build in-house, own the data', fxFn:function(){ applyFx({budget:-70000, trustD:2}, 'In-house AI build: 18-month project started'); GS.delayed.push({ atQ: GS.quarter + 8, fx:{trustD:3, admin:-0.03}, label:'In-house AI delivers: Doctors +3, Admin -3%' }); return {}; }, note:'-\u20ac70K \u00b7 Doctors +2 now \u00b7 18-month delay then: Doctors +3, Admin -3%' },
+      b:{ label:'Build in-house, own the data', plan:function(){ return {steps:[{fx:{budget:-70000,trustD:2},label:'In-house AI build: 18-month project started'},{fx:{trustD:3,admin:-0.03},delay:8,label:'In-house AI delivers: Doctors +3, Admin -3%'}]}; }, note:'-\u20ac70K \u00b7 Doctors +2 now \u00b7 18-month delay then: Doctors +3, Admin -3%' },
       c:{ label:'Require platform-first: no tool without shared data access', fxFn:function(){
-        if ((GS.platformMaturity || 0) >= 1) { applyFx({budget:-40000, frag:-1, trustD:3}, 'Platform-first procurement enforced'); townSay(['"They actually read the procurement criteria this time.", said Dr. Bakker.', '"A tool that talks to our records. First time ever."']); }
-        else { applyFx({trustP:-2}, 'Platform-first blocked: no platform exists yet'); townSay(['"Great policy. No platform to connect to.", said Van Dijk.']); }
-        return {};
+        return (GS.platformMaturity || 0)>=1 ? {budget:-40000,frag:-1,trustD:3} : {trustP:-2};
       }, note:'If platform built: Frag -1, Doctors +3, -\u20ac40K \u00b7 If no platform: Parliament -2' } },
     { id:'phddata', text:'A three-year readmission study requests anonymised GP data. Full access moves data outside the municipality.',
       a:{ label:'Grant full access \u2014 science matters', fx:{trustP:3, frag:1}, note:'Parliament +3 (open science) \u00b7 Fragmentation +1 (another external data consumer)' },
       b:{ label:'Refuse \u2014 patient data stays local', fx:{trustP:-3, trustC:2}, note:'Parliament -3 \u00b7 Citizens +2 (trust their data stays private)' },
       c:{ label:'Grant access only via federated query \u2014 data stays, insights travel', fxFn:function(){
-        if ((GS.platformMaturity || 0) >= 1) { applyFx({trustP:4, trustD:2}, 'Federated data access: privacy-preserving science'); townSay(['"The study used our data without touching our data. Future policy.", said Van Dijk.']); }
-        else { applyFx({trustP:-1}, 'Federated query impossible without platform infrastructure'); townSay(['"Good idea. Platform does not exist yet."']); }
-        return {};
+        return (GS.platformMaturity || 0)>=1 ? {trustP:4,trustD:2} : {trustP:-1};
       }, note:'If platform: Parliament +4, Doctors +2 \u00b7 If no platform: Parliament -1' } },
     { id:'aistartup', text:'A two-year risk-scoring pilot offers \u20ac20K co-funding. Patient data would be stored on the vendor\u2019s servers.',
       a:{ label:'Yes \u2014 innovation needs pilots', fx:{budget:20000, trustP:2, frag:2}, note:'+\u20ac20K \u00b7 Parliament +2 \u00b7 Fragmentation +2 (vendor-owned data silo)' },
       b:{ label:'No \u2014 patient data leaving Cammelot is unacceptable', fx:{trustC:3, trustP:-2}, note:'Citizens +3 (data protection) \u00b7 Parliament -2 (blocking innovation)' },
       c:{ label:'Yes, if data residency is Cammelot-controlled', fxFn:function(){
-        if ((GS.platformMaturity || 0) >= 1) { applyFx({budget:20000, frag:1, trustD:2}, 'Startup pilot: data sovereignty enforced'); townSay(['"Innovation on our terms. Good precedent.", said Dr. Bakker.']); }
-        else { applyFx({trustP:-2}, 'Startup rejected: data residency not feasible without platform'); townSay(['"They wanted our data on their cloud. We said no. They left."']); }
-        return {};
+        return (GS.platformMaturity || 0)>=1 ? {budget:20000,frag:1,trustD:2} : {trustP:-2};
       }, note:'If platform: +\u20ac20K, Doctors +2, Frag +1 (managed) \u00b7 If no platform: Parliament -2' } }
   ];
   // G15: Deterministic shuffle per seed (Fisher-Yates with mulberry32)
@@ -14098,7 +14273,7 @@ async function initLLMSubsystem() {
     add('Digital risk',fragility()+'%',GS.dependence>=7);
     const gps=agents.filter(function(agent){return agent.type==='gp';});
     const burnout=gps.length?Math.round(gps.reduce(function(sum,gp){return sum+(gp.burnoutLevel||0);},0)/gps.length):0;
-    add('Adoption',Math.round((GS.adoptionRate||0.7)*100)+'%',(GS.adoptionRate||0.7)<0.85);
+    add('Adoption',Math.round(GS.adoptionRate*100)+'%',GS.adoptionRate<0.85);
     add('GP burnout',burnout+'%',burnout>=65);
     add('Silos',GS.fragmentation||0,(GS.fragmentation||0)>=3);
     return '<section class="moc-priority-strip"><h4>PRIORITIES BEFORE YOU SPEND</h4><div class="moc-priority-list">'+priorities.join('')+'</div></section>';
@@ -14110,12 +14285,15 @@ async function initLLMSubsystem() {
     return match ? Number(match[1])*1000 : 0;
   }
   function optionAttrs(option){
-    const cost=optionCost(option),blocked=cost>GS.budget;
-    return {cost,blocked,html:blocked?' disabled aria-disabled="true"':''};
+    let invalid = '';
+    try { if (!option.run) for (const plan of choicePlans(option)) projectCarePlan(plan,true); }
+    catch (error) { invalid = error.message; }
+    const cost=optionCost(option),blocked=(cost>0 && cost>GS.budget) || !!invalid;
+    return {cost,blocked,invalid,html:blocked?' disabled aria-disabled="true"':''};
   }
   function unavailableHtml(option){
     const state=optionAttrs(option);
-    return state.blocked?'<span class="moc-unaffordable">Unavailable: needs '+fmtK(state.cost)+', budget '+fmtK(GS.budget)+'</span>':'';
+    return state.blocked?'<span class="moc-unaffordable">Unavailable: '+(state.invalid || 'needs '+fmtK(state.cost)+', budget '+fmtK(GS.budget))+'</span>':'';
   }
   // ── State of the System panel (so choices are never blind) ──
   function sysCls(v, goodLow, warnAt, badAt){
@@ -14124,7 +14302,7 @@ async function initLLMSubsystem() {
     return v >= badAt ? 'g' : v >= warnAt ? 'y' : 'r';
   }
   function systemPanelHtml(){
-    const ceff = Math.round((1 - M.IST.admin - M.IST.sick) * M.IST.ai * 100);
+    const gpCapacity = gpServiceCapacity();
     const gps = agents.filter(function(agent){ return agent.type === 'gp'; });
     const avgBurnout = gps.length ? Math.round(gps.reduce(function(sum,gp){ return sum + (gp.burnoutLevel || 0); },0) / gps.length) : 0;
     const cashflow = GS._cashflowThisQ || 0;
@@ -14136,10 +14314,10 @@ async function initLLMSubsystem() {
       [pixIcon('clock') + ' Current referral wait', MoC.care.snapshot().meanWait.toFixed(1) + ' wk', sysCls(MoC.care.snapshot().meanWait, true, 6, 10)],
       [pixIcon('bed') + ' Sick leave', Math.round(M.IST.sick * 100) + '%', sysCls(M.IST.sick, true, 0.05, 0.09)],
       [pixIcon('chip') + ' AI multiplier', M.IST.ai.toFixed(2) + '\u00d7', M.IST.ai > 1.15 ? 'g' : M.IST.ai > 1.0 ? 'y' : 'r'],
-      [pixIcon('cross') + ' Capacity', ceff + '%', sysCls(ceff, false, 70, 85)],
+      [pixIcon('cross') + ' GP clinical work/week', gpCapacity.availableWorkPerWeek.toFixed(2) + ' (nominal ' + gpCapacity.nominalWorkPerWeek + ')', ''],
       [pixIcon('brheart') + ' HP drain', M.IST.drain.toFixed(2) + '\u00d7', sysCls(M.IST.drain, true, 0.7, 1.0)],
       [pixIcon('plug') + ' Dependence', GS.dependence + ' pts', sysCls(GS.dependence, true, 3, 6)],
-      ['📚 Adoption', Math.round((GS.adoptionRate || 0.7) * 100) + '%', sysCls((GS.adoptionRate || 0.7) * 100, false, 70, 85)],
+      ['📚 Adoption', Math.round(GS.adoptionRate * 100) + '%', sysCls(GS.adoptionRate * 100, false, 70, 85)],
       [pixIcon('cross') + ' GP burnout', avgBurnout + '%', sysCls(avgBurnout, true, 35, 65)],
       [pixIcon('people') + ' Carer pressure', (GS.mantelzorg || 30) + '%', sysCls(GS.mantelzorg || 30, true, 50, 70)], // G23: warning earlier
       ['\ud83e\udde9 AI Silos', (GS.fragmentation || 0) + ' active', sysCls(GS.fragmentation || 0, true, 2, 5)], // G17
@@ -14160,13 +14338,16 @@ async function initLLMSubsystem() {
   // ── Concrete now->after preview per intervention ──
   // ── Impact preview as readable chips (green = better, red = worse) ──
   function fxPreview(fx){
+    let next;
+    try { next = projectedCareEffect(fx); }
+    catch (error) { return '<span class="moc-unaffordable">Unavailable: '+error.message+'</span>'; }
     const chips = [];
     // G18-B: plain-language tooltips so noobs know what each chip means
     const CHIP_TIPS = {
       Admin: 'Admin burden: lower means doctors spend more time on patients, not paperwork',
       Sick: 'Sick leave rate: high sick leave reduces effective GP capacity across town',
       Wait: 'Referral wait (Treeknorm): beyond the limit, HP drains faster toward death',
-      AI: 'AI multiplier: boosts care capacity and cuts admin time across all providers',
+      AI: 'GP productivity: scales remaining clinical work only; no extra admin reduction or specialist starts',
       Decline: 'HP drain rate: how fast citizen health falls while waiting for a referral',
       Fragile: 'Digital dependence: higher values mean hacks and outages cascade harder',
       Citizens: 'Citizen trust: below 40 people avoid care until crisis, driving up deaths',
@@ -14177,9 +14358,9 @@ async function initLLMSubsystem() {
       const tip = CHIP_TIPS[label] || '';
       chips.push('<span class="moc-chip ' + (better ? 'good' : 'bad') + '"' + (tip ? ' title="' + tip + '"' : '') + '>' + (icon ? pixIcon(icon) + ' ' : '') + label + ' ' + from + ' \u2192 ' + to + '</span>');
     }
-    if (fx.admin) { const to = Math.max(3, Math.round((M.IST.admin + fx.admin) * 100)); chip('scroll', 'Admin', Math.round(M.IST.admin * 100) + '%', to + '%', fx.admin < 0); }
-    if (fx.sick) { const to = Math.max(2, Math.round((M.IST.sick + fx.sick) * 100)); chip('bed', 'Sick', Math.round(M.IST.sick * 100) + '%', to + '%', fx.sick < 0); }
-    if (fx.capacity) { chip('clock', 'Starts/week', GS.specialistCapacity.toFixed(2), Math.max(0.25, GS.specialistCapacity + fx.capacity).toFixed(2), fx.capacity > 0); }
+    if (fx.admin) { chip('scroll', 'Admin', Math.round(M.IST.admin * 100) + '%', Math.round(next.p.admin*100) + '%', fx.admin < 0); }
+    if (fx.sick) { chip('bed', 'Sick', Math.round(M.IST.sick * 100) + '%', Math.round(next.p.sick*100) + '%', fx.sick < 0); }
+    if (fx.capacity) { chip('clock', 'Starts/week', GS.specialistCapacity.toFixed(2), next.capacity.toFixed(2), fx.capacity > 0); }
     if (fx.ai) { chip('chip', 'AI', M.IST.ai.toFixed(2) + '\u00d7', (M.IST.ai + fx.ai).toFixed(2) + '\u00d7', fx.ai > 0); }
     if (fx.drainMult) { chip('brheart', 'Decline', M.IST.drain.toFixed(2) + '\u00d7', (M.IST.drain * fx.drainMult).toFixed(2) + '\u00d7', fx.drainMult < 1); }
     if (fx.dep) { chip('plug', 'Fragile', GS.dependence, Math.max(0, GS.dependence + fx.dep), fx.dep < 0); }
@@ -14225,11 +14406,15 @@ async function initLLMSubsystem() {
       }
       else if (item.fx.dep > 0 && GS.quarter < GS.techFreezeUntil) btn = '<button class="moc-buy" disabled>\u2696 Frozen by parliament</button>';
       else if ((GS.buysThisCouncil || 0) >= ((GS._bruisedMandate > 0) ? 1 : BUY_CAP)) btn = '<button class="moc-buy" disabled>' + (GS._bruisedMandate > 0 ? '\ud83e\ude79 Bruised mandate: 1 slot only' : 'No slots left this quarter') + '</button>';
-      else btn = '<button class="moc-buy" data-buy="' + item.id + '"' + (GS.budget < shopCost(item) ? ' disabled' : '') + '>Buy ' + fmtK(shopCost(item)) + '</button>';
+      else btn = '<button class="moc-buy" data-buy="' + item.id + '"' + (!canBuy(item) ? ' disabled' : '') + '>Buy ' + fmtK(shopCost(item)) + '</button>';
       if (wizardMode && maxed) {
         return '<div class="moc-wiz-law-collapsed"><b>' + item.name + '</b><span class="moc-owned">\u2713 Active' + (item.max > 1 ? ' \u00d7' + owned : '') + '</span></div>';
       }
-      const preview = locked ? '' : fxPreview(effectivePolicy(item));
+      let preview = '';
+      if (!locked) {
+        try { projectCarePlan(shopPlan(item),true); preview=fxPreview(effectivePolicy(item)); }
+        catch (error) { preview='<span class="moc-unaffordable">Unavailable: '+error.message+'</span>'; }
+      }
       return '<div class="moc-item"><b>' + item.name + (owned && !maxed ? ' (\u00d7' + owned + ')' : '') + '</b><span class="fx">' + item.desc + '</span>' + preview + btn + '</div>';
     }).join('');
     if (wizardMode && !showAll && filteredItems.length > 3) {
@@ -14309,38 +14494,33 @@ async function initLLMSubsystem() {
     // Stakeholder consequence bands
     GS.activeStates = GS.activeStates || {};
     if (GS.trustD < 35 && !GS.activeStates.docWTR) {
-      GS.activeStates.docWTR = true;
-      applyFx({sick:0.02}, 'Doctors demoralised - sick leave rising.');
-      GS.pendingBanners = GS.pendingBanners || [];
-      GS.pendingBanners.push({ head:'⚕ GPS WORK TO CONTRACT', body:'Doctor trust is below 35. Overtime and cover swaps stop; staff absence rises until doctor trust recovers above 42.', soft:false });
-      showPolicyConsequences('doctors demoralised', {trustD:-3}, 'doctors');
+      if (applyConditionalCare('docWTR',true,'Doctors demoralised - sick leave rising.')) {
+        GS.pendingBanners = GS.pendingBanners || [];
+        GS.pendingBanners.push({ head:'⚕ GPS WORK TO CONTRACT', body:'Doctor trust is below 35. Overtime and cover swaps stop; staff absence rises until doctor trust recovers to 42 or more.', soft:false });
+        showPolicyConsequences('doctors demoralised', {trustD:-3}, 'doctors');
+      }
     } else if (GS.trustD >= 42 && GS.activeStates.docWTR) {
-      GS.activeStates.docWTR = false;
-      applyFx({sick:-0.02}, "Doctors' morale recovering.");
+      applyConditionalCare('docWTR',false,"Doctors' morale recovering.");
     }
     if (GS.trustD < 22 && !GS.activeStates.struck) {
-      GS.activeStates.struck = true;
-      GS._strikeUnresolvedQ = 1;
-      applyTimedFx({sick:0.06, admin:0.05}, 1, 'DOCTOR STRIKE - practices run on skeleton staff');
-      Audio5.klaxon(); FX.shake();
-      GS.pendingBanners = GS.pendingBanners || [];
-      GS.pendingBanners.push({ head:'🚨 GP STRIKE', body:'Doctor trust is below 22. Routine capacity is reduced. Recover above 35 by next council; at 15 the term ends.', soft:false });
-      showPolicyConsequences('doctor strike', {trustD:-5}, 'strike');
+      if (applyTimedFx({sick:0.06, admin:0.05},1,'DOCTOR STRIKE - practices run on skeleton staff','doctor-strike')) {
+        GS.activeStates.struck = true;
+        GS._strikeUnresolvedQ = 1;
+        Audio5.klaxon(); FX.shake();
+        GS.pendingBanners = GS.pendingBanners || [];
+        GS.pendingBanners.push({ head:'🚨 GP STRIKE', body:'Doctor trust is below 22. GP clinical work is reduced by absence and paperwork; routine specialist capacity is unchanged. Recover above 35 by next council; at 15 the term ends.', soft:false });
+        showPolicyConsequences('doctor strike', {trustD:-5}, 'strike');
+      }
     } else if (GS.activeStates.struck) {
-      if (GS.trustD >= 35) {
-        GS.activeStates.struck = false;
-        GS._strikeUnresolvedQ = 0;
-      } else {
+      if (GS.trustD < 35 && applyTimedFx({sick:0.06,admin:0.05},1,
+          'DOCTOR STRIKE CONTINUES - practices remain skeleton staffed','doctor-strike')) {
         GS._strikeUnresolvedQ = Math.max(1, (GS._strikeUnresolvedQ || 0) + 1);
-        applyTimedFx({sick:0.06, admin:0.05}, 1, 'DOCTOR STRIKE CONTINUES - practices remain skeleton staffed');
       }
     }
     if (GS.trustC < 35 && !GS.activeStates.citAvoid) {
-      GS.activeStates.citAvoid = true;
-      applyFx({drainMult:1.12}, 'Citizens delay seeing the GP - they arrive sicker.');
+      applyConditionalCare('citAvoid',true,'Citizens delay seeing the GP - they arrive sicker.');
     } else if (GS.trustC >= 42 && GS.activeStates.citAvoid) {
-      GS.activeStates.citAvoid = false;
-      applyFx({drainMult:1/1.12}, 'Citizens seek care earlier again.');
+      applyConditionalCare('citAvoid',false,'Citizens seek care earlier again.');
     }
     if (GS.trustC < 30) {
       GS._lowTrustCQ = (GS._lowTrustCQ || 0) + 1;
@@ -14386,6 +14566,10 @@ async function initLLMSubsystem() {
 
     // Expire timed effects, deliver delayed ones
     const dueDelayed = processQuarterEffects(q);
+    if (GS.activeStates.struck && GS.trustD>=35 && !GS.timedFx.some(t=>t.source==='doctor-strike')) {
+      GS.activeStates.struck=false;
+      GS._strikeUnresolvedQ=0;
+    }
 
     // Scripted beat takes priority; else event; else dilemma
     let beat = null;
@@ -14401,7 +14585,7 @@ async function initLLMSubsystem() {
           text: face.name + ' (' + formatCompletedAge(face.age) + ') stands at the town hall counter. Your AI-Gated Specialist Access requires a digital identity. ' + face.name.split(' ')[0] + ' has never owned one. "I have been seeing Dr. Bakker for thirty years. Now a computer says I do not exist."',
           a:{ label:'Grant manual exceptions at the counter', fx:{admin:0.02}, note:'A human backstop: admin +2% (permanent)' },
           b:{ label:'Hold the line: the gate applies to everyone',
-              fxFn:function(){ face.waitWeeks = (face.waitWeeks || 0) + 6; GS._biasDeaths = (GS._biasDeaths || 0) + 1; return {trust:-4}; },
+              fx:{trust:-4}, after:function(){ face.waitWeeks = (face.waitWeeks || 0) + 6; GS._biasDeaths = (GS._biasDeaths || 0) + 1; },
               note:'Trust -4 \u00b7 ' + face.name.split(' ')[0] + ' waits 6 extra weeks \u00b7 Exclusion logged' }
         };
       }
@@ -14656,7 +14840,8 @@ async function initLLMSubsystem() {
       if (dilemma) {
         const optHtml = function(opt){
           if (opt.fx && Object.keys(opt.fx).length) return '<br>' + fxPreview(opt.fx).replace('class="delta"', 'class="delta" style="margin:2px 0 0"');
-          if (opt.fxFn) return '<br><span class="delta" style="margin:2px 0 0"><span class="moc-chip risk">\ud83c\udfb2 Gamble \u2014 outcome varies</span></span>';
+          if (opt.fxChoices) return '<br><span class="delta" style="margin:2px 0 0"><span class="moc-chip risk">\ud83c\udfb2 Gamble \u2014 all possible outcomes must be feasible</span></span>';
+          if (opt.plan || opt.fxFn) return '<br><span class="delta" style="margin:2px 0 0">Immediate and scheduled effects checked together.</span>';
           return '<br><span class="delta" style="margin:2px 0 0"><span class="moc-chip" style="background:#2a2a3a;color:#8a94d8">\u2696 No immediate effect</span></span>';
         };
         html += '<div class="moc-dilemma"><div class="ec-head">' + pixIcon('scroll') + ' DECISION REQUIRED</div><div class="dq">' + dilemma.text + '</div>'+decisionBriefHtml([dilemma.a,dilemma.b,dilemma.c])
@@ -14665,17 +14850,24 @@ async function initLLMSubsystem() {
           + (dilemma.c ? '<button class="moc-opt" id="moc-opt-c"' + (decided ? ' disabled' : optionAttrs(dilemma.c).html) + '>' + dilemma.c.label + '<span class="fx">' + dilemma.c.note + optHtml(dilemma.c) + unavailableHtml(dilemma.c) + '</span></button>' : '')
           + '</div>';
       }
+      const options=evt?.choices || [((beat || dilemma)?.a),((beat || dilemma)?.b),((beat || dilemma)?.c)].filter(Boolean);
+      const allUnavailable=!decided && options.length>0 && options.every(option=>optionAttrs(option).blocked);
+      if (allUnavailable) html+='<button class="moc-opt" id="moc-defer-decision">Defer unavailable decision<span class="fx">No feasible option. Continue with no policy change or charge.</span></button>';
       body.innerHTML = html;
       renderNav(true, 'Next \u2192', !decided);
       if (!decided) {
+        document.getElementById('moc-defer-decision')?.addEventListener('click',function(){
+          if (!decided && options.every(option=>optionAttrs(option).blocked)) markDecided(this);
+        });
         if (evt && evt.choices) {
           ov.querySelectorAll('[data-evtopt]').forEach(function(b){
             b.addEventListener('click', function(){
               if (decided) return;
               const c = evt.choices[parseInt(b.getAttribute('data-evtopt'), 10)];
-              c.run();
+              const applied=applyChoice(c);
+              if (!applied) { renderStep2(); return; }
               GS.interventions.push({ q: q, label: evt.name.replace(/^\S+\s/, '') + ': ' + c.label, cost: 0 });
-              showPolicyConsequences(c.label, c.fx || {}, null);
+              showPolicyConsequences(c.label, applied.steps[0]?.fx || {}, null);
               markDecided(b);
             });
           });
@@ -14684,10 +14876,10 @@ async function initLLMSubsystem() {
         if (pool) {
           function decide(opt, btn){
             if (decided) return;
-            const fx = opt.fxFn ? opt.fxFn() : opt.fx;
-            applyFx(fx, 'Council decision: ' + opt.label);
+            const applied=applyChoice(opt);
+            if (!applied) { renderStep2(); return; }
             GS.interventions.push({ q: q, label: 'Decision: ' + opt.label, cost: 0 });
-            showPolicyConsequences(opt.label, fx || {}, null);
+            showPolicyConsequences(opt.label, applied.steps[0]?.fx || {}, null);
             markDecided(btn);
           }
           const btnA = document.getElementById('moc-opt-a');
@@ -14723,7 +14915,7 @@ async function initLLMSubsystem() {
             + '<span class="fx">' + law.desc + '</span>'
             + fxPreview(law.fx)
             + '<button class="moc-buy" data-law="' + law.id + '"'
-            + (GS.budget < law.cost ? ' disabled' : '') + (lawPassedThisCouncil ? ' disabled' : '') + '>'
+            + (GS.budget < law.cost || optionAttrs(law).invalid ? ' disabled' : '') + (lawPassedThisCouncil ? ' disabled' : '') + '>'
             + (lawPassedThisCouncil ? '\u2713 Enacted this quarter' : 'Enact' + (law.cost ? ' ' + fmtK(law.cost) : ''))
             + '</button></div>';
         }
@@ -14748,12 +14940,14 @@ async function initLLMSubsystem() {
               LAW_TRACKS[tk].laws.forEach(function(l){ if (l.id === lawId) law = l; });
             });
             if (!law || GS.budget < law.cost) return;
+            let plan;
+            try { plan=projectCarePlan({cost:law.cost,steps:[{fx:law.fx,label:'Law enacted: '+law.name}]},true); }
+            catch (error) { reportCareInputError(error); return; }
             lawPassedThisCouncil = true;
-            if (law.cost) GS.budget -= law.cost;
             GS.laws[law.id] = q;
             GS._lawsThisAct = (GS._lawsThisAct || 0) + 1; // G15: track for mandatory-law penalty
             GS.interventions.push({ q: q, label: 'Law enacted: ' + law.name, cost: law.cost });
-            applyFx(law.fx, 'Law enacted: ' + law.name);
+            commitCarePlan(plan);
             showPolicyConsequences(law.name, law.fx || {}, null);
             Audio5.gong();
             if (law.beat) GS.pendingBeat = law.beat;
@@ -14799,7 +14993,7 @@ async function initLLMSubsystem() {
     const lenFactor = Math.min(2.5, 40 / Math.max(1, MoC.TOTAL_QUARTERS));
     // G19: adoption penalty — if 2+ tech items owned but adoption < 80%
     const techOwned = ['scribes1','scribes2','a2a','twin','platformai'].filter(function(id){ return GS.owned && GS.owned[id] >= 1; }).length;
-    const adoptionPenalty = ((GS.adoptionRate || 0.7) < 0.8 && techOwned >= 2) ? Math.round((0.8 - (GS.adoptionRate || 0.7)) * 120) : 0;
+    const adoptionPenalty = (GS.adoptionRate < 0.8 && techOwned >= 2) ? Math.round((0.8 - GS.adoptionRate) * 120) : 0;
     // G20: bias penalty — each unmitigated exclusion event costs 50pts
     const biasPenalty = (GS._biasDeaths || 0) * 50;
     // G17/G19: dependence penalty/bonus
@@ -15541,12 +15735,12 @@ async function initLLMSubsystem() {
     { t:'Leaked closure memo', d:function(){return 'A draft memo considers closing a GP practice. The Gazette requests comment.';},
       a:{l:'Confirm the review',run:function(){MoC.adjustTrust(-1);}},
       b:{l:'Deny the review',run:function(){if(Math.random()<0.5)MoC.adjustTrust(-4);}}},
-    { t:'Storm warning', d:function(){return 'Code orange is forecast. Safe mode reduces digital capacity for one evening.';},
+    { t:'Storm warning', d:function(){return 'Code orange is forecast. Safe mode is a score-only action: term score -4 (minimum 0), with no modeled service effect.';},
       a:{l:'Use safe mode',run:function(){GS.liveScore=Math.max(0,GS.liveScore-4);}},
-      b:{l:'Keep systems online',run:function(){if(Math.random()<(GS.dependence>=6?0.45:0.15)){MoC.adjustTrust(-3);applyFx({admin:0.01},'Storm recovery: paperwork +1 point');}}}},
+      b:{l:'Keep systems online',get chance(){return GS.dependence>=6?0.45:0.15;},fxChoices:[{trust:-3,admin:0.01},{}]}},
     { t:'GP working-hours review', d:function(){return 'Dr. Willems is considering reduced hours.';},
       a:{l:'Discuss retention',run:function(){adjustStakeholders(0,3,0);}},
-      b:{l:'Take no action',run:function(){if(Math.random()<0.25)applyFx({sick:0.01},'Reduced GP hours: absence +1 point');}}},
+      b:{l:'Take no action',chance:0.25,fxChoices:[{sick:0.01},{}]}},
     { t:'Carer support request', d:function(){return 'Maria Jansen has provided unpaid care for four years and requests respite support.';},
       cond:function(){return (GS.mantelzorg||30)>=65;},
       a:{l:'Fund two weeks (−€4K)',run:function(){if(GS.budget<4000){FX.pop('Insufficient budget','#e05858');return;}GS.budget-=4000;MoC.adjustTrust(2);GS.mantelzorg=Math.max(30,(GS.mantelzorg||65)-8);}},
@@ -15602,7 +15796,10 @@ async function initLLMSubsystem() {
     function cleanup(){ el.remove(); flashActive = false; if (!councilOpen && !GS.over) resumeSim(); }
     function decide(option){
       const before = flashSnapshot(face);
-      option.run(face); refreshMeters(); renderMinistry(); renderTownWatch();
+      if (optionAttrs(option).blocked) return;
+      if (option.run) option.run(face);
+      else if (!applyChoice(option)) return;
+      refreshMeters(); renderMinistry(); renderTownWatch();
       const changes = flashChanges(before, flashSnapshot(face));
       el.innerHTML = '<h4>' + flash.t + '</h4><div class="moc-sub">Decision applied</div>'
         + '<div class="ft">' + option.l + '</div><div class="moc-flash-result">'
@@ -16094,8 +16291,7 @@ async function initLLMSubsystem() {
       const year = Math.ceil(q / 4);
       const earlyDampen = year <= 2 ? 0.5 : 1; // gradual onset first 2 years
       const preventDampen = GS.owned.prevention ? 0.5 : 1;
-      M.IST.drain = Math.round(M.IST.drain * (1 + 0.04 * preventDampen * earlyDampen) * 100) / 100;
-      M.IST.sick = Math.round((M.IST.sick + 0.003 * preventDampen * earlyDampen) * 1000) / 1000;
+      if (!applyFx({drainMult:1+0.04*preventDampen*earlyDampen,sick:0.003*preventDampen*earlyDampen})) return MoC.lastInputError;
       const annualRise = (0.04 * preventDampen * earlyDampen * 100).toFixed(0);
       return 'Year ' + year + ' aging update: waiting deterioration +' + annualRise + '%. '
         + (GS.owned.prevention ? 'Prevention halves this model increase.' : 'Prevention would halve this model increase.');
@@ -16411,9 +16607,9 @@ async function initLLMSubsystem() {
         }
         const next = st.stage + 1;
         if (q >= st.armedQ + (next - 1) * 2) {
-          st.stage = next;
           const s = c.stages[next - 1];
-          if (s.fx) applyFx(s.fx, s.head);
+          if (s.fx && !applyFx(s.fx, s.head)) return;
+          st.stage = next;
           Audio5.klaxon(); FX.shake();
           out.push(s);
         }
@@ -16482,11 +16678,11 @@ async function initLLMSubsystem() {
         if (M.IST.drain > 1.15) {
           GS.mantelzorg = Math.min(100, (GS.mantelzorg || 30) + 3); // reduced from 5 since quarterly now adds too
         }
-        if ((GS.mantelzorg || 30) >= 80 && !GS._mantelzorgFired) {
+        if ((GS.mantelzorg || 30) >= 80 && !GS._mantelzorgFired
+            && applyFx({sick:0.05,trustC:-3},'Carer burnout crisis: informal care network collapsing')) {
           GS._mantelzorgFired = true;
           GS.pendingBanners.push({ head: '\ud83d\udc9c CARER PRESSURE REACHES 80',
             body: 'Staff absence +5 points; citizen trust \u22123. Carer pressure remains visible in System State.', soft: false });
-          applyFx({ sick: 0.05, trustC: -3 }, 'Carer burnout crisis: informal care network collapsing');
         }
       }
       // G11: Parliament Question Hour every 4 quarters
