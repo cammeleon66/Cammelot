@@ -909,9 +909,32 @@ test('F08 real short and long scenario commands replay under distinct render/pau
       if(scenario==='campaign')assert.ok(deliveries.length,'long scenario must actually replay delayed effects/expiry');
       if(seed===2)assert.ok(deliveries.some(e=>/Strike ends bitter/.test(e.reason)),'actual strike consequence must replay at its logical boundary');
       const target=await makePage();
+      const savedHistory=await target.evaluate(record=>{
+        const history=JSON.stringify([{seed:record.inputs.seed,scenario:record.inputs.scenario,endTick:record.tick,
+          score:777,livesSaved:2,systemDeaths:9,endReason:'prior attempt',verdict:'prior verdict'}]);
+        localStorage.setItem('moc_runs_'+MoC.MODEL_VERSION,history);
+        return history;
+      },record);
+      if(record.ending)await target.waitForFunction(()=>MoC.baselineFrame?.contentWindow,null,{timeout:15000,polling:100});
       const replay=await target.evaluate(record=>MoC.record.run(record,{renderEvery:3,pauseMs:5}),record);
       assert.deepEqual(replay.snapshot,record.final);
       assert.equal(replay.commands,record.commands.length);
+      if(record.ending){
+        const late=await target.evaluate(()=>{
+          const share=document.getElementById('moc-sharetext');
+          share.textContent='Awaiting late reference';
+          const payload={type:'mocBaseline',seed:MoC.seed,scenario:MoC.S.scenario,
+            modelVersion:MoC.MODEL_VERSION,protocol:MoC.REFERENCE_PROTOCOL,
+            scheduleId:MoC.environment.scheduleId,snapshots:MoC.runSnapshots,tick:modelTick};
+          window.dispatchEvent(new MessageEvent('message',{origin:location.origin,
+            source:MoC.baselineFrame.contentWindow,data:payload}));
+          return {accepted:MoC.baseline===payload,share:share.textContent,
+            history:localStorage.getItem('moc_runs_'+MoC.MODEL_VERSION)};
+        });
+        assert.equal(late.accepted,true,'late reference must reach the real replay callback');
+        assert.notEqual(late.share,'Awaiting late reference','comparison sharing must still refresh');
+        assert.equal(late.history,savedHistory,'replay and late references must not rewrite another saved attempt');
+      }
       await source.close();await target.close();
     }
     assert.deepEqual(writes,[],'recorded tests and replay must not submit scores');

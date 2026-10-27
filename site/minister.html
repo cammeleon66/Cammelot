@@ -15508,6 +15508,7 @@ async function initLLMSubsystem() {
     const sv = document.getElementById('moc-scoreval'); if (sv) sv.textContent = r.score;
     const st = document.getElementById('moc-sharetext');
     if (st && GS._rebuildShare) st.textContent = GS._rebuildShare(r);
+    if (MoC.record?.replaying) return;
     const runs=loadJSON('moc_runs_'+MoC.MODEL_VERSION,[]);
     const saved=runs.find(run=>run.seed===MoC.seed && run.scenario===GS.scenario && run.endTick===modelTick);
     if(saved){saved.score=r.score;saved.livesSaved=r.livesSaved;saveJSON('moc_runs_'+MoC.MODEL_VERSION,runs);}

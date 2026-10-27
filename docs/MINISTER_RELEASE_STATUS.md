@@ -127,6 +127,23 @@ Implementation remains **UNRELEASED**; public model 9 is unchanged. The coordina
 owns final review and release. These local results are not publication evidence,
 clinical calibration, an outcome-improvement claim or universal replay causality.
 
+### Coordinator review: replay leaves saved attempts unchanged
+
+Standards review found a late-reference callback could overwrite a different
+saved run during replay. The real replay fixture reproduced a saved row changing
+from score 777 / lives saved 2 to score 215 / lives saved 0 while its other fields
+remained from the prior attempt. Late reference handling now refreshes comparison
+and sharing text but exits before local-history persistence or publication when
+replaying.
+
+`node --test --test-name-pattern='F08 real short' tests/minister_browser.test.js`
+fails on the original callback and passes with the guard (67.52 seconds).
+Both completed scenario replays preserve the sentinel history byte-for-byte
+after an accepted same-origin reference message, while sharing text still
+refreshes; the strike-prefix replay also passes. Frame readiness uses timer
+polling because the render-independence fixture deliberately disables animation
+frames. Final exact-source CI and review clearance are recorded on the PR.
+
 ## Model 9: workforce/productivity (F05)
 
 Issue [#5](https://github.com/cammeleon66/Cammelot/issues/5) is implemented and published as `minister-care-9-workforce-productivity`, based on `ba0c19ba4d6ca06618961327f742e677b44b0322`. **Model 9 is the verified public model.** The coordinator reviewed and published it through the existing gated workflow; no workflows, settings, backend or production leaderboard state were changed. Publication evidence is recorded separately below.
