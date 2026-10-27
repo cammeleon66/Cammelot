@@ -1,6 +1,6 @@
 # Minister of Cammelot — release status
 
-Updated: 2026-10-26
+Updated: 2026-10-27
 Public game: https://cammelot.org/minister.html
 Verified public model: `minister-care-8-finite-resources` (publication evidence below)
 Reference protocol: `no-discretionary-action-v1`
@@ -44,7 +44,28 @@ The seven F05 tests pass. Every service fixture uses stable RNG, isolated unrela
 
 The first complete-suite attempt exposed two implementation follow-ups: rejecting the existing `deceased` **condition** state broke reference execution on non-finalizing paths, and an old purchase assertion assumed hundredth rounding. The inherited condition-state factor 1 is now explicit (terminal resident rules unchanged), and the purchase assertion checks exact retained effect precision. The focused F05/reference/preview/replay rerun passed **10/10**.
 
-Final Windows validation: `npm test` **187/187 passed**, 48 suites, zero failures/cancellations/skips (180.36 seconds). This includes all seven F05 fixtures, all seven F04 resource fixtures, offline routing, both supported HTTP host paths, both scenario references, versioned replay/publication mocks, clock, terminal death, night routing and retirement regressions. Supported no-action runs additionally assert that scenario/scheduled effects produce no care-input error. `node --check tests/minister_browser.test.js`, Acorn parsing of the inline Minister script, and `git diff --check` passed. Self-review was local and single-writer; no other agent or workflow was launched. This is repository evidence, not publication or clinical validation.
+Initial implementation validation (`1d4a313a31d3ea362fffc89b2d351510e74ea180`): `npm test` **187/187 passed**, 48 suites, zero failures/cancellations/skips (180.36 seconds). This includes all seven F05 fixtures, all seven F04 resource fixtures, offline routing, both supported HTTP host paths, both scenario references, versioned replay/publication mocks, clock, terminal death, night routing and retirement regressions. Supported no-action runs additionally assert that scenario/scheduled effects produce no care-input error. `node --check tests/minister_browser.test.js`, Acorn parsing of the inline Minister script, and `git diff --check` passed. Self-review was local and single-writer; no other agent or workflow was launched. This is repository evidence, not publication or clinical validation.
+
+### F05 review follow-up: atomic choices, expiry precision and honest storm copy
+
+Review against pinned `1d4a313` exposed a complete-choice validation gap. The real ransomware decision at dependence 8 / routine rate 0.5 charged €50K and installed temporary paperwork before its final -0.5 rate step failed. Two active browser clicks reproduced budget €200K → €100K, admin 0.30 → 0.5666666666666667 and two pending inverses, with no completed decision. Independent red fixtures reproduced a permanent reduction consuming temporary paperwork needed at expiry and an in-house build charging €70K before an invalid future -0.03 admin delivery.
+
+The follow-up validates explicit complete plans, cumulative immediate state/cost and all known dated inverses/deliveries **before any mutation**. Availability uses the same plans, with click-time revalidation and exactly-once completion. Later choices reserve known obligations; expired work is removed only after successful application. Invalid restored-state batches remain pending with an observable error. An all-invalid mandatory council has an explicit no-effect deferral, rather than a repeatable rejected action or navigation deadlock. Random choices require all possible outcomes to be feasible without speculative execution. This is a conservative known-obligation rule, not a scheduler replacement or a forecast of unknown events.
+
+Additional real-path regressions caught valid full-adoption scribe/platform purchases being disabled by floating point residue, and two Pilot Grants whose scheduled inverses failed near zero (complete-plan validation initially moved this failure earlier, into purchase availability). A narrow machine-epsilon correction of computed bound crossings now permits these valid zero results; direct invalid inputs and substantive overshoots still reject. The active storm safe-mode copy now explicitly says score-only/no modeled service effect; its existing score decrement is unchanged.
+
+`node --test --test-name-pattern='F05 review' tests/minister_browser.test.js`: **11/11 passed** on the final source (23.60 seconds). Coverage includes:
+
+- All-invalid ransomware choices: no budget/trust/admin/pending mutation, disabled reasons, no-effect continuation to funding.
+- Valid ransomware: one charge, one temporary record, one rate reduction and one decision record; duplicate and stale button events cannot partially reapply it.
+- Permanent-policy and delayed-benefit reservations, valid delivery exactly once, cumulative admin failure and conservative random-outcome availability.
+- Failed expiry retained and retried after inconsistent state is repaired; council remains navigable.
+- Two actual Pilot Grant purchases at admin 0 / adoption 0.7: admin 0.04, Q3 about 0.02, Q4 **exactly 0**, no pending inverses or care-input errors.
+- Actual full-adoption scribe pilot/full rollout/platform purchases: final admin **exactly 0**, no care-input errors.
+- Nonfinite inputs, invalid raw fractions, zero-to-negative deltas and meaningful overshoots rejected without cost.
+- Active storm safe mode: score 100 → 96, unchanged GP work (5.152/week), parameters, routine rate and scheduled effects.
+
+Final-source Windows validation: `npm test` **198/198 passed**, 48 suites, zero failures/cancellations/skips (254.51 seconds). This includes all 18 F05 tests, existing finite-resource/clock/death/retirement checks, both supported scenario references (including the no-care-input-error assertions), offline browser isolation, and both supported HTTP host paths. `node --check tests/minister_browser.test.js`, Acorn parsing of the inline Minister script, and `git diff --check` passed. No dependencies or tooling were added. Model 9 is still **upcoming, not deployed**; public model 8 and reference protocol are unchanged.
 
 ## Model 8: finite resources (F04)
 

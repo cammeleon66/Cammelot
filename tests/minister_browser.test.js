@@ -850,6 +850,283 @@ test('F05 zero-adoption shop preview executes its named effects and invalid offe
   });
 });
 
+async function openRansomwareCouncil(page, capacity=0.5, admin=0.3) {
+  page.setDefaultTimeout(5000);
+  await page.evaluate(({capacity,admin}) => {
+    Object.assign(M.IST,{admin,sick:0.1,ai:1});
+    Object.assign(MoC.S,{specialistCapacity:capacity,dependence:8,budget:200000,quarter:2,
+      trust:70,trustC:70,trustD:70,trustP:70});
+    MoC.S.owned.scribes1=1;
+    document.getElementById('play-overlay')?.remove();
+    const rng=MoC.mulberry32;
+    try { MoC.mulberry32=()=>()=>0.7; _mocForceCouncil(2); }
+    finally { MoC.mulberry32=rng; }
+  },{capacity,admin});
+  await page.locator('#moc-wiz-next').click();
+  assert.match(await page.locator('#moc-wiz-body').innerText(),/RANSOMWARE/);
+}
+
+test('F05 review invalid complete council choices cannot charge repeatedly or deadlock funding', {timeout:30000}, async () => {
+  await withResourceTown(async page => {
+    await openRansomwareCouncil(page);
+    const snapshot=()=>page.evaluate(()=>({budget:MoC.S.budget,p:{...M.IST},rate:MoC.S.specialistCapacity,
+      trust:[MoC.S.trustC,MoC.S.trustD,MoC.S.trustP],timed:MoC.S.timedFx,delayed:MoC.S.delayed,
+      interventions:MoC.S.interventions}));
+    const before=await snapshot();
+    const negotiate=page.locator('[data-evtopt="0"]');
+    for(let i=0;i<2;i++) if (!await negotiate.isDisabled()) await negotiate.click();
+    const after=await snapshot();
+    assert.deepEqual(after,before,'rejected complete choice must not charge or install a partial effect');
+    assert.equal(await negotiate.isDisabled(),true);
+    assert.equal(await page.locator('[data-evtopt="1"]').isDisabled(),true);
+    assert.match(await page.locator('#moc-wiz-body').innerText(),/Unavailable: Invalid care input: capacity/);
+    await page.locator('#moc-defer-decision').click();
+    assert.equal(await page.locator('#moc-wiz-next').isDisabled(),false);
+    await page.locator('#moc-wiz-next').click();
+    await page.locator('#moc-wiz-next').click();
+    assert.equal(await page.locator('#moc-shop').count(),1);
+    assert.deepEqual(await snapshot(),before,'explicit unavailable-choice deferral has no policy effects');
+  });
+});
+
+test('F05 review temporary expiry is reserved before accepting a permanent policy', {timeout:30000}, async () => {
+  await withResourceTown(async page => {
+    await openRansomwareCouncil(page,1,0.02);
+    await page.locator('[data-evtopt="0"]').click();
+    const result=await page.evaluate(()=>{
+      const before={budget:MoC.S.budget,admin:M.IST.admin,timed:JSON.stringify(MoC.S.timedFx)};
+      const accepted=_mocDebug.applyFx({admin:-0.04,budget:-1000});
+      return {accepted,before,after:{budget:MoC.S.budget,admin:M.IST.admin,timed:JSON.stringify(MoC.S.timedFx)}};
+    });
+    assert.equal(result.accepted,false,'a permanent reduction must not consume temporary paperwork that expires');
+    assert.deepEqual(result.after,result.before);
+    await page.evaluate(()=>{
+      document.getElementById('moc-council')?.remove();
+      MoC.S._sinceQuiet=3; MoC.S.quarter=3; _mocForceCouncil(3);
+    });
+    const expired=await page.evaluate(()=>({admin:M.IST.admin,timed:MoC.S.timedFx.length}));
+    assert.ok(Math.abs(expired.admin-0.02)<1e-9);
+    assert.equal(expired.timed,0);
+  },'?debug=1');
+});
+
+test('F05 review delayed delivery is validated before any decision cost', {timeout:30000}, async () => {
+  await withResourceTown(async page => {
+    await page.evaluate(()=>{
+      Object.assign(M.IST,{admin:0.02,sick:0.1,ai:1});
+      Object.assign(MoC.S,{budget:200000,quarter:2,_sinceQuiet:3,_dilemmaOrder:['buildorbuy']});
+      document.getElementById('play-overlay')?.remove(); _mocForceCouncil(2);
+    });
+    await page.locator('#moc-wiz-next').click();
+    const build=page.locator('#moc-opt-b');
+    const before=await page.evaluate(()=>({budget:MoC.S.budget,delayed:MoC.S.delayed,trust:MoC.S.trustD}));
+    if (!await build.isDisabled()) await build.click();
+    assert.deepEqual(await page.evaluate(()=>({budget:MoC.S.budget,delayed:MoC.S.delayed,trust:MoC.S.trustD})),before);
+    assert.equal(await build.isDisabled(),true);
+    assert.match(await build.innerText(),/Unavailable:/);
+  });
+});
+
+async function openQuietFunding(page,q) {
+  await page.evaluate(q=>{
+    document.getElementById('play-overlay')?.remove();
+    document.getElementById('moc-council')?.remove();
+    Object.assign(MoC.S,{quarter:q,_sinceQuiet:3,_dilemmaOrder:[['cyberins','insurer','locum'][q-2]]});
+    _mocForceCouncil(q);
+  },q);
+  await openCouncilActions(page);
+  if (await page.locator('#moc-shop-more').count()) await page.locator('#moc-shop-more').click();
+}
+
+test('F05 review valid ransomware commits once, while stale and cumulative-invalid offers stay atomic', {timeout:30000}, async () => {
+  for (const kind of ['valid','stale','cumulative']) {
+    await withResourceTown(async page=>{
+      await openRansomwareCouncil(page,1,kind==='cumulative'?0.9:0.3);
+      if (kind==='stale') await page.evaluate(()=>{MoC.S.specialistCapacity=0.5;});
+      const snapshot=()=>page.evaluate(()=>({budget:MoC.S.budget,admin:M.IST.admin,capacity:MoC.S.specialistCapacity,
+        trust:[MoC.S.trustC,MoC.S.trustD,MoC.S.trustP],timed:MoC.S.timedFx,interventions:MoC.S.interventions}));
+      const before=await snapshot(),button=page.locator('[data-evtopt="0"]');
+      if (!await button.isDisabled()) await button.click();
+      const after=await snapshot();
+      if (kind==='valid') {
+        assert.equal(after.budget,before.budget-50000);
+        assert.ok(Math.abs(after.admin-before.admin-0.1*4/3)<1e-15);
+        assert.equal(after.capacity,0.5);
+        assert.equal(after.timed.length,1);
+        assert.equal(after.interventions.length,before.interventions.length+1);
+        assert.equal(await button.isDisabled(),true);
+        await button.dispatchEvent('click');
+        assert.deepEqual(await snapshot(),after,'even a duplicate event cannot apply a decided choice twice');
+      } else {
+        assert.deepEqual(after,before);
+        assert.equal(await button.isDisabled(),true);
+        assert.equal(await page.locator('#moc-defer-decision').count(),1);
+      }
+    });
+  }
+});
+
+test('F05 review valid delayed delivery is reserved and settles exactly once', {timeout:30000}, async () => {
+  await withResourceTown(async page=>{
+    page.setDefaultTimeout(4000);
+    await page.evaluate(()=>{
+      Object.assign(M.IST,{admin:0.06,sick:0.1,ai:1});
+      Object.assign(MoC.S,{budget:200000,quarter:2,_sinceQuiet:3,_dilemmaOrder:['buildorbuy']});
+      document.getElementById('play-overlay')?.remove(); _mocForceCouncil(2);
+    });
+    await page.locator('#moc-wiz-next').click();
+    await page.locator('#moc-opt-b').click();
+    const accepted=await page.evaluate(()=>({budget:MoC.S.budget,admin:M.IST.admin,delayed:MoC.S.delayed.length}));
+    assert.deepEqual(accepted,{budget:130000,admin:0.06,delayed:1});
+    assert.equal(await page.evaluate(()=>_mocDebug.applyFx({admin:-0.04,budget:-1000})),false);
+    assert.deepEqual(await page.evaluate(()=>({budget:MoC.S.budget,admin:M.IST.admin,delayed:MoC.S.delayed.length})),accepted);
+    await page.evaluate(()=>{
+      document.getElementById('moc-council')?.remove();
+      Object.assign(MoC.S,{quarter:10,_sinceQuiet:3,_dilemmaOrder:['locum']}); _mocForceCouncil(10);
+    });
+    assert.deepEqual(await page.evaluate(()=>({admin:M.IST.admin,delayed:MoC.S.delayed.length})),{admin:0.03,delayed:0});
+    await page.evaluate(()=>{
+      document.getElementById('moc-council')?.remove();
+      Object.assign(MoC.S,{quarter:11,_sinceQuiet:3,_dilemmaOrder:['cyberins']}); _mocForceCouncil(11);
+    });
+    assert.equal(await page.evaluate(()=>M.IST.admin),0.03);
+  },'?debug=1');
+});
+
+test('F05 review a failed expiry is retained for retry, not silently discarded', {timeout:30000}, async () => {
+  await withResourceTown(async page=>{
+    await openRansomwareCouncil(page,1,0.02);
+    await page.locator('[data-evtopt="0"]').click();
+    const active=await page.evaluate(()=>({admin:M.IST.admin,timed:MoC.S.timedFx}));
+    // Simulate inconsistent restored state, bypassing normal reserved-policy
+    // validation. Runtime must retain the obligation and expose the failure.
+    await page.evaluate(()=>{
+      M.IST.admin=0.01;
+      document.getElementById('moc-council')?.remove();
+      Object.assign(MoC.S,{quarter:3,_sinceQuiet:3,_dilemmaOrder:['locum']}); _mocForceCouncil(3);
+    });
+    assert.deepEqual(await page.evaluate(()=>MoC.S.timedFx),active.timed);
+    assert.equal(await page.evaluate(()=>M.IST.admin),0.01);
+    assert.match(await page.evaluate(()=>MoC.lastInputError),/Invalid care input: admin/);
+    await page.locator('#moc-wiz-next').click();
+    await page.locator('#moc-defer-decision').click();
+    assert.equal(await page.locator('#moc-wiz-next').isDisabled(),false);
+    await page.evaluate(admin=>{
+      M.IST.admin=admin;
+      document.getElementById('moc-council')?.remove();
+      Object.assign(MoC.S,{quarter:4,_sinceQuiet:3,_dilemmaOrder:['cyberins']}); _mocForceCouncil(4);
+    },active.admin);
+    assert.equal(await page.evaluate(()=>MoC.S.timedFx.length),0);
+    assert.ok(Math.abs(await page.evaluate(()=>M.IST.admin)-0.02)<1e-15);
+  });
+});
+
+test('F05 review gamble availability covers every outcome without speculative mutation', {timeout:30000}, async () => {
+  await withResourceTown(async page=>{
+    page.setDefaultTimeout(4000);
+    await page.evaluate(()=>{
+      Object.assign(M.IST,{admin:0.3,sick:0.1,ai:1});
+      Object.assign(MoC.S,{budget:200000,specialistCapacity:0.25,quarter:2,_sinceQuiet:3,_dilemmaOrder:['nzatariff']});
+      document.getElementById('play-overlay')?.remove(); _mocForceCouncil(2);
+    });
+    await page.locator('#moc-wiz-next').click();
+    assert.equal(await page.locator('#moc-opt-b').isDisabled(),true);
+    assert.match(await page.locator('#moc-opt-b').innerText(),/Invalid care input: capacity/);
+    assert.deepEqual(await page.evaluate(()=>({budget:MoC.S.budget,capacity:MoC.S.specialistCapacity,interventions:MoC.S.interventions})),
+      {budget:200000,capacity:0.25,interventions:[]});
+    assert.equal(await page.locator('#moc-opt-a').isDisabled(),false);
+  });
+});
+
+test('F05 review roundoff correction does not accept invalid inputs or substantive overshoots', {timeout:30000}, async () => {
+  await withResourceTown(async page=>{
+    const results=await page.evaluate(()=>{
+      const tryFx=(admin,fx)=>{
+        M.IST.admin=admin;
+        const before={budget:MoC.S.budget,admin:M.IST.admin};
+        const accepted=_mocDebug.applyFx({...fx,budget:-100});
+        return {accepted,before,after:{budget:MoC.S.budget,admin:M.IST.admin}};
+      };
+      return [
+        tryFx(0,{admin:-Number.EPSILON}),
+        tryFx(-Number.EPSILON,{admin:0.1}),
+        tryFx(0.3,{admin:-0.30000001}),
+        tryFx(0.9,{admin:0.10000001}),
+        tryFx(0.3,{admin:NaN}),
+        tryFx(0.3,{ai:Infinity})
+      ];
+    });
+    for (const result of results) {
+      assert.equal(result.accepted,false);
+      assert.deepEqual(result.after,result.before);
+    }
+  },'?debug=1');
+});
+
+test('F05 review two Pilot Grants expire without a roundoff residue or lost reversal', {timeout:30000}, async () => {
+  await withResourceTown(async page=>{
+    page.setDefaultTimeout(4000);
+    await page.evaluate(()=>{
+      Object.assign(M.IST,{admin:0,sick:0.1,ai:1});
+      Object.assign(MoC.S,{budget:1000000,adoptionRate:0.7});
+    });
+    await openQuietFunding(page,2);
+    for(let i=0;i<2;i++) {
+      const buy=page.locator('[data-buy="pilotgrant"]');
+      assert.equal(await buy.isDisabled(),false,'both valid pilots must remain available');
+      await buy.click();
+    }
+    assert.ok(Math.abs(await page.evaluate(()=>M.IST.admin)-0.04)<1e-15);
+    await openQuietFunding(page,3);
+    assert.ok(Math.abs(await page.evaluate(()=>M.IST.admin)-0.02)<1e-15);
+    await openQuietFunding(page,4);
+    assert.deepEqual(await page.evaluate(()=>({admin:M.IST.admin,timed:MoC.S.timedFx,errors:MoC.careInputErrorCount || 0})),
+      {admin:0,timed:[],errors:0});
+  });
+});
+
+test('F05 review full-adoption scribe and platform purchases reach exact zero paperwork', {timeout:30000}, async () => {
+  await withResourceTown(async page=>{
+    page.setDefaultTimeout(4000);
+    await page.evaluate(()=>{
+      Object.assign(M.IST,{admin:0.3,sick:0.1,ai:1});
+      Object.assign(MoC.S,{budget:1000000,adoptionRate:1});
+    });
+    await openQuietFunding(page,2);
+    await page.locator('[data-buy="scribes1"]').click();
+    await page.locator('[data-buy="scribes2"]').click();
+    await openQuietFunding(page,3);
+    const platform=page.locator('[data-buy="platform"]');
+    assert.equal(await platform.isDisabled(),false,'0.30 - 0.18 - 0.07 - 0.05 is a valid zero');
+    await platform.click();
+    assert.deepEqual(await page.evaluate(()=>({admin:M.IST.admin,owned:MoC.S.owned.platform,errors:MoC.careInputErrorCount || 0})),
+      {admin:0,owned:1,errors:0});
+  });
+});
+
+test('F05 review storm safe mode explicitly reports score only with no service effect', {timeout:30000}, async () => {
+  await withResourceTown(async page=>{
+    page.setDefaultTimeout(4000);
+    await page.evaluate(()=>{
+      Object.assign(M.IST,{admin:0.3,sick:0.08,ai:1});
+      MoC.S.liveScore=100;
+      document.getElementById('play-overlay')?.remove();
+      _mocForceFlash(5);
+    });
+    const snapshot=()=>page.evaluate(()=>({p:{...M.IST},capacity:MoC.S.specialistCapacity,
+      timed:MoC.S.timedFx,delayed:MoC.S.delayed,gp:MoC.care.snapshot().gpService}));
+    const before=await snapshot();
+    const text=await page.locator('.moc-flash').innerText();
+    assert.match(text,/score.only/i);
+    assert.match(text,/no modeled service effect/i);
+    assert.doesNotMatch(text,/reduces digital capacity/i);
+    await page.locator('#moc-fa').click();
+    assert.equal(await page.evaluate(()=>MoC.S.liveScore),96);
+    assert.deepEqual(await snapshot(),before);
+    assert.match(await page.locator('.moc-flash-result').innerText(),/Term score -4/);
+  });
+});
+
 test('F04 eight emergencies share one place with bounded visible overflow and no routine displacement', {timeout:30000}, async () => {
   await withResourceTown(async page => {
     const result = await page.evaluate(() => {
