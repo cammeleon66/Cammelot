@@ -7,6 +7,143 @@ Reference protocol: `no-discretionary-action-v1`
 
 This is the canonical status list. Older plans describe how the current release was built; their unchecked boxes are not active tasks.
 
+## Upcoming model 10 foundation fixes — UNRELEASED
+
+Implementation branch `fix/foundation-time-and-replay`, base
+`86d53e02ed5dc4bb5c8a2c26782a5008f831923d`; single writer in the isolated Windows
+worktree. No deployment, settings changes or production backend/leaderboard writes.
+
+F06 baseline command: `node --test --test-name-pattern='F06' tests/minister_browser.test.js`.
+Before runtime changes the real council callback failed **10 !== 4**: six weeks
+were invented in the resident field, absent from authoritative elapsed time.
+The episode now carries an idempotent future hold; see the model contract for
+no-referral and mitigation rules. Targeted `F06|F04` run: **10/10 passed**
+(17.29s), including expiry at 24 ticks, treatment completion, emergency eligibility,
+duplicate synchronization/dispatch, absent referral and all exit classifications.
+Existing finite-resource regressions pass. Model identity is
+`minister-care-10-access-time-replay`; reference protocol unchanged.
+F06 implementation commit: `b20f2c9563048287e6e1b33e5769ddeb793e3042`.
+
+F07 baseline command: `node --test --test-name-pattern='F07' tests/minister_browser.test.js`.
+The real strike choice followed by 4.25 seconds of paused council reading changed
+doctor trust **73 → 67 at tick 0**. Logical delivery now occurs once after four
+ticks. Ending cancels pending delivery; repeated terminal settlement, stale
+decisions and effect calls leave the final gameplay snapshot unchanged. Two new
+fixture attempts initially failed for fixture errors (forcing a flash while council
+was open; expecting unchanged trust across councils with their own political
+effects); the tests were corrected to test the intended boundaries, not bypass them.
+The existing F05 horizon/conditional/stacked Pilot Grant checks plus first F07
+fixture passed **13/13** (34.66s). Final F07 targeted run: **3/3 passed**
+(15.56s). The terminal fixture additionally caught a real early-ending defect:
+end-screen rendering appended the already-settled objective a second time when
+the final year had not been reached. Rendering now reads the history only.
+F07 implementation commit: `118372a57077096b7a2dba0c8a6758891b64ad3c`.
+
+### F08 complete record and executable replay — prepublication evidence
+
+The actual-path red command was
+`node --test --test-name-pattern='F08' tests/minister_browser.test.js`.
+A mid-quarter case-manager request spent **€5,000**, but the old previous-attempt
+artifact contained no command or cash reason for it. The assertion failed before
+the recorder/replayer implementation.
+
+The complete record now distinguishes envelope schema, event schema, replay
+interpreter, model, reference protocol and SHA-256 executable identity. It retains
+initial inputs, full ordered commands/events, named-resident changes, authored
+effects/reasons, schedules, no-effect/rejected actions and agreed initial/final
+states. Export does not truncate. Replay executes the same actual controls and
+domain handlers, verifies availability/order/context and outcomes, and visibly
+refuses incompatible or divergent records. It never restores recorded snapshots
+into the model. Remote score publication and new local leaderboard entries are
+suppressed during replay. See the [complete contract](MINISTER_MODEL_CONTRACT.md#f08-complete-local-commandevent-record-and-executable-replay)
+for supported inputs, checksum limitations and explicit non-goals.
+
+| Actual command-path fixture | Recorded and replayed evidence |
+|---|---|
+| Cabinet Crisis, seed 2468 | Tick **416**, final election ending; **64 commands / 716 events**. Purchases, laws, dilemmas, resident requests and actual temporary rollout expiry. |
+| Full Term, seed 2468 | Tick **988**, actual early midterm-election ending; **160 commands / 1,568 events**. Same domain-handler path, including real rollout expiry and complete terminal history. This does **not** claim a 2,080-tick discretionary campaign replay. |
+| Cabinet Crisis, seed 2 | Prefix through tick **108**; **20 commands / 208 events**. The naturally selected GP strike is accepted at tick 104; its doctor-trust consequence executes at tick 108. No forced dilemma order or reference-policy bypass. |
+| Corrupt/incompatible records | Separate schema, event schema, replay version, model and executable mismatch; reordered, unavailable, missing and forbidden-selector commands; altered initial state and effect trace; repeated replay without reset. Each refuses visibly. |
+| Full export / automatic consequences | Real request at tick 26 retains the €5K cost reason; clinical/political/cash/live-score changes, external impacts and expiry, objectives and terminal dispositions remain in the untruncated record. |
+
+Replay fixtures use actual player ticks with bounded loops, seeded command RNG,
+normal finite resources, no reference-policy bypass and no clinical state
+installation. Source runs omit rendering; replay renders every third tick and
+adds pauses at quarter boundaries. Final agreed snapshots and complete event
+traces match. Existing full-horizon no-action/reference tests are separate
+evidence, not a substitute for these discretionary replay cases.
+
+Targeted integrated `F08|F07|F06` run before the final mitigation/strike cases:
+**9/9 passed** (111.52s). Final three-scenario replay fixture:
+**passed** (84.29s). The additional actual manual-exception/Inclusion Officer
+fixture passed (4.68s). The replay test was tightened after an initial run showed
+no delayed policy delivery on the selected strategy: it now buys a real Pilot
+Grant and verifies its expiry, plus the separate natural seed-2 strike. An initial
+negative-test setup reused a same-document navigation; it now opens a fresh
+document before each incompatible-record test, rather than weakening tick-zero
+validation.
+
+### Final integrated verification — prepublication only
+
+The final consistency check extended the actual early-ending/reference fixture
+to publish to a local mocked endpoint before the reference arrived. It exposed a
+protocol regression: reusing the entire frozen publication result left
+`Lives saved vs status quo: 0` absent from sharing text after a valid tick-75
+reference arrived. Presentation now recomputes comparison details while retaining
+the published scalar score; the submitted result remains frozen. Reference
+matching rules are unchanged. The pinned command
+`node --test --test-name-pattern='Early results match' tests/minister_browser.test.js`
+failed on that missing sharing detail before the correction, then passed **1/1**
+in **13.82s**. An initial assertion used `innerText` on the collapsed sharing
+section; it was corrected to `textContent` before the substantive red run.
+
+Verification history is retained, including incomplete runs:
+
+- First full-suite attempt: **217 passed, 0 assertion failures, 2 canceled**.
+  `F08 incompatible, reordered, unavailable and altered records fail visibly without publication`
+  reported **`test timed out after 120000ms`** (reported duration 1,524.40s);
+  `F05 aggregate absence reduces actual GP service` reported
+  **`test timed out after 30000ms`**. The timeout cause is unproven; this is not
+  attributed to the unrelated known name-generation flake. The leftover test
+  process was stopped after its summary.
+- Those two fixtures rerun **unchanged**: **2/2 passed**, **14.59s**.
+- Fresh complete suite before the late-reference correction: **219/219 passed**,
+  **48 suites**, **508.27s**, no failures, cancellations or skips.
+- **Final source, including that correction:** `npm test` exited **0** with
+  **219/219 passed**, **48 suites**, **460.48s**, **0 failures, 0 cancellations,
+  0 skips**. This includes all **four F06**, **three F07** and **three F08**
+  fixtures, existing F04/F05 resource and reservation regressions, and both
+  full-horizon no-action/reference cases. The three-scenario discretionary replay
+  fixture passed in **77.39s**, with the exact command/event counts above.
+- `node --check tests/minister_browser.test.js`, Acorn parsing of the complete
+  inline executable, and `git diff --check` passed. No build/linter is defined
+  by this repository. No dependencies were added.
+
+The existing random-player-name uniqueness flake was not encountered in the
+completed full-suite summaries, not changed, and is not guaranteed absent.
+Only `site/minister.html`, `tests/minister_browser.test.js`, this release status
+and `MINISTER_MODEL_CONTRACT.md` changed for these three stages.
+Implementation remains **UNRELEASED**; public model 9 is unchanged. The coordinator
+owns final review and release. These local results are not publication evidence,
+clinical calibration, an outcome-improvement claim or universal replay causality.
+
+### Coordinator review: replay leaves saved attempts unchanged
+
+Standards review found a late-reference callback could overwrite a different
+saved run during replay. The real replay fixture reproduced a saved row changing
+from score 777 / lives saved 2 to score 215 / lives saved 0 while its other fields
+remained from the prior attempt. Late reference handling now refreshes comparison
+and sharing text but exits before local-history persistence or publication when
+replaying.
+
+`node --test --test-name-pattern='F08 real short' tests/minister_browser.test.js`
+fails on the original callback and passes with the guard (67.52 seconds).
+Both completed scenario replays preserve the sentinel history byte-for-byte
+after an accepted same-origin reference message, while sharing text still
+refreshes; the strike-prefix replay also passes. Frame readiness uses timer
+polling because the render-independence fixture deliberately disables animation
+frames. Final exact-source CI and review clearance are recorded on the PR.
+
 ## Model 9: workforce/productivity (F05)
 
 Issue [#5](https://github.com/cammeleon66/Cammelot/issues/5) is implemented and published as `minister-care-9-workforce-productivity`, based on `ba0c19ba4d6ca06618961327f742e677b44b0322`. **Model 9 is the verified public model.** The coordinator reviewed and published it through the existing gated workflow; no workflows, settings, backend or production leaderboard state were changed. Publication evidence is recorded separately below.

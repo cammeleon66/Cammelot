@@ -221,7 +221,7 @@ test('Elapsed model clock uses quarter-week ticks and exact calendar boundaries'
       }
     });
     assert.deepEqual(outcome.initial,{cycle:30,elapsed:0,ticksPerWeek:4,ticksPerDay:4/7,ticksPerQuarter:52,ticksPerYear:208,
-      modelVersion:'minister-care-9-workforce-productivity'});
+      modelVersion:'minister-care-10-access-time-replay'});
     assert.match(outcome.openingCopy.story,/Seven allocation councils remain, from Q2 through Q8/);
     assert.match(outcome.openingCopy.brief,/Seven allocation councils from Q2 through Q8/);
     assert.match(outcome.openingCopy.brief,/opening quarter has no purchase window/);
@@ -604,6 +604,401 @@ async function workforceTrace(parameters) {
   });
   return result;
 }
+
+async function openExclusionCouncil(page, referred=true) {
+  await page.evaluate(referred => {
+    const a = referred ? resourceFixture.queue(0,'hospital',{waitWeeks:4,referredToHospital:true})
+      : resourceFixture.activate(0);
+    MoC.S._face=a;
+    Object.assign(MoC.S,{pendingBeat:'digigate',quarter:2,trustC:70,trustD:70,trustP:70});
+    document.getElementById('play-overlay')?.remove();
+    MoC.care.sync();
+    window.exclusionEpisode=MoC.care.episodes.findLast(e=>e.agentId===a.id);
+    _mocForceCouncil(2);
+  },referred);
+  await page.locator('#moc-wiz-next').click();
+}
+
+test('F06 exclusion holds the actual referral without fabricating elapsed history', {timeout:30000}, async () => {
+  await withResourceTown(async page => {
+    await openExclusionCouncil(page);
+    // Keep the original callback to exercise duplicate dispatch as well as a real click.
+    await page.evaluate(()=>window.exclusionButton=[...document.querySelectorAll('button')]
+      .find(b=>b.textContent.includes('Hold the line')));
+    await page.evaluate(()=>exclusionButton.click());
+    const result=await page.evaluate(()=>{
+      const a=resourceFixture.people[0], e=exclusionEpisode;
+      const callbackWait=a.waitWeeks;
+      exclusionButton.click();
+      MoC.care.sync(); MoC.care.sync();
+      const elapsed=MoC.care.elapsed(a);
+      MoC.paused=false;
+      resourceFixture.advance(1);
+      return {callbackWait,elapsed,behavior:a.behaviorState,start:e.startTick,
+        holds:e.accessHolds,bias:MoC.S._biasDeaths};
+    });
+
+    assert.equal(result.elapsed,4,'elapsed wait must remain the real four weeks');
+    assert.equal(result.callbackWait,4,'exclusion must not invent six weeks of elapsed history');
+    assert.equal(result.behavior,'queuing','the actual routine gate must honor the hold');
+    assert.equal(result.holds.length,1,'duplicate callback must not create another hold');
+    assert.equal(result.holds[0].untilTick-result.holds[0].tick,24);
+    assert.equal(result.bias,1);
+  });
+});
+
+test('F06 access expiry, emergency gating, mitigation and exits conserve episode chronology', {timeout:30000}, async () => {
+      await withResourceTown(async page => {
+        await openExclusionCouncil(page);
+        await page.evaluate(()=>[...document.querySelectorAll('button')].find(b=>b.textContent.includes('Hold the line')).click());
+        const result=await page.evaluate(()=>{
+          const a=resourceFixture.people[0], e=exclusionEpisode;
+          const start=e.startTick;
+          MoC.paused=false;
+          resourceFixture.advance(23);
+          const before={state:a.behaviorState,remaining:MoC.care.accessRemaining(a),wait:MoC.care.elapsed(a)};
+          resourceFixture.advance(1);
+          MoC.care.sync();
+          const admitted={state:a.behaviorState,wait:e.waitWeeks,status:e.status,hold:e.accessHolds[0].status,start:e.startTick};
+          resourceFixture.advance(12);
+          const completed=MoC.care.snapshot().resources.routine.completions;
+          const b=resourceFixture.activate(1,{behaviorState:'emergency',emergencyAdmission:true,waitWeeks:4});
+          MoC.care.sync();
+          MoC.care.exclude(b,'emergency-test','Digital identity gate');
+          MoC.care.processEmergencies(); MoC.care.sync();
+          const emergencyBefore=b.behaviorState;
+          MoC.care.mitigateAccess(b,'Manual exception granted');
+          MoC.care.processEmergencies(); MoC.care.sync();
+          const emergencyAfter=b.behaviorState;
+          const exits=[];
+          for (const [i,outcome] of [[2,'died_waiting'],[3,'relocated'],[4,'other_exit']]) {
+            const c=resourceFixture.queue(i,'hospital',{waitWeeks:4});
+            MoC.care.sync(); MoC.care.exclude(c,'exit:'+i,'Digital identity gate');
+            if (outcome==='died_waiting') {c.hp=0;c.state='dead';}
+            else if(outcome==='relocated') c.moved=true;
+            else c.behaviorState='roaming';
+            MoC.care.sync(); MoC.care.sync();
+            const episode=MoC.care.episodes.findLast(x=>x.agentId===c.id);
+            exits.push({status:episode.status,wait:episode.waitWeeks,hold:episode.accessHolds[0].status});
+          }
+          return {start,before,admitted,completed,emergencyBefore,emergencyAfter,exits};
+        });
+        assert.deepEqual(result.before,{state:'queuing',remaining:0.25,wait:9.75});
+        assert.deepEqual(result.admitted,{state:'at_hospital',wait:10,status:'treatment_started',hold:'expired',start:result.start});
+        assert.equal(result.completed,1);
+        assert.equal(result.emergencyBefore,'emergency_overflow');
+        assert.equal(result.emergencyAfter,'at_hospital');
+        assert.deepEqual(result.exits,['died_waiting','relocated','other_exit'].map(status=>({status,wait:4,hold:'closed'})));
+      });
+    });
+
+    test('F06 absent referral is recorded without manufacturing a future wait', {timeout:30000}, async () => {
+      await withResourceTown(async page => {
+        await openExclusionCouncil(page,false);
+        await page.evaluate(()=>[...document.querySelectorAll('button')].find(b=>b.textContent.includes('Hold the line')).click());
+        const result=await page.evaluate(()=>{
+          const a=resourceFixture.people[0];
+          const count=MoC.care.episodes.length;
+          MoC.care.sync();
+          const event=MoC.care.accessEvents.at(-1),wait=a.waitWeeks;
+          a.behaviorState='going_to_hospital';a.referredToHospital=true;
+          MoC.care.sync();
+          return {event,wait,created:MoC.care.episodes.length-count,remaining:MoC.care.accessRemaining(a),
+            elapsed:MoC.care.elapsed(a)};
+        });
+        assert.equal(result.event.outcome,'no_active_referral');
+        assert.equal(result.event.episodeId,null);
+        assert.equal(result.wait,0); assert.equal(result.remaining,0);assert.equal(result.elapsed,0);
+        assert.equal(result.created,1);
+      });
+    });
+async function openStrikeCouncil(page) {
+  await page.evaluate(()=>{
+    document.getElementById('play-overlay')?.remove();
+    Object.assign(MoC.S,{quarter:2,_sinceQuiet:3,_dilemmaOrder:['gpstrike'],trustC:70,trustD:70,trustP:70});
+    _mocForceCouncil(2);
+  });
+  await page.locator('#moc-wiz-next').click();
+  await page.locator('#moc-opt-c').click();
+}
+
+test('F06 real manual exception and Inclusion Officer release holds without erasing elapsed wait', {timeout:30000}, async () => {
+  for (const mitigation of ['manual','officer']) await withResourceTown(async page=>{
+    await openExclusionCouncil(page);
+    await page.locator('#moc-opt-b').click();
+    if(mitigation==='manual') {
+      await page.evaluate(()=>{
+        document.getElementById('moc-council').remove();
+        MoC.S.pendingBeat='digigate';MoC.S.quarter=3;_mocForceCouncil(3);
+      });
+      await page.locator('#moc-wiz-next').click();
+      await page.locator('#moc-opt-a').click();
+    } else {
+      await page.evaluate(()=>{MoC.S.laws.dig2=1;MoC.S.budget=200000;});
+      await openCouncilActions(page);
+      if(await page.locator('#moc-shop-more').count())await page.locator('#moc-shop-more').click();
+      await page.locator('[data-buy="inclofficer"]').click();
+    }
+    const state=await page.evaluate(()=>{
+      const a=resourceFixture.people[0],e=exclusionEpisode;
+      MoC.care.sync();
+      return {elapsed:MoC.care.elapsed(a),remaining:MoC.care.accessRemaining(a),hold:e.accessHolds[0].status,
+        exclusions:MoC.S._biasDeaths,mitigations:MoC.care.accessEvents.filter(e=>e.outcome==='mitigated').length};
+    });
+    assert.deepEqual(state,{elapsed:4,remaining:0,hold:'mitigated',exclusions:1,mitigations:1});
+  });
+});
+
+test('F07 actual strike political consequence waits for logical time, not council reading', {timeout:30000}, async () => {
+  await withResourceTown(async page=>{
+    await openStrikeCouncil(page);
+    const before=await page.evaluate(()=>({tick:modelTick,doctor:MoC.S.trustD}));
+    await page.waitForTimeout(4250);
+    assert.deepEqual(await page.evaluate(()=>({tick:modelTick,doctor:MoC.S.trustD})),before);
+    const result=await page.evaluate(()=>{
+      MoC.paused=false;
+      resourceFixture.advance(3);
+      const beforeDue=MoC.S.trustD;
+      resourceFixture.advance(1);
+      const atDue=MoC.S.trustD;
+      resourceFixture.advance(2);
+      return {beforeDue,atDue,after:MoC.S.trustD};
+    });
+    assert.deepEqual(result,{beforeDue:before.doctor,atDue:before.doctor-6,after:before.doctor-6});
+  });
+});
+
+test('F07 ending cancels pending strike and stale commands cannot change final output', {timeout:30000}, async () => {
+  await withResourceTown(async page=>{
+    await openStrikeCouncil(page);
+    const previousYears=await page.evaluate(()=>{
+      window.staleFlash=document.getElementById('moc-opt-c');
+      const count=MoC.S._yearResults.length;
+      _mocDebug.endTerm('scandal');
+      return count;
+    });
+    const snapshot=()=>page.evaluate(()=>({tick:modelTick,care:MoC.S._finalSnapshot,trust:MoC.S.trustD,
+      budget:MoC.S.budget,score:MoC.S.liveScore,years:MoC.S._yearResults,effects:MoC.S.logicalEffects}));
+    const before=await snapshot();
+    await page.evaluate(()=>{
+      staleFlash.click(); MoC.logicalEffects.advance(); MoC.logicalEffects.strike();
+      _mocDebug.applyFx({trustD:-10,budget:-1234},'stale'); MoC.onQuarter(5); MoC.onTick(modelTick);
+      _mocDebug.endTerm('served'); tick(); MoC.refreshMinistry();
+    });
+    await page.waitForTimeout(4250);
+    assert.deepEqual(await snapshot(),before);
+    assert.equal(before.effects[0].status,'cancelled');
+    assert.equal(before.years.length,previousYears+1,'terminal objective settles once');
+  },'?debug=1');
+});
+
+test('F07 stacked temporary care effects restore exact state without reversing permanent trust', {timeout:30000}, async () => {
+  await withResourceTown(async page=>{
+    await page.evaluate(()=>{
+      Object.assign(M.IST,{admin:0.2,sick:0.1});
+      MoC.S.quarter=2;MoC.S._sinceQuiet=3;MoC.S._dilemmaOrder=['cyberins'];
+      document.getElementById('play-overlay')?.remove();
+      MoC.S.timedFx.push({inverse:{admin:-0.02},untilQ:3,label:'first'},
+        {inverse:{admin:-0.03},untilQ:4,label:'second'});
+      _mocDebug.applyFx({admin:0.05,trustD:50},'stacked fixture');
+      _mocDebug.applyFx({admin:-0.05,trustD:-10},'permanent policy');
+    });
+    assert.deepEqual(await page.evaluate(()=>MoC.S.timedFx.map(e=>Object.keys(e.inverse))),[['admin'],['admin']]);
+    await openQuietFunding(page,3);
+    assert.ok(Math.abs(await page.evaluate(()=>M.IST.admin)-0.18)<1e-12);
+    await openQuietFunding(page,4);
+    assert.ok(Math.abs(await page.evaluate(()=>M.IST.admin)-0.15)<1e-12);
+    assert.equal(await page.evaluate(()=>MoC.S.timedFx.length),0);
+  },'?debug=1');
+});
+
+test('F08 complete export includes a mid-quarter resident request and its cash consequence', {timeout:30000}, async () => {
+  await withResourceTown(async page=>{
+    const result=await page.evaluate(()=>{
+      document.getElementById('play-overlay')?.remove();
+      resourceFixture.activate(0);
+      MoC.record?.begin();
+      modelTick=26;cycle=MoC.STARTUP_CYCLE+modelTick;
+      _mocForceFlash(0);
+      const before=MoC.S.budget;
+      document.getElementById('moc-fa').click();
+      MoC.saveReplay();
+      const record=JSON.parse(localStorage.getItem(MoC.replayKey));
+      return {delta:MoC.S.budget-before,record};
+    });
+    assert.equal(result.delta,-5000);
+    assert.ok(result.record.commandRecord?.commands.some(c=>c.kind==='request' && c.tick===26),
+      'actual late resident request must be in the full export, not just displayed receipt');
+    assert.ok(result.record.commandRecord.events.some(e=>e.reason.includes('Assign case manager')),
+      'the cash consequence must retain its authoritative reason');
+  });
+});
+
+test('F08 real short and long scenario commands replay under distinct render/pause schedules', {timeout:300000}, async t => {
+  const server=await startSiteServer(),browser=await launchBrowser();
+  const writes=[];
+  try {
+    for (const [scenario,seed] of [['cabinetcrisis',2468],['campaign',2468],['cabinetcrisis',2]]) {
+      const makePage=async()=>{
+        const page=await browser.newPage();
+        await page.route('**/*',route=>{
+          if(route.request().method()!=='GET'){writes.push(route.request().url());return route.abort();}
+          if(!route.request().url().startsWith(`http://127.0.0.1:${server.address().port}/`))
+            return route.fulfill({contentType:'application/json',body:'{"entries":[]}'});
+          return route.continue();
+        });
+        await page.addInitScript(()=>{localStorage.setItem('moc_muted_v2','true');window.requestAnimationFrame=()=>0;});
+        await page.goto(`http://127.0.0.1:${server.address().port}/minister.html#scn=${scenario}&seed=${seed}`,{waitUntil:'domcontentloaded'});
+        await page.evaluate(()=>MoC.record.ready);
+        return page;
+      };
+      const source=await makePage();
+      const record=await source.evaluate(()=>{
+        document.getElementById('play-overlay').remove();
+        if(MoC.S.scenario==='campaign') MoC.S.promises=[0,1,2];
+        MoC.S._manifestoShown=true;
+        // Suppress optional publication only; never alter model/reference policy.
+        MoC.S._communityPublishStarted=true;
+        launchSimulation();
+        const stopClock=()=>{clearInterval(autoTimer);autoTimer=null;};
+        stopClock();
+        const click=button=>{button.click();stopClock();};
+        let actions=0;
+        while(!MoC.S.over && actions++<5000) {
+          if(MoC.seed===2 && MoC.S.logicalEffects.some(e=>e.status==='applied'))break;
+          const flash=document.querySelector('.moc-flash');
+          if(flash) {click(flash.querySelector('#moc-flash-continue') || flash.querySelector('button:not(:disabled)'));continue;}
+          const year=document.getElementById('moc-yearend-btn');
+          if(year){click(year);continue;}
+          const vote=document.querySelector('[data-vote="promise"]');
+          if(vote){click(vote);continue;}
+          if(MoC.S._councilDue){click(document.getElementById('moc-town-council'));continue;}
+          const council=document.getElementById('moc-council');
+          if(council){
+            const choices=[...council.querySelectorAll('.moc-opt:not(:disabled)')];
+            if(choices.length){
+              click(choices.find(b=>b.textContent.includes('Let it run')) || choices[0]);continue;
+            }
+            const law=council.querySelector('[data-law]:not(:disabled)');
+            if(law){click(law);continue;}
+            const more=document.getElementById('moc-shop-more');
+            if(more){click(more);continue;}
+            const priorities=MoC.S.owned.pilotgrant ? ['gpfund','mtvp','prevention','hire','resilience'] :
+              ['pilotgrant','gpfund','mtvp','prevention','hire','resilience'];
+            const buy=priorities.map(id=>council.querySelector(`[data-buy="${id}"]:not(:disabled)`)).find(Boolean);
+            if(buy){click(buy);continue;}
+            const next=document.getElementById('moc-wiz-next');
+            if(next&&!next.disabled){click(next);continue;}
+            throw new Error('Unresolved council at '+modelTick);
+          }
+          MoC.paused=false;
+          const previous=modelTick;tick();
+          if(modelTick!==previous+1)throw new Error('Stalled at '+modelTick);
+          stopClock();
+        }
+        if(!MoC.S.over && !(MoC.seed===2 && MoC.S.logicalEffects.some(e=>e.status==='applied')))
+          throw new Error('Recorded player exceeded bounded action budget');
+        return MoC.record.export();
+      });
+      assert.ok(record.commands.some(c=>c.kind==='request'),'real mid-quarter request recorded');
+      assert.ok(record.commands.some(c=>c.kind==='decision'));
+      assert.ok(record.commands.some(c=>c.kind==='law'));
+      assert.ok(record.commands.some(c=>c.kind==='purchase'));
+      const deliveries=record.events.filter(e=>e.kind==='effect' && /Effect ended:|Strike ends bitter/.test(e.reason));
+      t.diagnostic(`${scenario} seed ${seed}: ${record.tick} ticks, ${record.ending}, ${record.commands.length} commands, ${record.events.length} events; deliveries: ${deliveries.map(e=>e.reason).join(', ')}`);
+      if(scenario==='campaign')assert.ok(deliveries.length,'long scenario must actually replay delayed effects/expiry');
+      if(seed===2)assert.ok(deliveries.some(e=>/Strike ends bitter/.test(e.reason)),'actual strike consequence must replay at its logical boundary');
+      const target=await makePage();
+      const savedHistory=await target.evaluate(record=>{
+        const history=JSON.stringify([{seed:record.inputs.seed,scenario:record.inputs.scenario,endTick:record.tick,
+          score:777,livesSaved:2,systemDeaths:9,endReason:'prior attempt',verdict:'prior verdict'}]);
+        localStorage.setItem('moc_runs_'+MoC.MODEL_VERSION,history);
+        return history;
+      },record);
+      if(record.ending)await target.waitForFunction(()=>MoC.baselineFrame?.contentWindow,null,{timeout:15000,polling:100});
+      const replay=await target.evaluate(record=>MoC.record.run(record,{renderEvery:3,pauseMs:5}),record);
+      assert.deepEqual(replay.snapshot,record.final);
+      assert.equal(replay.commands,record.commands.length);
+      if(record.ending){
+        const late=await target.evaluate(()=>{
+          const share=document.getElementById('moc-sharetext');
+          share.textContent='Awaiting late reference';
+          const payload={type:'mocBaseline',seed:MoC.seed,scenario:MoC.S.scenario,
+            modelVersion:MoC.MODEL_VERSION,protocol:MoC.REFERENCE_PROTOCOL,
+            scheduleId:MoC.environment.scheduleId,snapshots:MoC.runSnapshots,tick:modelTick};
+          window.dispatchEvent(new MessageEvent('message',{origin:location.origin,
+            source:MoC.baselineFrame.contentWindow,data:payload}));
+          return {accepted:MoC.baseline===payload,share:share.textContent,
+            history:localStorage.getItem('moc_runs_'+MoC.MODEL_VERSION)};
+        });
+        assert.equal(late.accepted,true,'late reference must reach the real replay callback');
+        assert.notEqual(late.share,'Awaiting late reference','comparison sharing must still refresh');
+        assert.equal(late.history,savedHistory,'replay and late references must not rewrite another saved attempt');
+      }
+      await source.close();await target.close();
+    }
+    assert.deepEqual(writes,[],'recorded tests and replay must not submit scores');
+  } finally {await browser.close();await new Promise(resolve=>server.close(resolve));}
+});
+
+test('F08 incompatible, reordered, unavailable and altered records fail visibly without publication', {timeout:120000}, async () => {
+  const server=await startSiteServer(),browser=await launchBrowser(),page=await browser.newPage();
+  const writes=[];
+  await page.route('**/*',route=>{
+    if(route.request().method()!=='GET'){writes.push(route.request().url());return route.abort();}
+    if(!route.request().url().startsWith(`http://127.0.0.1:${server.address().port}/`))
+      return route.fulfill({contentType:'application/json',body:'{"entries":[]}'});
+    return route.continue();
+  });
+  const url=`http://127.0.0.1:${server.address().port}/minister.html#scn=cabinetcrisis&seed=2468`;
+  const open=async()=>{await page.goto('about:blank');await page.goto(url,{waitUntil:'domcontentloaded'});await page.evaluate(()=>MoC.record.ready);};
+  try {
+    await open();
+    const record=await page.evaluate(()=>{
+      document.getElementById('play-overlay').remove();MoC.S._manifestoShown=true;
+      launchSimulation();clearInterval(autoTimer);autoTimer=null;
+      for(let i=0;i<16;i++)tick();
+      document.querySelector('.moc-flash button:not(:disabled)').click();
+      document.getElementById('moc-flash-continue').click();
+      clearInterval(autoTimer);autoTimer=null;
+      for(let i=0;i<4;i++)tick();
+      return MoC.record.export();
+    });
+    for (const field of ['schema','eventSchema','replayVersion','modelVersion','executableId']) {
+      await open();
+      const error=await page.evaluate(async ({record,field})=>{
+        record[field]='incompatible';
+        try{await MoC.record.run(record);return null;}catch(e){return e.message;}
+      },{record,field});
+      assert.match(error,/incompatible/);
+      assert.match(await page.locator('#moc-record-status').innerText(),/Replay refused/);
+      assert.equal(await page.evaluate(()=>modelTick),0);
+    }
+    for (const mutation of ['order','unavailable','initial','effect','missing','selector']) {
+      await open();
+      const error=await page.evaluate(async ({record,mutation})=>{
+        if(mutation==='order')record.commands[1].order=record.commands[0].order;
+        if(mutation==='unavailable')record.commands[0].selector='[data-buy="hire"]';
+        if(mutation==='initial')record.initial.government.budget++;
+        if(mutation==='effect')record.events.at(-1).data.stateHash='altered';
+        if(mutation==='missing')record.commands=[];
+        if(mutation==='selector')record.commands[0].selector='#moc-export-record';
+        try{await MoC.record.run(record);return null;}catch(e){return e.message;}
+      },{record,mutation});
+      assert.match(error,/Replay refused/,mutation);
+      assert.match(await page.locator('#moc-record-status').innerText(),/Replay refused/);
+    }
+    await open();
+    await page.evaluate(record=>MoC.record.run(record,{renderEvery:1}),record);
+    const before=await page.evaluate(()=>MoC.record.snapshot());
+    const repeated=await page.evaluate(async record=>{
+      try{await MoC.record.run(record);return null;}catch(e){return e.message;}
+    },record);
+    assert.match(repeated,/fresh matching town/);
+    assert.deepEqual(await page.evaluate(()=>MoC.record.snapshot()),before);
+    assert.deepEqual(writes,[]);
+  } finally {await browser.close();await new Promise(resolve=>server.close(resolve));}
+});
 
 test('F05 aggregate absence reduces actual GP service', {timeout:30000}, async t => {
   const low = await workforceTrace({sick:0.1}), high = await workforceTrace({sick:0.8});
@@ -2141,6 +2536,8 @@ test('Early results match the reference date and replay preserves the prior atte
   const page=await browser.newPage({viewport:{width:390,height:844}});
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.addInitScript(()=>localStorage.setItem('moc_muted_v2','true'));
+  await page.route('**/api/leaderboard**',route=>route.fulfill({status:200,json:
+    route.request().method()==='POST' ? {entry:{username:'Fixture Minister'},rank:1} : {entries:[]}}));
   try {
     const url=`http://127.0.0.1:${server.address().port}/minister.html?debug=1#scn=cabinetcrisis&seed=2468`;
     await page.goto(url,{waitUntil:'domcontentloaded'});
@@ -2156,12 +2553,17 @@ test('Early results match the reference date and replay preserves the prior atte
       window._mocDebug.endTerm('noconfidence');
     });
     await page.locator('#moc-care-comparison').waitFor();
+    await page.evaluate(()=>MoC.S._publishCompletedRun(true));
+    const publishedScore=await page.locator('#moc-scoreval').innerText();
     await page.waitForFunction(()=>!!MoC.referenceAt(75),null,{timeout:25000});
     const pair=await page.evaluate(()=>({tick:MoC.S._finalSnapshot.tick,reference:MoC.referenceAt(75).tick,
       signed:MoC.care.compare(MoC.S._finalSnapshot,MoC.referenceAt(75)).livesDifference}));
     assert.deepEqual(pair,{tick:75,reference:75,signed:0});
     assert.match(await page.locator('#moc-care-comparison').innerText(),/Same date: tick 75/);
     assert.match(await page.locator('#moc-care-verdict').innerText(),/same number/i);
+    assert.equal(await page.locator('#moc-scoreval').innerText(),publishedScore,'late comparison must not change the published score');
+    assert.match(await page.locator('#moc-sharetext').textContent(),/Lives saved vs status quo: 0/,
+      'late matching care data must still refresh sharing detail under the unchanged protocol');
     const endCopy=await page.locator('#moc-endscreen').innerText();
     assert.doesNotMatch(endCopy,/not heroic|played it safe|your successor inherits|the system won|hard route|rare trifecta/i);
     assert.match(endCopy,/FINAL SCORE/);
@@ -2173,11 +2575,11 @@ test('Early results match the reference date and replay preserves the prior atte
     });
     assert.equal(forged,true);
     await page.locator('#moc-again').click();
-    await page.waitForURL(/&v=minister-care-9-workforce-productivity/);
+    await page.waitForURL(/&v=minister-care-10-access-time-replay/);
     await page.locator('#moc-takeoffice').waitFor();
     assert.match(await page.locator('#moc-previous-attempt').innerText(),/tick 75/);
     assert.equal(await page.evaluate(()=>MoC.previousRun.final.tick),75);
-    assert.equal(await page.evaluate(()=>MoC.previousRun.modelVersion), 'minister-care-9-workforce-productivity');
+    assert.equal(await page.evaluate(()=>MoC.previousRun.modelVersion), 'minister-care-10-access-time-replay');
     assert.deepEqual(await page.evaluate(()=>MoC.previousRun.externalSchedule),await page.evaluate(()=>MoC.environment.schedule));
     assert.equal(await page.evaluate(()=>MoC.audio.isMuted()),true);
     // Controlled outcome fixture: political survival must not conceal worse care.
@@ -2252,7 +2654,7 @@ test('Completed runs publish automatically with a public or generated name', { t
     assert.equal(await page.locator('#moc-community-name,#moc-submit-score').count(),0,'publication is automatic, not an optional form');
     assert.equal(submitted.username,'');
     assert.equal(submitted.seed,2468);
-    assert.equal(submitted.modelVersion,'minister-care-9-workforce-productivity');
+    assert.equal(submitted.modelVersion,'minister-care-10-access-time-replay');
     assert.equal(submitted.endTick,75);
     assert.equal(typeof submitted.summary.meanWait,'number');
     assert.match(await page.locator('#moc-community-status').innerText(),/Published as Minister Silver Heron 468 · rank 2/);
