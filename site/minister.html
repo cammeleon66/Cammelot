@@ -13055,20 +13055,52 @@ async function initLLMSubsystem() {
 
   // ── Effect applicator ──
   // fx: {budget, trust, trustC, trustD, trustP, dep, admin, sick, tree, ai, drainMult}
+  const CONDITIONAL_CARE = {
+    docWTR:{fx:{sick:0.02},inverse:{sick:-0.02}},
+    citAvoid:{fx:{drainMult:1.12},inverse:{drainMult:1/1.12}}
+  };
+  function careConditions(){ return Object.keys(CONDITIONAL_CARE).filter(key=>GS.activeStates?.[key]); }
   function careSchedule(timed=GS.timedFx, delayed=GS.delayed, external=activeExternal){
+    const terminal=MoC.TOTAL_QUARTERS*MoC.QUARTER_TICKS;
     return [
       ...external.map(e=>({tick:e.endTick,order:0,fx:{drainMult:1/e.drainFactor,sick:-e.sickDelta,capacity:-e.capacityDelta},label:e.id})),
       ...(timed || []).map(e=>({tick:(e.untilQ-1)*MoC.QUARTER_TICKS,order:1,fx:e.inverse,label:e.label})),
       ...(delayed || []).map(e=>({tick:(e.atQ-1)*MoC.QUARTER_TICKS,order:2,fx:e.fx,label:e.label}))
-    ].sort((a,b)=>a.tick-b.tick || a.order-b.order);
+    // Environment runs before onTick/onTermEnd; the terminal quarter callback
+    // is preempted by onTermEnd. Keep records, but reserve only executable work.
+    ].filter(e=>e.order===0 ? e.tick<=terminal : e.tick<terminal)
+      .sort((a,b)=>a.tick-b.tick || a.order-b.order);
   }
-  function validateCareSchedule(state, scheduled, funded=false){
-    for (const effect of scheduled) {
-      try {
-        state=projectedCareEffect(effect.fx,state,false);
-        if (funded) requireCareNumber('scheduled budget',state.budget,Math.min(0,GS.budget));
-      } catch (error) {
-        throw new RangeError(error.message+' (scheduled: '+effect.label+')');
+  function validateCareSchedule(state, scheduled, funded=false, conditions=careConditions()){
+    const timeline=[...scheduled];
+    if (conditions.length) {
+      for (let q=Math.max(2,GS.quarter+1);q<=MoC.TOTAL_QUARTERS;q++)
+        timeline.push({tick:(q-1)*MoC.QUARTER_TICKS,order:0.5,recovery:true});
+    }
+    timeline.sort((a,b)=>a.tick-b.tick || a.order-b.order);
+    // At most four views: each of the two active morale effects may still be
+    // active or have recovered. Their additive/multiplicative inverses commute
+    // with dated care effects; check every prefix, not merely the final balance.
+    const states=new Map([[0,state]]);
+    for (const effect of timeline) {
+      if (effect.recovery) {
+        conditions.forEach((key,i)=>{
+          for (const [mask,current] of [...states]) {
+            if (mask & (1<<i)) continue;
+            const recovered=projectedCareEffect(CONDITIONAL_CARE[key].inverse,current,false);
+            if (!states.has(mask | (1<<i))) states.set(mask | (1<<i),recovered);
+          }
+        });
+      } else {
+        for (const [mask,current] of states) {
+          try {
+            const next=projectedCareEffect(effect.fx,current,false);
+            if (funded) requireCareNumber('scheduled budget',next.budget,Math.min(0,GS.budget));
+            states.set(mask,next);
+          } catch (error) {
+            throw new RangeError(error.message+' (scheduled: '+effect.label+')');
+          }
+        }
       }
     }
   }
@@ -13107,7 +13139,7 @@ async function initLLMSubsystem() {
   }
   // Plans are data, never speculative execution of callbacks. Project every
   // immediate step plus the dated reversals/deliveries before the first write.
-  function projectCarePlan(plan, funded=false, scheduled=careSchedule()){
+  function projectCarePlan(plan, funded=false, scheduled=careSchedule(), conditions=careConditions()){
     const cost=requireCareNumber('cost',plan.cost ?? 0,0);
     let state={p:M.IST,capacity:GS.specialistCapacity,budget:GS.budget-cost};
     if (funded) requireCareNumber('budget',state.budget,Math.min(0,GS.budget));
@@ -13128,11 +13160,11 @@ async function initLLMSubsystem() {
         for (const key of ['admin','sick','ai']) if (step.fx[key]) inverse[key]=-step.fx[key];
         if (step.fx.capacity) inverse.capacity=previous.capacity-state.capacity;
         if (step.fx.drainMult) inverse.drainMult=1/step.fx.drainMult;
-        timed.push({inverse,untilQ:GS.quarter+step.quarters,label:step.label});
+        timed.push({inverse,untilQ:GS.quarter+step.quarters,label:step.label,...(step.source?{source:step.source}:{})});
       }
     }
     const future=[...scheduled,...careSchedule(timed,delayed,[])].sort((a,b)=>a.tick-b.tick || a.order-b.order);
-    validateCareSchedule(state,future,funded);
+    validateCareSchedule(state,future,funded,conditions);
     return {cost,steps,timed,delayed};
   }
   function commitFx(fx, next){
@@ -13164,6 +13196,18 @@ async function initLLMSubsystem() {
     return true;
   }
   function applyFx(fx, label){ return applyCarePlan({steps:[{fx,label}]}); }
+  function applyConditionalCare(key, active, label){
+    const conditions=careConditions().filter(k=>k!==key);
+    if (active) conditions.push(key);
+    let plan;
+    try {
+      plan=projectCarePlan({steps:[{fx:CONDITIONAL_CARE[key][active?'fx':'inverse'],label}]},
+        false,careSchedule(),conditions);
+    } catch (error) { return reportCareInputError(error); }
+    commitCarePlan(plan);
+    GS.activeStates[key]=active;
+    return true;
+  }
   function choicePlan(option){
     return option.plan ? option.plan() : {cost:option.cost,steps:[{fx:option.fxChoices ? option.fxChoices[Math.random()<option.chance?0:1] : option.fxFn ? option.fxFn() : option.fx || {},label:option.label}]};
   }
@@ -13452,8 +13496,8 @@ async function initLLMSubsystem() {
   const EVENT_REACTIONS = { cyber:[], outage:[], meds:[], yearWin:[], yearLoss:[], election:[], flu:[] };
 
   // ── Timed & delayed effects ──
-  function applyTimedFx(fx, quarters, label){
-    return applyCarePlan({steps:[{fx,quarters,label}]});
+  function applyTimedFx(fx, quarters, label, source){
+    return applyCarePlan({steps:[{fx,quarters,label,source}]});
   }
   function processQuarterEffects(q){
     const expired=GS.timedFx.filter(t=>q>=t.untilQ), due=GS.delayed.filter(d=>q>=d.atQ);
@@ -14450,38 +14494,33 @@ async function initLLMSubsystem() {
     // Stakeholder consequence bands
     GS.activeStates = GS.activeStates || {};
     if (GS.trustD < 35 && !GS.activeStates.docWTR) {
-      GS.activeStates.docWTR = true;
-      applyFx({sick:0.02}, 'Doctors demoralised - sick leave rising.');
-      GS.pendingBanners = GS.pendingBanners || [];
-      GS.pendingBanners.push({ head:'⚕ GPS WORK TO CONTRACT', body:'Doctor trust is below 35. Overtime and cover swaps stop; staff absence rises until doctor trust recovers above 42.', soft:false });
-      showPolicyConsequences('doctors demoralised', {trustD:-3}, 'doctors');
+      if (applyConditionalCare('docWTR',true,'Doctors demoralised - sick leave rising.')) {
+        GS.pendingBanners = GS.pendingBanners || [];
+        GS.pendingBanners.push({ head:'⚕ GPS WORK TO CONTRACT', body:'Doctor trust is below 35. Overtime and cover swaps stop; staff absence rises until doctor trust recovers to 42 or more.', soft:false });
+        showPolicyConsequences('doctors demoralised', {trustD:-3}, 'doctors');
+      }
     } else if (GS.trustD >= 42 && GS.activeStates.docWTR) {
-      GS.activeStates.docWTR = false;
-      applyFx({sick:-0.02}, "Doctors' morale recovering.");
+      applyConditionalCare('docWTR',false,"Doctors' morale recovering.");
     }
     if (GS.trustD < 22 && !GS.activeStates.struck) {
-      GS.activeStates.struck = true;
-      GS._strikeUnresolvedQ = 1;
-      applyTimedFx({sick:0.06, admin:0.05}, 1, 'DOCTOR STRIKE - practices run on skeleton staff');
-      Audio5.klaxon(); FX.shake();
-      GS.pendingBanners = GS.pendingBanners || [];
-      GS.pendingBanners.push({ head:'🚨 GP STRIKE', body:'Doctor trust is below 22. GP clinical work is reduced by absence and paperwork; routine specialist capacity is unchanged. Recover above 35 by next council; at 15 the term ends.', soft:false });
-      showPolicyConsequences('doctor strike', {trustD:-5}, 'strike');
+      if (applyTimedFx({sick:0.06, admin:0.05},1,'DOCTOR STRIKE - practices run on skeleton staff','doctor-strike')) {
+        GS.activeStates.struck = true;
+        GS._strikeUnresolvedQ = 1;
+        Audio5.klaxon(); FX.shake();
+        GS.pendingBanners = GS.pendingBanners || [];
+        GS.pendingBanners.push({ head:'🚨 GP STRIKE', body:'Doctor trust is below 22. GP clinical work is reduced by absence and paperwork; routine specialist capacity is unchanged. Recover above 35 by next council; at 15 the term ends.', soft:false });
+        showPolicyConsequences('doctor strike', {trustD:-5}, 'strike');
+      }
     } else if (GS.activeStates.struck) {
-      if (GS.trustD >= 35) {
-        GS.activeStates.struck = false;
-        GS._strikeUnresolvedQ = 0;
-      } else {
+      if (GS.trustD < 35 && applyTimedFx({sick:0.06,admin:0.05},1,
+          'DOCTOR STRIKE CONTINUES - practices remain skeleton staffed','doctor-strike')) {
         GS._strikeUnresolvedQ = Math.max(1, (GS._strikeUnresolvedQ || 0) + 1);
-        applyTimedFx({sick:0.06, admin:0.05}, 1, 'DOCTOR STRIKE CONTINUES - practices remain skeleton staffed');
       }
     }
     if (GS.trustC < 35 && !GS.activeStates.citAvoid) {
-      GS.activeStates.citAvoid = true;
-      applyFx({drainMult:1.12}, 'Citizens delay seeing the GP - they arrive sicker.');
+      applyConditionalCare('citAvoid',true,'Citizens delay seeing the GP - they arrive sicker.');
     } else if (GS.trustC >= 42 && GS.activeStates.citAvoid) {
-      GS.activeStates.citAvoid = false;
-      applyFx({drainMult:1/1.12}, 'Citizens seek care earlier again.');
+      applyConditionalCare('citAvoid',false,'Citizens seek care earlier again.');
     }
     if (GS.trustC < 30) {
       GS._lowTrustCQ = (GS._lowTrustCQ || 0) + 1;
@@ -14527,6 +14566,10 @@ async function initLLMSubsystem() {
 
     // Expire timed effects, deliver delayed ones
     const dueDelayed = processQuarterEffects(q);
+    if (GS.activeStates.struck && GS.trustD>=35 && !GS.timedFx.some(t=>t.source==='doctor-strike')) {
+      GS.activeStates.struck=false;
+      GS._strikeUnresolvedQ=0;
+    }
 
     // Scripted beat takes priority; else event; else dilemma
     let beat = null;
@@ -16564,9 +16607,9 @@ async function initLLMSubsystem() {
         }
         const next = st.stage + 1;
         if (q >= st.armedQ + (next - 1) * 2) {
-          st.stage = next;
           const s = c.stages[next - 1];
-          if (s.fx) applyFx(s.fx, s.head);
+          if (s.fx && !applyFx(s.fx, s.head)) return;
+          st.stage = next;
           Audio5.klaxon(); FX.shake();
           out.push(s);
         }
@@ -16635,11 +16678,11 @@ async function initLLMSubsystem() {
         if (M.IST.drain > 1.15) {
           GS.mantelzorg = Math.min(100, (GS.mantelzorg || 30) + 3); // reduced from 5 since quarterly now adds too
         }
-        if ((GS.mantelzorg || 30) >= 80 && !GS._mantelzorgFired) {
+        if ((GS.mantelzorg || 30) >= 80 && !GS._mantelzorgFired
+            && applyFx({sick:0.05,trustC:-3},'Carer burnout crisis: informal care network collapsing')) {
           GS._mantelzorgFired = true;
           GS.pendingBanners.push({ head: '\ud83d\udc9c CARER PRESSURE REACHES 80',
             body: 'Staff absence +5 points; citizen trust \u22123. Carer pressure remains visible in System State.', soft: false });
-          applyFx({ sick: 0.05, trustC: -3 }, 'Carer burnout crisis: informal care network collapsing');
         }
       }
       // G11: Parliament Question Hour every 4 quarters

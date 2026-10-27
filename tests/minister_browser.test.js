@@ -505,7 +505,7 @@ test('Clinical replay is independent of drawing and baseline batching', { timeou
 
 // Resource fixtures use the actual tick, movement, admission and terminal paths.
 // No reference-policy bypass is left enabled while exercising the player handlers.
-async function withResourceTown(run, query='') {
+async function withResourceTown(run, query='', scenario='cabinetcrisis', seed=2468) {
   const server = await startSiteServer(), browser = await launchBrowser(), page = await browser.newPage();
   const writes = [];
   await page.route('**/*', route => {
@@ -516,7 +516,7 @@ async function withResourceTown(run, query='') {
     return route.continue();
   });
   try {
-    await page.goto(`http://127.0.0.1:${server.address().port}/minister.html${query}#scn=cabinetcrisis&seed=2468`, {waitUntil:'domcontentloaded'});
+    await page.goto(`http://127.0.0.1:${server.address().port}/minister.html${query}#scn=${scenario}&seed=${seed}`, {waitUntil:'domcontentloaded'});
     await page.evaluate(() => {
       clearInterval(autoTimer); autoTimer = null; MoC.audio.setMuted(true);
       const original = {referencePolicy:MoC.referencePolicy,seedTick:MoC.seedTick,
@@ -537,6 +537,7 @@ async function withResourceTown(run, query='') {
       const samples = [];
       window.resourceFixture = {
         people, samples,
+        enableEnvironment(){ MoC.environment.advance=original.advance; },
         activate(index, props={}) {
           const a = people[index];
           Object.assign(a,{moved:false,insideBuilding:null,behaviorState:'roaming',state:'managed',hp:100,
@@ -924,7 +925,7 @@ test('F05 review delayed delivery is validated before any decision cost', {timeo
     assert.deepEqual(await page.evaluate(()=>({budget:MoC.S.budget,delayed:MoC.S.delayed,trust:MoC.S.trustD})),before);
     assert.equal(await build.isDisabled(),true);
     assert.match(await build.innerText(),/Unavailable:/);
-  });
+  },'','campaign');
 });
 
 async function openQuietFunding(page,q) {
@@ -937,6 +938,319 @@ async function openQuietFunding(page,q) {
   await openCouncilActions(page);
   if (await page.locator('#moc-shop-more').count()) await page.locator('#moc-shop-more').click();
 }
+
+test('F05 scope post-term in-house delivery cannot block a valid council law', {timeout:30000}, async()=>{
+  await withResourceTown(async page=>{
+    page.setDefaultTimeout(4000);
+    await page.evaluate(()=>{
+      Object.assign(M.IST,{admin:0.04,sick:0.1,ai:1});
+      Object.assign(MoC.S,{budget:200000,quarter:2,_sinceQuiet:3,_dilemmaOrder:['buildorbuy']});
+      document.getElementById('play-overlay')?.remove(); _mocForceCouncil(2);
+    });
+    await page.locator('#moc-wiz-next').click();
+    await page.locator('#moc-opt-b').click();
+    assert.equal(await page.evaluate(()=>MoC.S.delayed[0].atQ),10);
+    await page.locator('#moc-wiz-next').click();
+    const law=page.locator('[data-law="work1"]');
+    assert.equal(await law.isDisabled(),false,'Q10 delivery cannot reserve admin beyond the Q8 terminal horizon');
+    await law.click();
+    assert.ok(Math.abs(await page.evaluate(()=>M.IST.admin)-0.01)<1e-15);
+  });
+});
+
+test('F05 scope work-to-rule begin, real policy choices and recovery preserve the conditional obligation', {timeout:30000}, async()=>{
+  await withResourceTown(async page=>{
+    page.setDefaultTimeout(4000);
+    await page.evaluate(()=>{
+      Object.assign(M.IST,{admin:0.2,sick:0.01,ai:1});
+      Object.assign(MoC.S,{budget:1000000,trustC:70,trustP:70,trustD:32,quarter:2,
+        _sinceQuiet:3,_dilemmaOrder:['overtime']});
+      document.getElementById('play-overlay')?.remove(); _mocForceCouncil(2);
+    });
+    assert.deepEqual(await page.evaluate(()=>({sick:M.IST.sick,wtr:MoC.S.activeStates.docWTR})),{sick:0.03,wtr:true});
+    await page.locator('#moc-wiz-next').click();
+    const overtime=page.locator('#moc-opt-a');
+    const overtimeDisabled=await overtime.isDisabled();
+    if (!overtimeDisabled) await overtime.click(); // reproduces the pinned lost-inverse path
+    else await page.locator('#moc-opt-b').click();
+    await page.locator('#moc-wiz-next').click(); await page.locator('#moc-wiz-next').click();
+    if (await page.locator('#moc-shop-more').count()) await page.locator('#moc-shop-more').click();
+    await page.locator('[data-buy="gpfund"]').click();
+    // The safe alternative refusal lowers trust. A real no-cost accountability
+    // council decision restores it without spending any conditional absence.
+    await page.evaluate(()=>{
+      document.getElementById('moc-council')?.remove();
+      Object.assign(MoC.S,{quarter:3,_sinceQuiet:3,_dilemmaOrder:['press']}); _mocForceCouncil(3);
+    });
+    await page.locator('#moc-wiz-next').click(); await page.locator('#moc-opt-a').click();
+    await page.evaluate(()=>{
+      document.getElementById('moc-council')?.remove();
+      Object.assign(MoC.S,{quarter:4,_sinceQuiet:3,_dilemmaOrder:['cyberins']}); _mocForceCouncil(4);
+    });
+    assert.equal(overtimeDisabled,true,'overtime must not consume the absence reserved for morale recovery');
+    assert.equal(await page.evaluate(()=>MoC.careInputErrorCount || 0),0);
+    assert.equal(await page.evaluate(()=>MoC.S.activeStates.docWTR),false);
+    assert.ok(Math.abs(await page.evaluate(()=>M.IST.sick)-0.02)<1e-15);
+  });
+});
+
+test('F05 scope quarter obligations execute at the last council but not the terminal tick in both scenarios', {timeout:30000}, async()=>{
+  for (const scenario of ['cabinetcrisis','campaign']) {
+    await withResourceTown(async page=>{
+      page.setDefaultTimeout(4000);
+      const projection=await page.evaluate(()=>{
+        const n=MoC.TOTAL_QUARTERS;
+        Object.assign(M.IST,{admin:0.04,sick:0.1,ai:1});
+        Object.assign(MoC.S,{budget:1000000,trustC:70,trustD:70,trustP:70,quarter:n-1,
+          _sinceQuiet:3,_dilemmaOrder:['cyberins'],delayed:[
+            {atQ:n,fx:{admin:-0.01},label:'Last executable council'},
+            {atQ:n+1,fx:{admin:-0.03},label:'Preempted terminal council'}
+          ]});
+        document.getElementById('play-overlay')?.remove();
+        return _mocDebug.applyFx({admin:-0.02});
+      });
+      assert.equal(projection,true,scenario+': only the executable delivery reserves admin');
+      await page.evaluate(()=>{
+        modelTick=(MoC.TOTAL_QUARTERS-1)*MoC.QUARTER_TICKS-1;
+        cycle=MoC.STARTUP_CYCLE+modelTick; MoC.paused=false; tick();
+      });
+      if (await page.locator('#moc-council-ready-banner button').count())
+        await page.locator('#moc-council-ready-banner button').click();
+      assert.equal(await page.locator('#moc-council').count(),1);
+      assert.ok(Math.abs(await page.evaluate(()=>M.IST.admin)-0.01)<1e-15);
+      const terminal=await page.evaluate(()=>{
+        document.getElementById('moc-council')?.remove();
+        modelTick=MoC.TOTAL_QUARTERS*MoC.QUARTER_TICKS-1;
+        cycle=MoC.STARTUP_CYCLE+modelTick; MoC.paused=false; tick();
+        return {over:MoC.S.over,admin:M.IST.admin,delayed:MoC.S.delayed.length,
+          errors:MoC.careInputErrorCount || 0,tick:modelTick};
+      });
+      assert.equal(terminal.over,true);
+      assert.equal(terminal.tick,scenario==='campaign'?2080:416);
+      assert.ok(Math.abs(terminal.admin-0.01)<1e-15);
+      assert.equal(terminal.delayed,1);
+      assert.equal(terminal.errors,0);
+    },'?debug=1',scenario);
+  }
+});
+
+test('F05 scope environmental inverses still reserve and execute on the terminal tick in both scenarios', {timeout:30000}, async()=>{
+  for (const scenario of ['cabinetcrisis','campaign']) {
+    await withResourceTown(async page=>{
+      const start=await page.evaluate(()=>{
+        const n=MoC.TOTAL_QUARTERS;
+        Object.assign(M.IST,{admin:0.2,sick:0,drain:1,ai:1});
+        Object.assign(MoC.S,{budget:1000000,trustC:70,trustD:70,trustP:70,specialistCapacity:2,
+          quarter:n-1,_sinceQuiet:3,_dilemmaOrder:['cyberins']});
+        document.getElementById('play-overlay')?.remove();
+        resourceFixture.enableEnvironment();
+        modelTick=(n-1)*MoC.QUARTER_TICKS-1; cycle=MoC.STARTUP_CYCLE+modelTick;
+        MoC.paused=false; tick();
+        const shock=MoC.environment.log.at(-1),sick=M.IST.sick;
+        const accepted=_mocDebug.applyFx({sick:-sick/2});
+        return {shock,sick,accepted,after:M.IST.sick};
+      });
+      assert.equal(start.shock.kind,'flu');
+      assert.equal(start.shock.endTick,scenario==='campaign'?2080:416);
+      assert.ok(start.sick>0);
+      assert.equal(start.accepted,false,'the terminal environment callback must still be reserved');
+      assert.equal(start.after,start.sick);
+      const ended=await page.evaluate(()=>{
+        const errors=MoC.careInputErrorCount || 0;
+        document.getElementById('moc-council')?.remove();
+        modelTick=MoC.TOTAL_QUARTERS*MoC.QUARTER_TICKS-1; cycle=MoC.STARTUP_CYCLE+modelTick;
+        MoC.paused=false; tick();
+        return {over:MoC.S.over,sick:M.IST.sick,drain:M.IST.drain,errors:(MoC.careInputErrorCount || 0)-errors};
+      });
+      assert.equal(ended.over,true);
+      assert.equal(ended.sick,0);
+      assert.ok(Math.abs(ended.drain-1)<1e-15);
+      assert.equal(ended.errors,0);
+    },'?debug=1',scenario,13);
+  }
+});
+
+test('F05 scope conditional and dated recoveries are feasible together at every prefix', {timeout:30000}, async()=>{
+  await withResourceTown(async page=>{
+    await page.evaluate(()=>{
+      Object.assign(M.IST,{admin:0.2,sick:0.01,ai:1});
+      Object.assign(MoC.S,{budget:1000000,trustC:70,trustP:70,trustD:19,quarter:2,
+        _sinceQuiet:3,_dilemmaOrder:['overtime']});
+      document.getElementById('play-overlay')?.remove(); _mocForceCouncil(2);
+    });
+    const result=await page.evaluate(()=>{
+      const before={sick:M.IST.sick,budget:MoC.S.budget};
+      // Either inverse alone would fit after this reduction; together they do not.
+      const accepted=_mocDebug.applyFx({sick:-0.02,budget:-1000});
+      return {accepted,before,after:{sick:M.IST.sick,budget:MoC.S.budget},
+        wtr:MoC.S.activeStates.docWTR,struck:MoC.S.activeStates.struck,timed:MoC.S.timedFx};
+    });
+    assert.ok(Math.abs(result.before.sick-0.09)<1e-15);
+    assert.equal(result.wtr,true); assert.equal(result.struck,true);
+    assert.equal(result.timed.length,1);
+    assert.equal(result.accepted,false);
+    assert.deepEqual(result.after,result.before);
+  },'?debug=1');
+  await withResourceTown(async page=>{
+    await page.evaluate(()=>{
+      Object.assign(M.IST,{admin:0.2,sick:0.01,ai:1});
+      Object.assign(MoC.S,{budget:1000000,trustC:70,trustP:70,trustD:32,quarter:2,
+        _sinceQuiet:3,_dilemmaOrder:['overtime'],
+        delayed:[{atQ:4,fx:{sick:0.03},label:'Later staffing pressure'}]});
+      document.getElementById('play-overlay')?.remove(); _mocForceCouncil(2);
+    });
+    assert.equal(await page.evaluate(()=>_mocDebug.applyFx({sick:-0.02})),false,
+      'Q4 positive pressure must not fund a possible Q3 morale recovery');
+    assert.ok(Math.abs(await page.evaluate(()=>M.IST.sick)-0.03)<1e-15);
+  },'?debug=1');
+});
+
+test('F05 scope conditional recovery failures retain flags and obligations until a successful retry', {timeout:30000}, async()=>{
+  await withResourceTown(async page=>{
+    await page.evaluate(()=>{
+      Object.assign(M.IST,{admin:0.2,sick:0.01,drain:1,ai:1});
+      Object.assign(MoC.S,{budget:1000000,trustC:32,trustP:70,trustD:32,quarter:2,
+        _sinceQuiet:3,_dilemmaOrder:['cyberins']});
+      document.getElementById('play-overlay')?.remove(); _mocForceCouncil(2);
+    });
+    assert.deepEqual(await page.evaluate(()=>MoC.S.activeStates),{docWTR:true,citAvoid:true});
+    // Inconsistent restored state: legal raw fraction but insufficient to honor
+    // the already installed inverse. Normal player policies cannot create it.
+    await page.evaluate(()=>{
+      M.IST.sick=0.01;
+      document.getElementById('moc-council')?.remove();
+      Object.assign(MoC.S,{trustD:70,trustC:70,quarter:3,_sinceQuiet:3,_dilemmaOrder:['locum']});
+      _mocForceCouncil(3);
+    });
+    assert.deepEqual(await page.evaluate(()=>MoC.S.activeStates),{docWTR:true,citAvoid:true});
+    assert.equal(await page.evaluate(()=>M.IST.sick),0.01);
+    assert.equal(await page.evaluate(()=>M.IST.drain),1.12);
+    assert.match(await page.evaluate(()=>MoC.lastInputError),/Invalid care input: sick/);
+    await page.evaluate(()=>{
+      M.IST.sick=0.03;
+      document.getElementById('moc-council')?.remove();
+      Object.assign(MoC.S,{quarter:4,_sinceQuiet:3,_dilemmaOrder:['press']}); _mocForceCouncil(4);
+    });
+    assert.deepEqual(await page.evaluate(()=>MoC.S.activeStates),{docWTR:false,citAvoid:false});
+    assert.ok(Math.abs(await page.evaluate(()=>M.IST.sick)-0.01)<1e-15);
+    assert.equal(await page.evaluate(()=>M.IST.drain),1);
+  });
+});
+
+test('F05 scope rejected morale onsets do not install flags or strike obligations', {timeout:30000}, async()=>{
+  for (const kind of ['work-to-rule','citizen','strike']) {
+    await withResourceTown(async page=>{
+      await page.evaluate(kind=>{
+        Object.assign(M.IST,{admin:kind==='strike'?0.98:0.2,sick:kind==='work-to-rule'?0.99:0.01,
+          drain:kind==='citizen'?Number.MAX_VALUE:1,ai:1});
+        Object.assign(MoC.S,{budget:1000000,trustC:kind==='citizen'?32:70,trustP:70,
+          trustD:kind==='strike'?20:kind==='work-to-rule'?32:70,quarter:2,
+          _sinceQuiet:3,_dilemmaOrder:['cyberins']});
+        document.getElementById('play-overlay')?.remove(); _mocForceCouncil(2);
+      },kind);
+      const state=await page.evaluate(()=>({flags:MoC.S.activeStates,timed:MoC.S.timedFx,error:MoC.lastInputError}));
+      const key=kind==='strike'?'struck':kind==='citizen'?'citAvoid':'docWTR';
+      assert.equal(!!state.flags[key],false);
+      assert.equal(state.timed.length,0);
+      assert.match(state.error,/Invalid care input/);
+    });
+  }
+});
+
+test('F05 scope rejected strike expiry retains its lifecycle until the dated effect settles', {timeout:30000}, async()=>{
+  await withResourceTown(async page=>{
+    await page.evaluate(()=>{
+      Object.assign(M.IST,{admin:0.2,sick:0.01,ai:1});
+      Object.assign(MoC.S,{budget:1000000,trustC:70,trustP:70,trustD:19,quarter:2,
+        _sinceQuiet:3,_dilemmaOrder:['cyberins']});
+      document.getElementById('play-overlay')?.remove(); _mocForceCouncil(2);
+    });
+    assert.equal(await page.evaluate(()=>MoC.S.activeStates.struck),true);
+    await page.evaluate(()=>{
+      M.IST.admin=0.01; // inconsistent restored state; inverse cannot apply
+      document.getElementById('moc-council')?.remove();
+      Object.assign(MoC.S,{trustD:70,quarter:3,_sinceQuiet:3,_dilemmaOrder:['locum']}); _mocForceCouncil(3);
+    });
+    assert.equal(await page.evaluate(()=>MoC.S.activeStates.struck),true);
+    assert.equal(await page.evaluate(()=>MoC.S.timedFx.filter(t=>t.source==='doctor-strike').length),1);
+    assert.match(await page.evaluate(()=>MoC.lastInputError),/Invalid care input: admin/);
+    await page.evaluate(()=>{
+      M.IST.admin=0.25;
+      document.getElementById('moc-council')?.remove();
+      Object.assign(MoC.S,{quarter:4,_sinceQuiet:3,_dilemmaOrder:['press']}); _mocForceCouncil(4);
+    });
+    assert.equal(await page.evaluate(()=>MoC.S.activeStates.struck),false);
+    assert.equal(await page.evaluate(()=>MoC.S.timedFx.length),0);
+    assert.ok(Math.abs(await page.evaluate(()=>M.IST.sick)-0.01)<1e-15);
+  });
+});
+
+test('F05 scope final-council conditional recovery is not reserved beyond either scenario', {timeout:30000}, async()=>{
+  for (const scenario of ['cabinetcrisis','campaign']) {
+    await withResourceTown(async page=>{
+      page.setDefaultTimeout(4000);
+      await page.evaluate(()=>{
+        Object.assign(M.IST,{admin:0.2,sick:0.01,ai:1});
+        Object.assign(MoC.S,{budget:1000000,trustC:70,trustP:70,trustD:32,quarter:MoC.TOTAL_QUARTERS,
+          _sinceQuiet:3,_dilemmaOrder:['overtime']});
+        modelTick=(MoC.TOTAL_QUARTERS-1)*MoC.QUARTER_TICKS; cycle=MoC.STARTUP_CYCLE+modelTick;
+        document.getElementById('play-overlay')?.remove(); _mocForceCouncil(MoC.TOTAL_QUARTERS);
+      });
+      assert.equal(await page.evaluate(()=>MoC.S.activeStates.docWTR),true);
+      await page.locator('#moc-wiz-next').click();
+      assert.equal(await page.locator('#moc-opt-a').isDisabled(),false);
+      await page.locator('#moc-opt-a').click();
+      assert.ok(Math.abs(await page.evaluate(()=>M.IST.sick)-0.01)<1e-15);
+      const ended=await page.evaluate(()=>{
+        modelTick=MoC.TOTAL_QUARTERS*MoC.QUARTER_TICKS-1; cycle=MoC.STARTUP_CYCLE+modelTick;
+        MoC.paused=false; tick();
+        return {over:MoC.S.over,wtr:MoC.S.activeStates.docWTR,sick:M.IST.sick,errors:MoC.careInputErrorCount || 0};
+      });
+      assert.equal(ended.over,true);
+      assert.equal(ended.wtr,true,'no terminal council callback clears the active condition');
+      assert.ok(Math.abs(ended.sick-0.01)<1e-15);
+      assert.equal(ended.errors,0);
+    },'',scenario);
+  }
+});
+
+test('F05 scope rejected workforce cascade remains retryable', {timeout:30000}, async()=>{
+  await withResourceTown(async page=>{
+    const cascade=await page.evaluate(()=>{
+      Object.assign(M.IST,{admin:0.2,sick:0.99,drain:1});
+      Object.assign(MoC.S,{trustD:28,pendingBanners:[],cascades:{}});
+      _mocDebug.stepCascades(4); _mocDebug.stepCascades(6);
+      return {stage:MoC.S.cascades.exodus.stage,sick:M.IST.sick};
+    });
+    assert.deepEqual(cascade,{stage:1,sick:0.99});
+    const retried=await page.evaluate(()=>{
+      M.IST.sick=0.1; _mocDebug.stepCascades(6);
+      return {stage:MoC.S.cascades.exodus.stage,sick:M.IST.sick};
+    });
+    assert.equal(retried.stage,2);
+    assert.ok(Math.abs(retried.sick-0.12)<1e-15);
+  },'?debug=1');
+});
+
+test('F05 scope rejected carer onset remains retryable', {timeout:30000}, async()=>{
+  await withResourceTown(async page=>{
+    const result=await page.evaluate(()=>{
+      Object.assign(M.IST,{admin:0.2,sick:0.99,drain:1});
+      Object.assign(MoC.S,{budget:1000000,trustC:70,trustD:70,trustP:70,quarter:3,mantelzorg:90});
+      document.getElementById('play-overlay')?.remove();
+      modelTick=155; cycle=MoC.STARTUP_CYCLE+modelTick; MoC.paused=false; tick();
+      return {fired:!!MoC.S._mantelzorgFired,sick:M.IST.sick};
+    });
+    assert.deepEqual(result,{fired:false,sick:0.99});
+    const retried=await page.evaluate(()=>{
+      M.IST.sick=0.1; MoC.S.quarter=7;
+      modelTick=363; cycle=MoC.STARTUP_CYCLE+modelTick; MoC.paused=false; tick();
+      return {fired:!!MoC.S._mantelzorgFired,sick:M.IST.sick};
+    });
+    assert.equal(retried.fired,true);
+    assert.ok(Math.abs(retried.sick-0.15)<1e-15);
+  });
+});
 
 test('F05 review valid ransomware commits once, while stale and cumulative-invalid offers stay atomic', {timeout:30000}, async () => {
   for (const kind of ['valid','stale','cumulative']) {
@@ -990,7 +1304,7 @@ test('F05 review valid delayed delivery is reserved and settles exactly once', {
       Object.assign(MoC.S,{quarter:11,_sinceQuiet:3,_dilemmaOrder:['cyberins']}); _mocForceCouncil(11);
     });
     assert.equal(await page.evaluate(()=>M.IST.admin),0.03);
-  },'?debug=1');
+  },'?debug=1','campaign');
 });
 
 test('F05 review a failed expiry is retained for retry, not silently discarded', {timeout:30000}, async () => {

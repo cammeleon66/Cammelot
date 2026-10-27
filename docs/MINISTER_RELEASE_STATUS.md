@@ -54,7 +54,7 @@ The follow-up validates explicit complete plans, cumulative immediate state/cost
 
 Additional real-path regressions caught valid full-adoption scribe/platform purchases being disabled by floating point residue, and two Pilot Grants whose scheduled inverses failed near zero (complete-plan validation initially moved this failure earlier, into purchase availability). A narrow machine-epsilon correction of computed bound crossings now permits these valid zero results; direct invalid inputs and substantive overshoots still reject. The active storm safe-mode copy now explicitly says score-only/no modeled service effect; its existing score decrement is unchanged.
 
-`node --test --test-name-pattern='F05 review' tests/minister_browser.test.js`: **11/11 passed** on the final source (23.60 seconds). Coverage includes:
+`node --test --test-name-pattern='F05 review' tests/minister_browser.test.js`: **11/11 passed** at `56aca266b652a578c4f63162543b08263e3d4d11` (23.60 seconds). Coverage includes:
 
 - All-invalid ransomware choices: no budget/trust/admin/pending mutation, disabled reasons, no-effect continuation to funding.
 - Valid ransomware: one charge, one temporary record, one rate reduction and one decision record; duplicate and stale button events cannot partially reapply it.
@@ -65,7 +65,31 @@ Additional real-path regressions caught valid full-adoption scribe/platform purc
 - Nonfinite inputs, invalid raw fractions, zero-to-negative deltas and meaningful overshoots rejected without cost.
 - Active storm safe mode: score 100 → 96, unchanged GP work (5.152/week), parameters, routine rate and scheduled effects.
 
-Final-source Windows validation: `npm test` **198/198 passed**, 48 suites, zero failures/cancellations/skips (254.51 seconds). This includes all 18 F05 tests, existing finite-resource/clock/death/retirement checks, both supported scenario references (including the no-care-input-error assertions), offline browser isolation, and both supported HTTP host paths. `node --check tests/minister_browser.test.js`, Acorn parsing of the inline Minister script, and `git diff --check` passed. No dependencies or tooling were added. Model 9 is still **upcoming, not deployed**; public model 8 and reference protocol are unchanged.
+Windows validation at `56aca266b652a578c4f63162543b08263e3d4d11`: `npm test` **198/198 passed**, 48 suites, zero failures/cancellations/skips (254.51 seconds). This includes all 18 then-current F05 tests, existing finite-resource/clock/death/retirement checks, both supported scenario references (including the no-care-input-error assertions), offline browser isolation, and both supported HTTP host paths. `node --check tests/minister_browser.test.js`, Acorn parsing of the inline Minister script, and `git diff --check` passed. No dependencies or tooling were added. Model 9 is still **upcoming, not deployed**; public model 8 and reference protocol are unchanged.
+
+### F05 scope follow-up: executable horizons and conditional recoveries
+
+Review pinned to `56aca266b652a578c4f63162543b08263e3d4d11` found that reservations exceeded the scenario's executable horizon and omitted conditional work-to-rule recovery. Active-browser regressions went red before the runtime fix:
+
+- Cabinet Crisis, admin 0.04, Q2 in-house build: the Q10/tick 468 delivery disabled Task Differentiation Act even though its immediate admin 0.01 was valid and the game ends at tick 416.
+- Work-to-rule installed sick +0.02 on a valid 0.01 base; overtime and GP Retention could spend that temporary amount, leaving the recovery inverse invalid. The recovery flag was cleared before the rejection, forgetting the obligation.
+- Synthetic dated boundary records, exercised through real ticks/councils, reproduced the same incorrect terminal reservation. Inspection also found and reproduced success flags advancing after rejected workforce-cascade and carer-burnout effects.
+
+The reservation now distinguishes callback phases: quarter work must precede terminal (`< H`); environmental inverses still execute at terminal (`<= H`). Active conditional recoveries are checked at remaining council starts against both still-active and recovered views, including dated changes at each prefix. This is bounded to the two existing morale conditions (at most four views), not an unbounded scheduler. Flags/counters change only after successful application. Strike expiry is linked to its dated source record; failed conditional/dated recovery retains the obligation for retry. The two earlier Q10 delayed-delivery tests now use **Full Term**, where Q10 is executable; their former Cabinet Crisis expectation was over-restrictive.
+
+Targeted command: `node --test --test-name-pattern='F05' tests/minister_browser.test.js` — **29/29 passed** (72.46 seconds), including 11 new scope/lifecycle regressions:
+
+- Real in-house build → valid Task Differentiation Act → admin 0.01 in Cabinet Crisis.
+- Real work-to-rule onset, unavailable unsafe overtime, valid alternative policy/GP Retention/press choices, and successful trust-based recovery with no care-input error.
+- Both scenarios: last councils at ticks 364/2028 execute dated deliveries; terminal ticks 416/2080 end the term without terminal-council delivery or conditional recovery.
+- Both scenarios, deterministic seed 13: actual final-quarter flu inverses remain reserved and execute on the terminal tick before term completion.
+- Combined work-to-rule/dated strike inverses reject a reduction that either obligation alone could allow; a later positive delivery cannot fund an earlier conditional inverse.
+- Rejected work-to-rule/citizen/strike onsets do not install flags or records; failed conditional and strike recovery retains flags/records and succeeds after inconsistent restored state is repaired.
+- Rejected exodus/carer effects remain retryable and apply once a feasible state is available.
+
+Audit scope: named GP burnout timers and queue transfers are unchanged and do not duplicate aggregate absence; active morale, strike, exodus and carer paths were checked. Inactive legacy aging/finale helpers remain inactive. Model 9 is still upcoming and undeployed; no reference protocol, service coefficient, dependency, workflow, backend or leaderboard-state change.
+
+Final-source Windows verification: `npm test` **209/209 passed**, 48 suites, zero failures/cancellations/skips (226.53 seconds). All 29 F05 tests, existing finite-resource/clock/death/retirement checks, both supported scenario references (including no-care-input-error assertions), offline browser isolation and both supported HTTP host paths pass. `node --check tests/minister_browser.test.js`, Acorn parsing of the inline executable and `git diff --check` pass. Local single-writer implementation only: no agents, push, PR update or deployment; the coordinator handles publication.
 
 ## Model 8: finite resources (F04)
 
