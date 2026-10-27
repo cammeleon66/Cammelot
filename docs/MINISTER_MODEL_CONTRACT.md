@@ -1,6 +1,6 @@
 # Minister model contract
 
-**Status:** Selected engineering target contract; not clinical validation. **Audited baseline:** [`bb6df6490ceb56e68cc8922ae167660ac6079b18`](https://github.com/cammeleon66/Cammelot/commit/bb6df6490ceb56e68cc8922ae167660ac6079b18), model `minister-care-5-rollout`. **Verified deployed model:** `minister-care-9-workforce-productivity` ([publication evidence](MINISTER_RELEASE_STATUS.md#verified-model-9-publication)). **Paired-reference protocol:** `no-discretionary-action-v1`.
+**Status:** Selected engineering target contract; not clinical validation. **Audited baseline:** [`bb6df6490ceb56e68cc8922ae167660ac6079b18`](https://github.com/cammeleon66/Cammelot/commit/bb6df6490ceb56e68cc8922ae167660ac6079b18), model `minister-care-5-rollout`. **Verified deployed model:** `minister-care-10-access-time-replay` ([publication evidence](MINISTER_RELEASE_STATUS.md#verified-model-10-publication)). **Paired-reference protocol:** `no-discretionary-action-v1`.
 
 This contract describes the Minister policy game only. Verified behavior below is distinct from selected target rules. The target rules are bounded engineering choices for subsequent implementation, not evidence of clinical validity, calibrated parameters, or claims that outcomes will improve. The audit summary and browser evidence in issue [#1](https://github.com/cammeleon66/Cammelot/issues/1) are the supplied evidence; no private audit artifacts are assumed.
 
@@ -143,11 +143,12 @@ Due quarter effects are projected as one ordered batch against the remaining sch
 
 No model-8 record is reused: existing versioned replay, reference and leaderboard filters pick up model 9. No protocol bump is needed because matching/comparison rules are unchanged. F06/F07, empirical calibration, balance tuning and backend/leaderboard changes remain outside this implementation. See [F05 evidence](MINISTER_RELEASE_STATUS.md#model-9-workforceproductivity-f05) and the separate [verified publication](MINISTER_RELEASE_STATUS.md#verified-model-9-publication).
 
-## Upcoming model 10 — access, logical effects and replay (UNRELEASED)
+## Model 10 — access, logical effects and replay
 
-Working identity: `minister-care-10-access-time-replay`. Public model 9 and reference
-protocol `no-discretionary-action-v1` remain unchanged. This is prepublication
-software evidence, not clinical calibration or an outcome-improvement claim.
+Published identity: `minister-care-10-access-time-replay`, verified on 2026-10-27.
+Reference protocol `no-discretionary-action-v1` remains unchanged. Implementation
+and publication evidence are software evidence, not clinical calibration or an
+outcome-improvement claim.
 
 ### F06: exclusion belongs to the referral episode
 
