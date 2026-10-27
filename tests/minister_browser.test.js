@@ -712,6 +712,79 @@ test('F06 access expiry, emergency gating, mitigation and exits conserve episode
         assert.equal(result.created,1);
       });
     });
+async function openStrikeCouncil(page) {
+  await page.evaluate(()=>{
+    document.getElementById('play-overlay')?.remove();
+    Object.assign(MoC.S,{quarter:2,_sinceQuiet:3,_dilemmaOrder:['gpstrike'],trustC:70,trustD:70,trustP:70});
+    _mocForceCouncil(2);
+  });
+  await page.locator('#moc-wiz-next').click();
+  await page.locator('#moc-opt-c').click();
+}
+
+test('F07 actual strike political consequence waits for logical time, not council reading', {timeout:30000}, async () => {
+  await withResourceTown(async page=>{
+    await openStrikeCouncil(page);
+    const before=await page.evaluate(()=>({tick:modelTick,doctor:MoC.S.trustD}));
+    await page.waitForTimeout(4250);
+    assert.deepEqual(await page.evaluate(()=>({tick:modelTick,doctor:MoC.S.trustD})),before);
+    const result=await page.evaluate(()=>{
+      MoC.paused=false;
+      resourceFixture.advance(3);
+      const beforeDue=MoC.S.trustD;
+      resourceFixture.advance(1);
+      const atDue=MoC.S.trustD;
+      resourceFixture.advance(2);
+      return {beforeDue,atDue,after:MoC.S.trustD};
+    });
+    assert.deepEqual(result,{beforeDue:before.doctor,atDue:before.doctor-6,after:before.doctor-6});
+  });
+});
+
+test('F07 ending cancels pending strike and stale commands cannot change final output', {timeout:30000}, async () => {
+  await withResourceTown(async page=>{
+    await openStrikeCouncil(page);
+    const previousYears=await page.evaluate(()=>{
+      window.staleFlash=document.getElementById('moc-opt-c');
+      const count=MoC.S._yearResults.length;
+      _mocDebug.endTerm('scandal');
+      return count;
+    });
+    const snapshot=()=>page.evaluate(()=>({tick:modelTick,care:MoC.S._finalSnapshot,trust:MoC.S.trustD,
+      budget:MoC.S.budget,score:MoC.S.liveScore,years:MoC.S._yearResults,effects:MoC.S.logicalEffects}));
+    const before=await snapshot();
+    await page.evaluate(()=>{
+      staleFlash.click(); MoC.logicalEffects.advance(); MoC.logicalEffects.strike();
+      _mocDebug.applyFx({trustD:-10,budget:-1234},'stale'); MoC.onQuarter(5); MoC.onTick(modelTick);
+      _mocDebug.endTerm('served'); tick(); MoC.refreshMinistry();
+    });
+    await page.waitForTimeout(4250);
+    assert.deepEqual(await snapshot(),before);
+    assert.equal(before.effects[0].status,'cancelled');
+    assert.equal(before.years.length,previousYears+1,'terminal objective settles once');
+  },'?debug=1');
+});
+
+test('F07 stacked temporary care effects restore exact state without reversing permanent trust', {timeout:30000}, async () => {
+  await withResourceTown(async page=>{
+    await page.evaluate(()=>{
+      Object.assign(M.IST,{admin:0.2,sick:0.1});
+      MoC.S.quarter=2;MoC.S._sinceQuiet=3;MoC.S._dilemmaOrder=['cyberins'];
+      document.getElementById('play-overlay')?.remove();
+      MoC.S.timedFx.push({inverse:{admin:-0.02},untilQ:3,label:'first'},
+        {inverse:{admin:-0.03},untilQ:4,label:'second'});
+      _mocDebug.applyFx({admin:0.05,trustD:50},'stacked fixture');
+      _mocDebug.applyFx({admin:-0.05,trustD:-10},'permanent policy');
+    });
+    assert.deepEqual(await page.evaluate(()=>MoC.S.timedFx.map(e=>Object.keys(e.inverse))),[['admin'],['admin']]);
+    await openQuietFunding(page,3);
+    assert.ok(Math.abs(await page.evaluate(()=>M.IST.admin)-0.18)<1e-12);
+    await openQuietFunding(page,4);
+    assert.ok(Math.abs(await page.evaluate(()=>M.IST.admin)-0.15)<1e-12);
+    assert.equal(await page.evaluate(()=>MoC.S.timedFx.length),0);
+  },'?debug=1');
+});
+
 test('F05 aggregate absence reduces actual GP service', {timeout:30000}, async t => {
   const low = await workforceTrace({sick:0.1}), high = await workforceTrace({sick:0.8});
   assert.ok(low.completions > high.completions, JSON.stringify({low,high}));

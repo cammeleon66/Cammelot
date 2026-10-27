@@ -143,8 +143,6 @@ Due quarter effects are projected as one ordered batch against the remaining sch
 
 No model-8 record is reused: existing versioned replay, reference and leaderboard filters pick up model 9. No protocol bump is needed because matching/comparison rules are unchanged. F06/F07, empirical calibration, balance tuning and backend/leaderboard changes remain outside this implementation. See [F05 evidence](MINISTER_RELEASE_STATUS.md#model-9-workforceproductivity-f05) and the separate [verified publication](MINISTER_RELEASE_STATUS.md#verified-model-9-publication).
 
-## Glossary
-
 ## Upcoming model 10 — access, logical effects and replay (UNRELEASED)
 
 Working identity: `minister-care-10-access-time-replay`. Public model 9 and reference
@@ -173,7 +171,42 @@ Expiry is at `event tick + 24` (plus existing remaining hold); treatment start,
 death, relocation and other exit close the same episode and preserve hold history.
 Reports separate elapsed weeks from remaining imposed weeks.
 
-## Glossary (continued)
+### F07: logical delayed effects and terminal settlement
+
+The strike's “wait them out” choice previously reduced doctor trust six points
+after four wall-clock seconds even while council was paused. It now has an
+identified, exactly-once consequence due **four elapsed ticks / one model week**
+after the choice, processed before quarter/terminal handling. This is the chosen
+logical delay, not a conversion from reading speed or an empirical strike duration.
+Its immediate +2-point absence is ongoing as before; political changes are not
+temporary care effects. Duplicate scheduling is inert. Reset reloads a fresh term.
+
+Existing temporary care effects continue to reverse their declared additive or
+multiplicative changes in the F05 validated boundary, not by restoring an old
+whole-state snapshot. Permanent changes survive stacked expiry; no clamped
+political inverse is invented. Quarter effects remain strictly before the horizon;
+external inverses remain executable on the terminal tick. Pending sub-quarter
+effects are canceled at termination with reason/time; pending quarter deliveries
+and reversals are marked canceled, without reversing care after the result.
+Election loss and fourth-household protest end synchronously at the triggering
+boundary, not after an animation timeout.
+
+Fragility objective failure is sampled on policy effects and ticks, not by rendering
+`check()`. Objective settlement is once per objective, including terminal settlement.
+Stale decision/vote/manifesto callbacks and effect APIs cannot mutate ended gameplay.
+Published score payload is retained for retries; a late matching reference may
+still populate comparison detail under the unchanged reference protocol.
+
+Async audit: remaining timers/animation frames implement audio, visual effects,
+layout, tooltips, onboarding/clock driving, baseline tick batching and optional
+publication. Clock drivers still execute guarded integer ticks. The name-completion
+sweep now runs synchronously at initialization rather than consuming RNG after
+1.5 seconds. Offline cognition is not initialized in this build; its dormant async
+completion/fallback is nevertheless terminal-guarded. Clipboard, soundtrack and
+leaderboard promises do not feed clinical or political state. Legacy IndexedDB
+helpers are not a supported Minister restore path. This is not a general job service.
+
+## Glossary
 
 - **Model version:** immutable identifier for a particular outcome-affecting model and policy implementation.
 - **Protocol version:** identifier for the paired-reference policy and comparison rules.

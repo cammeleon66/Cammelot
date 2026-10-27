@@ -7,8 +7,6 @@ Reference protocol: `no-discretionary-action-v1`
 
 This is the canonical status list. Older plans describe how the current release was built; their unchecked boxes are not active tasks.
 
-## Model 9: workforce/productivity (F05)
-
 ## Upcoming model 10 foundation fixes — UNRELEASED
 
 Implementation branch `fix/foundation-time-and-replay`, base
@@ -26,7 +24,21 @@ Existing finite-resource regressions pass. Model identity is
 `minister-care-10-access-time-replay`; reference protocol unchanged.
 F07/F08 implementation and full-suite evidence follow before handoff.
 
-## Model 9 implementation and publication (historical)
+F07 baseline command: `node --test --test-name-pattern='F07' tests/minister_browser.test.js`.
+The real strike choice followed by 4.25 seconds of paused council reading changed
+doctor trust **73 → 67 at tick 0**. Logical delivery now occurs once after four
+ticks. Ending cancels pending delivery; repeated terminal settlement, stale
+decisions and effect calls leave the final gameplay snapshot unchanged. Two new
+fixture attempts initially failed for fixture errors (forcing a flash while council
+was open; expecting unchanged trust across councils with their own political
+effects); the tests were corrected to test the intended boundaries, not bypass them.
+The existing F05 horizon/conditional/stacked Pilot Grant checks plus first F07
+fixture passed **13/13** (34.66s). Final F07 targeted run: **3/3 passed**
+(15.56s). The terminal fixture additionally caught a real early-ending defect:
+end-screen rendering appended the already-settled objective a second time when
+the final year had not been reached. Rendering now reads the history only.
+
+## Model 9: workforce/productivity (F05)
 
 Issue [#5](https://github.com/cammeleon66/Cammelot/issues/5) is implemented and published as `minister-care-9-workforce-productivity`, based on `ba0c19ba4d6ca06618961327f742e677b44b0322`. **Model 9 is the verified public model.** The coordinator reviewed and published it through the existing gated workflow; no workflows, settings, backend or production leaderboard state were changed. Publication evidence is recorded separately below.
 

@@ -8570,6 +8570,7 @@ function resetSim(){
 }
 
 function setMode(m){
+  if (MoC.S.over) return;
   mode=m;
   // Sprint S1: Trigger mode transition animation
   modeTransitionTimer = 30;
@@ -8648,6 +8649,7 @@ function activateCustomMode(){
 }
 
 function applyPlaygroundPreset(preset){
+  if (MoC.S.over) return false;
   try { validateCareParameters(preset); }
   catch (error) { return reportCareInputError(error); }
   M[mode].admin=preset.admin;
@@ -10778,6 +10780,7 @@ function updateWizardStep() {
 }
 
 function nextWizardStep() {
+  if (MoC.S.over) return;
   wizardStep++;
   if (wizardStep >= WIZARD_STEPS.length) {
     closeWizard();
@@ -12428,12 +12431,11 @@ class CognitiveManager {
       try {
         const prompt = buildCognitivePrompt(item.agent, item.trigger);
         const response = await this.llmClient.think(item.agent, prompt);
-        executeLLMAction(item.agent, response, item.trigger);
+        if (!MoC.S.over) executeLLMAction(item.agent, response, item.trigger);
       } catch (err) {
         console.error('[Cognitive] Error for ' + item.agent.id + ':', err);
         // Fallback to automaton
-        agentReflect(item.agent);
-        agentPlan(item.agent);
+        if (!MoC.S.over) { agentReflect(item.agent); agentPlan(item.agent); }
       } finally {
         this.inFlight--;
       }
@@ -13020,6 +13022,7 @@ async function initLLMSubsystem() {
     MoC.updateHUD();
   }
   function adjustStakeholders(dc, dd, dp){
+    if (GS.endReason) return;
     GS.trustC = clamp01(GS.trustC + (dc || 0));
     GS.trustD = clamp01(GS.trustD + (dd || 0));
     GS.trustP = clamp01(GS.trustP + (dp || 0));
@@ -13035,6 +13038,29 @@ async function initLLMSubsystem() {
   GS.eventLog = [];       // {q, name} for the judgment screen
   GS.timedFx = [];        // {inverse, untilQ, label}
   GS.delayed = [];        // {atQ, fx, label}
+  // Only the authored strike consequence needs sub-quarter delivery.
+  // Records remain after dispatch/cancellation; reset is a fresh page/term.
+  GS.logicalEffects = [];
+  MoC.logicalEffects = {
+    strike:function(){
+      const id='strike-consequence:'+GS.quarter;
+      if (GS.over || GS.logicalEffects.some(e=>e.id===id)) return false;
+      GS.logicalEffects.push({id,tick:modelTick,dueTick:modelTick+MoC.TICKS_PER_WEEK,
+        fx:{trustD:-6},reason:'Strike ends bitter',status:'pending'});
+      return true;
+    },
+    advance:function(){
+      if (GS.over) return;
+      for (const effect of GS.logicalEffects) if (effect.status==='pending' && effect.dueTick<=modelTick) {
+        if (applyFx(effect.fx,effect.reason)) { effect.status='applied';effect.endTick=modelTick; }
+      }
+    },
+    cancel:function(){
+      for (const effect of GS.logicalEffects) if (effect.status==='pending') {
+        effect.status='cancelled';effect.endTick=modelTick;effect.endReason='Term ended before delivery';
+      }
+    }
+  };
   GS.techFreezeUntil = 0; // parliament freeze on dep-adding purchases
   GS.pendingBeat = null;  // scripted named-citizen beat queued for next council
   GS.lastEventQ = {};     // eventId -> quarter (cooldowns)
@@ -13231,6 +13257,7 @@ async function initLLMSubsystem() {
     if (fx.trust) MoC.adjustTrust(fx.trust);
     if (fx.trustC || fx.trustD || fx.trustP) adjustStakeholders(fx.trustC, fx.trustD, fx.trustP);
     if (fx.dep) GS.dependence = Math.max(0, GS.dependence + fx.dep);
+    if (GS.objective?._ok !== undefined && fragility()>=50) GS.objective._ok=false;
     Object.assign(M.IST,next.p);
     GS.specialistCapacity = next.capacity;
     if (fx.mantelzorg) GS.mantelzorg = Math.max(0, Math.min(100, (GS.mantelzorg || 30) + fx.mantelzorg)); // G15
@@ -13245,6 +13272,7 @@ async function initLLMSubsystem() {
     refreshMeters();
   }
   function applyCarePlan(plan, funded=false){
+    if (GS.endReason) return false;
     let projected;
     try { projected=projectCarePlan(plan,funded); }
     catch (error) { return reportCareInputError(error); }
@@ -13271,6 +13299,7 @@ async function initLLMSubsystem() {
     return option.fxChoices ? option.fxChoices.map(fx=>({steps:[{fx}]})) : [choicePlan(option)];
   }
   function applyChoice(option){
+    if (GS.over) return false;
     try { for (const plan of choicePlans(option)) projectCarePlan(plan,true); }
     catch (error) { return reportCareInputError(error); }
     const plan=choicePlan(option);
@@ -13351,6 +13380,7 @@ async function initLLMSubsystem() {
   }
   const BUY_CAP = 2; // implementation capacity per quarter
   function canBuy(item){
+    if (GS.over) return false;
     try { projectCarePlan(shopPlan(item),true); }
     catch (error) { return false; }
     const owned = GS.owned[item.id] || 0;
@@ -13557,6 +13587,7 @@ async function initLLMSubsystem() {
     return applyCarePlan({steps:[{fx,quarters,label,source}]});
   }
   function processQuarterEffects(q){
+    if (GS.over) return [];
     const expired=GS.timedFx.filter(t=>q>=t.untilQ), due=GS.delayed.filter(d=>q>=d.atQ);
     const remainingTimed=GS.timedFx.filter(t=>q<t.untilQ),remainingDelayed=GS.delayed.filter(d=>q<d.atQ);
     let plan;
@@ -13974,7 +14005,9 @@ async function initLLMSubsystem() {
     { id:'gpstrike', text:'GP assistants announce a two-day workload strike. Non-emergency access is disrupted.',
       a:{ label:'Emergency mediator, grant a 10% bonus', fx:{budget:-45000, trustD:8, trustC:2, sick:-0.01}, note:'-\u20ac45K \u00b7 Doctors +8 \u00b7 Citizens +2 \u00b7 sick -1%' },
       b:{ label:'Publicly condemn the strike', fx:{trustD:-10, trustC:-3, trustP:4}, note:'Doctors -10 \u00b7 Citizens -3 \u00b7 Parliament +4' },
-      c:{ label:'Let it run, wait them out', fx:{sick:0.02,trustC:-5}, after:function(){ setTimeout(function(){ adjustStakeholders(0,-6,0); say('MINISTRY','Strike ends bitter','sys'); refreshMeters(); },4000); }, note:'Sick +2% \u00b7 Citizens -5 \u00b7 Doctors -6 after' } },
+      c:{ label:'Let it run, wait them out', fx:{sick:0.02,trustC:-5},
+        after:function(){ MoC.logicalEffects.strike(); },
+        note:'Sick +2% (ongoing) · Citizens -5 · Doctors -6 after 1 model week (4 ticks); canceled if term ends first' } },
     // G15: Mantelzorg / informal carer dilemma — biggest Dutch care gap
     { id:'mantelzorg', text:'One in five informal carers is at risk of burnout. Home-care waits rose for four quarters.',
       a:{ label:'Formalise: pay informal carers a stipend', fx:{budget:-25000, trustC:5, mantelzorg:-10}, note:'-\u20ac25K \u00b7 Citizens +5 \u00b7 Carer pressure -10' },
@@ -14617,7 +14650,8 @@ async function initLLMSubsystem() {
         GS._lowTrustCQ = 0;
         if (movedCount >= 4 && !GS.over) {
           GS.pendingBanners.push({ head:'📢 FOURTH HOUSEHOLD LEAVES', body:'The relocation limit is reached. The term ends in public protest.', soft:false });
-          setTimeout(function(){ if (!GS.over) endTerm('protest'); }, 1200);
+          endTerm('protest');
+          return;
         }
       }
     }
@@ -15001,7 +15035,7 @@ async function initLLMSubsystem() {
             Object.keys(LAW_TRACKS).forEach(function(tk){
               LAW_TRACKS[tk].laws.forEach(function(l){ if (l.id === lawId) law = l; });
             });
-            if (!law || GS.budget < law.cost) return;
+            if (GS.over || !law || GS.laws[law.id] || GS.budget < law.cost) return;
             let plan;
             try { plan=projectCarePlan({cost:law.cost,steps:[{fx:law.fx,label:'Law enacted: '+law.name}]},true); }
             catch (error) { reportCareInputError(error); return; }
@@ -15168,13 +15202,17 @@ async function initLLMSubsystem() {
 
   function endTerm(reason){
     if (GS.endReason) return;
+    settleYearObjective();
+    MoC.logicalEffects.cancel();
+    for (const effect of [...GS.timedFx,...GS.delayed]) {
+      effect.cancelledAt=modelTick; effect.endReason='Term ended; no post-term delivery or reversal';
+    }
     GS.endReason = reason;
     GS.over = true;
     pauseSim();
     MoC.care.sync();
     GS._finalSnapshot=MoC.care.snapshot();
     MoC.runSnapshots[modelTick]=GS._finalSnapshot;
-    settleYearObjective();
     const objEl = document.getElementById('moc-objective'); if (objEl) setTimeout(function(){ objEl.remove(); }, 4000);
     if (reason === 'served') Audio5.jingle(); else Audio5.dirge();
     drawMinister(ministerMood());
@@ -15290,9 +15328,7 @@ async function initLLMSubsystem() {
       const hit = yrs.filter(function(y){ return y.achieved; }).length;
       html += '<h3>\ud83c\udfaf Year objectives \u2014 ' + hit + ' of ' + yrs.length + ' met</h3>';
       html += '<div class="moc-sub" style="line-height:2">';
-      // Year 10 result (settled by endTerm call above) — add it if not already in _yearResults
-      const year10Settled = yrs.find(function(y){ return y.year >= Math.ceil(MoC.TOTAL_QUARTERS / 4); });
-      if (GS.lastYearResult && !year10Settled) yrs.push(GS.lastYearResult);
+      // Rendering never mutates settled objective history, including early endings.
       yrs.forEach(function(y){
         html += (y.achieved ? '\u2705' : '\u274c') + ' <b>Year ' + y.year + ':</b> ' + y.text
           + (y.achieved ? ' <span style="color:#7bc67b">+' + y.bonus + ' pts</span>' : ' <span style="color:#e05858">missed</span>') + '<br>';
@@ -15398,7 +15434,7 @@ async function initLLMSubsystem() {
       GS._communityPublishStarted=true;
       status.textContent='Publishing completed run…';
       try {
-        const finalScore=computeScore(MoC.baseline);
+        const finalScore=GS._publishedScore || (GS._publishedScore=computeScore(MoC.baseline));
         const scoreElement=document.getElementById('moc-scoreval');if(scoreElement)scoreElement.textContent=finalScore.score;
         const response=await fetch(communityApi,{method:'POST',headers:{'content-type':'application/json'},
           body:JSON.stringify(leaderboardPayload(publicName,finalScore))});
@@ -15429,7 +15465,7 @@ async function initLLMSubsystem() {
   function updateEndScreenBaseline(){
     const bv = document.getElementById('moc-baseval');
     if (!MoC.referenceAt(modelTick)) return;
-    const r = computeScore(MoC.baseline);
+    const r = GS._publishedScore || computeScore(MoC.baseline);
     const comparison=document.getElementById('moc-care-comparison');
     if(comparison) comparison.innerHTML=careComparisonHtml();
     if (bv) bv.textContent = r.baseSd;
@@ -15671,7 +15707,7 @@ async function initLLMSubsystem() {
     { text:'End the year with Trust <b>\u2265 55</b>', bonus:80, start:function(){}, check:function(){ return GS.trust >= 55; } },
     { text:'Get current referral waits to <b>\u2264 8 weeks</b>', bonus:100, start:function(){}, check:function(){ return MoC.care.snapshot().meanWait <= 8; } },
     { text:'Keep Fragility <b>below 50</b> all year', bonus:80,
-      start:function(){ this._ok = true; }, check:function(){ if (fragility() >= 50) this._ok = false; return this._ok; } },
+      start:function(){ this._ok = fragility()<50; }, check:function(){ return this._ok; } },
     { text:'No more than <b>1</b> preventable death this year', bonus:90,
       start:function(){ this._sd = systemDeaths(); }, check:function(){ return systemDeaths() - this._sd <= 1; } }
   ];
@@ -15681,7 +15717,7 @@ async function initLLMSubsystem() {
     return el;
   }
   function newYearObjective(year){
-    if (MoC.IS_BASELINE) return;
+    if (MoC.IS_BASELINE || GS.over) return;
     const obj = OBJECTIVES[(MoC.seed + year * 3) % OBJECTIVES.length];
     GS.objective = Object.create(obj);
     GS.objective.start();
@@ -15703,10 +15739,11 @@ async function initLLMSubsystem() {
                  : '<span style="color:var(--m-red);font-weight:700">\u2717 FAILING</span>');
   }
   function settleYearObjective(){
-    if (!GS.objective || MoC.IS_BASELINE) return null;
+    if (!GS.objective || MoC.IS_BASELINE || GS.endReason || GS.objective._settled) return null;
     const el = objectiveBar();
     el.style.borderColor = '';
     const obj = GS.objective;
+    obj._settled=true;
     if (obj.check()) {
       GS.liveScore += obj.bonus;
       const hs = document.getElementById('hScore'); if (hs) hs.textContent = GS.liveScore;
@@ -15857,11 +15894,14 @@ async function initLLMSubsystem() {
       + '<button id="moc-fb"'+optionAttrs(flash.b).html+'>' + flash.b.l + unavailableHtml(flash.b) + '</button>';
     document.body.appendChild(el);
     function cleanup(){ el.remove(); flashActive = false; if (!councilOpen && !GS.over) resumeSim(); }
+    let decided=false;
     function decide(option){
+      if (GS.over || decided) return;
       const before = flashSnapshot(face);
       if (optionAttrs(option).blocked) return;
       if (option.run) option.run(face);
       else if (!applyChoice(option)) return;
+      decided=true;
       refreshMeters(); renderMinistry(); renderTownWatch();
       const changes = flashChanges(before, flashSnapshot(face));
       el.innerHTML = '<h4>' + flash.t + '</h4><div class="moc-sub">Decision applied</div>'
@@ -16409,8 +16449,11 @@ async function initLLMSubsystem() {
         + '<button class="moc-opt" data-vote="defy">Call the vote now<span class="fx">50/50: all trust +15 or term ends</span></button>'
         + '</div></div>';
       document.body.appendChild(ov);
+      let voted=false;
       ov.querySelectorAll('[data-vote]').forEach(function(b){
         b.addEventListener('click', function(){
+          if (GS.over || voted) return;
+          voted=true;
           const v = b.getAttribute('data-vote');
           ov.remove();
           if (v === 'promise') {
@@ -16454,6 +16497,7 @@ async function initLLMSubsystem() {
     ];
     GS.PROMISES = PROMISES; // bridge: openCouncil is in outer IIFE scope and cannot see this closure
     function showManifesto(){
+      if (GS.over) return;
       if (MoC.TOTAL_QUARTERS < 16) { launchSimulation(); return; } // no election in sprints
       if (GS._manifestoShown) return; // guard: never show twice
       GS._manifestoShown = true; // prevents _mfCheck from firing it again
@@ -16473,6 +16517,7 @@ async function initLLMSubsystem() {
       MoC.paused = true;
       ov.querySelectorAll('[data-promise]').forEach(function(b){
         b.addEventListener('click', function(){
+          if (GS.over || !ov.isConnected) return;
           const i = parseInt(b.getAttribute('data-promise'), 10);
           const idx = GS.promises.indexOf(i);
           if (idx >= 0) { GS.promises.splice(idx, 1); b.style.borderColor = ''; b.style.background = ''; }
@@ -16481,6 +16526,7 @@ async function initLLMSubsystem() {
         });
       });
       document.getElementById('moc-manifesto-done').addEventListener('click', function(){
+        if (GS.over || !ov.isConnected) return;
         ov.remove();
         MoC.paused = false;
         say('MINISTRY', 'Manifesto signed: ' + GS.promises.map(function(i){ return PROMISES[i].text; }).join(' + '), 'sys');
@@ -16584,7 +16630,7 @@ async function initLLMSubsystem() {
       GS.electionSnapshot={tick:modelTick,result:ev,promises:GS.promises.map(i=>({id:_promises[i].id,met:_promises[i].check()}))};
       if (!ev.passes) {
         GS._electionResult = 'failed';
-        setTimeout(function(){ endTerm('election'); }, 400);
+        endTerm('election');
         const failReasons = ev.reasons.map(function(r){ return '• ' + r; }).join('<br>');
         return {
           head:'⏳ ELECTION NIGHT: DEFEAT',
@@ -16681,6 +16727,7 @@ async function initLLMSubsystem() {
     }
 
     MoC.onQuarter = function(q){
+      if (GS.over) return;
       const aging = q>1 && (q-1)%4===0 ? 'Age-related care pressure increased. The same change applies to the reference, adjusted for prevention.' : null;
       if (MoC.referencePolicy) {
         // Declared control: no purchases/laws/optional decisions; existing care and shared shocks continue.
@@ -16701,6 +16748,7 @@ async function initLLMSubsystem() {
       // Flu timing and severity are supplied by the shared environment schedule.
       stepCascades(q);
       const el = electionCheck(q); if (el) GS.pendingBanners.push(el);
+      if (GS.over) return;
       // No discretionary intervention is a valid strategy. Deaths come from the clinical lifecycle only.
       // G15: Quarterly deficit pain — can\'t govern when bankrupt
       if (GS.budget < 0 && !GS.over) {
@@ -16798,8 +16846,12 @@ async function initLLMSubsystem() {
     };
     const _coreOnTick = MoC.onTick;
     MoC.onTick = function(c){
+      if (GS.over) return;
+      MoC.logicalEffects.advance();
+      if (GS.objective?._ok !== undefined && fragility()>=50) GS.objective._ok=false;
       watchDeaths();
       _coreOnTick(c);
+      if (GS.over) return;
       if (!MoC.referencePolicy) maybeFlash();
       if (c % 20 === 0) updateLivesHud();
       if (c % 5 === 0) renderMinistry();
@@ -16855,16 +16907,17 @@ async function initLLMSubsystem() {
         newYearObjective(1);
         renderMinistry();
         // Everyone in town has a name — sweep any nameless walkers (visitors, workers)
-        setTimeout(function(){
-          if (typeof agents === 'undefined') return;
+        (function(){
+          if (typeof agents === 'undefined' || GS.over) return;
           agents.forEach(function(a){
             if (a.name || a.state === 'dead') return;
             const pool = (a.gender === 'F') ? FIRST_NAMES_F : FIRST_NAMES_M;
             a.name = pool[Math.floor(Math.random() * pool.length)] + ' ' + SURNAMES[Math.floor(Math.random() * SURNAMES.length)];
           });
-        }, 1500);
+        })();
         // G9c: manifesto after the tour finishes (hook into first sim launch)
         const _mfCheck = setInterval(function(){
+          if (GS.over) { clearInterval(_mfCheck); return; }
           if (GS._manifestoShown) { clearInterval(_mfCheck); return; } // already shown manually
           if (window._mocGameStarted && !GS._manifestoShown) {
             GS._manifestoShown = true;
