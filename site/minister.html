@@ -1788,6 +1788,7 @@ function findWaypointPath(fromIdx, toIdx) {
 const EVENT_LOG = []; // { cycle: elapsed tick, type, agentId, agentName, detail, hp, timestamp }
 
 function logEvent(type, agent, detail) {
+  MoC.record?.note('clinical:'+type,detail || type,{agentId:agent.id,hp:agent.hp});
   EVENT_LOG.push({
     cycle: modelTick,
     type,
@@ -4308,6 +4309,7 @@ function validateCareParameters(p, rate=MoC.S.specialistCapacity, adoption=MoC.S
   return p;
 }
 function reportCareInputError(error) {
+  MoC.record?.note('rejected',error.message);
   MoC.lastInputError = error.message;
   MoC.careInputErrorCount = (MoC.careInputErrorCount || 0) + 1;
   if (typeof showToast === 'function') showToast(error.message,4000);
@@ -7352,6 +7354,7 @@ function tick(){
   if (MoC.paused || MoC.S.over) return;
   try { validateCareParameters(M[mode]); }
   catch (error) { reportCareInputError(error); MoC.paused=true; return; }
+  const recordBefore=MoC.record?.before();
   cycle++; modelTick++; const p=M[mode];
   MoC.seedTick(modelTick);
   MoC.environment?.advance(modelTick);
@@ -8492,6 +8495,7 @@ function tick(){
   MoC.care?.sync();
   if (MoC.care) MoC.runSnapshots[modelTick] = MoC.care.snapshot();
   MoC.onTick(modelTick);
+  MoC.record?.after('tick','Elapsed tick: clinical care, environment and quarter rules',recordBefore);
 }
 
 function batch(n){for(let i=0;i<n;i++)tick();}
@@ -8571,6 +8575,7 @@ function resetSim(){
 
 function setMode(m){
   if (MoC.S.over) return;
+  MoC.record?.invalidate('Mid-term World mode changes are outside Minister command replay');
   mode=m;
   // Sprint S1: Trigger mode transition animation
   modeTransitionTimer = 30;
@@ -8650,6 +8655,7 @@ function activateCustomMode(){
 
 function applyPlaygroundPreset(preset){
   if (MoC.S.over) return false;
+  MoC.record?.invalidate('Mid-term playground overrides are outside Minister command replay');
   try { validateCareParameters(preset); }
   catch (error) { return reportCareInputError(error); }
   M[mode].admin=preset.admin;
@@ -8773,6 +8779,7 @@ function showPlayground(){
   var slidersContainer=panel.querySelector('.pg-sliders');
   if(slidersContainer){
     slidersContainer.addEventListener('input',function(e){
+      if(MoC.S.over)return;
       if(e.target.type!=='range')return;
       var key=e.target.getAttribute('data-pg-key');
       var val=parseFloat(e.target.value);
@@ -10885,6 +10892,7 @@ window.addEventListener('resize',()=>{userZoomed=false;zoom=1;render();});
 function launchSimulation() {
   if (window._mocGameStarted || autoTimer || MoC.S.over || MoC.isBlocked?.()) return;
   if (!MoC.scenario && !MoC.IS_BASELINE) return; // MoC: waiting for scenario pick
+  MoC.record?.begin();
   MoC.paused = false;
   window._mocGameStarted = true;
   document.body.classList.remove('moc-walkthrough-active');
@@ -10987,6 +10995,8 @@ document.getElementById('agent-detail').addEventListener('click', function(e) {
   // Sprint 22: Playground panel delegation
   var presetBtn = e.target.closest('[data-pg-preset]');
   if (presetBtn) {
+    if (MoC.S.over) return;
+    MoC.record?.invalidate('Mid-term playground override');
     var preset = presetBtn.getAttribute('data-pg-preset');
     if (preset === 'ist') applyPlaygroundPreset(M_ORIG.IST);
     else if (preset === 'soll') applyPlaygroundPreset(M_ORIG.SOLL);
@@ -12926,6 +12936,7 @@ async function initLLMSubsystem() {
         try {
           const next=projectedCareEffect({drainMult:1+increase,sick:0.003*(year<=2?0.5:1)});
           Object.assign(M.IST,next.p);
+          MoC.record?.note('automatic','Annual care pressure',{year,drainFactor:1+increase,sickDelta:0.003*(year<=2?0.5:1)});
         } catch (error) { reportCareInputError(error); }
       }
       for (let i=activeExternal.length-1;i>=0;i--) {
@@ -12936,6 +12947,7 @@ async function initLLMSubsystem() {
               careSchedule(GS.timedFx,GS.delayed,activeExternal.filter(e=>e!==active)));
             Object.assign(M.IST,next.p); GS.specialistCapacity=next.capacity;
             activeExternal.splice(i,1);
+            MoC.record?.note('external-expiry','Scheduled environmental effect ended',active);
           } catch (error) { reportCareInputError(error); }
         }
       }
@@ -12957,6 +12969,7 @@ async function initLLMSubsystem() {
         }
         const impact={...event,drainFactor,sickDelta,capacityDelta:GS.specialistCapacity-previous};
         activeExternal.push(impact); externalLog.push(impact);
+        MoC.record?.note('external','Scheduled environmental effect applied',impact);
         const name={flu:'Flu wave',grid:'Regional power disruption',shortage:'Regional staffing shortage'}[event.kind];
         GS.eventLog.push({q:Math.floor(tick/MoC.QUARTER_TICKS)+1,name});
         GS.pendingBanners=GS.pendingBanners||[];
@@ -13009,7 +13022,8 @@ async function initLLMSubsystem() {
     const record={modelVersion:MoC.MODEL_VERSION,protocol:MoC.REFERENCE_PROTOCOL,seed:MoC.seed,scenario:GS.scenario,tick:final.tick,
       politicalReason:GS.endReason,final,snapshots:{...MoC.runSnapshots,[final.tick]:final},
       decisions:GS.interventions,choices:GS.decisionLog||[],election:GS.electionSnapshot||null,
-      externalSchedule:MoC.environment.schedule,externalImpacts:MoC.environment.log};
+      externalSchedule:MoC.environment.schedule,externalImpacts:MoC.environment.log,
+      commandRecord:MoC.record?.export()};
     try {localStorage.setItem(MoC.replayKey,JSON.stringify(record));return true;} catch(e){return false;}
   };
 
@@ -13047,6 +13061,7 @@ async function initLLMSubsystem() {
       if (GS.over || GS.logicalEffects.some(e=>e.id===id)) return false;
       GS.logicalEffects.push({id,tick:modelTick,dueTick:modelTick+MoC.TICKS_PER_WEEK,
         fx:{trustD:-6},reason:'Strike ends bitter',status:'pending'});
+      MoC.record?.note('scheduled','Strike political consequence due in four ticks',GS.logicalEffects.at(-1));
       return true;
     },
     advance:function(){
@@ -13058,6 +13073,7 @@ async function initLLMSubsystem() {
     cancel:function(){
       for (const effect of GS.logicalEffects) if (effect.status==='pending') {
         effect.status='cancelled';effect.endTick=modelTick;effect.endReason='Term ended before delivery';
+        MoC.record?.note('cancelled',effect.endReason,effect);
       }
     }
   };
@@ -13265,10 +13281,13 @@ async function initLLMSubsystem() {
     if (fx.platform) GS.platformMaturity = Math.min(2, (GS.platformMaturity || 0) + fx.platform); // G17
   }
   function commitCarePlan(plan){
+    const recordBefore=MoC.record?.before();
     GS.budget-=plan.cost;
     for (const step of plan.steps) commitFx(step.fx,step.next);
     GS.timedFx.push(...plan.timed); GS.delayed.push(...plan.delayed);
     for (const step of plan.steps) if (step.label) say('MINISTRY',step.label,'sys');
+    MoC.record?.after('effect',plan.steps.map(s=>s.label || 'Declared policy effect').join('; '),recordBefore,
+      {cost:plan.cost,steps:plan.steps.map(s=>({fx:s.fx,label:s.label})),timed:plan.timed,delayed:plan.delayed});
     refreshMeters();
   }
   function applyCarePlan(plan, funded=false){
@@ -14002,7 +14021,7 @@ async function initLLMSubsystem() {
       a:{ label:'Top up the full 40%', fx:{budget:-55000, trustD:5}, note:'-\u20ac55K \u00b7 Doctors +5 \u00b7 Saturday access maintained' },
       b:{ label:'Offer 20%, negotiate the rest', chance:0.5, fxChoices:[{trustD:2,budget:-28000},{trustD:-4,capacity:-0.5}], note:'50/50: deal at -\u20ac28K (Doctors +2) or capacity -0.5/week, Doctors -4' },
       c:{ label:'Reject: not a municipal responsibility', fx:{trustD:-6, trustP:3}, note:'Doctors -6 \u00b7 Parliament +3 (fiscal discipline)' } },
-    { id:'gpstrike', text:'GP assistants announce a two-day workload strike. Non-emergency access is disrupted.',
+    { id:'gpstrike', text:'GP assistants announce a workload strike. Choose a response to the staffing and political pressure.',
       a:{ label:'Emergency mediator, grant a 10% bonus', fx:{budget:-45000, trustD:8, trustC:2, sick:-0.01}, note:'-\u20ac45K \u00b7 Doctors +8 \u00b7 Citizens +2 \u00b7 sick -1%' },
       b:{ label:'Publicly condemn the strike', fx:{trustD:-10, trustC:-3, trustP:4}, note:'Doctors -10 \u00b7 Citizens -3 \u00b7 Parliament +4' },
       c:{ label:'Let it run, wait them out', fx:{sick:0.02,trustC:-5},
@@ -14139,7 +14158,7 @@ async function initLLMSubsystem() {
       banner = document.createElement('div'); banner.id = 'moc-council-ready-banner'; banner.setAttribute('role', 'status');
       document.getElementById('game-wrap')?.appendChild(banner);
     }
-    banner.innerHTML = '<strong>COUNCIL READY</strong><span>Quarter ' + q + ' is complete. The town is paused.</span><button>OPEN COUNCIL</button>';
+    banner.innerHTML = '<strong>COUNCIL READY</strong><span>Quarter ' + q + ' is complete. The town is paused.</span><button id="moc-council-ready">OPEN COUNCIL</button>';
     banner.querySelector('button').onclick = openPendingCouncil;
   }
   function renderTownWatch(){
@@ -14665,6 +14684,10 @@ async function initLLMSubsystem() {
 
     // Scripted beat takes priority; else event; else dilemma
     let beat = null;
+    if (GS.pendingBeat === 'digigate' && GS.owned.inclofficer) {
+      GS.pendingBeat=null;
+      MoC.record?.note('access-mitigation','Inclusion Officer prevents pending digital-gate exclusion');
+    }
     if (GS.pendingBeat === 'digigate') {
       GS.pendingBeat = null;
       GS._digigateRecurs = true;
@@ -14721,6 +14744,7 @@ async function initLLMSubsystem() {
     // === Wizard shell ===
     const ov = document.createElement('div');
     ov.className = 'moc-overlay'; ov.id = 'moc-council';
+    ov.dataset.recordContext='council:'+q+':'+(beat?'beat:'+GS._digigateLastQ:evt?.id || dilemma?.id || 'quiet');
     ov.innerHTML = '<div class="moc-box">'
       + '<h2>\ud83c\udfdb Quarterly Council \u2014 Q' + qq + ', Year ' + year + '</h2>'
       + '<div class="moc-sub">Time is paused. No need to rush.</div><button id="moc-inspect-town">Inspect town</button>'
@@ -15090,7 +15114,7 @@ async function initLLMSubsystem() {
     // G19: adoption penalty — if 2+ tech items owned but adoption < 80%
     const techOwned = ['scribes1','scribes2','a2a','twin','platformai'].filter(function(id){ return GS.owned && GS.owned[id] >= 1; }).length;
     const adoptionPenalty = (GS.adoptionRate < 0.8 && techOwned >= 2) ? Math.round((0.8 - GS.adoptionRate) * 120) : 0;
-    // G20: bias penalty — each unmitigated exclusion event costs 50pts
+    // Historical exclusion decisions cost 50pts; mitigation does not erase history.
     const biasPenalty = (GS._biasDeaths || 0) * 50;
     // G17/G19: dependence penalty/bonus
     const dep = GS.dependence || 0;
@@ -15117,6 +15141,7 @@ async function initLLMSubsystem() {
   }
   function saveJSON(key, v){ try { localStorage.setItem(key, JSON.stringify(v)); } catch(e){} }
   function recordRun(r, reason){
+    if (MoC.record?.replaying) return {runs:[],streak:{count:0}};
     const runs = loadJSON('moc_runs_' + MoC.MODEL_VERSION, []);
     runs.push({ date: new Date().toISOString().slice(0, 10), seed: MoC.seed, scenario: GS.scenario, modelVersion:MoC.MODEL_VERSION,endTick:modelTick,
       score: r.score, sd: r.sd, livesSaved: r.livesSaved, reason: reason, verdict: verdict(r, reason) });
@@ -15369,7 +15394,7 @@ async function initLLMSubsystem() {
     }
     // G19/G20/G21: new score rows
     if (r.adoptionPenalty > 0) html += '<div class="moc-score-row"><span>Low adoption penalty (tools unused by staff)</span><b style="color:#e07050">\u2212' + r.adoptionPenalty + ' pts</b></div>';
-    if (r.biasPenalty > 0) html += '<div class="moc-score-row"><span>Digital exclusion events (' + (GS._biasDeaths||0) + ' unmitigated)</span><b style="color:#e07050">\u2212' + r.biasPenalty + ' pts</b></div>';
+    if (r.biasPenalty > 0) html += '<div class="moc-score-row"><span>Digital exclusion decisions (' + (GS._biasDeaths||0) + ' logged)</span><b style="color:#e07050">\u2212' + r.biasPenalty + ' pts</b></div>';
     if (r.depPenalty > 0) html += '<div class="moc-score-row"><span>High dependence risk (dep ' + (GS.dependence||0) + ' \u2265 7)</span><b style="color:#e07050">\u2212' + r.depPenalty + ' pts</b></div>';
     if (r.depBonus > 0) html += '<div class="moc-score-row"><span>Resilient dependence (dep ' + (GS.dependence||0) + ' \u2264 3)</span><b style="color:#7bc67b">+' + r.depBonus + ' pts</b></div>';
     if (r.platformBonus > 0) html += '<div class="moc-score-row"><span>Platform coherence (platform + AI on shared data)</span><b style="color:#7bc67b">+' + r.platformBonus + ' pts</b></div>';
@@ -15388,7 +15413,8 @@ async function initLLMSubsystem() {
     html += dataRevealHtml();
     html += '<details class="moc-result-details"><summary>Copy result</summary><div class="moc-share" id="moc-sharetext">' + shareText.replace(/</g, '&lt;') + '</div>';
     html += '<div style="text-align:center;line-height:2.4"><button class="moc-buy" id="moc-copy" style="padding:9px 20px;font-size:12.5px">\ud83d\udccb Copy result</button></div></details>';
-    html += '<div style="text-align:center;line-height:2.4"><button class="moc-buy" id="moc-again" style="padding:9px 20px;font-size:12.5px">Try another approach</button><p id="moc-replay-status" role="status"></p></div></div>';
+    html += '<div style="text-align:center;line-height:2.4"><button class="moc-buy" id="moc-again" style="padding:9px 20px;font-size:12.5px">Try another approach</button>'
+      + '<button class="moc-buy" id="moc-export-record">Export complete command record</button><p id="moc-replay-status" role="status"></p></div></div>';
     ov.innerHTML = html;
     document.body.appendChild(ov);
     GS._rebuildShare = buildShareText;
@@ -15425,6 +15451,11 @@ async function initLLMSubsystem() {
       } catch(e) { throw new Error('standings unavailable'); }
     }
     async function publishCompletedRun(force){
+      if (MoC.record?.replaying) {
+        const status=document.getElementById('moc-community-status');
+        if (status) status.textContent='Replay: publication disabled. This is not a new submission.';
+        return;
+      }
       const status=document.getElementById('moc-community-status');
       if(GS._communityPublishStarted)return;
       if(!force&&!MoC.referenceAt(modelTick)){
@@ -15460,12 +15491,16 @@ async function initLLMSubsystem() {
       location.hash='scn='+GS.scenario+'&seed='+MoC.seed+'&v='+MoC.MODEL_VERSION;
       location.reload();
     });
+    document.getElementById('moc-export-record').onclick=function(){MoC.record.download();};
   }
   // Late-arriving baseline updates the open end screen
   function updateEndScreenBaseline(){
     const bv = document.getElementById('moc-baseval');
     if (!MoC.referenceAt(modelTick)) return;
-    const r = GS._publishedScore || computeScore(MoC.baseline);
+    const r = computeScore(MoC.baseline);
+    // Keep the submitted scalar immutable, but retain the existing protocol's
+    // late same-date comparison/sharing refresh.
+    if (GS._publishedScore) r.score=GS._publishedScore.score;
     const comparison=document.getElementById('moc-care-comparison');
     if(comparison) comparison.innerHTML=careComparisonHtml();
     if (bv) bv.textContent = r.baseSd;
@@ -15758,6 +15793,7 @@ async function initLLMSubsystem() {
     // G16: push to _yearResults for legacy screen
     GS._yearResults = GS._yearResults || [];
     GS._yearResults.push(GS.lastYearResult);
+    MoC.record?.note('objective','Year objective settled once',GS.lastYearResult);
     return GS.lastYearResult;
   }
 
@@ -15888,6 +15924,7 @@ async function initLLMSubsystem() {
     Audio5.blip(880);
     const el = document.createElement('div');
     el.className = 'moc-flash';
+    el.dataset.recordContext='request:'+GS.quarter+':'+FLASH_POOL.indexOf(flash)+':'+(face.id || 'none');
     el.innerHTML = '<h4>' + flash.t + '</h4><div class="moc-sub">Time is paused.</div>'
       + '<div class="ft">' + flash.d(face) + '</div>'
       + '<button id="moc-fa"'+optionAttrs(flash.a).html+'>' + flash.a.l + unavailableHtml(flash.a) + '</button>'
@@ -16950,6 +16987,280 @@ async function initLLMSubsystem() {
       refreshMeters();
     });
   }
+
+  // F08: a local command record, not a save-state loader or online event store.
+  // Commands replay the same live controls/handlers; effects are observed, never
+  // assigned from recorded snapshots. Rendering and wall-clock pauses are omitted.
+  const RECORD_SCHEMA='minister-command-record-1', EVENT_SCHEMA='minister-domain-event-1',
+    REPLAY_VERSION='minister-command-replay-1';
+  const scriptBytes=new TextEncoder().encode(document.currentScript.textContent);
+  const executableReady=crypto.subtle.digest('SHA-256',scriptBytes).then(bytes=>
+    [...new Uint8Array(bytes)].map(v=>v.toString(16).padStart(2,'0')).join(''));
+  let executableId=null;
+  executableReady.then(id=>{ executableId=id; });
+  const copy=value=>JSON.parse(JSON.stringify(value));
+  const govKeys=['quarter','budget','trust','trustC','trustD','trustP','dependence','specialistCapacity',
+    'adoptionRate','serviceCredit','liveScore','mantelzorg','fragmentation','platformMaturity',
+    'owned','laws','promises','activeStates','cascades','timedFx','delayed','logicalEffects',
+    'techFreezeUntil','pendingBeat','_biasDeaths','_lowTrustCQ','_relocatedHouseholds','_strikeUnresolvedQ',
+    '_digigateRecurs','_digigateLastQ','_bruisedMandate','_lawsThisAct','_lastAct','_voteHeld',
+    '_promiseDebt','_electionHeld','_electionResult','_cabinetResult','electionSnapshot',
+    '_yearResults','flashSeen','dilemmasSeen','eventsFired','lastEventQ','buysThisCouncil',
+    '_sinceQuiet','_dilemmaOrder','_sdLastQ','_sdScoreLast','_cashflowThisQ','_councilDue','endReason','over'];
+  function recordMetrics(){
+    return {parameters:{...M.IST},government:Object.fromEntries(govKeys
+      .filter(k=>GS[k]!==undefined).map(k=>[k,GS[k]])),
+      objective:GS.objective ? {year:GS.objective._year,ok:GS.objective._ok,sd:GS.objective._sd,
+        settled:!!GS.objective._settled} : null,
+      residents:Object.fromEntries(agents.filter(resident).map(a=>[a.id,
+        {hp:a.hp,state:a.state,behavior:a.behaviorState,wait:a.waitWeeks,inside:a.insideBuilding,
+          workload:a.stateTimer,moved:!!a.moved}]))};
+  }
+  function recordSnapshot(){
+    return copy({...recordMetrics(),care:MoC.care.snapshot(),
+      clinical:agents.map(a=>({id:a.id,name:a.name,age:a.age,hp:a.hp,state:a.state,moved:!!a.moved,
+        conditions:a.conditions,behavior:a.behaviorState,wait:a.waitWeeks,inside:a.insideBuilding,
+        x:a.x,y:a.y,path:a.path,pathIdx:a.pathIdx,stateTimer:a.stateTimer,
+        burnout:a.burnoutLevel,absence:a.sickLeaveTimer,chat:a.chatTimer,grief:a.grievingTimer,
+        anxiety:a.systemAnxiety,referred:a.referredToHospital,emergency:a.emergencyAdmission})),
+      queues:Object.fromEntries(Object.entries(QUEUES).map(([id,q])=>[id,q.agents])),
+      episodes:MoC.care.episodes,resources:MoC.care.resourceUses,access:MoC.care.accessEvents,
+      environment:MoC.environment.log});
+  }
+  // State hash is a compact regression checksum, NOT a signature or proof of authenticity.
+  function recordHash(value){ return String(hashCode(JSON.stringify(value))); }
+  const recordSelectors=['#moc-town-council','#moc-council-ready','#moc-wiz-next','#moc-wiz-back',
+    '#moc-shop-more','#moc-opt-a','#moc-opt-b','#moc-opt-c','#moc-defer-decision',
+    '#moc-fa','#moc-fb','#moc-flash-continue','#moc-yearend-btn',
+    '[data-buy]','[data-law]','[data-evtopt]','[data-vote]'];
+  const validSelector=selector=>typeof selector==='string' && (recordSelectors
+    .filter(s=>s.startsWith('#')).includes(selector) ||
+    /^\[data-(buy|law|evtopt|vote)="[a-zA-Z0-9_-]+"\]$/.test(selector));
+  function commandSelector(button){
+    for (const attr of ['data-buy','data-law','data-evtopt','data-vote'])
+      if (button.hasAttribute(attr)) return '['+attr+'="'+button.getAttribute(attr)+'"]';
+    return '#'+button.id;
+  }
+  function commandContext(button){
+    const root=button.closest('#moc-council,.moc-flash,#moc-vote');
+    return root?.dataset.recordContext || (root?.id || 'town')+':'+GS.quarter;
+  }
+  function commandKind(button){
+    return button.hasAttribute('data-buy')?'purchase':button.hasAttribute('data-law')?'law'
+      :button.closest('.moc-flash')?'request':button.hasAttribute('data-vote')?'confidence'
+      :button.matches('[data-evtopt],#moc-opt-a,#moc-opt-b,#moc-opt-c,#moc-defer-decision')?'decision':'navigation';
+  }
+  let commandRecord=null, sequence=0, pendingCommand=null;
+  function recordError(message){
+    MoC.paused=true;
+    if (autoTimer) {clearInterval(autoTimer);autoTimer=null;}
+    MoC.record.lastError='Replay refused: '+message;
+    let el=document.getElementById('moc-record-status');
+    if (!el) {el=document.createElement('p');el.id='moc-record-status';el.setAttribute('role','alert');document.body.appendChild(el);}
+    el.textContent=MoC.record.lastError;
+    throw new Error(MoC.record.lastError);
+  }
+  MoC.record={
+    schema:RECORD_SCHEMA,replayVersion:REPLAY_VERSION,replaying:false,lastError:null,
+    ready:executableReady,
+    snapshot:recordSnapshot,
+    invalidate:function(reason){
+      if (commandRecord) {commandRecord.unsupported=reason;this.note('unsupported',reason);}
+    },
+    begin:function(){
+      if (commandRecord || MoC.IS_BASELINE) return;
+      if (modelTick!==0) return recordError('recording must begin at elapsed tick zero');
+      sequence=0;
+      commandRecord={schema:RECORD_SCHEMA,eventSchema:EVENT_SCHEMA,replayVersion:REPLAY_VERSION,modelVersion:MoC.MODEL_VERSION,
+        executableId,protocol:MoC.REFERENCE_PROTOCOL,
+        inputs:{scenario:GS.scenario,seed:MoC.seed,parameters:{...M.IST},promises:GS.promises || [],
+          promisesDeclared:GS.promises!==undefined,
+          horizon:MoC.TOTAL_QUARTERS*MoC.QUARTER_TICKS,mode,query:location.search},
+        initial:recordSnapshot(),externalSchedule:copy(MoC.environment.schedule),
+        commands:[],events:[]};
+      if (!['cabinetcrisis','campaign'].includes(GS.scenario) || MoC.referencePolicy)
+        this.invalidate('Only the two public Minister player scenarios are supported');
+    },
+    before:function(){ return commandRecord ? copy(recordMetrics()) : null; },
+    note:function(kind,reason,data={}){
+      if (!commandRecord) return;
+      if (kind==='rejected' && pendingCommand) pendingCommand.rejection=reason;
+      commandRecord.events.push({id:'event-'+(++sequence),order:sequence,tick:modelTick,kind,reason,
+        commandId:pendingCommand?.id || null,data:copy(data)});
+    },
+    after:function(kind,reason,before,data={}){
+      if (!before || !commandRecord) return;
+      const after=copy(recordMetrics()),changes={};
+      for (const group of Object.keys(after)) {
+        if (group==='objective') {
+          if (JSON.stringify(before[group])!==JSON.stringify(after[group])) changes[group]={from:before[group],to:after[group]};
+        } else for (const key of new Set([...Object.keys(before[group]),...Object.keys(after[group])]))
+          if (JSON.stringify(before[group][key])!==JSON.stringify(after[group][key]))
+            changes[group+'.'+key]={from:before[group][key] ?? null,to:after[group][key] ?? null};
+      }
+      this.note(kind,reason,{...data,changes,stateHash:recordHash(recordSnapshot())});
+    },
+    export:function(){
+      if (!commandRecord) return null;
+      return copy({...commandRecord,executableId,final:recordSnapshot(),tick:modelTick,
+        ending:GS.endReason || null,complete:!!GS.endReason});
+    },
+    download:async function(){
+      await this.ready;
+      const record=this.export();
+      if (!record) return recordError('start a term before exporting');
+      const blob=new Blob([JSON.stringify(record)],{type:'application/json'});
+      const url=URL.createObjectURL(blob),link=document.createElement('a');
+      link.href=url;link.download='minister-'+GS.scenario+'-'+MoC.seed+'-'+modelTick+'-record.json';
+      link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+    },
+    dispatch:function(selector){
+      // Only a fixed vocabulary of game controls, never arbitrary imported JS/selectors.
+      if (!validSelector(selector))
+        return recordError('unknown command '+selector);
+      const button=document.querySelector(selector);
+      if (!button || button.disabled || !button.isConnected || GS.over)
+        return recordError('command unavailable: '+selector);
+      button.click();
+    },
+    run:async function(input,{renderEvery=0,pauseMs=0}={}){
+      await executableReady;
+      let record;
+      try { record=typeof input==='string'?JSON.parse(input):copy(input); }
+      catch { return recordError('invalid JSON'); }
+      if (!record || record.schema!==RECORD_SCHEMA || record.eventSchema!==EVENT_SCHEMA || record.replayVersion!==REPLAY_VERSION ||
+          record.modelVersion!==MoC.MODEL_VERSION || record.executableId!==executableId ||
+          record.protocol!==MoC.REFERENCE_PROTOCOL)
+        return recordError('incompatible schema, replay, model, protocol or executable');
+      if (record.unsupported) return recordError(record.unsupported);
+      if (modelTick!==0 || commandRecord || GS.over) return recordError('open a fresh matching town at tick zero');
+      if (record.inputs?.scenario!==GS.scenario || record.inputs.seed!==MoC.seed ||
+          record.inputs.horizon!==MoC.TOTAL_QUARTERS*MoC.QUARTER_TICKS ||
+          record.inputs.mode!==mode || record.inputs.query!==location.search ||
+          JSON.stringify(record.inputs.parameters)!==JSON.stringify(M.IST) ||
+          JSON.stringify(record.externalSchedule)!==JSON.stringify(MoC.environment.schedule))
+        return recordError('initial inputs or external schedule differ; open the recorded scenario/seed/URL');
+      if (!Array.isArray(record.commands) || record.commands.length>20000 || !Array.isArray(record.events) ||
+          record.events.length>200000 ||
+          !Number.isInteger(record.tick) || record.tick<10 || record.tick>record.inputs.horizon ||
+          record.complete!==!!record.ending || record.final?.care?.tick!==record.tick ||
+          !Array.isArray(record.inputs.promises) || new Set(record.inputs.promises).size!==record.inputs.promises.length ||
+          record.inputs.promises.some(i=>!Number.isInteger(i)||i<0||i>=GS.PROMISES.length))
+        return recordError('invalid command record');
+      let previousTick=0,previousOrder=0;
+      for (let i=0;i<record.commands.length;i++) {
+        const c=record.commands[i];
+        if (c.id!=='command-'+(i+1) || !Number.isInteger(c.tick) || c.tick<previousTick ||
+            c.tick>record.tick || !Number.isInteger(c.order) || c.order<=previousOrder ||
+            !validSelector(c.selector) || typeof c.context!=='string')
+          return recordError('invalid command ordering');
+        previousTick=c.tick;previousOrder=c.order;
+      }
+      const orders=new Set(record.commands.map(c=>c.order));
+      previousOrder=0;previousTick=0;
+      for (const e of record.events) {
+        if (!Number.isInteger(e.order) || e.order<=previousOrder || orders.has(e.order) ||
+            e.id!=='event-'+e.order || !Number.isInteger(e.tick) || e.tick<previousTick || e.tick>record.tick ||
+            typeof e.kind!=='string' || typeof e.reason!=='string')
+          return recordError('invalid event ordering/schema');
+        orders.add(e.order);previousOrder=e.order;previousTick=e.tick;
+      }
+      this.replaying=true;this.lastError=null;
+      GS.promises=copy(record.inputs.promises);
+      // Absent promises and an empty manifesto have different election semantics.
+      if (!record.inputs.promisesDeclared) delete GS.promises;
+      GS._manifestoShown=true;
+      document.querySelectorAll('#play-overlay,#welcome-card,#moc-manifesto').forEach(el=>el.remove());
+      this.begin();
+      if (JSON.stringify(commandRecord.initial)!==JSON.stringify(record.initial))
+        return recordError('initial state differs (unsupported overrides or unavailable historical executable)');
+      launchSimulation();
+      if (autoTimer) {clearInterval(autoTimer);autoTimer=null;}
+      const advance=async target=>{
+        let budget=record.inputs.horizon+1;
+        while (modelTick<target && budget-->0) {
+          if (GS.over || MoC.isBlocked() || flashActive) return recordError('command missing at tick '+modelTick);
+          MoC.paused=false;
+          const before=modelTick;tick();
+          if (modelTick!==before+1) return recordError('logical clock stalled');
+          if (renderEvery && modelTick%renderEvery===0) render();
+          if (pauseMs && modelTick%52===0) await new Promise(resolve=>setTimeout(resolve,pauseMs));
+        }
+        if (modelTick!==target) return recordError('invalid target tick');
+      };
+      for (const expected of record.commands) {
+        await advance(expected.tick);
+        const button=document.querySelector(expected.selector);
+        if (!button || commandContext(button)!==expected.context ||
+            recordHash(recordSnapshot())!==expected.beforeHash)
+          return recordError('command context/state differs for '+expected.id);
+        this.dispatch(expected.selector);
+        if (autoTimer) {clearInterval(autoTimer);autoTimer=null;}
+        const actual=commandRecord.commands.at(-1);
+        if (JSON.stringify(actual)!==JSON.stringify(expected))
+          return recordError('command outcome differs for '+expected.id);
+      }
+      await advance(record.tick);
+      MoC.paused=true;
+      const actual=this.export();
+      if (actual.ending!==record.ending || JSON.stringify(actual.final)!==JSON.stringify(record.final) ||
+          JSON.stringify(actual.events)!==JSON.stringify(record.events))
+        return recordError('event trace or final snapshot differs');
+      return {tick:modelTick,ending:actual.ending,commands:actual.commands.length,events:actual.events.length,
+        snapshot:actual.final};
+    }
+  };
+  window.addEventListener('click',event=>{
+    if (!commandRecord || GS.over || pendingCommand) return;
+    const button=event.target.closest?.(recordSelectors.join(','));
+    if (!button || button.disabled) return;
+    const command={id:'command-'+(commandRecord.commands.length+1),order:++sequence,tick:modelTick,
+      kind:commandKind(button),selector:commandSelector(button),context:commandContext(button),
+      reason:button.textContent.trim(),beforeHash:recordHash(recordSnapshot())};
+    pendingCommand=command;event._ministerCommand=command;
+    event._ministerBefore=MoC.record.before();
+    commandRecord.commands.push(command);
+    // Independent command RNG: no dependence on elapsed reading/render time.
+    Math.random=MoC.mulberry32((MoC.seed ^ Math.imul(modelTick,0x504f4c) ^ hashCode(command.context+command.selector))>>>0);
+  },true);
+  window.addEventListener('click',event=>{
+    const command=event._ministerCommand;
+    if (!command) return;
+    const afterHash=recordHash(recordSnapshot());
+    command.afterHash=afterHash;
+    command.outcome=command.rejection?'rejected':afterHash===command.beforeHash?'no_effect':'applied';
+    MoC.record.after('command',command.reason,event._ministerBefore,{outcome:command.outcome});
+    pendingCommand=null;
+  });
+  document.addEventListener('input',event=>{
+    if (event.target.matches?.('[data-pg-key]')) MoC.record.invalidate('Mid-term playground slider override');
+  },true);
+  document.addEventListener('DOMContentLoaded',()=>{
+    if (MoC.IS_BASELINE || !MoC.scenario) return;
+    const panel=document.createElement('details');
+    const summary=document.createElement('summary');summary.textContent='Replay a complete command record';
+    const help=document.createElement('p');help.className='moc-sub';
+    help.textContent='Open the recorded scenario and seed at tick zero. Only this exact executable is supported. Replay never publishes a score; Try another approach is a separate comparison.';
+    const input=document.createElement('input');input.type='file';input.accept='.json,application/json';
+    input.setAttribute('aria-label','Import Minister command record');
+    input.onchange=async()=>{
+      const file=input.files[0];if(!file)return;
+      try {
+        if(file.size>32*1024*1024)return recordError('record exceeds 32 MiB');
+        const result=await MoC.record.run(await file.text());
+        help.textContent='Replay verified through tick '+result.tick+'; '+result.commands+' commands. No score submitted.';
+      } catch(error) {
+        // Keep the rejection visible even if onboarding was removed before divergence.
+        let status=document.getElementById('moc-record-status');
+        if(!status){status=document.createElement('p');status.id='moc-record-status';document.body.appendChild(status);}
+        status.setAttribute('role','alert');status.textContent=error.message;
+      }
+    };
+    panel.append(summary,help,input);document.querySelector('#play-overlay .moc-box')?.appendChild(panel);
+    const exportButton=document.createElement('button');exportButton.className='cb';
+    exportButton.textContent='Export record';exportButton.onclick=()=>MoC.record.download();
+    document.getElementById('cbar')?.appendChild(exportButton);
+  });
 })();
 
 </script>

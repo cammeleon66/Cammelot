@@ -722,6 +722,33 @@ async function openStrikeCouncil(page) {
   await page.locator('#moc-opt-c').click();
 }
 
+test('F06 real manual exception and Inclusion Officer release holds without erasing elapsed wait', {timeout:30000}, async () => {
+  for (const mitigation of ['manual','officer']) await withResourceTown(async page=>{
+    await openExclusionCouncil(page);
+    await page.locator('#moc-opt-b').click();
+    if(mitigation==='manual') {
+      await page.evaluate(()=>{
+        document.getElementById('moc-council').remove();
+        MoC.S.pendingBeat='digigate';MoC.S.quarter=3;_mocForceCouncil(3);
+      });
+      await page.locator('#moc-wiz-next').click();
+      await page.locator('#moc-opt-a').click();
+    } else {
+      await page.evaluate(()=>{MoC.S.laws.dig2=1;MoC.S.budget=200000;});
+      await openCouncilActions(page);
+      if(await page.locator('#moc-shop-more').count())await page.locator('#moc-shop-more').click();
+      await page.locator('[data-buy="inclofficer"]').click();
+    }
+    const state=await page.evaluate(()=>{
+      const a=resourceFixture.people[0],e=exclusionEpisode;
+      MoC.care.sync();
+      return {elapsed:MoC.care.elapsed(a),remaining:MoC.care.accessRemaining(a),hold:e.accessHolds[0].status,
+        exclusions:MoC.S._biasDeaths,mitigations:MoC.care.accessEvents.filter(e=>e.outcome==='mitigated').length};
+    });
+    assert.deepEqual(state,{elapsed:4,remaining:0,hold:'mitigated',exclusions:1,mitigations:1});
+  });
+});
+
 test('F07 actual strike political consequence waits for logical time, not council reading', {timeout:30000}, async () => {
   await withResourceTown(async page=>{
     await openStrikeCouncil(page);
@@ -783,6 +810,171 @@ test('F07 stacked temporary care effects restore exact state without reversing p
     assert.ok(Math.abs(await page.evaluate(()=>M.IST.admin)-0.15)<1e-12);
     assert.equal(await page.evaluate(()=>MoC.S.timedFx.length),0);
   },'?debug=1');
+});
+
+test('F08 complete export includes a mid-quarter resident request and its cash consequence', {timeout:30000}, async () => {
+  await withResourceTown(async page=>{
+    const result=await page.evaluate(()=>{
+      document.getElementById('play-overlay')?.remove();
+      resourceFixture.activate(0);
+      MoC.record?.begin();
+      modelTick=26;cycle=MoC.STARTUP_CYCLE+modelTick;
+      _mocForceFlash(0);
+      const before=MoC.S.budget;
+      document.getElementById('moc-fa').click();
+      MoC.saveReplay();
+      const record=JSON.parse(localStorage.getItem(MoC.replayKey));
+      return {delta:MoC.S.budget-before,record};
+    });
+    assert.equal(result.delta,-5000);
+    assert.ok(result.record.commandRecord?.commands.some(c=>c.kind==='request' && c.tick===26),
+      'actual late resident request must be in the full export, not just displayed receipt');
+    assert.ok(result.record.commandRecord.events.some(e=>e.reason.includes('Assign case manager')),
+      'the cash consequence must retain its authoritative reason');
+  });
+});
+
+test('F08 real short and long scenario commands replay under distinct render/pause schedules', {timeout:300000}, async t => {
+  const server=await startSiteServer(),browser=await launchBrowser();
+  const writes=[];
+  try {
+    for (const [scenario,seed] of [['cabinetcrisis',2468],['campaign',2468],['cabinetcrisis',2]]) {
+      const makePage=async()=>{
+        const page=await browser.newPage();
+        await page.route('**/*',route=>{
+          if(route.request().method()!=='GET'){writes.push(route.request().url());return route.abort();}
+          if(!route.request().url().startsWith(`http://127.0.0.1:${server.address().port}/`))
+            return route.fulfill({contentType:'application/json',body:'{"entries":[]}'});
+          return route.continue();
+        });
+        await page.addInitScript(()=>{localStorage.setItem('moc_muted_v2','true');window.requestAnimationFrame=()=>0;});
+        await page.goto(`http://127.0.0.1:${server.address().port}/minister.html#scn=${scenario}&seed=${seed}`,{waitUntil:'domcontentloaded'});
+        await page.evaluate(()=>MoC.record.ready);
+        return page;
+      };
+      const source=await makePage();
+      const record=await source.evaluate(()=>{
+        document.getElementById('play-overlay').remove();
+        if(MoC.S.scenario==='campaign') MoC.S.promises=[0,1,2];
+        MoC.S._manifestoShown=true;
+        // Suppress optional publication only; never alter model/reference policy.
+        MoC.S._communityPublishStarted=true;
+        launchSimulation();
+        const stopClock=()=>{clearInterval(autoTimer);autoTimer=null;};
+        stopClock();
+        const click=button=>{button.click();stopClock();};
+        let actions=0;
+        while(!MoC.S.over && actions++<5000) {
+          if(MoC.seed===2 && MoC.S.logicalEffects.some(e=>e.status==='applied'))break;
+          const flash=document.querySelector('.moc-flash');
+          if(flash) {click(flash.querySelector('#moc-flash-continue') || flash.querySelector('button:not(:disabled)'));continue;}
+          const year=document.getElementById('moc-yearend-btn');
+          if(year){click(year);continue;}
+          const vote=document.querySelector('[data-vote="promise"]');
+          if(vote){click(vote);continue;}
+          if(MoC.S._councilDue){click(document.getElementById('moc-town-council'));continue;}
+          const council=document.getElementById('moc-council');
+          if(council){
+            const choices=[...council.querySelectorAll('.moc-opt:not(:disabled)')];
+            if(choices.length){
+              click(choices.find(b=>b.textContent.includes('Let it run')) || choices[0]);continue;
+            }
+            const law=council.querySelector('[data-law]:not(:disabled)');
+            if(law){click(law);continue;}
+            const more=document.getElementById('moc-shop-more');
+            if(more){click(more);continue;}
+            const priorities=MoC.S.owned.pilotgrant ? ['gpfund','mtvp','prevention','hire','resilience'] :
+              ['pilotgrant','gpfund','mtvp','prevention','hire','resilience'];
+            const buy=priorities.map(id=>council.querySelector(`[data-buy="${id}"]:not(:disabled)`)).find(Boolean);
+            if(buy){click(buy);continue;}
+            const next=document.getElementById('moc-wiz-next');
+            if(next&&!next.disabled){click(next);continue;}
+            throw new Error('Unresolved council at '+modelTick);
+          }
+          MoC.paused=false;
+          const previous=modelTick;tick();
+          if(modelTick!==previous+1)throw new Error('Stalled at '+modelTick);
+          stopClock();
+        }
+        if(!MoC.S.over && !(MoC.seed===2 && MoC.S.logicalEffects.some(e=>e.status==='applied')))
+          throw new Error('Recorded player exceeded bounded action budget');
+        return MoC.record.export();
+      });
+      assert.ok(record.commands.some(c=>c.kind==='request'),'real mid-quarter request recorded');
+      assert.ok(record.commands.some(c=>c.kind==='decision'));
+      assert.ok(record.commands.some(c=>c.kind==='law'));
+      assert.ok(record.commands.some(c=>c.kind==='purchase'));
+      const deliveries=record.events.filter(e=>e.kind==='effect' && /Effect ended:|Strike ends bitter/.test(e.reason));
+      t.diagnostic(`${scenario} seed ${seed}: ${record.tick} ticks, ${record.ending}, ${record.commands.length} commands, ${record.events.length} events; deliveries: ${deliveries.map(e=>e.reason).join(', ')}`);
+      if(scenario==='campaign')assert.ok(deliveries.length,'long scenario must actually replay delayed effects/expiry');
+      if(seed===2)assert.ok(deliveries.some(e=>/Strike ends bitter/.test(e.reason)),'actual strike consequence must replay at its logical boundary');
+      const target=await makePage();
+      const replay=await target.evaluate(record=>MoC.record.run(record,{renderEvery:3,pauseMs:5}),record);
+      assert.deepEqual(replay.snapshot,record.final);
+      assert.equal(replay.commands,record.commands.length);
+      await source.close();await target.close();
+    }
+    assert.deepEqual(writes,[],'recorded tests and replay must not submit scores');
+  } finally {await browser.close();await new Promise(resolve=>server.close(resolve));}
+});
+
+test('F08 incompatible, reordered, unavailable and altered records fail visibly without publication', {timeout:120000}, async () => {
+  const server=await startSiteServer(),browser=await launchBrowser(),page=await browser.newPage();
+  const writes=[];
+  await page.route('**/*',route=>{
+    if(route.request().method()!=='GET'){writes.push(route.request().url());return route.abort();}
+    if(!route.request().url().startsWith(`http://127.0.0.1:${server.address().port}/`))
+      return route.fulfill({contentType:'application/json',body:'{"entries":[]}'});
+    return route.continue();
+  });
+  const url=`http://127.0.0.1:${server.address().port}/minister.html#scn=cabinetcrisis&seed=2468`;
+  const open=async()=>{await page.goto('about:blank');await page.goto(url,{waitUntil:'domcontentloaded'});await page.evaluate(()=>MoC.record.ready);};
+  try {
+    await open();
+    const record=await page.evaluate(()=>{
+      document.getElementById('play-overlay').remove();MoC.S._manifestoShown=true;
+      launchSimulation();clearInterval(autoTimer);autoTimer=null;
+      for(let i=0;i<16;i++)tick();
+      document.querySelector('.moc-flash button:not(:disabled)').click();
+      document.getElementById('moc-flash-continue').click();
+      clearInterval(autoTimer);autoTimer=null;
+      for(let i=0;i<4;i++)tick();
+      return MoC.record.export();
+    });
+    for (const field of ['schema','eventSchema','replayVersion','modelVersion','executableId']) {
+      await open();
+      const error=await page.evaluate(async ({record,field})=>{
+        record[field]='incompatible';
+        try{await MoC.record.run(record);return null;}catch(e){return e.message;}
+      },{record,field});
+      assert.match(error,/incompatible/);
+      assert.match(await page.locator('#moc-record-status').innerText(),/Replay refused/);
+      assert.equal(await page.evaluate(()=>modelTick),0);
+    }
+    for (const mutation of ['order','unavailable','initial','effect','missing','selector']) {
+      await open();
+      const error=await page.evaluate(async ({record,mutation})=>{
+        if(mutation==='order')record.commands[1].order=record.commands[0].order;
+        if(mutation==='unavailable')record.commands[0].selector='[data-buy="hire"]';
+        if(mutation==='initial')record.initial.government.budget++;
+        if(mutation==='effect')record.events.at(-1).data.stateHash='altered';
+        if(mutation==='missing')record.commands=[];
+        if(mutation==='selector')record.commands[0].selector='#moc-export-record';
+        try{await MoC.record.run(record);return null;}catch(e){return e.message;}
+      },{record,mutation});
+      assert.match(error,/Replay refused/,mutation);
+      assert.match(await page.locator('#moc-record-status').innerText(),/Replay refused/);
+    }
+    await open();
+    await page.evaluate(record=>MoC.record.run(record,{renderEvery:1}),record);
+    const before=await page.evaluate(()=>MoC.record.snapshot());
+    const repeated=await page.evaluate(async record=>{
+      try{await MoC.record.run(record);return null;}catch(e){return e.message;}
+    },record);
+    assert.match(repeated,/fresh matching town/);
+    assert.deepEqual(await page.evaluate(()=>MoC.record.snapshot()),before);
+    assert.deepEqual(writes,[]);
+  } finally {await browser.close();await new Promise(resolve=>server.close(resolve));}
 });
 
 test('F05 aggregate absence reduces actual GP service', {timeout:30000}, async t => {
@@ -2321,6 +2513,8 @@ test('Early results match the reference date and replay preserves the prior atte
   const page=await browser.newPage({viewport:{width:390,height:844}});
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.addInitScript(()=>localStorage.setItem('moc_muted_v2','true'));
+  await page.route('**/api/leaderboard**',route=>route.fulfill({status:200,json:
+    route.request().method()==='POST' ? {entry:{username:'Fixture Minister'},rank:1} : {entries:[]}}));
   try {
     const url=`http://127.0.0.1:${server.address().port}/minister.html?debug=1#scn=cabinetcrisis&seed=2468`;
     await page.goto(url,{waitUntil:'domcontentloaded'});
@@ -2336,12 +2530,17 @@ test('Early results match the reference date and replay preserves the prior atte
       window._mocDebug.endTerm('noconfidence');
     });
     await page.locator('#moc-care-comparison').waitFor();
+    await page.evaluate(()=>MoC.S._publishCompletedRun(true));
+    const publishedScore=await page.locator('#moc-scoreval').innerText();
     await page.waitForFunction(()=>!!MoC.referenceAt(75),null,{timeout:25000});
     const pair=await page.evaluate(()=>({tick:MoC.S._finalSnapshot.tick,reference:MoC.referenceAt(75).tick,
       signed:MoC.care.compare(MoC.S._finalSnapshot,MoC.referenceAt(75)).livesDifference}));
     assert.deepEqual(pair,{tick:75,reference:75,signed:0});
     assert.match(await page.locator('#moc-care-comparison').innerText(),/Same date: tick 75/);
     assert.match(await page.locator('#moc-care-verdict').innerText(),/same number/i);
+    assert.equal(await page.locator('#moc-scoreval').innerText(),publishedScore,'late comparison must not change the published score');
+    assert.match(await page.locator('#moc-sharetext').textContent(),/Lives saved vs status quo: 0/,
+      'late matching care data must still refresh sharing detail under the unchanged protocol');
     const endCopy=await page.locator('#moc-endscreen').innerText();
     assert.doesNotMatch(endCopy,/not heroic|played it safe|your successor inherits|the system won|hard route|rare trifecta/i);
     assert.match(endCopy,/FINAL SCORE/);
