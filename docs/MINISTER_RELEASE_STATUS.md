@@ -2,14 +2,14 @@
 
 Updated: 2026-10-27
 Public game: https://cammelot.org/minister.html
-Verified public model: `minister-care-8-finite-resources` (publication evidence below)
+Verified public model: `minister-care-9-workforce-productivity` (publication evidence below)
 Reference protocol: `no-discretionary-action-v1`
 
 This is the canonical status list. Older plans describe how the current release was built; their unchecked boxes are not active tasks.
 
-## Model 9: workforce/productivity (F05) — upcoming, not deployed
+## Model 9: workforce/productivity (F05)
 
-Issue [#5](https://github.com/cammeleon66/Cammelot/issues/5) is implemented locally as `minister-care-9-workforce-productivity`, based on `ba0c19ba4d6ca06618961327f742e677b44b0322`. **Model 8 remains the verified public model.** This work does not publish, push, open a PR, deploy or modify workflows, settings, backend or production leaderboard state. Review and release belong to the coordinator.
+Issue [#5](https://github.com/cammeleon66/Cammelot/issues/5) is implemented and published as `minister-care-9-workforce-productivity`, based on `ba0c19ba4d6ca06618961327f742e677b44b0322`. **Model 9 is the verified public model.** The coordinator reviewed and published it through the existing gated workflow; no workflows, settings, backend or production leaderboard state were changed. Publication evidence is recorded separately below.
 
 ### Mechanism and scope
 
@@ -19,7 +19,7 @@ Aggregate absence and AI productivity were disconnected from GP service on the c
 
 per present GP per tick (zero when none are present). Aggregate absence is a minimum unavailable fraction, with named absences counted toward it, not charged again. The old random admin admission gate is removed; admin reduces clinical work once and still affects the existing overdue-wait drain once. Recruitment retains the nominal routine-rate/credit/place mechanism; AI does not create specialist starts or change disease coefficients. Idle work is not stored, and a practice can complete at most one consultation per tick. These are explicit engineering assumptions, not empirical workforce effects or a guarantee of fewer deaths.
 
-The [model contract](MINISTER_MODEL_CONTRACT.md#f05-implementation-model-9-workforceproductivity-upcoming-not-deployed) traces shop, law, decision/shock and parameter paths through service to metrics. Reporting distinguishes nominal/available GP work, actual GP visits, routine starts and occupancy. Previews share effect projection with execution. Bounds reject invalid effects observably instead of silently clamping them; valid zeros and positive small drain factors survive. Effect arithmetic retains precision instead of rounding to hundredths (the 70%-adopted pilot now produces admin 0.184, displayed as 18%). Scheduled effects/reversals receive the same bounds checking; their coefficients and schedule generation are unchanged.
+The [model contract](MINISTER_MODEL_CONTRACT.md#f05-implementation-model-9-workforceproductivity) traces shop, law, decision/shock and parameter paths through service to metrics. Reporting distinguishes nominal/available GP work, actual GP visits, routine starts and occupancy. Previews share effect projection with execution. Bounds reject invalid effects observably instead of silently clamping them; valid zeros and positive small drain factors survive. Effect arithmetic retains precision instead of rounding to hundredths (the 70%-adopted pilot now produces admin 0.184, displayed as 18%). Scheduled effects/reversals receive the same bounds checking; their coefficients and schedule generation are unchanged.
 
 This is an outcome change and therefore incompatible with model 8 replay/reference/leaderboard results. Protocol `no-discretionary-action-v1` remains unchanged. Clock, horizons, terminal mortality, night GP routing, retirement in care and finite-resource conservation remain regression requirements. No F06/F07 work, score reweighting, scheduler replacement or wholesale rebalance is included.
 
@@ -65,7 +65,7 @@ Additional real-path regressions caught valid full-adoption scribe/platform purc
 - Nonfinite inputs, invalid raw fractions, zero-to-negative deltas and meaningful overshoots rejected without cost.
 - Active storm safe mode: score 100 → 96, unchanged GP work (5.152/week), parameters, routine rate and scheduled effects.
 
-Windows validation at `56aca266b652a578c4f63162543b08263e3d4d11`: `npm test` **198/198 passed**, 48 suites, zero failures/cancellations/skips (254.51 seconds). This includes all 18 then-current F05 tests, existing finite-resource/clock/death/retirement checks, both supported scenario references (including the no-care-input-error assertions), offline browser isolation, and both supported HTTP host paths. `node --check tests/minister_browser.test.js`, Acorn parsing of the inline Minister script, and `git diff --check` passed. No dependencies or tooling were added. Model 9 is still **upcoming, not deployed**; public model 8 and reference protocol are unchanged.
+Windows validation at `56aca266b652a578c4f63162543b08263e3d4d11`: `npm test` **198/198 passed**, 48 suites, zero failures/cancellations/skips (254.51 seconds). This includes all 18 then-current F05 tests, existing finite-resource/clock/death/retirement checks, both supported scenario references (including the no-care-input-error assertions), offline browser isolation, and both supported HTTP host paths. `node --check tests/minister_browser.test.js`, Acorn parsing of the inline Minister script, and `git diff --check` passed. No dependencies or tooling were added. At this implementation checkpoint, model 9 was not deployed and public model 8 remained unchanged.
 
 ### F05 scope follow-up: executable horizons and conditional recoveries
 
@@ -87,15 +87,24 @@ Targeted command: `node --test --test-name-pattern='F05' tests/minister_browser.
 - Rejected work-to-rule/citizen/strike onsets do not install flags or records; failed conditional and strike recovery retains flags/records and succeeds after inconsistent restored state is repaired.
 - Rejected exodus/carer effects remain retryable and apply once a feasible state is available.
 
-Audit scope: named GP burnout timers and queue transfers are unchanged and do not duplicate aggregate absence; active morale, strike, exodus and carer paths were checked. Inactive legacy aging/finale helpers remain inactive. Model 9 is still upcoming and undeployed; no reference protocol, service coefficient, dependency, workflow, backend or leaderboard-state change.
+Audit scope: named GP burnout timers and queue transfers are unchanged and do not duplicate aggregate absence; active morale, strike, exodus and carer paths were checked. Inactive legacy aging/finale helpers remain inactive. This final repair changed no reference protocol, service coefficient, dependency, workflow, backend or leaderboard state; publication followed coordinator review.
 
-Final-source Windows verification: `npm test` **209/209 passed**, 48 suites, zero failures/cancellations/skips (226.53 seconds). All 29 F05 tests, existing finite-resource/clock/death/retirement checks, both supported scenario references (including no-care-input-error assertions), offline browser isolation and both supported HTTP host paths pass. `node --check tests/minister_browser.test.js`, Acorn parsing of the inline executable and `git diff --check` pass. Local single-writer implementation only: no agents, push, PR update or deployment; the coordinator handles publication.
+Final-source Windows verification at `238c750a838dd56d8692677236b6ee3d9f2983a1`: `npm test` **209/209 passed**, 48 suites, zero failures/cancellations/skips (226.53 seconds). All 29 F05 tests, existing finite-resource/clock/death/retirement checks, both supported scenario references (including no-care-input-error assertions), offline browser isolation and both supported HTTP host paths pass. `node --check tests/minister_browser.test.js`, Acorn parsing of the inline executable and `git diff --check` pass. Standards and Spec follow-up reviews have no outstanding findings.
+
+### Verified model 9 publication
+
+- Protected master merge: `12564e3273fb7c48ef000a97ce635372e04e27f9` through [PR34](https://github.com/cammeleon66/Cammelot/pull/34); release: `65175d704439bded68934b7db3d9dd4be36993d2`, preserving `feature/agentic-overhaul` history and matching the reviewed tree.
+- [Pages run 40489766345, attempt 3](https://github.com/cammeleon66/Cammelot/actions/runs/40489766345/attempts/3) passed on 2026-10-27: full validation completed at 10:56:08 UTC, before deployment began at 10:56:12 UTC. No gate was bypassed.
+- Attempt 1 was canceled after Chromium installation stalled. Attempt 2 passed 208/209 tests but hit the unchanged random-name fixture: six generated names included a non-consecutive repeat. The generator only excludes the immediate previous name, while the fixture requires global uniqueness. This pre-existing nondeterministic assertion remains a test-maintenance limitation; no test or gameplay change was made to hide it. The unchanged release passed attempt 3.
+- Public `/minister.html` SHA-256 matched the canonical Git blob: `5231f563d8440513863e02a706da8013ccff91c0216690f1893e03479737b1ff`.
+- Live Cabinet Crisis and Full Term references completed at 416 and 2,080 ticks respectively for seed 2468. Scenario, model 9, protocol and schedule identities matched; player openings remained at elapsed tick zero with four ticks/week, 52/quarter and 208/year.
+- No browser, same-origin HTTP or care-input errors occurred in either player or reference. External requests were fulfilled locally, non-GET requests blocked, and leaderboard reads stubbed; no scores were submitted. This verifies the static game/reference path, not physical devices, leaderboard writes, clinical calibration or guaranteed outcome improvement.
 
 ## Model 8: finite resources (F04)
 
 Issue [#4](https://github.com/cammeleon66/Cammelot/issues/4) replaces unlimited emergency admission with one separate emergency place and visible queued overflow, and bounds simultaneous GP consultations to one per practice. Routine treatment retains its named finite places and starts/week credit, independent of emergency care. Releases, initial occupancy, starts and completions are separately accounted; reduction of the routine target retires occupied places without evicting residents. See the [implemented resource contract](MINISTER_MODEL_CONTRACT.md#f04-implementation-model-8-finite-resources) and [criterion evidence](#f04-implementation-evidence).
 
-This changes outcomes and is incompatible with model 7 replay/reference/leaderboard records. The implementation changed no workflow, backend, production leaderboard or repository settings; the coordinator published it through the existing gated branch after review. Model 8 is the verified public executable. The one-place rule and overflow outcomes are unvalidated gameplay assumptions, not calibration or a claim of lower mortality. F05 workforce/productivity tuning and F07 effects remain separate work.
+This changes outcomes and is incompatible with model 7 replay/reference/leaderboard records. The implementation changed no workflow, backend, production leaderboard or repository settings; the coordinator published it through the existing gated branch after review. Model 8 was the verified public executable before model 9. The one-place rule and overflow outcomes are unvalidated gameplay assumptions, not calibration or a claim of lower mortality. F05 is recorded above; F07 effects remain separate work.
 
 Local implementation evidence: Minister browser/supported-host tests **37/37 passed**; `npm test` **179/179 passed** using system Chromium and temporary existing test dependencies (the locked Azure mirror was unavailable). This is repository validation, not publication evidence; see the focused evidence below for exact limitations.
 

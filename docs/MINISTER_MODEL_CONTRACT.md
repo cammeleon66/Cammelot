@@ -1,6 +1,6 @@
 # Minister model contract
 
-**Status:** Selected engineering target contract; not clinical validation. **Audited baseline:** [`bb6df6490ceb56e68cc8922ae167660ac6079b18`](https://github.com/cammeleon66/Cammelot/commit/bb6df6490ceb56e68cc8922ae167660ac6079b18), model `minister-care-5-rollout`. **Verified deployed model:** `minister-care-8-finite-resources` ([publication evidence](MINISTER_RELEASE_STATUS.md#verified-model-8-publication)). **Paired-reference protocol:** `no-discretionary-action-v1`.
+**Status:** Selected engineering target contract; not clinical validation. **Audited baseline:** [`bb6df6490ceb56e68cc8922ae167660ac6079b18`](https://github.com/cammeleon66/Cammelot/commit/bb6df6490ceb56e68cc8922ae167660ac6079b18), model `minister-care-5-rollout`. **Verified deployed model:** `minister-care-9-workforce-productivity` ([publication evidence](MINISTER_RELEASE_STATUS.md#verified-model-9-publication)). **Paired-reference protocol:** `no-discretionary-action-v1`.
 
 This contract describes the Minister policy game only. Verified behavior below is distinct from selected target rules. The target rules are bounded engineering choices for subsequent implementation, not evidence of clinical validity, calibrated parameters, or claims that outcomes will improve. The audit summary and browser evidence in issue [#1](https://github.com/cammeleon66/Cammelot/issues/1) are the supplied evidence; no private audit artifacts are assumed.
 
@@ -77,7 +77,7 @@ The “Verified current behavior” section above records the original model-5 a
 
 These outcome-affecting rules require model 8. Replay keys, reference matching and leaderboard filters use that new model identity; model 7 results must not be compared or ranked as equivalent. The reference-policy protocol is unchanged. F02's elapsed clock, startup display offset and terminal mortality ordering remain intact. This is software conservation evidence, not calibration, validation of the one-place assumption, or a prediction of improved mortality. F05 workforce tuning and F07 effect corrections are not implemented here.
 
-## F05 implementation: model 9 workforce/productivity (upcoming, not deployed)
+## F05 implementation: model 9 workforce/productivity
 
 The working executable is `minister-care-9-workforce-productivity`. **The verified public release remains model 8.** This section supersedes the model-5 audit and model-8 deferral only for workforce/productivity semantics. Protocol `no-discretionary-action-v1`, schedule generation, matching rules, scenario inputs and horizons are unchanged. These are bounded engineering assumptions, not empirical effectiveness estimates, clinical validation or a technology preference.
 
@@ -141,7 +141,7 @@ Conditional flags change only after a successful validated onset/recovery; rejec
 
 Due quarter effects are projected as one ordered batch against the remaining schedule and conditional views, then removed only after successful validation. Environmental expiries likewise remove their own pending inverse only on success. If an inconsistent restored/directly edited state prevents expiry, recovery or delivery, the standard error is exposed and pending records/conditional flags remain available for retry; no partial dated batch is committed. A mandatory council with no feasible choices offers **Defer unavailable decision**, an explicit no-effect/no-charge continuation to laws and funding. This prevents a mandatory-decision dead end without silently weakening bounds or applying partial benefits.
 
-No model-8 record is reused: existing versioned replay, reference and leaderboard filters pick up model 9. No protocol bump is needed because matching/comparison rules are unchanged. F06/F07, empirical calibration, balance tuning, backend/leaderboard changes and deployment are outside this implementation. See [local F05 evidence](MINISTER_RELEASE_STATUS.md#model-9-workforceproductivity-f05--upcoming-not-deployed).
+No model-8 record is reused: existing versioned replay, reference and leaderboard filters pick up model 9. No protocol bump is needed because matching/comparison rules are unchanged. F06/F07, empirical calibration, balance tuning and backend/leaderboard changes remain outside this implementation. See [F05 evidence](MINISTER_RELEASE_STATUS.md#model-9-workforceproductivity-f05) and the separate [verified publication](MINISTER_RELEASE_STATUS.md#verified-model-9-publication).
 
 ## Glossary
 
