@@ -15203,14 +15203,14 @@ async function initLLMSubsystem() {
     return data.entries;
   }
   function communityFailureText(error){
-    if(error&&error.communityFailure==='network') return 'Community standings are temporarily unavailable.';
+    if(error&&error.communityFailure==='network') return 'The community service is temporarily unavailable';
     if(error&&error.communityFailure==='service'){
-      if(error.status===403||error.status>=500) return 'Community standings are temporarily unavailable.';
+      if(error.status===403||error.status>=500) return 'The community service is temporarily unavailable';
       if(error.status===400||error.status===422)
         return 'Community service validation error (HTTP '+error.status+'): '+error.message;
       return 'Community service error'+(error.status?' (HTTP '+error.status+')':'')+': '+error.message;
     }
-    return 'Standings could not be displayed.';
+    return 'Community service error: '+(error&&error.message||'invalid response');
   }
 
   // ── G4: End statement (succeed/fail epitaph under the verdict) ──
@@ -16454,7 +16454,7 @@ async function initLLMSubsystem() {
         let entries;
         try {
           entries=await fetchCommunityStandings(communityEndpoint()+'?scenario='+encodeURIComponent(sc.id)+'&modelVersion='+encodeURIComponent(MoC.MODEL_VERSION)+'&limit=5');
-        } catch(error){ note.textContent=communityFailureText(error)+' The game still works without standings.';list.replaceChildren();return; }
+        } catch(error){ note.textContent=communityFailureText(error)+'. The game still works without standings.';list.replaceChildren();return; }
         try {
           if(entries.length){
             note.textContent='Persisted community runs · different town seeds · care-first ranking';

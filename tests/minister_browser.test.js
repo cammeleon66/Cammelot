@@ -2827,12 +2827,12 @@ test('Opening standings distinguish empty, unavailable, validation and network o
     {
       label:'service unavailable by permission response',
       fulfill:route=>route.fulfill({status:403,contentType:'application/json',body:JSON.stringify({error:'This web app is stopped'})}),
-      message:/Community standings are temporarily unavailable.*game still works without standings/i,
+      message:/The community service is temporarily unavailable\. The game still works without standings\./i,
     },
     {
       label:'service unavailable by server error',
       fulfill:route=>route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:'temporarily unavailable'})}),
-      message:/Community standings are temporarily unavailable.*game still works without standings/i,
+      message:/The community service is temporarily unavailable\. The game still works without standings\./i,
     },
     {
       label:'service validation 400',
@@ -2847,7 +2847,7 @@ test('Opening standings distinguish empty, unavailable, validation and network o
     {
       label:'network',
       fulfill:route=>route.abort('failed'),
-      message:/Community standings are temporarily unavailable.*game still works without standings/i,
+      message:/The community service is temporarily unavailable\. The game still works without standings\./i,
     },
     {
       label:'client-side display failure',
