@@ -2,6 +2,8 @@
 
 **Status:** Selected engineering target contract; not clinical validation. **Audited baseline:** [`bb6df6490ceb56e68cc8922ae167660ac6079b18`](https://github.com/cammeleon66/Cammelot/commit/bb6df6490ceb56e68cc8922ae167660ac6079b18), model `minister-care-5-rollout`. **Verified deployed model:** `minister-care-10-access-time-replay` ([publication evidence](MINISTER_RELEASE_STATUS.md#verified-model-10-publication)). **Paired-reference protocol:** `no-discretionary-action-v1`.
 
+The proposed, non-implementation simulation boundary for R02 is documented in [MINISTER_SIMULATION_BOUNDARY.md](MINISTER_SIMULATION_BOUNDARY.md).
+
 This contract describes the Minister policy game only. Verified behavior below is distinct from selected target rules. The target rules are bounded engineering choices for subsequent implementation, not evidence of clinical validity, calibrated parameters, or claims that outcomes will improve. The audit summary and browser evidence in issue [#1](https://github.com/cammeleon66/Cammelot/issues/1) are the supplied evidence; no private audit artifacts are assumed.
 
 ## Verified current behavior
