@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createReadStream, existsSync, statSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { createReadStream, existsSync, readFileSync, statSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { spawn } from 'node:child_process';
 import { extname, join, relative, resolve, sep } from 'node:path';
@@ -8,12 +9,15 @@ import { chromium } from 'playwright-chromium';
 
 const REPO_ROOT = process.cwd();
 const SITE_ROOT = join(REPO_ROOT, 'site');
+const MINISTER_MODULE_BYTES = readFileSync(join(SITE_ROOT, 'minister-model-core.js'));
+const MINISTER_MODULE_SHA256 = createHash('sha256').update(MINISTER_MODULE_BYTES).digest('hex');
 const SCENARIOS = [
   { id: 'cabinetcrisis', quarters: 8 },
   { id: 'campaign', quarters: 40 },
 ];
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
   '.jpeg': 'image/jpeg',
   '.jpg': 'image/jpeg',
@@ -123,6 +127,11 @@ async function exerciseSupportedPath({
     browser = await chromium.launch({ headless: true, args: ['--mute-audio'] });
     const baseUrl = `${server.baseUrl}${pagePath}`;
     const origin = new URL(baseUrl).origin;
+    const moduleResponse = await fetch(new URL('minister-model-core.js', baseUrl));
+    assert.equal(moduleResponse.status, 200, `${name}: shared Minister model module must be served`);
+    const servedModuleDigest = createHash('sha256').update(Buffer.from(await moduleResponse.arrayBuffer())).digest('hex');
+    assert.equal(servedModuleDigest, MINISTER_MODULE_SHA256,
+      `${name}: shared Minister model module bytes must match the repository file`);
     const attemptedSubmissions = [];
     for (const [index, scenario] of SCENARIOS.entries()) {
       const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
@@ -308,4 +317,20 @@ test('deployment smoke detects an external leaderboard POST before aborting it',
     injectExternalLeaderboardPost: true,
   }), error => error.message.includes('smoke tests must never submit scores')
     && error.message.includes('app-cammelot-leaderboard-a8f605fa.azurewebsites.net/api/leaderboard'));
+});
+
+test('a failed Minister model module load displays a visible error', { timeout: 30000 }, async () => {
+  const server = await startArtifactServer();
+  const browser = await chromium.launch({ headless: true, args: ['--mute-audio'] });
+  try {
+    const page = await browser.newPage();
+    await page.route('**/minister-model-core.js', route => route.abort());
+    await page.goto(`${server.baseUrl}/minister.html#scn=cabinetcrisis&seed=2468`, { waitUntil: 'domcontentloaded' });
+    const notice = page.locator('#minister-model-error');
+    await notice.waitFor({ state: 'visible' });
+    assert.match(await notice.innerText(), /could not verify its model/i);
+  } finally {
+    await browser.close();
+    await server.close();
+  }
 });

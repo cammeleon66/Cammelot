@@ -10917,35 +10917,40 @@ window.addEventListener('beforeunload', function(event) {
 
 // === Launch simulation (called when walkthrough finishes) ===
 let simulationStarting=false;
+function startVerifiedSimulation() {
+  simulationStarting=false;
+  if (window._mocGameStarted || autoTimer || MoC.S.over || MoC.isBlocked?.()) return;
+  MoC.record?.begin();
+  MoC.paused = false;
+  window._mocGameStarted = true;
+  document.body.classList.remove('moc-walkthrough-active');
+  console.log('Cammelot: launching simulation!');
+  // Pre-tick to populate the world
+  try { for(var i=0;i<10;i++) tick(); } catch(e) {}
+  try { showTownFeed(); } catch(e) {}
+  // Start the tick loop
+  if (!MoC.paused && !MoC.S.over) autoTimer = setInterval(tick, Math.round(350 / ((MoC.S && MoC.S._speed) || 1)));
+  if (MoC.refreshTown) MoC.refreshTown();
+  var pb = document.getElementById('btn-play');
+  if (pb) pb.textContent = '⏸ Pause';
+  // Remove walkthrough card if still present
+  var wc = document.getElementById('welcome-card');
+  if (wc) wc.remove();
+  // Remove any leftover overlays
+  ['walkthrough-overlay','play-overlay','wizard-overlay'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.remove();
+  });
+}
 function launchSimulation() {
   if (window._mocGameStarted || autoTimer || simulationStarting || MoC.S.over || MoC.isBlocked?.()) return;
   if (!MoC.scenario && !MoC.IS_BASELINE) return; // MoC: waiting for scenario pick
+  if (!MoC.record?.ready || MoC.record.modelExecutableId) {
+    startVerifiedSimulation();
+    return;
+  }
   simulationStarting=true;
-  Promise.resolve(MoC.record?.ready).then(function() {
-    simulationStarting=false;
-    if (window._mocGameStarted || autoTimer || MoC.S.over || MoC.isBlocked?.()) return;
-    MoC.record?.begin();
-    MoC.paused = false;
-    window._mocGameStarted = true;
-    document.body.classList.remove('moc-walkthrough-active');
-    console.log('Cammelot: launching simulation!');
-    // Pre-tick to populate the world
-    try { for(var i=0;i<10;i++) tick(); } catch(e) {}
-    try { showTownFeed(); } catch(e) {}
-    // Start the tick loop
-    if (!MoC.paused && !MoC.S.over) autoTimer = setInterval(tick, Math.round(350 / ((MoC.S && MoC.S._speed) || 1)));
-    if (MoC.refreshTown) MoC.refreshTown();
-    var pb = document.getElementById('btn-play');
-    if (pb) pb.textContent = '⏸ Pause';
-    // Remove walkthrough card if still present
-    var wc = document.getElementById('welcome-card');
-    if (wc) wc.remove();
-    // Remove any leftover overlays
-    ['walkthrough-overlay','play-overlay','wizard-overlay'].forEach(function(id) {
-      var el = document.getElementById(id);
-      if (el) el.remove();
-    });
-  }).catch(function(error) {
+  MoC.record.ready.then(startVerifiedSimulation).catch(function(error) {
     simulationStarting=false;
     window.showMinisterModelError(error?.message);
   });
