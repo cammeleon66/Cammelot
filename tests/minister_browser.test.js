@@ -3122,3 +3122,190 @@ test('Android unmute starts media inside the user gesture', { timeout: 30000 }, 
     assert.equal(await page.evaluate(() => MoC.audio.isMuted()), false);
   } finally { await browser.close(); await new Promise(resolve => server.close(resolve)); }
 });
+// L04 — mobile controls. Expectations are documented in docs/MINISTER_MOBILE_CONTROLS.md.
+// This is emulation (Chromium mobile viewport + touch), not physical-device evidence.
+const L04_VIEWPORTS = [
+  { name: '375x667 portrait', width: 375, height: 667 },
+  { name: '390x844 portrait', width: 390, height: 844 },
+  { name: '412x915 portrait', width: 412, height: 915 },
+  { name: '667x375 short landscape', width: 667, height: 375 },
+  { name: '844x390 short landscape', width: 844, height: 390 },
+];
+const L04_MIN_TOUCH = 44;
+const L04_MIN_PIXEL_FONT = 10;
+
+async function l04SettleLayout(page) {
+  // Screen shake and modal entrance animations transform the layout transiently; measure the resting layout.
+  await page.waitForFunction(() => !document.body.classList.contains('moc-shake')
+    && document.getAnimations().every(animation => !animation.effect?.target?.matches?.('.moc-box') || animation.playState === 'finished'));
+}
+
+async function l04AssertNoHorizontalOverflow(page, viewport, label) {
+  await l04SettleLayout(page);
+  const overflow = await page.evaluate(() => {
+    const width = document.documentElement.clientWidth;
+    const clipped = [...document.querySelectorAll('#top .top-stats .ts, #top button, #site-nav a')].filter(element => {
+      const box = element.getBoundingClientRect();
+      const style = getComputedStyle(element);
+      return box.width > 0 && style.display !== 'none' && style.visibility !== 'hidden' && (box.right > width + 1 || box.left < -1);
+    }).map(element => element.id || element.className || element.textContent.trim().slice(0, 20));
+    const top = document.getElementById('top');
+    const scrollers = ['#top', '#panel', '#moc-council .moc-box', '#moc-endscreen .moc-box']
+      .map(selector => document.querySelector(selector))
+      .filter(element => element && element.getClientRects().length && element.scrollWidth > element.clientWidth + 1)
+      .map(element => element.id || element.className);
+    return { width, doc: document.documentElement.scrollWidth, body: document.body.scrollWidth, clipped, scrollers, topFits: top.scrollWidth <= top.clientWidth + 1 };
+  });
+  assert.ok(overflow.doc <= viewport.width && overflow.body <= viewport.width, `${label}: document must not scroll horizontally at ${viewport.name} (${JSON.stringify(overflow)})`);
+  assert.deepEqual(overflow.clipped, [], `${label}: header controls must stay inside the viewport at ${viewport.name}`);
+  assert.deepEqual(overflow.scrollers, [], `${label}: no panel or modal may scroll horizontally at ${viewport.name}`);
+}
+
+// Every matching visible control must be touch-sized, readable, inside the viewport and not covered once scrolled into view.
+async function l04AssertReachable(page, viewport, selector, label, { minCount = 1 } = {}) {
+  await l04AssertNoHorizontalOverflow(page, viewport, label);
+  const handles = await page.locator(selector).elementHandles();
+  const checked = [];
+  for (const handle of handles) {
+    const result = await handle.evaluate((element, minFont) => {
+      const style = getComputedStyle(element);
+      // checkVisibility also skips content inside closed <details>, which still reports layout boxes.
+      if (!element.getClientRects().length || style.visibility === 'hidden' || !element.checkVisibility({ checkVisibilityCSS: true, contentVisibilityAuto: true })) return null;
+      element.scrollIntoView({ block: 'center', inline: 'nearest' });
+      const box = element.getBoundingClientRect();
+      const hit = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
+      return {
+        // Layout size (not the transformed box) so modal entrance animations cannot shrink a control below the target.
+        name: (element.id || element.textContent || '').trim().slice(0, 30), height: Math.max(box.height, element.offsetHeight), width: Math.max(box.width, element.offsetWidth),
+        left: box.left, right: box.right, font: parseFloat(style.fontSize), minFont,
+        top: box.top, bottom: box.bottom, innerHeight, covered: !(hit && (element === hit || element.contains(hit) || hit.contains(element))),
+      };
+    }, L04_MIN_PIXEL_FONT);
+    if (!result) continue;
+    checked.push(result);
+    const where = `${label} "${result.name}" at ${viewport.name}: ${JSON.stringify(result)}`;
+    assert.ok(result.height >= L04_MIN_TOUCH - 0.1 && result.width >= L04_MIN_TOUCH - 0.1, `touch target below ${L04_MIN_TOUCH}px — ${where}`);
+    assert.ok(result.font >= L04_MIN_PIXEL_FONT, `label below ${L04_MIN_PIXEL_FONT}px — ${where}`);
+    assert.ok(result.left >= -0.5 && result.right <= viewport.width + 0.5, `control outside viewport width — ${where}`);
+    assert.ok(result.top >= -0.5 && result.bottom <= viewport.height + 0.5, `control not reachable by scrolling — ${where}`);
+    assert.equal(result.covered, false, `control covered by another element — ${where}`);
+  }
+  assert.ok(checked.length >= minCount, `${label}: expected at least ${minCount} visible control(s) for ${selector} at ${viewport.name}, found ${checked.length}`);
+}
+
+async function l04DisclosureState(page, selector) {
+  await page.waitForTimeout(250); // chevron rotation is a 120ms transition
+  return page.evaluate(selector => {
+    const details = document.querySelector(selector);
+    const summary = details.querySelector(':scope > summary');
+    const before = getComputedStyle(summary, '::before'), after = getComputedStyle(summary, '::after');
+    return { open: details.open, chevron: parseFloat(before.borderLeftWidth) >= 6 && before.content !== 'none', hint: after.content.replace(/"/g, '').split('/')[0].trim(), rotated: before.transform !== 'none' };
+  }, selector);
+}
+
+test('L04 mobile controls: touch-sized, discoverable disclosures and a reachable return to council at phone sizes', { timeout: 300000 }, async () => {
+  const server = await startSiteServer();
+  const browser = await launchBrowser();
+  try {
+    for (const viewport of L04_VIEWPORTS) {
+      const context = await browser.newContext({ viewport: { width: viewport.width, height: viewport.height }, isMobile: true, hasTouch: true });
+      // No production writes: leaderboard reads are stubbed, anything else on /api is refused.
+      await context.route('**/api/**', route => route.request().method() === 'GET' ? route.fulfill({ status: 200, json: { entries: [] } }) : route.fulfill({ status: 503, json: {} }));
+      const page = await context.newPage();
+      const pageErrors = [];
+      page.on('pageerror', error => pageErrors.push(String(error)));
+      await page.addInitScript(() => localStorage.setItem('moc_muted_v2', 'true'));
+      try {
+        await page.goto(`http://127.0.0.1:${server.address().port}/minister.html?debug=1#scn=cabinetcrisis&seed=2468`, { waitUntil: 'domcontentloaded' });
+        await page.locator('#moc-takeoffice').waitFor();
+        await l04AssertReachable(page, viewport, '#moc-generate-name, #moc-takeoffice', 'opening controls', { minCount: 2 });
+        await page.locator('#moc-takeoffice').tap();
+        for (let step = 0; step < 3; step++) await page.locator('#wc-next').tap();
+        await page.waitForFunction(() => window._mocGameStarted && document.getElementById('moc-town-watch'));
+        await page.locator('#moc-town-toggle').tap();
+        await page.waitForFunction(() => MoC.paused);
+
+        // Town view: toolbar, speed/sound and disclosure summaries.
+        await l04AssertReachable(page, viewport, '#cbar .cb', 'town toolbar', { minCount: 4 });
+        await l04AssertReachable(page, viewport, '#moc-ministry .spd button', 'speed and sound', { minCount: 4 });
+        await l04AssertReachable(page, viewport, '#moc-town-watch > summary, #moc-ministry-figures > summary', 'disclosure summaries', { minCount: 2 });
+        await l04AssertReachable(page, viewport, '#moc-town-toggle, [data-town-person]', 'follow controls', { minCount: 4 });
+
+        // Both disclosures show their state (chevron + SHOW/HIDE) and stay keyboard-operable.
+        for (const selector of ['#moc-town-watch', '#moc-ministry-figures']) {
+          const summary = page.locator(`${selector} > summary`);
+          await summary.scrollIntoViewIfNeeded();
+          const first = await l04DisclosureState(page, selector);
+          assert.equal(first.chevron, true, `${selector} must draw an expand chevron at ${viewport.name}`);
+          assert.equal(first.hint, first.open ? 'HIDE' : 'SHOW', `${selector} hint must match state at ${viewport.name}`);
+          await summary.focus();
+          await page.keyboard.press('Enter');
+          const second = await l04DisclosureState(page, selector);
+          assert.equal(second.open, !first.open, `${selector} must toggle with the keyboard`);
+          assert.equal(second.hint, second.open ? 'HIDE' : 'SHOW');
+          assert.notEqual(second.rotated, first.rotated, `${selector} chevron must change with state`);
+          await page.keyboard.press('Space');
+          assert.equal((await l04DisclosureState(page, selector)).open, first.open, `${selector} must toggle back with Space`);
+        }
+        await page.evaluate(() => { document.getElementById('moc-town-watch').open = true; });
+        await l04AssertReachable(page, viewport, '#moc-town-toggle', 'pause control', { minCount: 1 });
+
+        // Council: banner, wizard, funding.
+        await page.evaluate(() => { document.getElementById('play-overlay')?.remove(); window._mocForceCouncilReady(2); });
+        await page.locator('#moc-council-ready-banner').waitFor();
+        await l04AssertReachable(page, viewport, '#moc-council-ready', 'council ready banner');
+        await page.locator('#moc-council-ready').tap();
+        await page.locator('#moc-wiz-next').waitFor();
+        await l04AssertReachable(page, viewport, '#moc-inspect-town, #moc-wiz-next, #moc-council .moc-opt', 'council briefing');
+
+        // Inspecting hides the council: the way back must be obvious even if the people list is collapsed.
+        await page.locator('#moc-inspect-town').tap();
+        assert.equal(await page.locator('#moc-council').isVisible(), false);
+        await l04AssertReachable(page, viewport, '#moc-council-return', 'inspect return banner');
+        assert.equal(await page.locator('#moc-town-watch').evaluate(element => element.open), true, 'inspecting must reveal the Return to council control');
+        await page.locator('#moc-town-watch > summary').tap();
+        assert.equal(await page.locator('#moc-town-council').isVisible(), false, 'collapsed list hides its own return button');
+        await l04AssertReachable(page, viewport, '#moc-council-return', 'return banner with collapsed people list');
+        // Opening a dossier hides the people list; the return banner and the dossier back control must stay usable.
+        await page.evaluate(() => selectAgent(agents.find(agent => agent.type === 'patient' || agent.type === 'citizen')));
+        assert.equal(await page.locator('#panel').getAttribute('data-moc-detail'), 'true');
+        await page.locator('#agent-detail .panel-back').waitFor();
+        await l04AssertReachable(page, viewport, '#moc-council-return, #agent-detail .panel-back', 'dossier return paths', { minCount: 2 });
+        await page.locator('#agent-detail .panel-back').focus();
+        await page.keyboard.press('Enter');
+        assert.equal(await page.locator('#panel').getAttribute('data-moc-detail'), 'false', 'dossier back control must work from the keyboard');
+        await page.locator('#moc-council-return').tap();
+        await page.locator('#moc-wiz-next').waitFor();
+        assert.equal(await page.locator('#moc-council').isVisible(), true, 'return control must reopen the council');
+        assert.equal(await page.locator('#moc-council-ready-banner').count(), 0, 'return banner must go away with the council back');
+
+        for (let guard = 0; guard < 6 && !(await page.locator('#moc-shop').count()); guard++) {
+          if (!(await page.locator('#moc-laws').count())) {
+            const choices = page.locator('#moc-council .moc-opt:not(:disabled)');
+            if (await choices.count()) await choices.first().tap();
+            await l04AssertReachable(page, viewport, '#moc-council .moc-opt, #moc-wiz-next', 'council decision');
+          } else {
+            await l04AssertReachable(page, viewport, '#moc-laws [data-law], #moc-wiz-next, #moc-wiz-back', 'council law', { minCount: 3 });
+          }
+          await page.locator('#moc-wiz-next').tap();
+        }
+        await l04AssertReachable(page, viewport, '#moc-shop [data-buy], #moc-wiz-next, #moc-wiz-back', 'council funding', { minCount: 3 });
+        await page.locator('#moc-wiz-next').tap();
+        await page.waitForFunction(() => !document.getElementById('moc-council'));
+        await l04AssertReachable(page, viewport, '#cbar .cb, #moc-ministry .spd button', 'town after council', { minCount: 8 });
+
+        // Ending.
+        await page.evaluate(() => { MoC.referencePolicy = false; window._mocDebug.endTerm('served'); });
+        await page.locator('#moc-endscreen').waitFor();
+        await page.waitForFunction(() => document.querySelector('#moc-endscreen .moc-box').getAnimations().every(animation => animation.playState === 'finished'));
+        await l04AssertReachable(page, viewport, '#moc-endscreen button, #moc-endscreen summary', 'ending controls');
+        assert.deepEqual(pageErrors, [], `no page errors at ${viewport.name}`);
+      } finally {
+        await context.close();
+      }
+    }
+  } finally {
+    await browser.close();
+    await new Promise(resolve => server.close(resolve));
+  }
+});
