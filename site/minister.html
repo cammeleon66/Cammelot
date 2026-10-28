@@ -15464,7 +15464,7 @@ async function initLLMSubsystem() {
     html += '</details>';
     html += treasuryReportHtml();
     html += '<details class="moc-result-details"><summary>Game score calculation</summary><h3>Game scorecard</h3>';
-    html += '<div class="moc-score-row"><span>Model-classified system deaths (your term)</span><b>' + r.sd + '</b></div>
+    html += '<div class="moc-score-row"><span>Model-classified system deaths (your term)</span><b>' + r.sd + '</b></div>';
     const careResult = MoC.care.snapshot();
     html += '<div class="moc-score-row"><span>Admin burden reduced</span><b>' + r.adminGain + ' pts (now ' + Math.round(M.IST.admin * 100) + '%)</b></div>';
     html += '<div class="moc-score-row"><span>Current referral queue / fixed model norm</span><b>' + (careResult.waiting ? careResult.meanWait.toFixed(1)+'w' : 'No one waiting') + ' / 12w</b></div>';
