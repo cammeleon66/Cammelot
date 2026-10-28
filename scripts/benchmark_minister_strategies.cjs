@@ -597,7 +597,7 @@ async function main() {
       safeguards: {
         localStaticServer: '127.0.0.1 only; GET/HEAD static reads from site/',
         externalReadsStubbed: networkGuard.blockedExternalReads,
-        nonGetRequestsBlockedBeforeNetwork: networkGuard.blockedWrites.length,
+        blockedNonGetRequestsBeforeNetwork: networkGuard.blockedWrites.length,
         blockedRequests: networkGuard.blockedWrites,
         productionLeaderboardWrites: 0,
       },
