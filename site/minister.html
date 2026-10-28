@@ -389,6 +389,7 @@ body:has(#moc-manifesto) #moc-ministry{visibility:hidden!important;pointer-event
 .feed-warn { border-left:3px solid #FF9800; }
 .panel-back { font-size:11px; color:var(--gold); cursor:pointer; padding:4px 0 8px; }
 .panel-back:hover { text-decoration:underline; }
+.panel-back:focus-visible { outline:3px solid var(--gold); outline-offset:2px; }
 
 /* ═══ SPRINT 8: Responsive Layout ═══ */
 @media (max-width: 1024px) {
@@ -403,8 +404,8 @@ body:has(#moc-manifesto) #moc-ministry{visibility:hidden!important;pointer-event
   #chatlog { width: 200px; max-height: 100px; font-size: 10px; bottom: 35px; }
 }
 
-@media (max-width: 768px) {
-  /* Top bar: compact, no overflow */
+@media (max-width: 768px), (max-height: 500px) and (orientation: landscape) {
+  /* Top bar: compact, no overflow (also short landscape phones wider than 768px) */
   #top { padding: 4px 8px; gap: 4px; flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; }
   #top .sub { display: none; }
   .top-title { font-size: 12px; }
@@ -1253,6 +1254,38 @@ body:has(.moc-mandate) #moc-objective{display:none!important}
 @media(max-width:768px){
   #moc-portrait{display:none!important}
   .moc-wiz-nav .moc-continue{max-width:none}
+}
+/* ── L04: touch targets, visible disclosure state, short landscape (docs/MINISTER_MOBILE_CONTROLS.md) ── */
+#site-nav a{display:inline-block;padding:6px 4px;margin:-6px -4px}
+#moc-town-watch>summary,#moc-ministry-figures>summary{gap:8px;user-select:none;-webkit-tap-highlight-color:transparent}
+#moc-town-watch>summary{min-height:44px;font-size:10px;padding:0 8px;margin:0;background:var(--m-blue);border:2px solid var(--m-gold);cursor:pointer}
+#moc-ministry-figures>summary{padding:0 8px;background:var(--m-blue3);border:2px solid #6572ba}
+#moc-town-watch>summary::-webkit-details-marker,#moc-ministry-figures>summary::-webkit-details-marker{display:none}
+#moc-town-watch>summary::before,#moc-ministry-figures>summary::before{content:'';flex:0 0 auto;width:0;height:0;border-left:8px solid var(--m-gold);border-top:5px solid transparent;border-bottom:5px solid transparent;transition:transform .12s}
+#moc-town-watch[open]>summary::before,#moc-ministry-figures[open]>summary::before{transform:rotate(90deg)}
+#moc-town-watch>summary::after,#moc-ministry-figures>summary::after{content:'SHOW';content:'SHOW' / '';flex:0 0 auto;margin-left:auto;padding:3px 6px;border:2px solid var(--m-white);color:var(--m-white);font:10px/1 var(--px)}
+#moc-town-watch[open]>summary::after,#moc-ministry-figures[open]>summary::after{content:'HIDE';content:'HIDE' / ''}
+#moc-town-watch[open]>summary{margin-bottom:6px}
+#moc-town-watch>summary:focus-visible,#moc-ministry-figures>summary:focus-visible{outline:3px solid var(--m-gold);outline-offset:2px}
+#moc-council-ready-banner.is-return{width:auto;max-width:calc(100% - 20px);display:flex;align-items:center;gap:10px;padding:6px 8px}
+#moc-council-ready-banner.is-return strong{font-size:10px}
+#moc-council-ready-banner button{font-size:10px}
+@media(max-width:768px),(max-height:500px) and (orientation:landscape){
+  #cbar{flex-wrap:wrap;justify-content:center;max-width:calc(100% - 12px);box-sizing:border-box}
+  #cbar .cb{min-height:44px;min-width:44px;padding:4px 8px;font-size:11px}
+  #moc-ministry .spd button{min-width:44px;min-height:44px;font-size:10px}
+  #moc-town-watch>summary{font-size:10px}
+  .moc-wiz-nav .moc-continue{font-size:10px}
+  .moc-opt,.moc-buy,.moc-continue,.moc-wiz-back{min-height:44px}
+  .moc-name-row button,#moc-opening-sound,#moc-takeoffice{font-size:10px}
+  .panel-back{display:flex;align-items:center;min-height:44px;padding:0 0 4px;font-size:13px}
+}
+@media(max-height:500px) and (orientation:landscape){
+  #main{flex-direction:row}
+  #game-wrap{flex:1 1 auto;min-width:0;height:auto;min-height:0}
+  #panel,#panel[data-moc-detail]{flex:0 0 auto;width:min(360px,46vw);height:auto;min-height:0;border-top:0;border-left:6px solid var(--frame)}
+  #app{height:100dvh}
+  #moc-council-ready-banner{top:6px}
 }
 </style>
 </head>
@@ -6438,7 +6471,7 @@ function showMemorial(grave) {
   const d = document.getElementById('agent-detail');
   document.querySelector('.panel-header').textContent = 'MEMORIAL';
   const isSystem = grave.cause === 'system_failure';
-  let html = `<div class="panel-back" data-action="showTownFeed">← Ministry</div>`;
+  let html = `<div class="panel-back" data-action="showTownFeed" role="button" tabindex="0">← Ministry</div>`;
   html += `<div class="agent-card">
     <div class="ac-name" style="color:${isSystem ? 'var(--red)' : 'var(--ink2)'}">In Memory of ${grave.name}</div>
     <div class="ac-role">Age ${formatCompletedAge(grave.age)}</div>
@@ -6561,7 +6594,7 @@ function selectAgent(a){
   // Get agent events from EVENT_LOG
   const agentEvents=EVENT_LOG.filter(e=>e.agentId===a.id);
 
-  let html=`<div class="panel-back" data-action="showTownFeed">← Ministry</div>`;
+  let html=`<div class="panel-back" data-action="showTownFeed" role="button" tabindex="0">← Ministry</div>`;
   html+=`<div class="agent-card">
     <div class="portrait-wrap">
       <canvas class="portrait-canvas" id="portrait-cv" width="64" height="64" ${a.hp<=0?'style="filter:grayscale(100%)"':''}></canvas>
@@ -6943,7 +6976,7 @@ function selectBuilding(building){
     const thought=gp.thoughts[(gp.currentThought||0)%gp.thoughts.length];
     gp.currentThought=(gp.currentThought||0)+1;
 
-    let html=`<div class="panel-back" data-action="showTownFeed">← Ministry</div>`;
+    let html=`<div class="panel-back" data-action="showTownFeed" role="button" tabindex="0">← Ministry</div>`;
     html+=`<div class="agent-card">
       <div class="ac-name">${building.label}</div>
       <div class="ac-role">${gp.name} — General Practitioner</div>
@@ -6997,7 +7030,7 @@ function selectBuilding(building){
     const treeViolated=waitList.some(a=>a.waitWeeks>treeWeeks)||inHospital.some(a=>a.waitWeeks>treeWeeks);
     const specialists=agents.filter(a=>a.type==='specialist');
 
-    let html=`<div class="panel-back" data-action="showTownFeed">← Ministry</div>`;
+    let html=`<div class="panel-back" data-action="showTownFeed" role="button" tabindex="0">← Ministry</div>`;
     html+=`<div class="agent-card">
       <div class="ac-name">${building.label}</div>
       <div class="ac-role">Regional Hospital</div>
@@ -9100,7 +9133,7 @@ function showGazette() {
   }
 
   var dateInfo = getSeasonAndDay(modelTick);
-  var html = '<div class="panel-back" data-action="showTownFeed">← Ministry</div>';
+  var html = '<div class="panel-back" data-action="showTownFeed" role="button" tabindex="0">← Ministry</div>';
 
   // Main gazette header
   html += '<div class="gazette-header">';
@@ -10987,6 +11020,9 @@ _bind('wizard-next','click', () => nextWizardStep());
 })();
 
 // Event delegation for dynamically generated panel-back buttons
+document.getElementById('agent-detail').addEventListener('keydown', function(e) {
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('[data-action="showTownFeed"]')) { e.preventDefault(); showTownFeed(); }
+});
 document.getElementById('agent-detail').addEventListener('click', function(e) {
   const back = e.target.closest('[data-action="showTownFeed"]');
   if (back) showTownFeed();
@@ -11158,7 +11194,7 @@ function showMomentsGallery() {
   selectedAgent = null;
   panelIsTownFeed=false;
   var items = MOMENTS.items.slice().reverse();
-  var html = '<div class="panel-back" data-action="showTownFeed">← Ministry</div>';
+  var html = '<div class="panel-back" data-action="showTownFeed" role="button" tabindex="0">← Ministry</div>';
   html += '<div class="moments-gallery">';
   html += '<h3>🃏 DRAMATIC MOMENTS</h3>';
   if (items.length === 0) {
@@ -11340,7 +11376,7 @@ function showInsightsPanel() {
   selectedAgent = null;
   document.querySelector('.panel-header').textContent = '💡 INSIGHTS';
   var insights = INSIGHT_LOG.slice().reverse();
-  var html = '<div class="panel-back" data-action="showTownFeed">← Ministry</div>';
+  var html = '<div class="panel-back" data-action="showTownFeed" role="button" tabindex="0">← Ministry</div>';
   html += '<div style="padding:8px">';
   html += '<h3 style="color:var(--gold);margin:4px 0 8px">💡 Insight Engine</h3>';
   html += '<div style="font-size:11px;color:var(--parchment);opacity:0.7;margin-bottom:10px">';
@@ -11505,7 +11541,7 @@ function showWeeklyReport() {
   panelIsTownFeed=false;
   selectedAgent = null;
   document.querySelector('.panel-header').textContent = '📋 WEEKLY REPORTS';
-  var html = '<div class="panel-back" data-action="showTownFeed">← Ministry</div>';
+  var html = '<div class="panel-back" data-action="showTownFeed" role="button" tabindex="0">← Ministry</div>';
   html += '<div style="padding:8px">';
   html += '<h3 style="color:var(--gold);margin:4px 0 8px">📋 Weekly Report Center</h3>';
 
@@ -14146,6 +14182,17 @@ async function initLLMSubsystem() {
       + '<div class="moc-follow-now"><b>Now:</b> ' + sanitizeText(personStatus(a).replace(/\n/g, ' · ')) + '</div>'
       + '<div class="moc-follow-history"><b>Last care event:</b> ' + (latest ? 'tick ' + latest.cycle + ' · ' + sanitizeText(latest.text || latest.type) : 'none recorded yet') + '</div></article>';
   }
+  // Inspecting the town hides an open council; keep an always-visible way back (not tied to the collapsible people list).
+  function showCouncilReturnBanner(){
+    let banner = document.getElementById('moc-council-ready-banner');
+    if (!banner) {
+      banner = document.createElement('div'); banner.id = 'moc-council-ready-banner'; banner.setAttribute('role', 'status');
+      document.getElementById('game-wrap')?.appendChild(banner);
+    }
+    banner.className = 'is-return';
+    banner.innerHTML = '<strong>COUNCIL ON HOLD</strong><button id="moc-council-return">RETURN TO COUNCIL</button>';
+    banner.querySelector('button').onclick = openPendingCouncil;
+  }
   function openPendingCouncil(){
     document.getElementById('moc-council-ready-banner')?.remove();
     const council = document.getElementById('moc-council');
@@ -14163,6 +14210,7 @@ async function initLLMSubsystem() {
       banner = document.createElement('div'); banner.id = 'moc-council-ready-banner'; banner.setAttribute('role', 'status');
       document.getElementById('game-wrap')?.appendChild(banner);
     }
+    banner.className = '';
     banner.innerHTML = '<strong>COUNCIL READY</strong><span>Quarter ' + q + ' is complete. The town is paused.</span><button id="moc-council-ready">OPEN COUNCIL</button>';
     banner.querySelector('button').onclick = openPendingCouncil;
   }
@@ -14171,7 +14219,7 @@ async function initLLMSubsystem() {
     let el = document.getElementById('moc-town-watch');
     if (!el) {
       el = document.createElement('details'); el.id = 'moc-town-watch'; el.setAttribute('aria-label', 'Watch the town');
-      el.open = window.matchMedia('(max-width:768px)').matches;
+      el.open = window.matchMedia('(max-width:768px), (max-height:500px) and (orientation:landscape)').matches;
       el.innerHTML = '<summary>PEOPLE TO FOLLOW</summary><div id="moc-town-status" role="status"></div>'
         + '<div class="moc-town-people"></div><div id="moc-town-person"></div><div id="moc-town-change"></div>'
         + '<div class="moc-town-actions"><button id="moc-town-toggle">Pause &amp; look</button><button id="moc-town-council" hidden>Council ready</button></div>';
@@ -14768,7 +14816,9 @@ async function initLLMSubsystem() {
       GS.decisionLog.push({tick:modelTick,quarter:q,id,text:action.textContent.trim()});
     },true);
     document.getElementById('moc-inspect-town').onclick = function(){
-      ov.style.display = 'none'; renderTownWatch(); document.getElementById('moc-town-council').focus();
+      ov.style.display = 'none';
+      const watch = document.getElementById('moc-town-watch'); if (watch) watch.open = true;
+      showCouncilReturnBanner(); renderTownWatch(); document.getElementById('moc-town-council').focus();
     };
 
     const STEP_LABELS = needsDecision ? ['Briefing', 'Decision', 'Law', 'Fund'] : ['Briefing', 'Law', 'Fund'];
@@ -17045,11 +17095,11 @@ async function initLLMSubsystem() {
       const cbar = document.getElementById('cbar');
       if (cbar && MoC.scenario) {
         const crtBtn = document.createElement('button');
-        crtBtn.className = 'cb'; crtBtn.title = 'Toggle CRT scanlines'; crtBtn.textContent = '\ud83d\udcfa';
+        crtBtn.className = 'cb'; crtBtn.title = 'Toggle CRT scanlines'; crtBtn.setAttribute('aria-label', 'Toggle CRT scanlines'); crtBtn.textContent = '\ud83d\udcfa';
         crtBtn.addEventListener('click', function(){ setCrt(!document.getElementById('moc-crt')); });
         cbar.appendChild(crtBtn);
         const tourBtn = document.createElement('button');
-        tourBtn.className = 'cb'; tourBtn.title = 'Replay the guided tour'; tourBtn.textContent = '\u2753';
+        tourBtn.className = 'cb'; tourBtn.title = 'Replay the guided tour'; tourBtn.setAttribute('aria-label', 'Replay the guided tour'); tourBtn.textContent = '\u2753';
         tourBtn.addEventListener('click', function(){ if (window.mocReplayTour) window.mocReplayTour(); });
         cbar.appendChild(tourBtn);
       }
