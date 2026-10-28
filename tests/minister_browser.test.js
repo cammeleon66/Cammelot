@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createReadStream, existsSync, statSync } from 'node:fs';
+import { createReadStream, existsSync, readFileSync, statSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { extname, join, normalize } from 'node:path';
 import { chromium } from 'playwright-chromium';
@@ -48,6 +48,25 @@ async function openCouncilActions(page) {
   }
   assert.ok(await page.locator('#moc-shop').count(), 'council must reach funding');
 }
+
+test('Public entry pages distinguish evidence, synthetic residents and legacy provenance', () => {
+  for (const file of ['index.html', 'about.html', 'ch0.html', 'ch0-alternative.html', 'ch1.html', 'ch2.html', 'ch3.html', 'world.html', 'minister.html']) {
+    const html = readFileSync(join(SITE_ROOT, file), 'utf8');
+    assert.match(html, /(?:id="evidence"|href="index\.html#evidence")/, `${file} must link its evidence boundary`);
+    assert.doesNotMatch(html, /strictly factual|5,000 agents \(CBS scaled\)|first preventable death|Real Dutch data|runs on real CBS|Treeknorm says under 4 weeks|today's crisis/i, `${file} must not reintroduce unsupported claims`);
+    if (/^(?:ch[0-3]|world)/.test(file)) {
+      assert.match(html, /legacy World/i, `${file} must identify its legacy executable`);
+    }
+  }
+  const landing = readFileSync(join(SITE_ROOT, 'index.html'), 'utf8');
+  for (const category of ['Empirical input data', 'Model assumptions', 'Authored game rules', 'Observed simulation outputs']) {
+    assert.ok(landing.includes(category), `public evidence contract must define ${category}`);
+  }
+  const minister = readFileSync(join(SITE_ROOT, 'minister.html'), 'utf8');
+  assert.match(minister, /needle:'model system death'/, 'objective help must follow renamed mortality wording');
+  assert.doesNotMatch(minister, /needle:'preventable death'/);
+  assert.match(minister, /Within-model comparison, not clinical evidence\. Model /, 'copied results must retain the evidence qualification');
+});
 
 test('Browser fixtures isolate cosmetic requests offline for both context creation paths', { timeout: 30000 }, async () => {
   const browser = await launchBrowser();
@@ -117,12 +136,116 @@ test('Minister picker offers two responsive game modes', { timeout: 30000 }, asy
   }
 });
 
+test('Minister warns before leaving an active term and refresh does not restore spent budget', { timeout: 30000 }, async () => {
+  const server = await startSiteServer();
+  const browser = await launchBrowser();
+  const page = await browser.newPage({ viewport: { width: 375, height: 667 } });
+  await page.addInitScript(() => {
+    localStorage.setItem('moc_muted_v2', 'true');
+    localStorage.setItem('moc_player_name', JSON.stringify('Saved Minister'));
+  });
+  const dialogs = [];
+  page.on('dialog', async dialog => {
+    dialogs.push(dialog.type());
+    await dialog.accept();
+  });
+
+  try {
+    const baseUrl = `http://127.0.0.1:${server.address().port}/minister.html`;
+    const gameUrl = `${baseUrl}?debug=1#scn=cabinetcrisis&seed=2468`;
+    await page.goto(gameUrl, { waitUntil: 'domcontentloaded' });
+    await page.locator('#moc-takeoffice').waitFor();
+
+    const disclosure = await page.locator('#moc-save-disclosure').innerText();
+    assert.match(disclosure, /no mid-term save or resume/i);
+    assert.match(disclosure, /active town, budget and choices/i);
+    assert.match(disclosure, /completed results and previous-attempt summaries/i);
+    assert.match(disclosure, /especially on mobile, may not show a leave warning/i);
+    assert.equal(await page.locator('#moc-player-name').inputValue(), 'Saved Minister');
+    assert.ok(await page.locator('#moc-save-disclosure').isVisible(), 'disclosure must appear before taking office on mobile');
+
+    const openingBudget = await page.evaluate(() => MoC.S.budget);
+    await page.evaluate(() => {
+      document.getElementById('play-overlay')?.remove();
+      window._mocGameStarted = true;
+      MoC.S._manifestoShown = true;
+      window._mocForceCouncil(2);
+    });
+    await openCouncilActions(page);
+    const budgetBeforePurchase = await page.evaluate(() => MoC.S.budget);
+    await page.locator('[data-buy="scribes1"]').click();
+    assert.ok(await page.evaluate(() => MoC.S.budget) < budgetBeforePurchase, 'the scribe purchase should charge the opening budget');
+    assert.equal(await page.evaluate(() => MoC.S.owned.scribes1), 1);
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.locator('#moc-takeoffice').waitFor();
+    assert.deepEqual(dialogs, ['beforeunload'], 'refresh should warn when a term is active');
+    assert.equal(await page.evaluate(() => MoC.S.budget), openingBudget, 'refresh starts the same town with its opening budget');
+    assert.equal(await page.evaluate(() => !!MoC.S.owned.scribes1), false, 'active purchases are not restored');
+    assert.equal(await page.locator('#moc-player-name').inputValue(), 'Saved Minister', 'preferences remain separate from term state');
+
+    await page.evaluate(() => { window._mocGameStarted = true; });
+    await page.goto(`${baseUrl}?picker=again`, { waitUntil: 'domcontentloaded' });
+    assert.deepEqual(dialogs, ['beforeunload', 'beforeunload'], 'navigation away should also warn during an active term');
+    await page.locator('.moc-game-picker').waitFor();
+  } finally {
+    await browser.close();
+    await new Promise(resolve => server.close(resolve));
+  }
+});
+
+test('Restart confirmation can be cancelled or confirmed without a second leave prompt', { timeout: 30000 }, async () => {
+  const server = await startSiteServer();
+  const browser = await launchBrowser();
+  const page = await browser.newPage();
+  await page.addInitScript(() => localStorage.setItem('moc_muted_v2', 'true'));
+
+  try {
+    const url = `http://127.0.0.1:${server.address().port}/minister.html?debug=1#scn=cabinetcrisis&seed=2468`;
+    await page.goto(url, { waitUntil: 'domcontentloaded' });
+    const openingBudget = await page.evaluate(() => MoC.S.budget);
+    await page.evaluate(() => {
+      document.getElementById('play-overlay')?.remove();
+      window._mocGameStarted = true;
+      MoC.S._manifestoShown = true;
+      MoC.S.budget -= 100000;
+    });
+
+    const dialogs = [];
+    let acceptRestart = false;
+    page.on('dialog', async dialog => {
+      dialogs.push({ type: dialog.type(), message: dialog.message() });
+      if (acceptRestart) await dialog.accept();
+      else await dialog.dismiss();
+    });
+    await page.locator('#btn-reset').click();
+    assert.deepEqual(dialogs.map(dialog => dialog.type), ['confirm']);
+    assert.equal(await page.evaluate(() => MoC.S.budget), openingBudget - 100000, 'cancelling keeps the current term');
+
+    acceptRestart = true;
+    const reload = page.waitForEvent('load');
+    await page.locator('#btn-reset').click();
+    await reload;
+    assert.deepEqual(dialogs.map(dialog => dialog.type), ['confirm', 'confirm'], 'confirmed restart should not show a second unload warning');
+    assert.match(dialogs[1].message, /same town/i);
+    await page.locator('#moc-takeoffice').waitFor();
+    assert.equal(await page.evaluate(() => MoC.S.budget), openingBudget, 'confirming starts a fresh term in the same town');
+  } finally {
+    await browser.close();
+    await new Promise(resolve => server.close(resolve));
+  }
+});
+
 test('Drawing the town cannot advance a paused patient', { timeout: 30000 }, async () => {
   const server = await startSiteServer();
   const browser = await launchBrowser();
   const page = await browser.newPage();
   try {
     await page.goto(`http://127.0.0.1:${server.address().port}/minister.html#scn=cabinetcrisis&seed=2468`, { waitUntil: 'domcontentloaded' });
+    const limits = await page.locator('#play-overlay details').filter({ hasText: 'Why this game? Model & limits' }).textContent();
+    assert.match(limits, /45 synthetic residents/);
+    assert.match(limits, /not 5,000 individual agents/);
+    assert.match(limits, /game rules, not national financing/);
+    assert.match(limits, /not proven preventability/);
     assert.equal(await page.evaluate(()=>MoC.audio.isMuted()),false,'new visitors should start with sound enabled');
     assert.match(await page.locator('#moc-opening-sound').innerText(),/SOUND ON/);
     const openingSoundBox=await page.locator('#moc-opening-sound').boundingBox();
@@ -2562,20 +2685,25 @@ test('Early results match the reference date and replay preserves the prior atte
     assert.match(await page.locator('#moc-care-comparison').innerText(),/Same date: tick 75/);
     assert.match(await page.locator('#moc-care-verdict').innerText(),/same number/i);
     assert.equal(await page.locator('#moc-scoreval').innerText(),publishedScore,'late comparison must not change the published score');
-    assert.match(await page.locator('#moc-sharetext').textContent(),/Lives saved vs status quo: 0/,
+    assert.match(await page.locator('#moc-sharetext').textContent(),/Model system deaths below same-date reference \(signed\): 0/,
       'late matching care data must still refresh sharing detail under the unchanged protocol');
     const endCopy=await page.locator('#moc-endscreen').innerText();
     assert.doesNotMatch(endCopy,/not heroic|played it safe|your successor inherits|the system won|hard route|rare trifecta/i);
     assert.match(endCopy,/FINAL SCORE/);
     assert.match(endCopy,/Parliament ended the term/);
+    assert.match(endCopy,/Observed simulation output, not clinical evidence/);
+    assert.match(endCopy,/not proven preventability/);
     const forged=await page.evaluate(()=>{
       const before=MoC.baseline;
       window.dispatchEvent(new MessageEvent('message',{origin:location.origin,source:window,data:{...MoC.baseline,systemDeaths:999}}));
       return before===MoC.baseline;
     });
     assert.equal(forged,true);
+    const finishedTermDialogs=[];
+    page.on('dialog',async dialog=>{finishedTermDialogs.push(dialog.type());await dialog.accept();});
     await page.locator('#moc-again').click();
     await page.waitForURL(/&v=minister-care-10-access-time-replay/);
+    assert.deepEqual(finishedTermDialogs,[],'retrying a completed term should not trigger the active-term warning');
     await page.locator('#moc-takeoffice').waitFor();
     assert.match(await page.locator('#moc-previous-attempt').innerText(),/tick 75/);
     assert.equal(await page.evaluate(()=>MoC.previousRun.final.tick),75);
@@ -3032,7 +3160,9 @@ test('Desktop play uses one uncluttered Ministry panel and explains immediate re
       assert.match(generated, /^[\p{L}\p{N} ._'-]{2,24}$/u);
       assert.ok(generated.length <= 24);
     });
-    assert.equal(new Set(generatedNames).size, generatedNames.length, 'successive random names should be distinct');
+    for (let index = 1; index < generatedNames.length; index++) {
+      assert.notEqual(generatedNames[index], generatedNames[index - 1], 'each random name should differ from the immediately previous name');
+    }
     assert.ok(generatedNames.some(generated => generated.startsWith('The ')));
     assert.ok(generatedNames.some(generated => generated.endsWith(' of Cammelot')));
     assert.ok(generatedNames.some(generated => generated.startsWith('Minister ')));

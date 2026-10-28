@@ -315,6 +315,35 @@ Existing full-horizon no-action/reference regressions remain separate evidence.
 None of these software invariants implies clinical calibration, improved mortality
 or universal causal attribution.
 
+## Public evidence wording (L01)
+
+The public landing, chapter, About, World and Minister surfaces distinguish:
+dated empirical input data; unvalidated model assumptions; authored game rules;
+and outputs observed in a particular executable/run. The claim-level source
+audit is [MINISTER_CLAIM_SOURCES.md](MINISTER_CLAIM_SOURCES.md); unresolved source,
+definition and provenance questions are explicitly marked, not treated as facts.
+
+The 45 residents have synthetic identities and medical histories. The setting's
+5,000-person town scale is not 5,000 individually simulated agents. Minister's
+role, budget, intervention prices and legal powers are authored abstractions,
+not a proportional allocation of national funds. System-death labels include
+the model's terminal-disease and HP rules; neither that label nor a difference
+from the no-action reference establishes clinical preventability.
+
+The legacy research runner `scripts/deep_research.cjs` calls
+`scripts/research_run.cjs`, which extracts `site/world.html`, not Minister or the
+modular backend. `scripts/output/deep_research_100runs.json` records 100 runs per
+mode, 3,000 cycles and 2026-06-09, but no executable revision. This identifies a
+research path, not a verified correspondence between every chapter figure and
+that artifact. Historical tables remain unverified and do not validate Minister.
+
+L01 changes public wording, not clinical numbers, identifiers or control flow.
+The model identifier remains `minister-care-10-access-time-replay`. The exact
+HTML executable fingerprint nevertheless changes: complete command records from
+the previous HTML are rejected by the existing exact-executable replay check.
+Display strings can also occur in recorded context/events; no cross-executable
+record migration or replay-compatibility claim is made.
+
 ## Glossary
 
 - **Model version:** immutable identifier for a particular outcome-affecting model and policy implementation.
