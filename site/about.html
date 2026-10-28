@@ -6,7 +6,7 @@
 <title>About Cammelot</title>
 
 <meta property="og:title" content="About Cammelot">
-<meta property="og:description" content="A research-backed healthcare simulation built by Simone Cammel.">
+<meta property="og:description" content="An independent healthcare-policy simulation by Simone Cammel, with fictional residents, explicit assumptions and stated evidence limits.">
 <meta property="og:type" content="website">
 
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='4' y='20' width='24' height='12' fill='%23c0392b'/%3E%3Crect x='4' y='16' width='6' height='4' fill='%23c0392b'/%3E%3Crect x='13' y='16' width='6' height='4' fill='%23c0392b'/%3E%3Crect x='22' y='16' width='6' height='4' fill='%23c0392b'/%3E%3Crect x='12' y='8' width='8' height='12' fill='%23e74c3c'/%3E%3Crect x='14' y='4' width='4' height='4' fill='%23c0392b'/%3E%3Crect x='14' y='24' width='4' height='8' fill='%23922b21'/%3E%3C/svg%3E">
@@ -271,22 +271,23 @@ abbr[title]:hover::before {
   <p class="page-subtitle">Independent research into the systemic boundaries of AI in public infrastructure.</p>
 
   <section class="about-section">
-    <p>The Cammelot project began as an independent research initiative to explore the systemic boundaries of artificial intelligence within public infrastructure; it has since evolved into a comprehensive simulation framework that uses real-world data to test how different technological architectures affect the delivery of healthcare in the Netherlands.</p>
+    <p>Cammelot is an independent educational simulation exploring assumptions about AI, care access and public infrastructure. It uses selected Dutch statistics as context, but its outputs describe authored models, not measured effects of technology on Dutch healthcare.</p>
   </section>
 
   <hr class="divider">
 
   <section class="about-section">
     <h2>The Scope of the Project</h2>
-    <p>Cammelot is a digital representation of a Dutch town consisting of forty-five citizens, three general practitioners, and one hospital. The health outcomes within the simulation are determined by actual disease prevalence data from the <abbr title="Rijksinstituut voor Volksgezondheid en Milieu - Dutch National Institute for Public Health">RIVM</abbr>, while the demographics and financial costs are based on <abbr title="Centraal Bureau voor de Statistiek - Statistics Netherlands">CBS</abbr> mortality tables and <abbr title="Nederlandse Zorgautoriteit - Dutch Healthcare Authority">NZa</abbr> tariff schedules. The 16-bit visual style is a deliberate choice intended to focus the user’s attention on the underlying patterns of the system rather than the aesthetic details. In this environment, citizens move through their daily lives and interact with healthcare providers; when the system cannot process patients efficiently, the simulation records the resulting health decline and mortality events.</p>
+    <p>The current Minister game follows 45 fictional named residents in a town-scale setting of 5,000, with two modeled GP practices and a hospital. These are synthetic profiles, not real patient records. The minister role, powers, scenario budget and intervention prices are authored abstractions, not a literal national financing system. CBS/RIVM context and selected tariffs do not validate disease transitions, policy coefficients, political rules or mortality attribution.</p>
+    <p><strong>Evidence classes:</strong> distinguish dated empirical input data, model assumptions, authored game rules and observed simulation outputs. A model-classified system death is not a clinically established preventable death. The <a href="index.html#evidence">public evidence contract</a> and <a href="https://github.com/cammeleon66/Cammelot/blob/master/docs/MINISTER_CLAIM_SOURCES.md" target="_blank" rel="noopener">source checklist</a> explain these limits.</p>
   </section>
 
   <hr class="divider">
 
   <section class="about-section">
     <h2>Technical Architecture and Lineage</h2>
-    <p>The design of Cammelot is informed by the “Generative Agents” research published by Park et al. (Stanford/Google, 2023), which demonstrated how AI agents could simulate complex social behaviors in a virtual town. Cammelot adapts this “cognitive loop” of perceiving, reflecting, and planning for a specific healthcare context. Instead of open-ended social interactions, these agents are driven by epidemiological data and regulatory constraints.</p>
-    <p>The project involved running 100 simulations of the current healthcare status quo and 100 simulations of a system overhaul where AI acts as the primary connective tissue. By comparing these two regimes, we can observe the impact of technology on variables such as specialist wait times, doctor burnout, and the equitable distribution of care across different age groups.</p>
+    <p>Park et al.'s 2023 Generative Agents work informed the design vocabulary. The modular backend contains FHIR/A2A and cognitive-loop experiments; the legacy World page and current Minister page are separate browser executables. They do not become clinically validated by sharing that architecture or vocabulary.</p>
+    <p>The archived 200-run study used the World executable through <code>scripts/research_run.cjs</code>. Its June 2026 artifact records run count and cycles but not the exact executable revision. Reported legacy figures therefore have unverified provenance at the individual-claim level and do not validate Minister. Current Minister comparisons must identify their own model version, executable, seed, ending tick and command history.</p>
   </section>
 
   <hr class="divider">
@@ -308,11 +309,11 @@ abbr[title]:hover::before {
 
   <section class="about-section">
     <h2>Primary Data Sources</h2>
-    <p>The simulation parameters are drawn from the following public Dutch healthcare datasets to ensure the results are grounded in reality:</p>
+    <p>The following sources provide empirical or policy context. They do not establish every model parameter or validate the resulting simulation outcomes:</p>
     <ul class="links-list">
       <li><strong>CBS</strong>, Centraal Bureau voor de Statistiek - population demographics and baseline mortality tables</li>
       <li><strong>RIVM</strong>, Rijksinstituut voor Volksgezondheid en Milieu - age-stratified disease prevalence and comorbidity risk factors</li>
-      <li><strong>NZa</strong>, Nederlandse Zorgautoriteit - healthcare tariffs and legal waiting time standards (Treeknorm)</li>
+      <li><strong>NZa</strong>, Nederlandse Zorgautoriteit - healthcare tariffs and access-standard oversight (Treeknorm); not a universal 12-week statutory limit</li>
       <li><strong><abbr title="Landelijke Huisartsen Vereniging - Dutch National Association of GPs">LHV</abbr></strong>, Landelijke Huisartsen Vereniging - administrative workload and capacity of general practitioners</li>
       <li><strong><abbr title="Integraal Zorgakkoord - Dutch National Healthcare Agreement 2023–2026">IZA</abbr></strong>, Integraal Zorgakkoord - transformation targets for system interoperability and staffing</li>
     </ul>
