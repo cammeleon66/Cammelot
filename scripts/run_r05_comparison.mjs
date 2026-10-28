@@ -340,7 +340,9 @@ export function executeRun({ analysis, seed, arm, dataset, horizonTicks = R01_HO
   }
   const label = `${analysis}/${seed}/${arm.id}`;
   const lifecycle = arm.lifecycle ? makeLifecycleInput({
-    id: `r05-${analysis}-${arm.id}-${seed}`.replace(/[^A-Za-z0-9_-]/g, '-').slice(0, 64),
+    id: `r05-${seed}-${sha256(Buffer.from(stableString({
+      analysis, arm: arm.id, horizonTicks, lifecycleOptions, costMultiplier, profileMultiplier,
+    }), 'utf8')).slice(0, 24)}`,
     armId: arm.interventionId,
     horizonTicks,
     cashMultiplier: costMultiplier,
@@ -381,7 +383,7 @@ export function executeRun({ analysis, seed, arm, dataset, horizonTicks = R01_HO
       .sort(policyOrder);
     for (const episode of pending) {
       const command = {
-        id: `r05-${seed}-${analysis}-${arm.id}-${++commandOrdinal}`.replace(/[^A-Za-z0-9_-]/g, '-').slice(0, 64),
+        id: `cmd-${++commandOrdinal}`,
         sequence: commandSequence,
         kind: informationAvailable.has(episode.id) ? 'complete_handoff' : 'request_information',
         patientId: episode.id,

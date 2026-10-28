@@ -119,8 +119,8 @@ test('zero adoption is a null control and a commissioning failure is explicitly 
   assert.deepEqual(zeroClinical, baselineClinical);
 
   const failed = executeRun({
-    analysis: 'failure_fixture', seed: dataset.seed,
-    arm: { id: 'agentic_failure', interventionId: 'agentic_coordination', lifecycle: true },
+    analysis: 'commissioning_failure', seed: dataset.seed,
+    arm: { id: 'agentic_commissioning_failure', interventionId: 'agentic_coordination', lifecycle: true },
     dataset,
     horizonTicks: 8,
     lifecycleOptions: {
@@ -132,6 +132,8 @@ test('zero adoption is a null control and a commissioning failure is explicitly 
       reworkWorkPerFailure: 1,
     },
   });
+  assert.equal(new Set(failed.commands.map(item => item.command.id)).size, failed.commands.length);
+  assert.ok(failed.commands.every(item => item.receipt.reason !== 'duplicate_command_id'));
   assert.deepEqual(failed.finalSnapshot.lifecycle.commissioning.attempts.map(attempt => attempt.outcome),
     ['failed', 'passed']);
   assert.ok(failed.eventStream.kinds.commissioning_failed > 0);
