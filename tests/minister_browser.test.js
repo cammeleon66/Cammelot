@@ -1,9 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createReadStream, existsSync, readFileSync, statSync } from 'node:fs';
+import { mkdtemp, rm } from 'node:fs/promises';
 import { createServer } from 'node:http';
+import { tmpdir } from 'node:os';
 import { extname, join, normalize } from 'node:path';
 import { chromium } from 'playwright-chromium';
+import { createLeaderboardServer } from '../src/leaderboard/server.js';
 
 const SITE_ROOT = join(process.cwd(), 'site');
 const launchBrowser = async () => {
@@ -981,7 +984,7 @@ test('F08 real short and long scenario commands replay under distinct render/pau
         if(MoC.S.scenario==='campaign') MoC.S.promises=[0,1,2];
         MoC.S._manifestoShown=true;
         // Suppress optional publication only; never alter model/reference policy.
-        MoC.S._communityPublishStarted=true;
+        MoC.S._communityPublishPromise=Promise.resolve();
         launchSimulation();
         const stopClock=()=>{clearInterval(autoTimer);autoTimer=null;};
         stopClock();
@@ -2757,7 +2760,7 @@ test('Completed runs publish automatically with a public or generated name', { t
     await page.waitForFunction(()=>document.querySelectorAll('#moc-opening-board li').length===2);
     assert.deepEqual(await page.locator('#moc-opening-board strong').allTextContents(),['Vera van den Broek','<img src=x onerror=alert(1)>']);
     assert.equal(await page.locator('#moc-opening-board img').count(),0,'opening leaderboard names render as text');
-    assert.match(await page.locator('.moc-name-entry').innerText(),/published automatically/);
+    assert.match(await page.locator('.moc-name-entry').innerText(),/listed publicly if automatic publication succeeds/i);
     await page.evaluate(()=>{
       document.getElementById('play-overlay')?.remove();MoC.referencePolicy=true;MoC.paused=false;
       for(let step=0;modelTick<75&&step<75;step++){
@@ -2813,11 +2816,197 @@ test('Completed runs publish automatically with a public or generated name', { t
   } finally {await browser.close();await new Promise(resolve=>server.close(resolve));}
 });
 
+test('Opening standings distinguish empty, unavailable, validation and network outcomes', { timeout: 45000 }, async () => {
+  const server=await startSiteServer(),browser=await launchBrowser();
+  const cases=[
+    {
+      label:'empty',
+      fulfill:route=>route.fulfill({status:200,json:{entries:[]}}),
+      message:/No published runs for this scenario and model yet.*illustrative, not player results/i,
+    },
+    {
+      label:'service unavailable by permission response',
+      fulfill:route=>route.fulfill({status:403,contentType:'application/json',body:JSON.stringify({error:'This web app is stopped'})}),
+      message:/The community service is temporarily unavailable\. The game still works without standings\./i,
+    },
+    {
+      label:'service unavailable by server error',
+      fulfill:route=>route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:'temporarily unavailable'})}),
+      message:/The community service is temporarily unavailable\. The game still works without standings\./i,
+    },
+    {
+      label:'service validation 400',
+      fulfill:route=>route.fulfill({status:400,contentType:'application/json',body:JSON.stringify({error:'modelVersion is invalid'})}),
+      message:/Community service validation error \(HTTP 400\): modelVersion is invalid.*game still works without standings/i,
+    },
+    {
+      label:'service validation 422',
+      fulfill:route=>route.fulfill({status:422,contentType:'application/json',body:JSON.stringify({error:'scenario is invalid'})}),
+      message:/Community service validation error \(HTTP 422\): scenario is invalid.*game still works without standings/i,
+    },
+    {
+      label:'network',
+      fulfill:route=>route.abort('failed'),
+      message:/The community service is temporarily unavailable\. The game still works without standings\./i,
+    },
+    {
+      label:'client-side display failure',
+      fulfill:route=>route.fulfill({status:200,json:{entries:[{username:'Incomplete entry'}]}}),
+      message:/Standings could not be displayed\. The game still works without standings\./i,
+    },
+  ];
+  try {
+    for(const fixture of cases){
+      const page=await browser.newPage({viewport:{width:390,height:844}});
+      await page.addInitScript(()=>localStorage.setItem('moc_muted_v2','true'));
+      await page.route('**/api/leaderboard**',fixture.fulfill);
+      await page.goto(`http://127.0.0.1:${server.address().port}/minister.html#scn=cabinetcrisis&seed=2468`,{waitUntil:'domcontentloaded'});
+      await page.locator('#moc-opening-board small').waitFor();
+      assert.match(await page.locator('#moc-opening-board small').innerText(),fixture.message,fixture.label);
+      assert.equal(await page.getByRole('button',{name:/TAKE OFFICE/}).isVisible(),true,'standings availability must not block play');
+      await page.close();
+    }
+  } finally {await browser.close();await new Promise(resolve=>server.close(resolve));}
+});
+
+test('Client publication reaches a real local leaderboard and filters by model and scenario', { timeout: 60000 }, async () => {
+  const site=await startSiteServer();
+  const directory=await mkdtemp(join(tmpdir(),'cammelot-client-leaderboard-'));
+  const allowedOrigin=`http://127.0.0.1:${site.address().port}`;
+  const leaderboard=createLeaderboardServer({filePath:join(directory,'leaderboard.json'),allowedOrigins:[allowedOrigin]});
+  await new Promise(resolve=>leaderboard.listen(0,'127.0.0.1',resolve));
+  const api=`http://127.0.0.1:${leaderboard.address().port}/api/leaderboard`;
+  const browser=await launchBrowser();
+  const modelVersion='minister-care-10-access-time-replay';
+  const summary={systemDeaths:1,waiting:0,meanWait:0,treatments:1,deathsWaiting:0,admin:0.2,budget:100000,trust:60,fragility:12};
+  async function seedRun(username,scenario,version,seed){
+    const response=await fetch(api,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({
+      username,scenario,seed,modelVersion:version,endTick:75,score:400,politicalOutcome:'served',summary,
+    })});
+    assert.equal(response.status,201);
+  }
+  try {
+    await seedRun('Other Scenario','campaign',modelVersion,2468);
+    await seedRun('Other Model','cabinetcrisis','minister-care-9-workforce-productivity',2468);
+    await seedRun('Other Town','cabinetcrisis',modelVersion,1357);
+    const page=await browser.newPage({viewport:{width:390,height:844}});
+    await page.addInitScript(url=>{
+      localStorage.setItem('moc_muted_v2','true');
+      window.CAMMELOT_LEADERBOARD_URL=url;
+    },api);
+    await page.goto(`${allowedOrigin}/minister.html?debug=1#scn=cabinetcrisis&seed=2468`,{waitUntil:'domcontentloaded'});
+    await page.locator('#moc-opening-board small').waitFor();
+    await page.waitForFunction(()=>{
+      const note=document.querySelector('#moc-opening-board small');
+      return note&&note.textContent!=='Loading persisted results…';
+    });
+    assert.deepEqual(await page.locator('#moc-opening-board ol li strong').allTextContents(),['Other Town']);
+    await page.evaluate(()=>{
+      document.getElementById('play-overlay')?.remove();MoC.referencePolicy=true;MoC.paused=false;
+      for(let step=0;modelTick<75&&step<75;step++){
+        const before=modelTick;tick();
+        if(modelTick!==before+1)throw new Error(`Clock stopped at elapsed tick ${modelTick}; expected ${before+1}`);
+      }
+      if(modelTick!==75)throw new Error(`Clock did not reach elapsed tick 75; stopped at ${modelTick}`);
+      MoC.referencePolicy=false;
+      agents.filter(agent=>agent.hp>0&&!agent.moved&&(agent.behaviorState==='going_to_hospital'||agent.behaviorState==='emergency'||(agent.behaviorState==='queuing'&&agent.queueType==='hospital')))
+        .forEach(agent=>{agent.moved=true;agent.state='moved';});MoC.care.sync();
+      const reference=MoC.care.snapshot();
+      MoC.baseline={protocol:MoC.REFERENCE_PROTOCOL,scheduleId:MoC.environment.scheduleId,modelVersion:MoC.MODEL_VERSION,
+        seed:MoC.seed,scenario:MoC.S.scenario,snapshots:{75:reference}};
+      window._mocDebug.endTerm('served');
+      MoC.S._publishCompletedRun(true);
+    });
+    await page.waitForFunction(()=>document.querySelector('#moc-community-status')?.textContent.startsWith('Published as '));
+    await page.waitForFunction(()=>document.querySelectorAll('#moc-community-list .moc-community-entry').length===1);
+    const sameTown=await fetch(`${api}?scenario=cabinetcrisis&modelVersion=${modelVersion}&seed=2468`).then(response=>response.json());
+    assert.equal(sameTown.entries.length,1);
+    assert.equal(sameTown.entries[0].scenario,'cabinetcrisis');
+    assert.equal(sameTown.entries[0].modelVersion,modelVersion);
+    assert.equal(sameTown.entries[0].seed,2468);
+    assert.deepEqual(await page.locator('#moc-community-list .moc-community-entry strong').allTextContents(),[sameTown.entries[0].username]);
+    await page.close();
+  } finally {
+    await browser.close();
+    await new Promise(resolve=>leaderboard.close(resolve));
+    await new Promise(resolve=>site.close(resolve));
+    await rm(directory,{recursive:true,force:true});
+  }
+});
+
+test('Publication retries are single-flight and a published run only retries standings', { timeout: 60000 }, async () => {
+  const server=await startSiteServer(),browser=await launchBrowser(),page=await browser.newPage({viewport:{width:390,height:844}});
+  let postCount=0,getCount=0;
+  const submitted=[];
+  let releaseFirstPost;
+  const firstPostGate=new Promise(resolve=>{releaseFirstPost=resolve;});
+  let announceFirstPost;
+  const firstPostStarted=new Promise(resolve=>{announceFirstPost=resolve;});
+  await page.addInitScript(()=>localStorage.setItem('moc_muted_v2','true'));
+  await page.route('**/api/leaderboard**',async route=>{
+    if(route.request().method()==='POST'){
+      const payload=route.request().postDataJSON();submitted.push(payload);postCount++;
+      if(postCount===1){
+        announceFirstPost();
+        await firstPostGate;
+        return route.fulfill({status:400,contentType:'application/json',body:JSON.stringify({error:'username is invalid'})});
+      }
+      return route.fulfill({status:201,contentType:'application/json',body:JSON.stringify({
+        entry:{...payload,username:'Retry Minister'},rank:1,duplicate:false,
+      })});
+    }
+    getCount++;
+    if(getCount===2)return route.fulfill({status:400,contentType:'application/json',body:JSON.stringify({error:'modelVersion is invalid'})});
+    return route.fulfill({status:200,json:{entries:getCount===1?[]:[{
+      username:'Retry Minister',score:431,summary:{systemDeaths:2},
+    }]}});
+  });
+  try {
+    await page.goto(`http://127.0.0.1:${server.address().port}/minister.html?debug=1#scn=cabinetcrisis&seed=2468`,{waitUntil:'domcontentloaded'});
+    await page.locator('#moc-opening-board small').waitFor();
+    await page.evaluate(()=>{
+      document.getElementById('play-overlay')?.remove();MoC.referencePolicy=true;MoC.paused=false;
+      for(let step=0;modelTick<75&&step<75;step++){
+        const before=modelTick;tick();
+        if(modelTick!==before+1)throw new Error(`Clock stopped at elapsed tick ${modelTick}; expected ${before+1}`);
+      }
+      if(modelTick!==75)throw new Error(`Clock did not reach elapsed tick 75; stopped at ${modelTick}`);
+      MoC.referencePolicy=false;
+      agents.filter(agent=>agent.hp>0&&!agent.moved&&(agent.behaviorState==='going_to_hospital'||agent.behaviorState==='emergency'||(agent.behaviorState==='queuing'&&agent.queueType==='hospital')))
+        .forEach(agent=>{agent.moved=true;agent.state='moved';});MoC.care.sync();
+      const reference=MoC.care.snapshot();
+      MoC.baseline={protocol:MoC.REFERENCE_PROTOCOL,scheduleId:MoC.environment.scheduleId,modelVersion:MoC.MODEL_VERSION,
+        seed:MoC.seed,scenario:MoC.S.scenario,snapshots:{75:reference}};
+      window._mocDebug.endTerm('served');
+    });
+    await firstPostStarted;
+    await page.evaluate(()=>{MoC.S._publishCompletedRun(true);MoC.S._publishCompletedRun(true);});
+    releaseFirstPost();
+    await page.waitForFunction(()=>document.querySelector('#moc-community-status').textContent.includes('username is invalid'));
+    assert.match(await page.locator('#moc-community-status').innerText(),/Publication failed: Community service validation error \(HTTP 400\): username is invalid/);
+    assert.equal(postCount,1,'overlapping automatic/manual attempts must share one request');
+    await page.getByRole('button',{name:'Retry publication'}).click();
+    await page.waitForFunction(()=>document.querySelector('#moc-community-status').textContent.includes('Standings unavailable'));
+    assert.match(await page.locator('#moc-community-status').innerText(),/Published as Retry Minister · rank 1\..*Community service validation error \(HTTP 400\): modelVersion is invalid/);
+    assert.equal(postCount,2,'a retry after a rejected publication may safely re-submit');
+    assert.deepEqual(submitted[1],submitted[0],'retry submits the exact same run payload for server-side de-duplication');
+    await page.getByRole('button',{name:'Retry standings'}).click();
+    await page.waitForFunction(()=>document.querySelectorAll('#moc-community-list .moc-community-entry').length===1);
+    assert.match(await page.locator('#moc-community-status').innerText(),/Published as Retry Minister · rank 1\./);
+    assert.equal(postCount,2,'after publication succeeds, standings retry must not submit the run again');
+    assert.equal(getCount,3);
+  } finally {
+    releaseFirstPost();
+    await browser.close();
+    await new Promise(resolve=>server.close(resolve));
+  }
+});
+
 test('Town requests pause without a countdown', { timeout: 30000 }, async () => {
   const server=await startSiteServer(),browser=await launchBrowser(),page=await browser.newPage({viewport:{width:390,height:844}});
   await page.addInitScript(()=>localStorage.setItem('moc_muted_v2','true'));
   try {
-    await page.goto(`http://127.0.0.1:${server.address().port}/minister.html#scn=cabinetcrisis&seed=2468`,{waitUntil:'domcontentloaded'});
+    await page.goto(`http://127.0.0.1:${server.address().port}/minister.html?debug=1#scn=cabinetcrisis&seed=2468`,{waitUntil:'domcontentloaded'});
     await page.evaluate(()=>{
       document.getElementById('play-overlay')?.remove();window._mocGameStarted=true;
       modelTick=182;cycle=MoC.STARTUP_CYCLE+modelTick;MoC.S.quarter=4;MoC.paused=false;MoC.onTick(modelTick);

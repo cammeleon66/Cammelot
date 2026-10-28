@@ -99,6 +99,12 @@ test('leaderboard serves an opening top five across persisted town seeds', async
         score:400 + index, summary:{...validRun().summary,systemDeaths:index % 4,deathsWaiting:index % 3} }));
       assert.equal(response.status,201);
     }
+    assert.equal((await post(app.base, validRun({ seed:8000, modelVersion:'minister-care-4-next' }))).status,201);
+    assert.equal((await post(app.base, validRun({ seed:8001, scenario:'campaign' }))).status,201);
+    const sameBoard = await fetch(`${app.base}/api/leaderboard?scenario=cabinetcrisis&modelVersion=minister-care-3-paired&limit=100`)
+      .then(response=>response.json());
+    assert.equal(sameBoard.entries.length,7);
+    assert.ok(sameBoard.entries.every(entry=>entry.scenario==='cabinetcrisis'&&entry.modelVersion==='minister-care-3-paired'));
     const overall = await fetch(`${app.base}/api/leaderboard?scenario=cabinetcrisis&modelVersion=minister-care-3-paired&limit=5`).then(response=>response.json());
     assert.equal(overall.entries.length,5);
     assert.equal(new Set(overall.entries.map(entry=>entry.seed)).size,5);
