@@ -389,6 +389,7 @@ body:has(#moc-manifesto) #moc-ministry{visibility:hidden!important;pointer-event
 .feed-warn { border-left:3px solid #FF9800; }
 .panel-back { font-size:11px; color:var(--gold); cursor:pointer; padding:4px 0 8px; }
 .panel-back:hover { text-decoration:underline; }
+.panel-back:focus-visible { outline:3px solid var(--gold); outline-offset:2px; }
 
 /* ═══ SPRINT 8: Responsive Layout ═══ */
 @media (max-width: 1024px) {
@@ -403,8 +404,8 @@ body:has(#moc-manifesto) #moc-ministry{visibility:hidden!important;pointer-event
   #chatlog { width: 200px; max-height: 100px; font-size: 10px; bottom: 35px; }
 }
 
-@media (max-width: 768px) {
-  /* Top bar: compact, no overflow */
+@media (max-width: 768px), (max-height: 500px) and (orientation: landscape) {
+  /* Top bar: compact, no overflow (also short landscape phones wider than 768px) */
   #top { padding: 4px 8px; gap: 4px; flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; }
   #top .sub { display: none; }
   .top-title { font-size: 12px; }
@@ -1253,6 +1254,38 @@ body:has(.moc-mandate) #moc-objective{display:none!important}
 @media(max-width:768px){
   #moc-portrait{display:none!important}
   .moc-wiz-nav .moc-continue{max-width:none}
+}
+/* ── L04: touch targets, visible disclosure state, short landscape (docs/MINISTER_MOBILE_CONTROLS.md) ── */
+#site-nav a{display:inline-block;padding:6px 4px;margin:-6px -4px}
+#moc-town-watch>summary,#moc-ministry-figures>summary{gap:8px;user-select:none;-webkit-tap-highlight-color:transparent}
+#moc-town-watch>summary{min-height:44px;font-size:10px;padding:0 8px;margin:0;background:var(--m-blue);border:2px solid var(--m-gold);cursor:pointer}
+#moc-ministry-figures>summary{padding:0 8px;background:var(--m-blue3);border:2px solid #6572ba}
+#moc-town-watch>summary::-webkit-details-marker,#moc-ministry-figures>summary::-webkit-details-marker{display:none}
+#moc-town-watch>summary::before,#moc-ministry-figures>summary::before{content:'';flex:0 0 auto;width:0;height:0;border-left:8px solid var(--m-gold);border-top:5px solid transparent;border-bottom:5px solid transparent;transition:transform .12s}
+#moc-town-watch[open]>summary::before,#moc-ministry-figures[open]>summary::before{transform:rotate(90deg)}
+#moc-town-watch>summary::after,#moc-ministry-figures>summary::after{content:'SHOW';content:'SHOW' / '';flex:0 0 auto;margin-left:auto;padding:3px 6px;border:2px solid var(--m-white);color:var(--m-white);font:10px/1 var(--px)}
+#moc-town-watch[open]>summary::after,#moc-ministry-figures[open]>summary::after{content:'HIDE';content:'HIDE' / ''}
+#moc-town-watch[open]>summary{margin-bottom:6px}
+#moc-town-watch>summary:focus-visible,#moc-ministry-figures>summary:focus-visible{outline:3px solid var(--m-gold);outline-offset:2px}
+#moc-council-ready-banner.is-return{width:auto;max-width:calc(100% - 20px);display:flex;align-items:center;gap:10px;padding:6px 8px}
+#moc-council-ready-banner.is-return strong{font-size:10px}
+#moc-council-ready-banner button{font-size:10px}
+@media(max-width:768px),(max-height:500px) and (orientation:landscape){
+  #cbar{flex-wrap:wrap;justify-content:center;max-width:calc(100% - 12px);box-sizing:border-box}
+  #cbar .cb{min-height:44px;min-width:44px;padding:4px 8px;font-size:11px}
+  #moc-ministry .spd button{min-width:44px;min-height:44px;font-size:10px}
+  #moc-town-watch>summary{font-size:10px}
+  .moc-wiz-nav .moc-continue{font-size:10px}
+  .moc-opt,.moc-buy,.moc-continue,.moc-wiz-back{min-height:44px}
+  .moc-name-row button,#moc-opening-sound,#moc-takeoffice{font-size:10px}
+  .panel-back{display:flex;align-items:center;min-height:44px;padding:0 0 4px;font-size:13px}
+}
+@media(max-height:500px) and (orientation:landscape){
+  #main{flex-direction:row}
+  #game-wrap{flex:1 1 auto;min-width:0;height:auto;min-height:0}
+  #panel,#panel[data-moc-detail]{flex:0 0 auto;width:min(360px,46vw);height:auto;min-height:0;border-top:0;border-left:6px solid var(--frame)}
+  #app{height:100dvh}
+  #moc-council-ready-banner{top:6px}
 }
 </style>
 </head>
@@ -6438,7 +6471,7 @@ function showMemorial(grave) {
   const d = document.getElementById('agent-detail');
   document.querySelector('.panel-header').textContent = 'MEMORIAL';
   const isSystem = grave.cause === 'system_failure';
-  let html = `<div class="panel-back" data-action="showTownFeed">← Ministry</div>`;
+  let html = `<div class="panel-back" data-action="showTownFeed" role="button" tabindex="0">← Ministry</div>`;
   html += `<div class="agent-card">
     <div class="ac-name" style="color:${isSystem ? 'var(--red)' : 'var(--ink2)'}">In Memory of ${grave.name}</div>
     <div class="ac-role">Age ${formatCompletedAge(grave.age)}</div>
@@ -6561,7 +6594,7 @@ function selectAgent(a){
   // Get agent events from EVENT_LOG
   const agentEvents=EVENT_LOG.filter(e=>e.agentId===a.id);
 
-  let html=`<div class="panel-back" data-action="showTownFeed">← Ministry</div>`;
+  let html=`<div class="panel-back" data-action="showTownFeed" role="button" tabindex="0">← Ministry</div>`;
   html+=`<div class="agent-card">
     <div class="portrait-wrap">
       <canvas class="portrait-canvas" id="portrait-cv" width="64" height="64" ${a.hp<=0?'style="filter:grayscale(100%)"':''}></canvas>
@@ -6943,7 +6976,7 @@ function selectBuilding(building){
     const thought=gp.thoughts[(gp.currentThought||0)%gp.thoughts.length];
     gp.currentThought=(gp.currentThought||0)+1;
 
-    let html=`<div class="panel-back" data-action="showTownFeed">← Ministry</div>`;
+    let html=`<div class="panel-back" data-action="showTownFeed" role="button" tabindex="0">← Ministry</div>`;
     html+=`<div class="agent-card">
       <div class="ac-name">${building.label}</div>
       <div class="ac-role">${gp.name} — General Practitioner</div>
@@ -6997,7 +7030,7 @@ function selectBuilding(building){
     const treeViolated=waitList.some(a=>a.waitWeeks>treeWeeks)||inHospital.some(a=>a.waitWeeks>treeWeeks);
     const specialists=agents.filter(a=>a.type==='specialist');
 
-    let html=`<div class="panel-back" data-action="showTownFeed">← Ministry</div>`;
+    let html=`<div class="panel-back" data-action="showTownFeed" role="button" tabindex="0">← Ministry</div>`;
     html+=`<div class="agent-card">
       <div class="ac-name">${building.label}</div>
       <div class="ac-role">Regional Hospital</div>
@@ -9100,7 +9133,7 @@ function showGazette() {
   }
 
   var dateInfo = getSeasonAndDay(modelTick);
-  var html = '<div class="panel-back" data-action="showTownFeed">← Ministry</div>';
+  var html = '<div class="panel-back" data-action="showTownFeed" role="button" tabindex="0">← Ministry</div>';
 
   // Main gazette header
   html += '<div class="gazette-header">';
@@ -9794,78 +9827,74 @@ function drawGiniTimelineChart() {
 function buildROIHTML() {
   var p = M[mode];
   var gps = agents.filter(function(a) { return a.type === 'gp'; });
-
-  // Admin waste: GP hours × rate × admin%
   var gpHoursPerCycle = gps.length * 0.25;
   var adminWasteEUR = Math.round(gpHoursPerCycle * p.admin * NZA_GP_CONSULT_EUR * modelTick);
-
-  // Preventable deaths cost
   var sysDeaths = EVENT_LOG.filter(function(e) { return e.type === 'died'; }).length;
-  var preventableDeathCostEUR = sysDeaths * SIM_PREVENTABLE_DEATH_EUR;
-
-  // Treeknorm violation cost
-  var treeViolationWeeks = agents.filter(function(a) { return a.waitWeeks > p.tree && a.hp > 0; })
-    .reduce(function(s, a) { return s + (a.waitWeeks - p.tree); }, 0);
-  var treeViolationCostEUR = Math.round(treeViolationWeeks * SIM_TREEKNORM_WEEK_EUR);
-
-  // Total system cost
-  var totalCostEUR = adminWasteEUR + preventableDeathCostEUR + treeViolationCostEUR;
-
-  // SOLL comparison
-  var sollAdmin = Math.round(gpHoursPerCycle * 0.05 * NZA_GP_CONSULT_EUR * modelTick);
-  var savings = adminWasteEUR - sollAdmin;
+  var systemDeathCostEUR = sysDeaths * SIM_PREVENTABLE_DEATH_EUR;
+  var overNormWeeks = agents.filter(function(a) { return a.waitWeeks > p.tree && a.hp > 0; })
+    .reduce(function(sum, a) { return sum + (a.waitWeeks - p.tree); }, 0);
+  var currentOverNormCostEUR = Math.round(overNormWeeks * SIM_TREEKNORM_WEEK_EUR);
+  var assumedSollAdmin = 0.05;
+  var adminDifference = Math.round(gpHoursPerCycle * (p.admin - assumedSollAdmin) * NZA_GP_CONSULT_EUR * modelTick);
+  var currentAdminPercent = (p.admin * 100).toFixed(1);
+  var interval = 'elapsed ticks 0–' + modelTick + ' (' + (modelTick / MoC.TICKS_PER_WEEK).toFixed(2) + ' weeks; ' + gps.length + ' GPs)';
+  var adminProxy = modelTick > 0 && gps.length > 0 ? '€' + adminWasteEUR.toLocaleString() : 'Unavailable (no elapsed interval or GP cohort)';
+  var adminDifferenceLabel = modelTick > 0 && gps.length > 0 ? '€' + adminDifference.toLocaleString() : 'Unavailable (no elapsed interval or GP cohort)';
 
   return '<hr class="stats-divider">' +
-    '<div class="stats-group"><h4>💰 ROI Analysis</h4>' +
-      '<div class="stats-row"><span class="sk">Admin Waste</span><span class="sv sr">€' + adminWasteEUR.toLocaleString() + '</span></div>' +
-      '<div class="stats-row"><span class="sk">System-death cost proxy (unvalidated)</span><span class="sv sr">€' + preventableDeathCostEUR.toLocaleString() + ' (' + sysDeaths + ' × €5,845)</span></div>' +
-      '<div class="stats-row"><span class="sk">Treeknorm Violation Cost</span><span class="sv ' + (treeViolationCostEUR > 0 ? 'sr' : '') + '">€' + treeViolationCostEUR.toLocaleString() + '</span></div>' +
-      '<div class="stats-row"><span class="sk"><b>Total System Cost</b></span><span class="sv sr"><b>€' + totalCostEUR.toLocaleString() + '</b></span></div>' +
-      '<div class="stats-row"><span class="sk">SOLL Savings (admin alone)</span><span class="sv sg">€' + savings.toLocaleString() + '</span></div>' +
-      '<div style="font-size:8px;color:var(--ink2);margin-top:6px;font-style:italic">* €5,845/death and €150/week are simulation estimates, not official NZa tariffs.</div>' +
+    '<div class="stats-group"><h4>Illustrative system-cost estimates</h4>' +
+      '<div style="font-size:8px;color:var(--ink2);margin:4px 0">Not government cash, observed expenditure, or validated savings. Components have different time scopes and are not added into a total. Window: ' + interval + '.</div>' +
+      '<div class="stats-row"><span class="sk">Administrative-time proxy (elapsed window)</span><span class="sv sr">' + adminProxy + '</span></div>' +
+      '<div class="stats-row"><span class="sk">Model-classified system-death proxy (cumulative; ' + sysDeaths + ' × €5,845)</span><span class="sv sr">€' + systemDeathCostEUR.toLocaleString() + '</span></div>' +
+      '<div class="stats-row"><span class="sk">Current living over-norm wait proxy (' + overNormWeeks.toFixed(1) + ' person-weeks; current snapshot)</span><span class="sv ' + (currentOverNormCostEUR > 0 ? 'sr' : '') + '">€' + currentOverNormCostEUR.toLocaleString() + '</span></div>' +
+      '<div class="stats-row"><span class="sk">Illustrative admin-only difference (current ' + currentAdminPercent + '% vs assumed 5%; same elapsed window)</span><span class="sv sg">' + adminDifferenceLabel + '</span></div>' +
+      '<div style="font-size:8px;color:var(--ink2);margin-top:6px;font-style:italic">€5,845 per model-classified death and €150 per over-norm person-week are game estimates, not official NZa tariffs. The 5% admin comparison is an assumption, not a simulated SOLL outcome.</div>' +
     '</div>';
 }
-
 // ═══ Sprint S5: ER Pressure Comparison ═══
 function buildERPressureHTML() {
   var totalPop = agents.filter(function(a) { return a.type === 'patient' || a.type === 'citizen'; }).length;
   var admittedEvents = EVENT_LOG.filter(function(e) { return e.type === 'admitted'; }).length;
-  var istRate = totalPop > 0 ? (admittedEvents / totalPop * 100) : 0;
-  var sollRate = istRate * 0.75; // SOLL reduces by ~25% via proactive care
-  var reductionPct = istRate > 0 ? Math.round((1 - sollRate / istRate) * 100) : 25;
-  var avgStayDays = HOSPITAL_DISCHARGED.length > 0 ? 5 : 3; // default 3 if no data
-  var projectedSollAdmissions = Math.round(admittedEvents * 0.75);
-  var savedAdmissions = admittedEvents - projectedSollAdmissions;
-  var eurSaved = savedAdmissions * HOSPITAL_DAY_COST_EUR * avgStayDays;
+  var hasBaseline = totalPop > 0 && admittedEvents > 0;
+  var istRate = totalPop > 0 ? admittedEvents / totalPop * 100 : null;
+  var sollRate = hasBaseline ? istRate * 0.75 : null;
+  var reductionPct = hasBaseline ? 25 : null;
+  var avgStayDays = HOSPITAL_DISCHARGED.length > 0 ? 5 : 3;
+  var projectedSollAdmissions = hasBaseline ? Math.round(admittedEvents * 0.75) : null;
+  var savedAdmissions = hasBaseline ? admittedEvents - projectedSollAdmissions : null;
+  var eurSaved = hasBaseline ? savedAdmissions * HOSPITAL_DAY_COST_EUR * avgStayDays : null;
   var maxBarW = 180;
-  var istBarW = Math.min(maxBarW, Math.round(istRate / Math.max(istRate, 1) * maxBarW));
-  var sollBarW = Math.min(maxBarW, Math.round(sollRate / Math.max(istRate, 1) * maxBarW));
-  if (istRate === 0) { istBarW = 0; sollBarW = 0; }
+  var istBarW = hasBaseline ? Math.min(maxBarW, Math.round(istRate / Math.max(istRate, 1) * maxBarW)) : 0;
+  var sollBarW = hasBaseline ? Math.min(maxBarW, Math.round(sollRate / Math.max(istRate, 1) * maxBarW)) : 0;
+  var rateLabel = totalPop > 0 ? istRate.toFixed(1) + '%' : 'Unavailable (n=0)';
+  var projectionLabel = hasBaseline ? sollRate.toFixed(1) + '% (illustrative)' : 'Unavailable (no admission-event baseline)';
+  var avoidedLabel = hasBaseline ? savedAdmissions + ' (illustrative; assumed 25% reduction)' : 'Unavailable (no admission-event baseline)';
+  var savingsLabel = hasBaseline ? '€' + eurSaved.toLocaleString() + ' (estimate; assumed ' + avgStayDays + '-day stay)' : 'Unavailable (no admission-event baseline)';
 
   return '<hr class="stats-divider">' +
-    '<div class="stats-group"><h4>🏥 ER Pressure</h4>' +
+    '<div class="stats-group"><h4>Illustrative hospital-admission projection</h4>' +
+      '<div style="font-size:8px;color:var(--ink2);margin:4px 0">The 25% reduction is an assumption, not a measured or simulated outcome. Baseline is cumulative admission events per resident roster through tick ' + modelTick + '; repeat admissions may occur.</div>' +
       '<div style="margin:4px 0">' +
         '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;font-size:11px">' +
-          '<span style="width:45px;color:var(--red,#E53935);font-weight:600">IST</span>' +
+          '<span style="width:45px;color:var(--red,#E53935);font-weight:600">Observed</span>' +
           '<div style="width:' + maxBarW + 'px;height:14px;background:rgba(0,0,0,.08);border-radius:3px;overflow:hidden">' +
             '<div style="width:' + istBarW + 'px;height:100%;background:#E53935;border-radius:3px;transition:width .3s"></div>' +
           '</div>' +
-          '<span>' + istRate.toFixed(1) + '%</span>' +
+          '<span>' + admittedEvents + ' events / ' + totalPop + ' residents (' + rateLabel + ')</span>' +
         '</div>' +
         '<div style="display:flex;align-items:center;gap:6px;font-size:11px">' +
-          '<span style="width:45px;color:var(--green,#4CAF50);font-weight:600">SOLL</span>' +
+          '<span style="width:45px;color:var(--green,#4CAF50);font-weight:600">Assumed</span>' +
           '<div style="width:' + maxBarW + 'px;height:14px;background:rgba(0,0,0,.08);border-radius:3px;overflow:hidden">' +
             '<div style="width:' + sollBarW + 'px;height:100%;background:#4CAF50;border-radius:3px;transition:width .3s"></div>' +
           '</div>' +
-          '<span>' + sollRate.toFixed(1) + '%</span>' +
+          '<span>' + projectionLabel + '</span>' +
         '</div>' +
       '</div>' +
-      '<div class="stats-row"><span class="sk">SOLL reduces ER pressure by</span><span class="sv sg">' + reductionPct + '%</span></div>' +
-      '<div class="stats-row"><span class="sk">Admissions avoided (projected)</span><span class="sv sg">' + savedAdmissions + '</span></div>' +
-      '<div class="stats-row"><span class="sk">€ Saved (×€' + HOSPITAL_DAY_COST_EUR + '/day ×' + avgStayDays + 'd)</span><span class="sv sg">€' + eurSaved.toLocaleString() + '</span></div>' +
+      '<div class="stats-row"><span class="sk">Assumed reduction (not observed)</span><span class="sv">' + (reductionPct === null ? 'Unavailable (zero baseline)' : reductionPct + '%') + '</span></div>' +
+      '<div class="stats-row"><span class="sk">Admissions avoided (projection)</span><span class="sv">' + avoidedLabel + '</span></div>' +
+      '<div class="stats-row"><span class="sk">Estimated system value (not treasury cash; €' + HOSPITAL_DAY_COST_EUR + '/day × assumed ' + avgStayDays + ' days)</span><span class="sv">' + savingsLabel + '</span></div>' +
     '</div>';
 }
-
 // ═══ SCENARIO COMPARISON (Sprint 12) ═══
 function buildComparisonHTML() {
   var ist = M.IST, soll = M.SOLL;
@@ -10987,6 +11016,9 @@ _bind('wizard-next','click', () => nextWizardStep());
 })();
 
 // Event delegation for dynamically generated panel-back buttons
+document.getElementById('agent-detail').addEventListener('keydown', function(e) {
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('[data-action="showTownFeed"]')) { e.preventDefault(); showTownFeed(); }
+});
 document.getElementById('agent-detail').addEventListener('click', function(e) {
   const back = e.target.closest('[data-action="showTownFeed"]');
   if (back) showTownFeed();
@@ -11158,7 +11190,7 @@ function showMomentsGallery() {
   selectedAgent = null;
   panelIsTownFeed=false;
   var items = MOMENTS.items.slice().reverse();
-  var html = '<div class="panel-back" data-action="showTownFeed">← Ministry</div>';
+  var html = '<div class="panel-back" data-action="showTownFeed" role="button" tabindex="0">← Ministry</div>';
   html += '<div class="moments-gallery">';
   html += '<h3>🃏 DRAMATIC MOMENTS</h3>';
   if (items.length === 0) {
@@ -11340,7 +11372,7 @@ function showInsightsPanel() {
   selectedAgent = null;
   document.querySelector('.panel-header').textContent = '💡 INSIGHTS';
   var insights = INSIGHT_LOG.slice().reverse();
-  var html = '<div class="panel-back" data-action="showTownFeed">← Ministry</div>';
+  var html = '<div class="panel-back" data-action="showTownFeed" role="button" tabindex="0">← Ministry</div>';
   html += '<div style="padding:8px">';
   html += '<h3 style="color:var(--gold);margin:4px 0 8px">💡 Insight Engine</h3>';
   html += '<div style="font-size:11px;color:var(--parchment);opacity:0.7;margin-bottom:10px">';
@@ -11505,7 +11537,7 @@ function showWeeklyReport() {
   panelIsTownFeed=false;
   selectedAgent = null;
   document.querySelector('.panel-header').textContent = '📋 WEEKLY REPORTS';
-  var html = '<div class="panel-back" data-action="showTownFeed">← Ministry</div>';
+  var html = '<div class="panel-back" data-action="showTownFeed" role="button" tabindex="0">← Ministry</div>';
   html += '<div style="padding:8px">';
   html += '<h3 style="color:var(--gold);margin:4px 0 8px">📋 Weekly Report Center</h3>';
 
@@ -12651,6 +12683,8 @@ async function initLLMSubsystem() {
   const resourceUses = [];
   const activeUses = new Map();
   const overflowEntries = [];
+  const treasuryLedger = [];
+  let openingTreasuryBalance = GS.budget;
   let creditTick = -1;
   const resident = a => a && (a.type === 'patient' || a.type === 'citizen');
   function resourceFor(a){
@@ -12850,12 +12884,15 @@ async function initLLMSubsystem() {
     snapshot:function(){
       const waiting = agents.filter(pendingReferral);
       const waits = waiting.map(a => MoC.care.elapsed(a));
+      const treatedEpisodes = referralEpisodes.filter(e => e.status === 'treatment_started');
+      const completedReferralWaits = treatedEpisodes.filter(e => Number.isFinite(e.waitWeeks)).map(e => e.waitWeeks);
       return { modelVersion:MoC.MODEL_VERSION, seed:MoC.seed, scenario:GS.scenario, tick:modelTick,
         waiting:waiting.length, meanWait:waits.length ? waits.reduce((a,b) => a+b,0)/waits.length : 0,
         accessHeld:waiting.filter(a=>this.accessRemaining(a)>0).length,
         accessDelayWeeks:waiting.reduce((sum,a)=>sum+this.accessRemaining(a),0),
         longestWait:Math.max(0,...waits), overdue:waits.filter(w => w > 12).length,
-        treatments:referralEpisodes.filter(e => e.status === 'treatment_started').length,
+        treatments:treatedEpisodes.length, completedReferralWaitN:completedReferralWaits.length,
+        meanWaitToTreatmentWeeks:completedReferralWaits.length ? completedReferralWaits.reduce((sum,weeks)=>sum+weeks,0)/completedReferralWaits.length : null,
         deathsWaiting:referralEpisodes.filter(e => e.status === 'died_waiting').length,
         relocated:referralEpisodes.filter(e => e.status === 'relocated').length,
         otherExits:referralEpisodes.filter(e => e.status === 'other_exit').length,
@@ -12882,12 +12919,26 @@ async function initLLMSubsystem() {
         waitingDifference:reference.waiting-player.waiting, deathsWaitingDifference:reference.deathsWaiting-player.deathsWaiting };
     }
   };
+  MoC.treasuryLedger = treasuryLedger;
+  MoC.treasurySummary = function(){
+    const net = treasuryLedger.reduce((sum,entry)=>sum+entry.amount,0);
+    return {opening:openingTreasuryBalance,net,closing:GS.budget,transactions:treasuryLedger.slice()};
+  };
   MoC.runSnapshots = {};
   function resourceReportHtml(s){
     const r = s.resources;
     const line = (label,value) => '<div class="moc-score-row"><span>'+label+'</span><b>'+value+'</b></div>';
+    const completedWait = s.completedReferralWaitN
+      ? s.meanWaitToTreatmentWeeks.toFixed(1)+' weeks (n='+s.completedReferralWaitN+')'
+      : 'Unavailable (n=0 treatment-start episodes)';
+    const elapsedWeeks = (s.tick/MoC.TICKS_PER_WEEK).toFixed(2);
+    const completions = r.gp1_bldg.completions+r.gp2_bldg.completions+r.routine.completions+r.emergency.completions;
     return '<div class="moc-resource-report">'
-      + '<p class="moc-sub">Named treatment places (not beds or staff). Throughput: elapsed ticks 0–'+s.tick+'.</p>'
+      + '<p class="moc-sub">End-of-run snapshot at tick '+s.tick+'. Throughput interval: elapsed ticks 0–'+s.tick+' ('+elapsedWeeks+' weeks; 4 ticks/week). Named treatment places (not beds or staff).</p>'
+      + line('Current referral wait (mean among people waiting)',currentReferralWait(s))
+      + line('Closed referral-to-treatment-start wait (mean)',completedWait)
+      + line('Cumulative treatment starts (referral episodes)',s.treatments)
+      + line('Completed care episodes in interval',completions)
       + line('GP consultations occupied',r.gp1_bldg.occupancy+'/1 + '+r.gp2_bldg.occupancy+'/1')
       + line('Nominal GP work units/week',s.gpService.nominalWorkPerWeek.toFixed(2))
       + line('Available GP clinical work/week',s.gpService.availableWorkPerWeek.toFixed(2))
@@ -12895,13 +12946,13 @@ async function initLLMSubsystem() {
       + '<p class="moc-sub">Each GP consultation needs 3–5 work units in one place. Admin, absence and GP productivity change available work, not specialist starts. Idle work is not stored; at most one completion per practice per tick.</p>'
       + line('Routine places occupied',r.routine.occupancy+'/'+r.routine.slots
         +(r.routine.retiringSlots ? ' · '+r.routine.retiringSlots+' retiring' : ''))
-      + line('Nominal routine starts/week',s.capacity.toFixed(2))
-      + line('Routine starts / completions',r.routine.starts+' / '+r.routine.completions)
+      + line('Nominal routine treatment starts/week',s.capacity.toFixed(2))
+      + line('Routine starts / completions in interval',r.routine.starts+' / '+r.routine.completions)
       + line('Emergency place occupied',r.emergency.occupancy+'/1')
       + line('Emergency overflow waiting / bound',s.emergencyOverflow+' / '+s.emergencyOverflowBound)
-      + line('Emergency starts / completions',r.emergency.starts+' / '+r.emergency.completions)
+      + line('Emergency starts / completions in interval',r.emergency.starts+' / '+r.emergency.completions)
       + line('Overflow entries / deaths before treatment',s.emergencyOverflowEntries+' / '+s.overflowDeathsWaiting)
-      + '<p class="moc-sub">Overflow is waiting, not treatment. Bound: one record per named resident. Emergency care uses no routine place or start credit.</p></div>';
+      + '<p class="moc-sub">Starts are admissions to treatment, not completed care. Current waiting excludes closed episodes; end-to-end wait is shown only for referrals that reached a treatment start. Overflow is waiting, not treatment. Bound: one record per named resident.</p></div>';
   }
   MoC.referenceAt = function(tick){
     const ref=MoC.baseline, sample=ref?.snapshots?.[tick];
@@ -12917,6 +12968,7 @@ async function initLLMSubsystem() {
   if (MoC.previousRun && (MoC.previousRun.modelVersion!==MoC.MODEL_VERSION || MoC.previousRun.seed!==MoC.seed || MoC.previousRun.scenario!==GS.scenario)) MoC.previousRun=null;
   // Apply scenario modifiers (must run before first tick matters)
   if (MoC.scenario && MoC.scenario.setup) MoC.scenario.setup();
+  openingTreasuryBalance = GS.budget;
   MoC.care.sync(); // Account initial care at tick zero, before any displayed snapshot.
   const GENTLE = !!(MoC.scenario && MoC.scenario.gentle);
   // Schedule is exogenous: generation reads seed/scenario length only, never policy or UI randomness.
@@ -12994,18 +13046,32 @@ async function initLLMSubsystem() {
     function row(label,p,r,unit=''){
       return '<div class="moc-score-row"><span>'+label+'</span><b>'+p+unit+' / '+r+unit+'</b></div>';
     }
-    function waitText(snapshot){ return snapshot.waiting ? snapshot.meanWait.toFixed(1)+'w' : 'No one currently waiting'; }
-    let html='<h3>Care result</h3><p class="moc-sub">Same date: tick '+player.tick+'. Values: your town / no-action reference.</p>';
+    function valueRow(label,value){
+      return '<div class="moc-score-row"><span>'+label+'</span><b>'+value+'</b></div>';
+    }
+    function waitText(snapshot){ return currentReferralWait(snapshot); }
+    const completedWait=player.completedReferralWaitN
+      ? player.meanWaitToTreatmentWeeks.toFixed(1)+' weeks (n='+player.completedReferralWaitN+')'
+      : 'Unavailable (n=0 treatment-start episodes)';
+    const systemDeaths=diff
+      ? row('Model-classified system deaths (yours / no-action reference)',player.systemDeaths,reference.systemDeaths)
+      : valueRow('Model-classified system deaths (yours)',player.systemDeaths);
+    const deathsBeforeTreatment=diff
+      ? row('Deaths before treatment (yours / no-action reference)',player.deathsWaiting,reference.deathsWaiting)
+      : valueRow('Deaths before treatment (yours)',player.deathsWaiting);
+    let html='<h3>Care performance</h3><p class="moc-sub">Ending snapshot at tick '+player.tick+'. Same date: tick '+player.tick+'. Current queue and completed referral waits are separate cohorts; paired values compare your town / no-action reference.</p>'
+      + '<div class="moc-score-row"><span>Current referral queue mean wait</span><b>'+waitText(player)+'</b></div>'
+      + '<div class="moc-score-row"><span>Closed referral-to-treatment-start wait (mean)</span><b>'+completedWait+'</b></div>'
+      + '<div class="moc-score-row"><span>Cumulative treatment starts by tick '+player.tick+'</span><b>'+player.treatments+'</b></div>'
+      + systemDeaths + deathsBeforeTreatment;
     if (!diff) html+='<p class="moc-sub" role="status">Reference pending or unavailable for this date. No benefit claimed.</p>';
     else {
       const deathText=diff.livesDifference>0 ? diff.livesDifference+' fewer model-classified system deaths'
         : diff.livesDifference<0 ? Math.abs(diff.livesDifference)+' more model-classified system deaths' : 'The same number of model-classified system deaths';
       html+='<p class="moc-sub" id="moc-care-verdict">'+deathText+'. Other outcomes may differ.</p>'
-        +row('System deaths',player.systemDeaths,reference.systemDeaths)
         +'<div class="moc-score-row"><span>Death difference (reference − yours)</span><b id="moc-livesval">'+(diff.livesDifference>0?'+':'')+diff.livesDifference+'</b></div>'
-        +row('Treatment starts',player.treatments,reference.treatments)
-        +'<div class="moc-score-row"><span>Current referral queue</span><b>'+waitText(player)+' / '+waitText(reference)+'</b></div>'
-        +row('Deaths before treatment',player.deathsWaiting,reference.deathsWaiting);
+        +row('Cumulative treatment starts',player.treatments,reference.treatments)
+        +'<div class="moc-score-row"><span>Current referral queue mean (n waiting)</span><b>'+waitText(player)+' / '+waitText(reference)+'</b></div>';
       const mean=s=>s.staffBurnout.length?s.staffBurnout.reduce((sum,a)=>sum+a.burnout,0)/s.staffBurnout.length:0;
       html+='<details><summary>Care context</summary>'
         +row('People waiting',player.waiting,reference.waiting)
@@ -13162,6 +13228,32 @@ async function initLLMSubsystem() {
     docWTR:{fx:{sick:0.02},inverse:{sick:-0.02}},
     citAvoid:{fx:{drainMult:1.12},inverse:{drainMult:1/1.12}}
   };
+  function euroAmount(value){ return '€' + Math.round(value).toLocaleString('en-US'); }
+  function escapeResultText(value){
+    return String(value).replace(/[&<>"']/g,character=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[character]));
+  }
+  function treasuryReportHtml(){
+    const summary=MoC.treasurySummary(), entries=summary.transactions;
+    const net=(summary.net>=0?'+':'−')+euroAmount(Math.abs(summary.net));
+    const rows=entries.map(entry=>'<div class="moc-score-row"><span>Tick '+entry.tick+': '+escapeResultText(entry.reason)+'</span><b>'
+      +(entry.amount>=0?'+':'−')+euroAmount(Math.abs(entry.amount))+' · '+euroAmount(entry.before)+' → '+euroAmount(entry.after)+'</b></div>').join('');
+    return '<details class="moc-result-details" id="moc-treasury-record"><summary>Government treasury ledger</summary>'
+      + '<p class="moc-sub">Opening government cash '+euroAmount(summary.opening)+' '+net+' recorded net transactions = ending government cash '+euroAmount(summary.closing)+'. These are budget cash movements, not system-cost estimates or savings.</p>'
+      + (rows || '<p class="moc-sub">No treasury transactions recorded.</p>')+'</details>';
+  }
+  function recordTreasury(amount, reason){
+    if (!Number.isFinite(amount)) throw new RangeError('Invalid treasury transaction.');
+    if (amount === 0) return GS.budget;
+    const before = GS.budget;
+    GS.budget = before + amount;
+    GS._cashflowThisQ = (GS._cashflowThisQ || 0) + amount;
+    const entry = {tick:modelTick,reason:String(reason || 'Unspecified government cash change'),amount,before,after:GS.budget};
+    treasuryLedger.push(entry);
+    const receipt = document.getElementById('moc-policy-receipt');
+    if (receipt) receipt.textContent = 'Treasury receipt · ' + entry.reason + '\n'
+      + euroAmount(before) + ' ' + (amount > 0 ? '→' : '−') + ' ' + euroAmount(Math.abs(amount)) + ' = ' + euroAmount(GS.budget);
+    return GS.budget;
+  }
   function careConditions(){ return Object.keys(CONDITIONAL_CARE).filter(key=>GS.activeStates?.[key]); }
   function careSchedule(timed=GS.timedFx, delayed=GS.delayed, external=activeExternal){
     const terminal=MoC.TOTAL_QUARTERS*MoC.QUARTER_TICKS;
@@ -13270,11 +13362,8 @@ async function initLLMSubsystem() {
     validateCareSchedule(state,future,funded,conditions);
     return {cost,steps,timed,delayed};
   }
-  function commitFx(fx, next){
-    if (fx.budget) {
-      GS.budget = GS.budget + fx.budget;
-      GS._cashflowThisQ = (GS._cashflowThisQ || 0) + fx.budget; // G15: cashflow tracking
-    }
+  function commitFx(fx, next, reason){
+    if (fx.budget) recordTreasury(fx.budget, reason);
     if (fx.trust) MoC.adjustTrust(fx.trust);
     if (fx.trustC || fx.trustD || fx.trustP) adjustStakeholders(fx.trustC, fx.trustD, fx.trustP);
     if (fx.dep) GS.dependence = Math.max(0, GS.dependence + fx.dep);
@@ -13287,13 +13376,15 @@ async function initLLMSubsystem() {
   }
   function commitCarePlan(plan){
     const recordBefore=MoC.record?.before();
-    GS.budget-=plan.cost;
-    for (const step of plan.steps) commitFx(step.fx,step.next);
+    const reason = plan.steps.map(step=>step.label).filter(Boolean).join('; ') || 'Policy cost';
+    if (plan.cost) recordTreasury(-plan.cost, reason);
+    for (const step of plan.steps) commitFx(step.fx,step.next,step.label || reason);
     GS.timedFx.push(...plan.timed); GS.delayed.push(...plan.delayed);
     for (const step of plan.steps) if (step.label) say('MINISTRY',step.label,'sys');
     MoC.record?.after('effect',plan.steps.map(s=>s.label || 'Declared policy effect').join('; '),recordBefore,
       {cost:plan.cost,steps:plan.steps.map(s=>({fx:s.fx,label:s.label})),timed:plan.timed,delayed:plan.delayed});
     refreshMeters();
+    refreshPrioritySummary();
   }
   function applyCarePlan(plan, funded=false){
     if (GS.endReason) return false;
@@ -13453,6 +13544,7 @@ async function initLLMSubsystem() {
       if (fx.ai) fx.ai *= rate;
       if (fx.capacity) fx.capacity *= rate;
     }
+    if (digitalRollout) fx._rolloutBurnout = Math.max(0, Math.round((1 - GS.adoptionRate) * 12));
     if (digitalRollout && GS.adoptionRate < 0.85) {
       fx.admin = (fx.admin || 0) + 0.01;
       fx._rolloutAdmin = 0.01;
@@ -13478,6 +13570,8 @@ async function initLLMSubsystem() {
     try { plan=projectCarePlan(shopPlan(item),true); }
     catch (error) { reportCareInputError(error); return; }
     const beforePolicy = MoC.care.snapshot();
+    const treasuryBefore = GS.budget;
+    const beforeBurnout = averageGPBurnout();
     const dependenceBefore = GS.dependence;
     const effectiveFx = effectivePolicy(item);
     const fragmentationBefore = GS.fragmentation || 0;
@@ -13498,8 +13592,7 @@ async function initLLMSubsystem() {
     const digitalRollout = ['scribes1','scribes2','a2a','twin','platform','platformai','pilotgrant'].includes(item.id);
     let rolloutNote = '';
     if (digitalRollout) {
-      const adoption = GS.adoptionRate;
-      const strain = Math.max(0, Math.round((1 - adoption) * 12));
+      const strain = effectiveFx._rolloutBurnout || 0;
       if (strain > 0) {
         agents.filter(function(agent){ return agent.type === 'gp'; }).forEach(function(gp){
           gp.burnoutLevel = Math.min(100, (gp.burnoutLevel || 0) + strain);
@@ -13541,11 +13634,19 @@ async function initLLMSubsystem() {
       : (item.id === 'campaign' || item.id === 'prevention') ? 'citizens'
       : 'citizens';
     showPolicyConsequences(item.name, item.fx, pckind);
-    GS._policyReceipt = item.name + '\nAdmin ' + Math.round(beforePolicy.admin * 100) + '% → ' + Math.round(M.IST.admin * 100)
-      + '% · Treatment capacity ' + beforePolicy.capacity.toFixed(1) + ' → ' + GS.specialistCapacity.toFixed(1) + ' starts/week'
-      + '\nDependence ' + dependenceBefore + ' → ' + GS.dependence + rolloutNote + '. Care outcomes are not guaranteed.';
+    const receiptGps = agents.filter(function(agent){ return agent.type === 'gp'; });
+    const afterBurnout = averageGPBurnout();
+    const cashChange = GS.budget - treasuryBefore;
+    GS._policyReceipt = item.name + '\nTreasury cash: ' + euroAmount(treasuryBefore) + ' → ' + euroAmount(GS.budget)
+      + ' (' + (cashChange > 0 ? '+' : '−') + euroAmount(Math.abs(cashChange)) + ')'
+      + '\nAdmin burden: ' + Math.round(beforePolicy.admin * 100) + '% → ' + Math.round(M.IST.admin * 100) + '%'
+      + '\nNominal treatment starts/week: ' + beforePolicy.capacity.toFixed(2) + ' → ' + GS.specialistCapacity.toFixed(2)
+      + '\nDigital dependence: ' + dependenceBefore + ' → ' + GS.dependence
+      + (receiptGps.length ? '\nGP burnout mean (n=' + receiptGps.length + '): ' + beforeBurnout + '% → ' + afterBurnout + '%' : '\nGP burnout mean: unavailable (n=0)')
+      + (rolloutNote ? '\n' + rolloutNote.slice(3) : '') + '\nCare outcomes are not guaranteed.';
     const receipt = document.getElementById('moc-policy-receipt');
     if (receipt) receipt.textContent = GS._policyReceipt;
+    refreshPrioritySummary();
     renderTownWatch();
     Audio5.coin();
     renderShop(window._councilWizardMode || false);
@@ -14146,6 +14247,17 @@ async function initLLMSubsystem() {
       + '<div class="moc-follow-now"><b>Now:</b> ' + sanitizeText(personStatus(a).replace(/\n/g, ' · ')) + '</div>'
       + '<div class="moc-follow-history"><b>Last care event:</b> ' + (latest ? 'tick ' + latest.cycle + ' · ' + sanitizeText(latest.text || latest.type) : 'none recorded yet') + '</div></article>';
   }
+  // Inspecting the town hides an open council; keep an always-visible way back (not tied to the collapsible people list).
+  function showCouncilReturnBanner(){
+    let banner = document.getElementById('moc-council-ready-banner');
+    if (!banner) {
+      banner = document.createElement('div'); banner.id = 'moc-council-ready-banner'; banner.setAttribute('role', 'status');
+      document.getElementById('game-wrap')?.appendChild(banner);
+    }
+    banner.className = 'is-return';
+    banner.innerHTML = '<strong>COUNCIL ON HOLD</strong><button id="moc-council-return">RETURN TO COUNCIL</button>';
+    banner.querySelector('button').onclick = openPendingCouncil;
+  }
   function openPendingCouncil(){
     document.getElementById('moc-council-ready-banner')?.remove();
     const council = document.getElementById('moc-council');
@@ -14163,6 +14275,7 @@ async function initLLMSubsystem() {
       banner = document.createElement('div'); banner.id = 'moc-council-ready-banner'; banner.setAttribute('role', 'status');
       document.getElementById('game-wrap')?.appendChild(banner);
     }
+    banner.className = '';
     banner.innerHTML = '<strong>COUNCIL READY</strong><span>Quarter ' + q + ' is complete. The town is paused.</span><button id="moc-council-ready">OPEN COUNCIL</button>';
     banner.querySelector('button').onclick = openPendingCouncil;
   }
@@ -14171,7 +14284,7 @@ async function initLLMSubsystem() {
     let el = document.getElementById('moc-town-watch');
     if (!el) {
       el = document.createElement('details'); el.id = 'moc-town-watch'; el.setAttribute('aria-label', 'Watch the town');
-      el.open = window.matchMedia('(max-width:768px)').matches;
+      el.open = window.matchMedia('(max-width:768px), (max-height:500px) and (orientation:landscape)').matches;
       el.innerHTML = '<summary>PEOPLE TO FOLLOW</summary><div id="moc-town-status" role="status"></div>'
         + '<div class="moc-town-people"></div><div id="moc-town-person"></div><div id="moc-town-change"></div>'
         + '<div class="moc-town-actions"><button id="moc-town-toggle">Pause &amp; look</button><button id="moc-town-council" hidden>Council ready</button></div>';
@@ -14288,7 +14401,7 @@ async function initLLMSubsystem() {
   }
   function gazetteReport(q, dueDelayed, evt){
     const sd = systemDeaths();
-    const avgWait = MoC.care.snapshot().meanWait.toFixed(1);
+    const avgWait = currentReferralWait(MoC.care.snapshot());
     const lastQGraves = GRAVE_MARKERS.filter(function(g){ return g.cause === 'system_failure' && g.cycle > modelTick - MoC.QUARTER_TICKS; });
     // Choose front page: strike > deaths > event > citizens-avoid > praise > calm
     let kind = 'calm', headline = 'NO SIRENS, SOME PAPERWORK';
@@ -14309,7 +14422,7 @@ async function initLLMSubsystem() {
     }
     if (GS.activeStates && GS.activeStates.docWTR) lines.push('GPs are working to rule. Sick leave is elevated.');
     if (GS.activeStates && GS.activeStates.citAvoid) lines.push('Low trust is delaying care-seeking.');
-    lines.push('Average specialist wait: ' + avgWait + ' weeks (norm: ' + M.IST.tree + 'w). Admin burden: ' + Math.round(M.IST.admin * 100) + '%.');
+    lines.push('Current referral wait: ' + avgWait + ' (clinical model threshold: ' + M.IST.tree + 'w). Admin burden: ' + Math.round(M.IST.admin * 100) + '%.');
     (dueDelayed || []).forEach(function(d){ lines.push(d.label); });
     const face = theFace();
     if (face && face.state === 'dead' && !GS._faceMourned) {
@@ -14351,11 +14464,13 @@ async function initLLMSubsystem() {
     if (!current) return '';
     function card(label,key,unit,lowerBetter){
       const value=current[key], diff=previous ? value-previous[key] : 0;
-      const cls=!previous||Math.abs(diff)<0.05?'flat':(lowerBetter ? diff<0 : diff>0)?'good':'bad';
-      const arrow=!previous||Math.abs(diff)<0.05?'→':diff>0?'↑':'↓';
+      const emptyWait=key==='meanWait'&&!current.waiting;
+      const cls=!previous||emptyWait||Math.abs(diff)<0.05?'flat':(lowerBetter ? diff<0 : diff>0)?'good':'bad';
+      const arrow=!previous||emptyWait||Math.abs(diff)<0.05?'→':diff>0?'↑':'↓';
       const decimals=key==='meanWait'?1:0;
-      return '<div class="moc-quarter-trend"><span>'+label+'</span><b>'+Number(value).toFixed(decimals)+unit+'</b>'
-        + '<span class="'+cls+'">'+(previous ? arrow+' '+(diff>0?'+':'')+diff.toFixed(decimals)+unit+' vs Q'+previous.q : 'First council reading')+'</span></div>';
+      const display=emptyWait?'No one waiting (n=0)':Number(value).toFixed(decimals)+unit+(key==='meanWait'?' (n='+current.waiting+')':'');
+      return '<div class="moc-quarter-trend"><span>'+label+'</span><b>'+display+'</b>'
+        + '<span class="'+cls+'">'+(previous ? (emptyWait?'No current wait sample':arrow+' '+(diff>0?'+':'')+diff.toFixed(decimals)+unit+' vs Q'+previous.q) : 'First council reading')+'</span></div>';
     }
     return '<div class="moc-quarter-trends">'
       +card('Citizen trust','trustC','',false)+card('Doctor trust','trustD','',false)
@@ -14368,13 +14483,25 @@ async function initLLMSubsystem() {
     if(!current)return '';
     const lines=[];
     if(previous){
-      const waitDiff=current.meanWait-previous.meanWait;
-      lines.push('The specialist list '+(Math.abs(waitDiff)<0.05?'held at ':waitDiff<0?'fell to ':'rose to ')+current.meanWait.toFixed(1)+' weeks, with '+current.waiting+' residents still waiting.');
+      if(current.waiting){
+        lines.push('The current referral queue mean is '+current.meanWait.toFixed(1)+' weeks among '+current.waiting+' residents still waiting.');
+      } else lines.push('No one is currently waiting (n=0); this empty queue is not, by itself, evidence of improved access.');
       const trustChanges=[['citizen',current.trustC-previous.trustC],['doctor',current.trustD-previous.trustD],['parliament',current.trustP-previous.trustP]].filter(function(entry){return Math.abs(entry[1])>=1;});
       if(trustChanges.length)lines.push('Since the last council, '+trustChanges.map(function(entry){return entry[0]+' trust '+(entry[1]>0?'rose ':'fell ')+Math.abs(entry[1]).toFixed(0);}).join(', ')+'.');
-    } else lines.push('This is the first quarterly reading: '+current.waiting+' residents are waiting, with a mean specialist wait of '+current.meanWait.toFixed(1)+' weeks.');
+    } else lines.push(current.waiting ? 'This first quarterly reading has a mean referral wait of '+current.meanWait.toFixed(1)+' weeks among '+current.waiting+' people waiting.' : 'This first quarterly reading has no one waiting (n=0).');
     lines.push('The town enters Q'+q+' with '+current.deaths+' model-classified system deaths, '+current.admin.toFixed(0)+'% paperwork and '+current.sick.toFixed(0)+'% staff absence.');
     return '<p style="margin:8px 0;font-family:Georgia,serif;line-height:1.55">'+lines.join(' ')+'</p>';
+  }
+  function averageGPBurnout(){
+    const gps=agents.filter(function(agent){return agent.type==='gp';});
+    return gps.length ? Math.round(gps.reduce(function(sum,gp){return sum+(gp.burnoutLevel||0);},0)/gps.length) : null;
+  }
+  function currentReferralWait(snapshot, precision=1){
+    return snapshot.waiting ? snapshot.meanWait.toFixed(precision)+' weeks (n='+snapshot.waiting+')' : 'No one waiting (n=0)';
+  }
+  function refreshPrioritySummary(){
+    const summary=document.getElementById('moc-priority-summary');
+    if(summary) summary.outerHTML=prioritySummaryHtml();
   }
   function prioritySummaryHtml(){
     const care=MoC.care.snapshot(), election=window._mocEvaluateElection ? window._mocEvaluateElection() : {trustFloor:35,deathCap:5};
@@ -14384,14 +14511,14 @@ async function initLLMSubsystem() {
     add('Doctors',GS.trustD,GS.trustD<election.trustFloor);
     add('Parliament',GS.trustP,GS.trustP<election.trustFloor);
     add('Deaths',care.systemDeaths+'/'+election.deathCap,care.systemDeaths>election.deathCap);
-    add('Wait',care.meanWait.toFixed(1)+'w',care.meanWait>M.IST.tree);
-    add('Digital risk',fragility()+'%',GS.dependence>=7);
-    const gps=agents.filter(function(agent){return agent.type==='gp';});
-    const burnout=gps.length?Math.round(gps.reduce(function(sum,gp){return sum+(gp.burnoutLevel||0);},0)/gps.length):0;
+    add('Current mean referral wait',currentReferralWait(care),care.waiting>0 && care.meanWait>M.IST.tree);
+    add('Digital fragility',fragility()+'%',fragility()>=60);
+    add('Dependence',GS.dependence+' pts',GS.dependence>=7);
+    const burnout=averageGPBurnout();
     add('Adoption',Math.round(GS.adoptionRate*100)+'%',GS.adoptionRate<0.85);
-    add('GP burnout',burnout+'%',burnout>=65);
+    add('GP burnout mean',burnout===null?'Unavailable (n=0)':burnout+'% (n='+agents.filter(function(agent){return agent.type==='gp';}).length+')',burnout!==null && burnout>=65);
     add('Silos',GS.fragmentation||0,(GS.fragmentation||0)>=3);
-    return '<section class="moc-priority-strip"><h4>PRIORITIES BEFORE YOU SPEND</h4><div class="moc-priority-list">'+priorities.join('')+'</div></section>';
+    return '<section class="moc-priority-strip" id="moc-priority-summary"><h4>CURRENT STATE · tick '+care.tick+'</h4><div class="moc-priority-list">'+priorities.join('')+'</div></section>';
   }
   function optionCost(option){
     if(option && option.fx && Number(option.fx.budget)<0)return Math.abs(Number(option.fx.budget));
@@ -14423,10 +14550,10 @@ async function initLLMSubsystem() {
     const cashflow = GS._cashflowThisQ || 0;
     const cashStr = (cashflow >= 0 ? '+' : '') + fmtK(cashflow) + ' this Q';
     const cells = [
-      [pixIcon('coin') + ' Budget', fmtK(GS.budget), GS.budget > 200000 ? 'g' : GS.budget > 50000 ? 'y' : 'r'],
-      [pixIcon('coin') + ' Cashflow', cashStr, cashflow >= 0 ? 'g' : cashflow > -50000 ? 'y' : 'r'],
+      [pixIcon('coin') + ' Government cash', fmtK(GS.budget), GS.budget > 200000 ? 'g' : GS.budget > 50000 ? 'y' : 'r'],
+      [pixIcon('coin') + ' Government cashflow (this quarter)', cashStr, cashflow >= 0 ? 'g' : cashflow > -50000 ? 'y' : 'r'],
       [pixIcon('scroll') + ' Admin burden', Math.round(M.IST.admin * 100) + '%', sysCls(M.IST.admin, true, 0.10, 0.22)],
-      [pixIcon('clock') + ' Current referral wait', MoC.care.snapshot().meanWait.toFixed(1) + ' wk', sysCls(MoC.care.snapshot().meanWait, true, 6, 10)],
+      [pixIcon('clock') + ' Current referral wait', currentReferralWait(MoC.care.snapshot()), sysCls(MoC.care.snapshot().meanWait, true, 6, 10)],
       [pixIcon('bed') + ' Sick leave', Math.round(M.IST.sick * 100) + '%', sysCls(M.IST.sick, true, 0.05, 0.09)],
       [pixIcon('chip') + ' AI multiplier', M.IST.ai.toFixed(2) + '\u00d7', M.IST.ai > 1.15 ? 'g' : M.IST.ai > 1.0 ? 'y' : 'r'],
       [pixIcon('cross') + ' GP clinical work/week', gpCapacity.availableWorkPerWeek.toFixed(2) + ' (nominal ' + gpCapacity.nominalWorkPerWeek + ')', ''],
@@ -14452,11 +14579,12 @@ async function initLLMSubsystem() {
   }
   // ── Concrete now->after preview per intervention ──
   // ── Impact preview as readable chips (green = better, red = worse) ──
-  function fxPreview(fx){
+  function fxPreview(fx, purchaseCost=0){
     let next;
     try { next = projectedCareEffect(fx); }
     catch (error) { return '<span class="moc-unaffordable">Unavailable: '+error.message+'</span>'; }
     const chips = [];
+    if (purchaseCost > 0) chips.push('<span class="moc-chip money">One-time treasury cost '+euroAmount(purchaseCost)+'</span>');
     // G18-B: plain-language tooltips so noobs know what each chip means
     const CHIP_TIPS = {
       Admin: 'Admin burden: lower means doctors spend more time on patients, not paperwork',
@@ -14478,7 +14606,14 @@ async function initLLMSubsystem() {
     if (fx.capacity) { chip('clock', 'Starts/week', GS.specialistCapacity.toFixed(2), next.capacity.toFixed(2), fx.capacity > 0); }
     if (fx.ai) { chip('chip', 'AI', M.IST.ai.toFixed(2) + '\u00d7', (M.IST.ai + fx.ai).toFixed(2) + '\u00d7', fx.ai > 0); }
     if (fx.drainMult) { chip('brheart', 'Decline', M.IST.drain.toFixed(2) + '\u00d7', (M.IST.drain * fx.drainMult).toFixed(2) + '\u00d7', fx.drainMult < 1); }
-    if (fx.dep) { chip('plug', 'Fragile', GS.dependence, Math.max(0, GS.dependence + fx.dep), fx.dep < 0); }
+    if (fx.dep) { chip('plug', 'Dependence', GS.dependence, Math.max(0, GS.dependence + fx.dep), fx.dep < 0); }
+    if (fx._rolloutBurnout) {
+      const gps=agents.filter(function(agent){return agent.type==='gp';});
+      const current=averageGPBurnout();
+      const projected=gps.length?Math.round(gps.reduce(function(sum,gp){return sum+Math.min(100,(gp.burnoutLevel||0)+fx._rolloutBurnout);},0)/gps.length):null;
+      if(projected===null) chips.push('<span class="moc-chip risk">GP burnout mean unavailable (n=0)</span>');
+      else chip('cross','GP burnout mean (n='+gps.length+')',current+'%',projected+'%',false);
+    }
     if (fx.trust) chips.push('<span class="moc-chip ' + (fx.trust > 0 ? 'good' : 'bad') + '" title="All stakeholder trust bars: citizens, doctors, and parliament move together">All trust ' + (fx.trust > 0 ? '+' : '') + fx.trust + '</span>');
     if (fx.trustC) chip('people', 'Citizens', GS.trustC, Math.max(0, Math.min(100, GS.trustC + fx.trustC)), fx.trustC > 0);
     if (fx.trustD) chip('cross', 'Doctors', GS.trustD, Math.max(0, Math.min(100, GS.trustD + fx.trustD)), fx.trustD > 0);
@@ -14527,7 +14662,7 @@ async function initLLMSubsystem() {
       }
       let preview = '';
       if (!locked) {
-        try { projectCarePlan(shopPlan(item),true); preview=fxPreview(effectivePolicy(item)); }
+        try { projectCarePlan(shopPlan(item),true); preview=fxPreview(effectivePolicy(item),shopCost(item)); }
         catch (error) { preview='<span class="moc-unaffordable">Unavailable: '+error.message+'</span>'; }
       }
       return '<div class="moc-item"><b>' + item.name + (owned && !maxed ? ' (\u00d7' + owned + ')' : '') + '</b><span class="fx">' + item.desc + '</span>' + preview + btn + '</div>';
@@ -14768,7 +14903,9 @@ async function initLLMSubsystem() {
       GS.decisionLog.push({tick:modelTick,quarter:q,id,text:action.textContent.trim()});
     },true);
     document.getElementById('moc-inspect-town').onclick = function(){
-      ov.style.display = 'none'; renderTownWatch(); document.getElementById('moc-town-council').focus();
+      ov.style.display = 'none';
+      const watch = document.getElementById('moc-town-watch'); if (watch) watch.open = true;
+      showCouncilReturnBanner(); renderTownWatch(); document.getElementById('moc-town-council').focus();
     };
 
     const STEP_LABELS = needsDecision ? ['Briefing', 'Decision', 'Law', 'Fund'] : ['Briefing', 'Law', 'Fund'];
@@ -14893,7 +15030,7 @@ async function initLLMSubsystem() {
           + (onTrack ? '\u2713 On track' : '\u2717 Failing') + '</div>';
         const METRIC_HINTS = [
           { needle:'model system death', hint:function(){ return 'Model system deaths this year: ' + (systemDeaths() - (obj._sd || 0)) + '. ' + (newDeaths > 0 ? newDeaths + ' recorded last quarter. Delay and disease rules both matter.' : 'None yet this year. Keep it that way.'); } },
-          { needle:'referral wait', hint:function(){ return 'Current referral wait: ' + MoC.care.snapshot().meanWait.toFixed(1) + 'w across ' + MoC.care.snapshot().waiting + ' people. Target: 8w or less.'; } },
+          { needle:'referral wait', hint:function(){ return 'Current referral wait: ' + currentReferralWait(MoC.care.snapshot()) + '. Target: 8w or less.'; } },
           { needle:'trust', hint:function(){ return 'Citizens ' + GS.trustC + ' / Doctors ' + GS.trustD + ' / Parliament ' + GS.trustP + '. All three must stay above 10 or your term ends.'; } },
           { needle:'fragil', hint:function(){ return 'Fragility is now ' + fragility() + '%. Each tech purchase raises dependence. Resilience items reduce it.'; } }
         ];
@@ -14929,7 +15066,7 @@ async function initLLMSubsystem() {
       const hasCare=notes.some(function(note){return /capacity|wait|health|admin|sick|deterioration|treatment/i.test(note);});
       const hasDigital=notes.some(function(note){return /dependence|fragment|platform|digital|AI|system/i.test(note);});
       let html='<div class="moc-decision-brief"><b>Why this matters now</b>'
-        +'<div class="moc-decision-view">'+care.waiting+' residents are waiting; mean wait '+(care.waiting?care.meanWait.toFixed(1)+' weeks':'no active queue')+'. Budget '+fmtK(GS.budget)+'.</div>';
+        +'<div class="moc-decision-view">Current referral queue: '+currentReferralWait(care)+'. Government cash '+fmtK(GS.budget)+'.</div>';
       if(hasCare)html+='<div class="moc-decision-view"><b>Care teams:</b> weigh continuity, workload and treatment capacity.</div>';
       if(hasCost)html+='<div class="moc-decision-view"><b>Treasury:</b> asks what must be delayed or unfunded to pay for this.</div>';
       if(hasTrust)html+='<div class="moc-decision-view"><b>Stakeholders:</b> judge access, working conditions and accountability differently.</div>';
@@ -15072,7 +15209,11 @@ async function initLLMSubsystem() {
             GS.laws[law.id] = q;
             GS._lawsThisAct = (GS._lawsThisAct || 0) + 1; // G15: track for mandatory-law penalty
             GS.interventions.push({ q: q, label: 'Law enacted: ' + law.name, cost: law.cost });
+            const treasuryBefore=GS.budget;
             commitCarePlan(plan);
+            const lawReceipt=document.getElementById('moc-policy-receipt');
+            if(lawReceipt) lawReceipt.textContent='Law receipt · '+law.name+'\nTreasury cash: '+euroAmount(treasuryBefore)+' → '+euroAmount(GS.budget);
+            refreshPrioritySummary();
             showPolicyConsequences(law.name, law.fx || {}, null);
             Audio5.gong();
             if (law.beat) GS.pendingBeat = law.beat;
@@ -15178,6 +15319,40 @@ async function initLLMSubsystem() {
     return window.CAMMELOT_LEADERBOARD_URL
       || (/^(www\.)?cammelot\.org$/i.test(location.hostname) ? publicLeaderboard : '/api/leaderboard');
   }
+  function communityServiceError(message,status){
+    const error=new Error(message);error.communityFailure='service';error.status=status;return error;
+  }
+  async function communityRequest(url,options){
+    let response;
+    try { response=await fetch(url,options); }
+    catch(error) {
+      const networkError=new Error(error&&error.message||'request failed');
+      networkError.communityFailure='network';
+      throw networkError;
+    }
+    let data=null;
+    try { data=await response.json(); } catch(e) {}
+    if(!response.ok) {
+      throw communityServiceError(data&&typeof data.error==='string' ? data.error : 'request rejected',response.status);
+    }
+    if(!data||typeof data!=='object'||Array.isArray(data)) throw communityServiceError('invalid service response');
+    return data;
+  }
+  async function fetchCommunityStandings(url){
+    const data=await communityRequest(url);
+    if(!Array.isArray(data.entries))throw communityServiceError('invalid standings response');
+    return data.entries;
+  }
+  function communityFailureText(error){
+    if(error&&error.communityFailure==='network') return 'The community service is temporarily unavailable';
+    if(error&&error.communityFailure==='service'){
+      if(error.status===403||error.status>=500) return 'The community service is temporarily unavailable';
+      if(error.status===400||error.status===422)
+        return 'Community service validation error (HTTP '+error.status+'): '+error.message;
+      return 'Community service error'+(error.status?' (HTTP '+error.status+')':'')+': '+error.message;
+    }
+    return 'Community service error: '+(error&&error.message||'invalid response');
+  }
 
   // ── G4: End statement (succeed/fail epitaph under the verdict) ──
   function endStatement(r, reason){
@@ -15187,8 +15362,7 @@ async function initLLMSubsystem() {
     const cabinetReasons = GS.scenario === 'cabinetcrisis' && reason === 'election' && (GS._cabinetReasons || []).length
       ? ' Failed conditions: ' + GS._cabinetReasons.join('; ') + '.'
       : '';
-    const wait=final.waiting ? final.waiting+' waiting; mean '+final.meanWait.toFixed(1)+' weeks' : 'no one currently waiting; '+final.deathsWaiting+' died before treatment';
-    return political+cabinetReasons+' '+final.systemDeaths+' model-classified system deaths · '+final.treatments+' treatment starts · '+wait+'.';
+    return political+cabinetReasons;
   }
 
   // ── G4: Post-game data reveal (play-first-explain-later) ──
@@ -15286,10 +15460,10 @@ async function initLLMSubsystem() {
         : (MoC.TOTAL_QUARTERS < 16 || GS._electionResult === 'strong'));
     const earnedWinStamp = reason === 'served' && politicalWin && (GS.scenario === 'cabinetcrisis' || r.score >= 400);
     html += '<div class="moc-verdict"><span class="moc-stamp' + (earnedWinStamp ? ' win' : '') + '">' + verdict(r, reason) + '</span></div>';
-    html += '<div class="moc-sub" style="text-align:center;font-size:13px">' + endStatement(r, reason) + '</div>';
+    html += '<h3>Political outcome</h3><div class="moc-sub" style="text-align:center;font-size:13px">' + endStatement(r, reason) + '</div>';
     html += '<div id="moc-care-comparison">'+careComparisonHtml()+'</div>';
     html += '<section class="moc-community" id="moc-community"><h3>Same-town standings</h3>'
-      + '<p class="moc-sub">Your completed run is published automatically under the public name chosen at the start. Community submissions are unverified.</p>'
+      + '<p class="moc-sub">Your completed run is published automatically under your chosen or generated public name. If publication succeeds, that name and run data are publicly listed. Community submissions are unverified.</p>'
       + '<div class="moc-publish-status" id="moc-community-status" role="status">Publishing result…</div>'
       + '<ol class="moc-community-list" id="moc-community-list" aria-label="Community leaderboard"></ol></section>';
     // Secondary detail: the result and same-date care comparison remain above this section.
@@ -15384,7 +15558,9 @@ async function initLLMSubsystem() {
       if ((GS.platformMaturity || 0) > 0) html += '\ud83c\udfd7 <b>Platform maturity:</b> Level ' + (GS.platformMaturity || 0) + ' of 2 \u2014 ' + ((GS.platformMaturity || 0) >= 2 ? 'regional model' : 'foundation built') + '<br>';
       html += '</div>';
     })();
-    html += '</details><details class="moc-result-details"><summary>Score calculation</summary><h3>Scorecard</h3>';
+    html += '</details>';
+    html += treasuryReportHtml();
+    html += '<details class="moc-result-details"><summary>Game score calculation</summary><h3>Game scorecard</h3>';
     html += '<div class="moc-score-row"><span>Model-classified system deaths (your term)</span><b>' + r.sd + '</b></div>';
     const careResult = MoC.care.snapshot();
     html += '<div class="moc-score-row"><span>Admin burden reduced</span><b>' + r.adminGain + ' pts (now ' + Math.round(M.IST.admin * 100) + '%)</b></div>';
@@ -15441,19 +15617,21 @@ async function initLLMSubsystem() {
     }
     async function loadCommunity(){
       const list=document.getElementById('moc-community-list');
-      try {
-        const response=await fetch(communityApi+'?scenario='+encodeURIComponent(GS.scenario)+'&modelVersion='+encodeURIComponent(MoC.MODEL_VERSION)+'&seed='+MoC.seed+'&limit=10');
-        if(!response.ok) throw new Error('unavailable');
-        const data=await response.json();
-        list.replaceChildren();
-        data.entries.forEach(function(entry,index){
-          const row=document.createElement('li');row.className='moc-community-entry';
-          const rank=document.createElement('span');rank.textContent=String(index+1)+'.';
-          const name=document.createElement('strong');name.textContent=entry.username;
-          const score=document.createElement('span');score.textContent=entry.summary.systemDeaths+' deaths · '+entry.score+' pts';
-          row.append(rank,name,score);list.appendChild(row);
-        });
-      } catch(e) { throw new Error('standings unavailable'); }
+      const entries=await fetchCommunityStandings(communityApi+'?scenario='+encodeURIComponent(GS.scenario)+'&modelVersion='+encodeURIComponent(MoC.MODEL_VERSION)+'&seed='+MoC.seed+'&limit=10');
+      list.replaceChildren();
+      if(!entries.length){
+        const empty=document.createElement('li');empty.className='moc-community-empty';
+        empty.textContent='No published runs for this scenario, model and town yet.';
+        list.appendChild(empty);
+        return;
+      }
+      entries.forEach(function(entry,index){
+        const row=document.createElement('li');row.className='moc-community-entry';
+        const rank=document.createElement('span');rank.textContent=String(index+1)+'.';
+        const name=document.createElement('strong');name.textContent=entry.username;
+        const score=document.createElement('span');score.textContent=entry.summary.systemDeaths+' deaths · '+entry.score+' pts';
+        row.append(rank,name,score);list.appendChild(row);
+      });
     }
     async function publishCompletedRun(force){
       if (MoC.record?.replaying) {
@@ -15462,27 +15640,48 @@ async function initLLMSubsystem() {
         return;
       }
       const status=document.getElementById('moc-community-status');
-      if(GS._communityPublishStarted)return;
-      if(!force&&!MoC.referenceAt(modelTick)){
+      if(GS._communityPublishPromise)return GS._communityPublishPromise;
+      if(!GS._communityPublished&&!force&&!MoC.referenceAt(modelTick)){
         status.textContent='Waiting for the same-date reference before publishing…';
         return;
       }
-      GS._communityPublishStarted=true;
-      status.textContent='Publishing completed run…';
-      try {
-        const finalScore=GS._publishedScore || (GS._publishedScore=computeScore(MoC.baseline));
-        const scoreElement=document.getElementById('moc-scoreval');if(scoreElement)scoreElement.textContent=finalScore.score;
-        const response=await fetch(communityApi,{method:'POST',headers:{'content-type':'application/json'},
-          body:JSON.stringify(leaderboardPayload(publicName,finalScore))});
-        const data=String(response.headers.get('content-type')||'').includes('application/json') ? await response.json() : {error:'leaderboard service unavailable'};
-        if(!response.ok) throw new Error(data.error||'submission failed');
-        await loadCommunity();
-        status.textContent=(data.duplicate?'Already published as ':'Published as ')+data.entry.username+' · rank '+data.rank+'.';
-      } catch(e) {
-        GS._communityPublishStarted=false;
-        status.replaceChildren(document.createTextNode('Publication failed: '+e.message+'. '));
-        const retry=document.createElement('button');retry.className='moc-buy';retry.textContent='Retry publication';retry.onclick=function(){publishCompletedRun(true);};status.appendChild(retry);
+      function retryButton(message,label){
+        if(!status)return;
+        status.replaceChildren(document.createTextNode(message+' '));
+        const retry=document.createElement('button');retry.className='moc-buy';retry.textContent=label;
+        retry.onclick=function(){publishCompletedRun(true);};status.appendChild(retry);
       }
+      const operation=(async function(){
+        let publication=GS._communityPublished;
+        if(!publication){
+          status.textContent='Publishing completed run…';
+          try {
+            const finalScore=GS._publishedScore || (GS._publishedScore=computeScore(MoC.baseline));
+            const scoreElement=document.getElementById('moc-scoreval');if(scoreElement)scoreElement.textContent=finalScore.score;
+            const payload=GS._communityPayload || (GS._communityPayload=leaderboardPayload(publicName,finalScore));
+            const data=await communityRequest(communityApi,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)});
+            if(!data.entry||typeof data.entry.username!=='string') throw communityServiceError('invalid publication response');
+            publication=GS._communityPublished=data;
+          } catch(error) {
+            retryButton('Publication failed: '+communityFailureText(error)+'.','Retry publication');
+            return;
+          }
+        }
+        const publishedText=(publication.duplicate?'Already published as ':'Published as ')
+          +publication.entry.username+' · rank '+publication.rank+'.';
+        status.textContent=publishedText;
+        try {
+          await loadCommunity();
+          status.textContent=publishedText;
+        } catch(error) {
+          retryButton(publishedText+' Standings unavailable: '+communityFailureText(error)+'.','Retry standings');
+        }
+      })();
+      const singleFlight=operation.finally(function(){
+        if(GS._communityPublishPromise===singleFlight)GS._communityPublishPromise=null;
+      });
+      GS._communityPublishPromise=singleFlight;
+      return singleFlight;
     }
     GS._publishCompletedRun=publishCompletedRun;
     publishCompletedRun(false);
@@ -15851,7 +16050,7 @@ async function initLLMSubsystem() {
       cond: function(){ return (GS.mantelzorg || 30) >= 65; },
       a:{ l:'Fund her a two-week break (\u2212\u20ac4K)', run:function(){
         if (GS.budget < 4000) { FX.pop('Cannot afford', '#e05858'); return; }
-        GS.budget -= 4000; MoC.adjustTrust(2);
+        recordTreasury(-4000, 'Resident carer request: two-week respite'); MoC.adjustTrust(2);
         GS.mantelzorg = Math.max(30, (GS.mantelzorg || 65) - 8);
         FX.pop('Carer supported', '#7bc67b');
         townSay(['"Maria got two weeks. She cried on the phone.", said Van Dijk.', '"One person helped. How many more are there that nobody called?"']);
@@ -15863,16 +16062,16 @@ async function initLLMSubsystem() {
   ];
   const FLASH_POOL = [
     { t:'Access request', d:function(f){return f.name+' ('+formatCompletedAge(f.age)+') cannot reach the GP by phone.';},
-      a:{l:'Assign case manager (−€5K)',run:function(f){if(GS.budget<5000){FX.pop('Insufficient budget','#e05858');return;}GS.budget-=5000;f.hp=Math.min(100,(f.hp||60)+8);FX.pop(f.name+': health +8','#7bc67b');}},
+      a:{l:'Assign case manager (−€5K)',run:function(f){if(GS.budget<5000){FX.pop('Insufficient budget','#e05858');return;}recordTreasury(-5000,'Resident access request: assign case manager');f.hp=Math.min(100,(f.hp||60)+8);FX.pop(f.name+': health +8','#7bc67b');}},
       b:{l:'Keep normal queue',run:function(){MoC.adjustTrust(-1);}}},
     { t:'Practice server issue', d:function(){return 'Clinical records are intermittently unavailable this afternoon.';},
       a:{l:'Switch to paper',run:function(){GS.liveScore=Math.max(0,GS.liveScore-5);}},
       b:{l:'Continue digitally',run:function(){if(Math.random()<0.3)MoC.adjustTrust(-2);}}},
     { t:'Patient transport offer', d:function(){return 'Volunteers offer weekly transport for older patients. Insurance costs €3K.';},
-      a:{l:'Fund insurance (−€3K)',run:function(){if(GS.budget<3000){FX.pop('Insufficient budget','#e05858');return;}GS.budget-=3000;MoC.adjustTrust(2);}},
+      a:{l:'Fund insurance (−€3K)',run:function(){if(GS.budget<3000){FX.pop('Insufficient budget','#e05858');return;}recordTreasury(-3000,'Resident transport request: volunteer insurance');MoC.adjustTrust(2);}},
       b:{l:'Decline',run:function(){MoC.adjustTrust(-1);}}},
     { t:'Medicine shortage', d:function(){return 'The pharmacy is out of children’s antibiotics until Thursday.';},
-      a:{l:'Emergency courier (−€4K)',run:function(){if(GS.budget<4000){FX.pop('Insufficient budget','#e05858');return;}GS.budget-=4000;MoC.adjustTrust(2);}},
+      a:{l:'Emergency courier (−€4K)',run:function(){if(GS.budget<4000){FX.pop('Insufficient budget','#e05858');return;}recordTreasury(-4000,'Resident medicine request: emergency courier');MoC.adjustTrust(2);}},
       b:{l:'Wait for national supply',run:function(){MoC.adjustTrust(-2);}}},
     { t:'Leaked closure memo', d:function(){return 'A draft memo considers closing a GP practice. The Gazette requests comment.';},
       a:{l:'Confirm the review',run:function(){MoC.adjustTrust(-1);}},
@@ -15885,7 +16084,7 @@ async function initLLMSubsystem() {
       b:{l:'Take no action',chance:0.25,fxChoices:[{sick:0.01},{}]}},
     { t:'Carer support request', d:function(){return 'Maria Jansen has provided unpaid care for four years and requests respite support.';},
       cond:function(){return (GS.mantelzorg||30)>=65;},
-      a:{l:'Fund two weeks (−€4K)',run:function(){if(GS.budget<4000){FX.pop('Insufficient budget','#e05858');return;}GS.budget-=4000;MoC.adjustTrust(2);GS.mantelzorg=Math.max(30,(GS.mantelzorg||65)-8);}},
+      a:{l:'Fund two weeks (−€4K)',run:function(){if(GS.budget<4000){FX.pop('Insufficient budget','#e05858');return;}recordTreasury(-4000,'Resident carer request: two-week respite');MoC.adjustTrust(2);GS.mantelzorg=Math.max(30,(GS.mantelzorg||65)-8);}},
       b:{l:'Refer to local service',run:function(){MoC.adjustTrust(-1);}}}
   ];
   let flashActive = false;
@@ -16372,7 +16571,7 @@ async function initLLMSubsystem() {
         + '<div class="moc-name-entry"><label for="moc-player-name">YOUR PUBLIC LEADERBOARD NAME</label><div class="moc-name-row">'
         + '<input id="moc-player-name" maxlength="24" autocomplete="nickname" aria-describedby="moc-name-error">'
         + '<button class="moc-buy" id="moc-generate-name" type="button">RANDOM NAME</button></div>'
-        + '<p class="moc-sub" style="margin:5px 0 0">Your completed score is published automatically. No account or email.</p><p class="moc-name-error" id="moc-name-error"></p></div>'
+        + '<p class="moc-sub" style="margin:5px 0 0">Your chosen or randomly generated name and completed run are listed publicly if automatic publication succeeds. Private participation is not available. No account or email.</p><p class="moc-name-error" id="moc-name-error"></p></div>'
         + '<button class="moc-opening-sound" id="moc-opening-sound" type="button">🔊 SOUND ON · TAP TO MUTE</button>'
         + '<section class="moc-opening-board" id="moc-opening-board"><h3>COMMUNITY TOP 5</h3><small>Loading persisted results…</small><ol></ol></section>'
         + '<details style="text-align:left"><summary>Why this game? Model &amp; limits</summary>'
@@ -16394,23 +16593,24 @@ async function initLLMSubsystem() {
       });
       (async function loadOpeningBoard(){
         const board=document.getElementById('moc-opening-board'),list=board.querySelector('ol'),note=board.querySelector('small');
+        let entries;
         try {
-          const response=await fetch(communityEndpoint()+'?scenario='+encodeURIComponent(sc.id)+'&modelVersion='+encodeURIComponent(MoC.MODEL_VERSION)+'&limit=5');
-          if(!response.ok)throw new Error('unavailable');
-          const data=await response.json();
-          if(data.entries.length){
+          entries=await fetchCommunityStandings(communityEndpoint()+'?scenario='+encodeURIComponent(sc.id)+'&modelVersion='+encodeURIComponent(MoC.MODEL_VERSION)+'&limit=5');
+        } catch(error){ note.textContent=communityFailureText(error)+'. The game still works without standings.';list.replaceChildren();return; }
+        try {
+          if(entries.length){
             note.textContent='Persisted community runs · different town seeds · care-first ranking';
-            data.entries.forEach(function(entry,index){
+            entries.forEach(function(entry,index){
               const row=document.createElement('li'),rank=document.createElement('span'),name=document.createElement('strong'),score=document.createElement('span');
               rank.textContent=(index+1)+'.';name.textContent=entry.username;score.textContent=entry.summary.systemDeaths+' deaths · '+entry.score+' pts';
               row.append(rank,name,score);list.appendChild(row);
             });
             return;
           }
-          note.textContent='Simulation examples until the first community runs are published';
+          note.textContent='No published runs for this scenario and model yet. Examples below are illustrative, not player results.';
           [['Benchmark Resilient','4 deaths · 412 pts'],['Benchmark Digital','5 deaths · 386 pts'],['Benchmark Staffing','5 deaths · 351 pts'],['Benchmark Foundation','6 deaths · 443 pts'],['Benchmark No Action','6 deaths · 303 pts']]
             .forEach(function(example,index){const row=document.createElement('li');row.innerHTML='<span>'+(index+1)+'.</span><strong></strong><span></span>';row.children[1].textContent=example[0];row.children[2].textContent=example[1];list.appendChild(row);});
-        } catch(error){ note.textContent='Community board unavailable; the game still works offline.'; }
+        } catch(error){ note.textContent='Standings could not be displayed. The game still works without standings.';list.replaceChildren(); }
       })();
       document.getElementById('moc-takeoffice').addEventListener('click', function(){
         if (!validPlayerName(nameInput.value)) { nameError.textContent = 'Use 2–24 letters or numbers.'; nameInput.focus(); return; }
@@ -16506,7 +16706,7 @@ async function initLLMSubsystem() {
             GS._promiseDebt = true;
             say('SYSTEM', 'Survived the confidence vote on promises. They will collect.', 'sys');
           } else if (v === 'sacrifice') {
-            GS.budget = GS.budget - 100000;
+            recordTreasury(-100000, 'Confidence vote: returned €100K');
             adjustStakeholders(0, 0, 12);
             say('SYSTEM', 'Survived the confidence vote by returning \u20ac100K.', 'sys');
           } else {
@@ -16987,11 +17187,11 @@ async function initLLMSubsystem() {
       const cbar = document.getElementById('cbar');
       if (cbar && MoC.scenario) {
         const crtBtn = document.createElement('button');
-        crtBtn.className = 'cb'; crtBtn.title = 'Toggle CRT scanlines'; crtBtn.textContent = '\ud83d\udcfa';
+        crtBtn.className = 'cb'; crtBtn.title = 'Toggle CRT scanlines'; crtBtn.setAttribute('aria-label', 'Toggle CRT scanlines'); crtBtn.textContent = '\ud83d\udcfa';
         crtBtn.addEventListener('click', function(){ setCrt(!document.getElementById('moc-crt')); });
         cbar.appendChild(crtBtn);
         const tourBtn = document.createElement('button');
-        tourBtn.className = 'cb'; tourBtn.title = 'Replay the guided tour'; tourBtn.textContent = '\u2753';
+        tourBtn.className = 'cb'; tourBtn.title = 'Replay the guided tour'; tourBtn.setAttribute('aria-label', 'Replay the guided tour'); tourBtn.textContent = '\u2753';
         tourBtn.addEventListener('click', function(){ if (window.mocReplayTour) window.mocReplayTour(); });
         cbar.appendChild(tourBtn);
       }

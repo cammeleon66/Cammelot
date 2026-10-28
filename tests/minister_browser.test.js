@@ -1,9 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createReadStream, existsSync, readFileSync, statSync } from 'node:fs';
+import { mkdtemp, rm } from 'node:fs/promises';
 import { createServer } from 'node:http';
+import { tmpdir } from 'node:os';
 import { extname, join, normalize } from 'node:path';
 import { chromium } from 'playwright-chromium';
+import { createLeaderboardServer } from '../src/leaderboard/server.js';
 
 const SITE_ROOT = join(process.cwd(), 'site');
 const launchBrowser = async () => {
@@ -947,9 +950,15 @@ test('F08 complete export includes a mid-quarter resident request and its cash c
       document.getElementById('moc-fa').click();
       MoC.saveReplay();
       const record=JSON.parse(localStorage.getItem(MoC.replayKey));
-      return {delta:MoC.S.budget-before,record};
+      return {delta:MoC.S.budget-before,record,treasury:MoC.treasurySummary()};
     });
     assert.equal(result.delta,-5000);
+    const requestReceipt=result.treasury.transactions.at(-1);
+    assert.equal(requestReceipt.amount,-5000);
+    assert.match(requestReceipt.reason,/case manager/i);
+    assert.equal(requestReceipt.after-requestReceipt.before,-5000);
+    assert.equal(result.treasury.opening+result.treasury.net,result.treasury.closing,
+      'resident-request cash must reconcile with the opening and closing government balance');
     assert.ok(result.record.commandRecord?.commands.some(c=>c.kind==='request' && c.tick===26),
       'actual late resident request must be in the full export, not just displayed receipt');
     assert.ok(result.record.commandRecord.events.some(e=>e.reason.includes('Assign case manager')),
@@ -981,7 +990,7 @@ test('F08 real short and long scenario commands replay under distinct render/pau
         if(MoC.S.scenario==='campaign') MoC.S.promises=[0,1,2];
         MoC.S._manifestoShown=true;
         // Suppress optional publication only; never alter model/reference policy.
-        MoC.S._communityPublishStarted=true;
+        MoC.S._communityPublishPromise=Promise.resolve();
         launchSimulation();
         const stopClock=()=>{clearInterval(autoTimer);autoTimer=null;};
         stopClock();
@@ -1473,6 +1482,8 @@ test('F05 scope post-term in-house delivery cannot block a valid council law', {
     assert.equal(await law.isDisabled(),false,'Q10 delivery cannot reserve admin beyond the Q8 terminal horizon');
     await law.click();
     assert.ok(Math.abs(await page.evaluate(()=>M.IST.admin)-0.01)<1e-15);
+    assert.match(await page.locator('#moc-policy-receipt').innerText(),/Law receipt · Task Differentiation Act/);
+    assert.match(await page.locator('#moc-policy-receipt').innerText(),/Treasury cash: €[\d,]+ → €[\d,]+/);
   });
 });
 
@@ -1987,7 +1998,10 @@ test('F04 eight emergencies share one place with bounded visible overflow and no
       return {first,second,third,observedDrain,expectedDrain,observedWait,expectedWait,
         deadEpisode:episode.status,releaseTick:endUse.endTick,replacementTick:replacement.startTick,
         visible:document.querySelector('#moc-emergency-overflow').textContent,
-        details:document.querySelector('.moc-resource-report').textContent,referencePolicy:MoC.referencePolicy,roster:f.people.length};
+        details:document.querySelector('.moc-resource-report').textContent,
+        emergencyThroughput:[...document.querySelectorAll('.moc-resource-report .moc-score-row')]
+          .find(row=>row.children[0]?.textContent==='Emergency starts / completions in interval')?.children[1]?.textContent,
+        referencePolicy:MoC.referencePolicy,roster:f.people.length};
     });
     assert.equal(result.referencePolicy,false);
     assert.equal(result.first.resources.routine.slots,1);
@@ -2003,6 +2017,7 @@ test('F04 eight emergencies share one place with bounded visible overflow and no
       `overflow uses the existing untreated HP rule: observed ${result.observedDrain}, expected ${result.expectedDrain}, wait ${result.observedWait}/${result.expectedWait}`);
     assert.ok(Math.abs(result.observedWait-result.expectedWait)<1e-9);
     assert.equal(result.third.emergencyStarts,2);
+    assert.equal(result.third.resources.emergency.starts,2);
     assert.equal(result.third.resources.emergency.completions,1);
     assert.equal(result.third.emergencyOverflow,5);
     assert.equal(result.deadEpisode,'died_waiting');
@@ -2012,7 +2027,7 @@ test('F04 eight emergencies share one place with bounded visible overflow and no
     assert.equal(result.third.routineStarts,1);
     assert.equal(result.third.routineDisplacements,0);
     assert.match(result.visible,/Emergency overflow: 5 waiting/);
-    assert.match(result.details,/Emergency starts \/ completions2 \/ 1/);
+    assert.equal(result.emergencyThroughput,'2 / 1','in-interval emergency throughput reports actual starts and completions');
   });
 });
 
@@ -2623,9 +2638,12 @@ test('Care reports preserve adverse outcomes and previews match purchases', { ti
       person.behaviorState='going_to_hospital'; person.waitWeeks=15;
       MoC.care.sync();
       const episode = MoC.care.episodes.find(e=>e.agentId===person.id && e.status==='waiting');
+      const waitingBeforeDeath = MoC.care.snapshot();
       person.hp=0;
       MoC.care.sync();
-      return { noForcedDeath, difference, wrongDate, wrongModel, exit:episode.status, validated:MoC.comparisonValidated };
+      const afterDeath = MoC.care.snapshot();
+      return { noForcedDeath, difference, wrongDate, wrongModel, exit:episode.status, validated:MoC.comparisonValidated,
+        waitingBeforeDeath,afterDeath,roi:buildROIHTML(),er:buildERPressureHTML() };
     });
     assert.equal(result.noForcedDeath,true);
     assert.equal(result.difference.livesDifference,-2);
@@ -2633,15 +2651,42 @@ test('Care reports preserve adverse outcomes and previews match purchases', { ti
     assert.equal(result.wrongModel,null);
     assert.equal(result.exit,'died_waiting');
     assert.equal(result.validated,true,'paired protocol is available; actual benefits still require matching reference data');
+    assert.ok(result.waitingBeforeDeath.waiting>0);
+    assert.equal(result.afterDeath.waiting,result.waitingBeforeDeath.waiting-1,
+      'a death removes one person from the current queue without erasing the closed episode');
+    assert.equal(result.afterDeath.deathsWaiting,result.waitingBeforeDeath.deathsWaiting+1,
+      'the closed death episode remains in the outcome record');
+    assert.match(result.roi,/not government cash/i);
+    assert.match(result.roi,/different time scopes and are not added into a total/i);
+    assert.doesNotMatch(result.roi,/Total System Cost/);
+    assert.match(result.er,/Unavailable \(zero baseline\)/);
+    assert.doesNotMatch(result.er,/SOLL reduces ER pressure by/);
     await page.evaluate(() => { document.getElementById('play-overlay')?.remove(); window._mocForceCouncil(2); });
     await openCouncilActions(page);
     const card = page.locator('[data-buy="scribes1"]');
     assert.match(await card.evaluate(el=>el.closest('.moc-item').innerText), /30% → 18%/);
+    assert.match(await card.evaluate(el=>el.closest('.moc-item').innerText),/One-time treasury cost €100,000/);
+    assert.match(await card.evaluate(el=>el.closest('.moc-item').innerText),/GP burnout mean \(n=\d+\)\s+0% → 4%/);
     const burnoutBefore=await page.evaluate(()=>agents.filter(a=>a.type==='gp').map(a=>a.burnoutLevel||0));
     await card.click();
     assert.ok(Math.abs(await page.evaluate(()=>M.IST.admin)-0.184)<1e-9,
       'model9 retains adoption-scaled effect precision; percent copy rounds for display only');
-    assert.match(await page.locator('#moc-policy-receipt').innerText(),/30% → 18%/);
+    const receipt=await page.locator('#moc-policy-receipt').innerText();
+    assert.match(receipt,/Admin burden: 30% → 18%/);
+    const cashReceipt=receipt.match(/Treasury cash: €([\d,]+) → €([\d,]+) \(−€([\d,]+)\)/);
+    assert.ok(cashReceipt,'purchase receipt states its opening cash, closing cash and debit');
+    const purchase=await page.evaluate(()=>MoC.treasurySummary().transactions.at(-1));
+    assert.equal(Number(cashReceipt[1].replace(/,/g,'')),purchase.before);
+    assert.equal(Number(cashReceipt[2].replace(/,/g,'')),purchase.after);
+    assert.equal(Number(cashReceipt[3].replace(/,/g,'')),-purchase.amount);
+    assert.match(receipt,/GP burnout mean \(n=\d+\): 0% → 4%/);
+    const updatedPriorities=await page.locator('#moc-priority-summary').innerText();
+    assert.match(updatedPriorities,/CURRENT STATE · tick/);
+    assert.match(updatedPriorities,/Dependence: 4 pts/);
+    assert.match(updatedPriorities,/GP burnout mean: 4% \(n=\d+\)/);
+    const treasury=await page.evaluate(()=>MoC.treasurySummary());
+    assert.equal(treasury.transactions.at(-1).amount,-100000);
+    assert.equal(treasury.opening+treasury.net,treasury.closing);
     const rollout=await page.evaluate(()=>({burnout:agents.filter(a=>a.type==='gp').map(a=>a.burnoutLevel||0),strain:MoC.S.rolloutStrain,adoption:MoC.S.adoptionRate}));
     assert.ok(rollout.burnout.every((value,index)=>value>burnoutBefore[index]));
     assert.ok(rollout.strain>0);
@@ -2652,6 +2697,71 @@ test('Care reports preserve adverse outcomes and previews match purchases', { ti
     await browser.close();
     await new Promise(resolve=>server.close(resolve));
   }
+});
+
+test('L02 Pilot Grant receipt reconciles through treasury ledger and empty cohorts stay unavailable', { timeout: 30000 }, async () => {
+  await withResourceTown(async page=>{
+    await openQuietFunding(page,2);
+    const grant=page.locator('[data-buy="pilotgrant"]');
+    assert.equal(await grant.isDisabled(),false,'the real Pilot Grant purchase path must be available');
+    const before=await page.evaluate(()=>MoC.treasurySummary().closing);
+    await grant.click();
+    const receipt=await page.locator('#moc-policy-receipt').innerText();
+    const result=await page.evaluate(()=>{
+      const treasury=MoC.treasurySummary();
+      const care=MoC.care.snapshot();
+      const roi=buildROIHTML();
+      const er=buildERPressureHTML();
+      const referenceAvailable=!!MoC.referenceAt(care.tick);
+      _mocDebug.endTerm('served');
+      document.querySelector('#moc-treasury-record summary').click();
+      return {treasury,care,roi,er,referenceAvailable,comparison:document.querySelector('#moc-care-comparison').innerText,
+        ending:document.getElementById('moc-endscreen').innerText,
+        closing:MoC.treasurySummary().closing};
+    });
+    assert.equal(result.treasury.transactions.at(-1).amount,-30000);
+    assert.match(result.treasury.transactions.at(-1).reason,/AI Pilot Grant/i);
+    assert.equal(result.treasury.opening+result.treasury.net,result.treasury.closing);
+    assert.equal(result.closing,result.treasury.closing);
+    assert.match(receipt,/AI Pilot Grant/);
+    const cashReceipt=receipt.match(/Treasury cash: €([\d,]+) → €([\d,]+) \(−€([\d,]+)\)/);
+    assert.ok(cashReceipt,'the real purchase receipt states opening cash, closing cash and debit');
+    assert.equal(Number(cashReceipt[1].replace(/,/g,'')),before);
+    assert.equal(Number(cashReceipt[2].replace(/,/g,'')),before-30000);
+    assert.equal(Number(cashReceipt[3].replace(/,/g,'')),30000);
+    assert.equal(result.care.waiting,0);
+    assert.equal(result.care.completedReferralWaitN,0);
+    assert.equal(result.care.meanWaitToTreatmentWeeks,null);
+    assert.equal(result.referenceAvailable,false,'this fixture has no same-date comparison reference');
+    assert.match(result.comparison,/Reference pending or unavailable/);
+    assert.match(result.comparison,/Model-classified system deaths \(yours\)\s+0/);
+    assert.match(result.comparison,/Deaths before treatment \(yours\)\s+0/);
+    assert.match(result.ending,/Political outcome/);
+    assert.match(result.ending,/Care performance/);
+    assert.match(result.ending,/No one waiting \(n=0\)/);
+    assert.match(result.ending,/Unavailable \(n=0 treatment-start episodes\)/);
+    assert.match(result.ending,/Opening government cash .* recorded net transactions = ending government cash/);
+    assert.match(result.roi,/not government cash/i);
+    assert.match(result.er,/Unavailable \(zero baseline\)/);
+    assert.doesNotMatch(result.er,/SOLL reduces ER pressure by/);
+  },'?debug=1');
+});
+
+test('L02 ROI difference labels current admin and computes against the assumed five percent', {timeout:30000}, async()=>{
+  await withResourceTown(async page=>{
+    const result=await page.evaluate(()=>{
+      M[mode].admin=0.184;
+      modelTick=4;
+      const host=document.createElement('div');
+      host.innerHTML=buildROIHTML();
+      const row=[...host.querySelectorAll('.stats-row')].find(item=>item.querySelector('.sk')?.textContent.includes('Illustrative admin-only difference'));
+      const gps=agents.filter(agent=>agent.type==='gp').length;
+      return {label:row.querySelector('.sk').textContent,value:row.querySelector('.sv').textContent,
+        expected:'€'+Math.round((gps*0.25)*(0.184-0.05)*12.43*4).toLocaleString()};
+    });
+    assert.match(result.label,/current 18\.4% vs assumed 5%/);
+    assert.equal(result.value,result.expected,'the displayed difference is current modeled admin burden minus the 5% assumption');
+  });
 });
 
 test('Early results match the reference date and replay preserves the prior attempt', { timeout: 45000 }, async () => {
@@ -2690,6 +2800,8 @@ test('Early results match the reference date and replay preserves the prior atte
     const endCopy=await page.locator('#moc-endscreen').innerText();
     assert.doesNotMatch(endCopy,/not heroic|played it safe|your successor inherits|the system won|hard route|rare trifecta/i);
     assert.match(endCopy,/FINAL SCORE/);
+    assert.match(endCopy,/Political outcome/);
+    assert.match(endCopy,/Care performance/);
     assert.match(endCopy,/Parliament ended the term/);
     assert.match(endCopy,/Observed simulation output, not clinical evidence/);
     assert.match(endCopy,/not proven preventability/);
@@ -2757,7 +2869,7 @@ test('Completed runs publish automatically with a public or generated name', { t
     await page.waitForFunction(()=>document.querySelectorAll('#moc-opening-board li').length===2);
     assert.deepEqual(await page.locator('#moc-opening-board strong').allTextContents(),['Vera van den Broek','<img src=x onerror=alert(1)>']);
     assert.equal(await page.locator('#moc-opening-board img').count(),0,'opening leaderboard names render as text');
-    assert.match(await page.locator('.moc-name-entry').innerText(),/published automatically/);
+    assert.match(await page.locator('.moc-name-entry').innerText(),/listed publicly if automatic publication succeeds/i);
     await page.evaluate(()=>{
       document.getElementById('play-overlay')?.remove();MoC.referencePolicy=true;MoC.paused=false;
       for(let step=0;modelTick<75&&step<75;step++){
@@ -2786,7 +2898,7 @@ test('Completed runs publish automatically with a public or generated name', { t
     assert.equal(submitted.endTick,75);
     assert.equal(typeof submitted.summary.meanWait,'number');
     assert.match(await page.locator('#moc-community-status').innerText(),/Published as Minister Silver Heron 468 · rank 2/);
-    assert.match(await page.locator('#moc-care-comparison').innerText(),/No one currently waiting/);
+    assert.match(await page.locator('#moc-care-comparison').innerText(),/No one waiting \(n=0\)/);
     assert.doesNotMatch(await page.locator('#moc-care-comparison').innerText(),/0\.0w/);
     assert.match(await page.locator('#moc-care-comparison').innerText(),/Deaths before treatment/);
     const topChildren=await page.locator('#moc-endscreen .moc-box').evaluate(element=>[...element.children].slice(0,5).map(child=>child.className||child.id||child.tagName));
@@ -2813,11 +2925,197 @@ test('Completed runs publish automatically with a public or generated name', { t
   } finally {await browser.close();await new Promise(resolve=>server.close(resolve));}
 });
 
+test('Opening standings distinguish empty, unavailable, validation and network outcomes', { timeout: 45000 }, async () => {
+  const server=await startSiteServer(),browser=await launchBrowser();
+  const cases=[
+    {
+      label:'empty',
+      fulfill:route=>route.fulfill({status:200,json:{entries:[]}}),
+      message:/No published runs for this scenario and model yet.*illustrative, not player results/i,
+    },
+    {
+      label:'service unavailable by permission response',
+      fulfill:route=>route.fulfill({status:403,contentType:'application/json',body:JSON.stringify({error:'This web app is stopped'})}),
+      message:/The community service is temporarily unavailable\. The game still works without standings\./i,
+    },
+    {
+      label:'service unavailable by server error',
+      fulfill:route=>route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:'temporarily unavailable'})}),
+      message:/The community service is temporarily unavailable\. The game still works without standings\./i,
+    },
+    {
+      label:'service validation 400',
+      fulfill:route=>route.fulfill({status:400,contentType:'application/json',body:JSON.stringify({error:'modelVersion is invalid'})}),
+      message:/Community service validation error \(HTTP 400\): modelVersion is invalid.*game still works without standings/i,
+    },
+    {
+      label:'service validation 422',
+      fulfill:route=>route.fulfill({status:422,contentType:'application/json',body:JSON.stringify({error:'scenario is invalid'})}),
+      message:/Community service validation error \(HTTP 422\): scenario is invalid.*game still works without standings/i,
+    },
+    {
+      label:'network',
+      fulfill:route=>route.abort('failed'),
+      message:/The community service is temporarily unavailable\. The game still works without standings\./i,
+    },
+    {
+      label:'client-side display failure',
+      fulfill:route=>route.fulfill({status:200,json:{entries:[{username:'Incomplete entry'}]}}),
+      message:/Standings could not be displayed\. The game still works without standings\./i,
+    },
+  ];
+  try {
+    for(const fixture of cases){
+      const page=await browser.newPage({viewport:{width:390,height:844}});
+      await page.addInitScript(()=>localStorage.setItem('moc_muted_v2','true'));
+      await page.route('**/api/leaderboard**',fixture.fulfill);
+      await page.goto(`http://127.0.0.1:${server.address().port}/minister.html#scn=cabinetcrisis&seed=2468`,{waitUntil:'domcontentloaded'});
+      await page.locator('#moc-opening-board small').waitFor();
+      assert.match(await page.locator('#moc-opening-board small').innerText(),fixture.message,fixture.label);
+      assert.equal(await page.getByRole('button',{name:/TAKE OFFICE/}).isVisible(),true,'standings availability must not block play');
+      await page.close();
+    }
+  } finally {await browser.close();await new Promise(resolve=>server.close(resolve));}
+});
+
+test('Client publication reaches a real local leaderboard and filters by model and scenario', { timeout: 60000 }, async () => {
+  const site=await startSiteServer();
+  const directory=await mkdtemp(join(tmpdir(),'cammelot-client-leaderboard-'));
+  const allowedOrigin=`http://127.0.0.1:${site.address().port}`;
+  const leaderboard=createLeaderboardServer({filePath:join(directory,'leaderboard.json'),allowedOrigins:[allowedOrigin]});
+  await new Promise(resolve=>leaderboard.listen(0,'127.0.0.1',resolve));
+  const api=`http://127.0.0.1:${leaderboard.address().port}/api/leaderboard`;
+  const browser=await launchBrowser();
+  const modelVersion='minister-care-10-access-time-replay';
+  const summary={systemDeaths:1,waiting:0,meanWait:0,treatments:1,deathsWaiting:0,admin:0.2,budget:100000,trust:60,fragility:12};
+  async function seedRun(username,scenario,version,seed){
+    const response=await fetch(api,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({
+      username,scenario,seed,modelVersion:version,endTick:75,score:400,politicalOutcome:'served',summary,
+    })});
+    assert.equal(response.status,201);
+  }
+  try {
+    await seedRun('Other Scenario','campaign',modelVersion,2468);
+    await seedRun('Other Model','cabinetcrisis','minister-care-9-workforce-productivity',2468);
+    await seedRun('Other Town','cabinetcrisis',modelVersion,1357);
+    const page=await browser.newPage({viewport:{width:390,height:844}});
+    await page.addInitScript(url=>{
+      localStorage.setItem('moc_muted_v2','true');
+      window.CAMMELOT_LEADERBOARD_URL=url;
+    },api);
+    await page.goto(`${allowedOrigin}/minister.html?debug=1#scn=cabinetcrisis&seed=2468`,{waitUntil:'domcontentloaded'});
+    await page.locator('#moc-opening-board small').waitFor();
+    await page.waitForFunction(()=>{
+      const note=document.querySelector('#moc-opening-board small');
+      return note&&note.textContent!=='Loading persisted results…';
+    });
+    assert.deepEqual(await page.locator('#moc-opening-board ol li strong').allTextContents(),['Other Town']);
+    await page.evaluate(()=>{
+      document.getElementById('play-overlay')?.remove();MoC.referencePolicy=true;MoC.paused=false;
+      for(let step=0;modelTick<75&&step<75;step++){
+        const before=modelTick;tick();
+        if(modelTick!==before+1)throw new Error(`Clock stopped at elapsed tick ${modelTick}; expected ${before+1}`);
+      }
+      if(modelTick!==75)throw new Error(`Clock did not reach elapsed tick 75; stopped at ${modelTick}`);
+      MoC.referencePolicy=false;
+      agents.filter(agent=>agent.hp>0&&!agent.moved&&(agent.behaviorState==='going_to_hospital'||agent.behaviorState==='emergency'||(agent.behaviorState==='queuing'&&agent.queueType==='hospital')))
+        .forEach(agent=>{agent.moved=true;agent.state='moved';});MoC.care.sync();
+      const reference=MoC.care.snapshot();
+      MoC.baseline={protocol:MoC.REFERENCE_PROTOCOL,scheduleId:MoC.environment.scheduleId,modelVersion:MoC.MODEL_VERSION,
+        seed:MoC.seed,scenario:MoC.S.scenario,snapshots:{75:reference}};
+      window._mocDebug.endTerm('served');
+      MoC.S._publishCompletedRun(true);
+    });
+    await page.waitForFunction(()=>document.querySelector('#moc-community-status')?.textContent.startsWith('Published as '));
+    await page.waitForFunction(()=>document.querySelectorAll('#moc-community-list .moc-community-entry').length===1);
+    const sameTown=await fetch(`${api}?scenario=cabinetcrisis&modelVersion=${modelVersion}&seed=2468`).then(response=>response.json());
+    assert.equal(sameTown.entries.length,1);
+    assert.equal(sameTown.entries[0].scenario,'cabinetcrisis');
+    assert.equal(sameTown.entries[0].modelVersion,modelVersion);
+    assert.equal(sameTown.entries[0].seed,2468);
+    assert.deepEqual(await page.locator('#moc-community-list .moc-community-entry strong').allTextContents(),[sameTown.entries[0].username]);
+    await page.close();
+  } finally {
+    await browser.close();
+    await new Promise(resolve=>leaderboard.close(resolve));
+    await new Promise(resolve=>site.close(resolve));
+    await rm(directory,{recursive:true,force:true});
+  }
+});
+
+test('Publication retries are single-flight and a published run only retries standings', { timeout: 60000 }, async () => {
+  const server=await startSiteServer(),browser=await launchBrowser(),page=await browser.newPage({viewport:{width:390,height:844}});
+  let postCount=0,getCount=0;
+  const submitted=[];
+  let releaseFirstPost;
+  const firstPostGate=new Promise(resolve=>{releaseFirstPost=resolve;});
+  let announceFirstPost;
+  const firstPostStarted=new Promise(resolve=>{announceFirstPost=resolve;});
+  await page.addInitScript(()=>localStorage.setItem('moc_muted_v2','true'));
+  await page.route('**/api/leaderboard**',async route=>{
+    if(route.request().method()==='POST'){
+      const payload=route.request().postDataJSON();submitted.push(payload);postCount++;
+      if(postCount===1){
+        announceFirstPost();
+        await firstPostGate;
+        return route.fulfill({status:400,contentType:'application/json',body:JSON.stringify({error:'username is invalid'})});
+      }
+      return route.fulfill({status:201,contentType:'application/json',body:JSON.stringify({
+        entry:{...payload,username:'Retry Minister'},rank:1,duplicate:false,
+      })});
+    }
+    getCount++;
+    if(getCount===2)return route.fulfill({status:400,contentType:'application/json',body:JSON.stringify({error:'modelVersion is invalid'})});
+    return route.fulfill({status:200,json:{entries:getCount===1?[]:[{
+      username:'Retry Minister',score:431,summary:{systemDeaths:2},
+    }]}});
+  });
+  try {
+    await page.goto(`http://127.0.0.1:${server.address().port}/minister.html?debug=1#scn=cabinetcrisis&seed=2468`,{waitUntil:'domcontentloaded'});
+    await page.locator('#moc-opening-board small').waitFor();
+    await page.evaluate(()=>{
+      document.getElementById('play-overlay')?.remove();MoC.referencePolicy=true;MoC.paused=false;
+      for(let step=0;modelTick<75&&step<75;step++){
+        const before=modelTick;tick();
+        if(modelTick!==before+1)throw new Error(`Clock stopped at elapsed tick ${modelTick}; expected ${before+1}`);
+      }
+      if(modelTick!==75)throw new Error(`Clock did not reach elapsed tick 75; stopped at ${modelTick}`);
+      MoC.referencePolicy=false;
+      agents.filter(agent=>agent.hp>0&&!agent.moved&&(agent.behaviorState==='going_to_hospital'||agent.behaviorState==='emergency'||(agent.behaviorState==='queuing'&&agent.queueType==='hospital')))
+        .forEach(agent=>{agent.moved=true;agent.state='moved';});MoC.care.sync();
+      const reference=MoC.care.snapshot();
+      MoC.baseline={protocol:MoC.REFERENCE_PROTOCOL,scheduleId:MoC.environment.scheduleId,modelVersion:MoC.MODEL_VERSION,
+        seed:MoC.seed,scenario:MoC.S.scenario,snapshots:{75:reference}};
+      window._mocDebug.endTerm('served');
+    });
+    await firstPostStarted;
+    await page.evaluate(()=>{MoC.S._publishCompletedRun(true);MoC.S._publishCompletedRun(true);});
+    releaseFirstPost();
+    await page.waitForFunction(()=>document.querySelector('#moc-community-status').textContent.includes('username is invalid'));
+    assert.match(await page.locator('#moc-community-status').innerText(),/Publication failed: Community service validation error \(HTTP 400\): username is invalid/);
+    assert.equal(postCount,1,'overlapping automatic/manual attempts must share one request');
+    await page.getByRole('button',{name:'Retry publication'}).click();
+    await page.waitForFunction(()=>document.querySelector('#moc-community-status').textContent.includes('Standings unavailable'));
+    assert.match(await page.locator('#moc-community-status').innerText(),/Published as Retry Minister · rank 1\..*Community service validation error \(HTTP 400\): modelVersion is invalid/);
+    assert.equal(postCount,2,'a retry after a rejected publication may safely re-submit');
+    assert.deepEqual(submitted[1],submitted[0],'retry submits the exact same run payload for server-side de-duplication');
+    await page.getByRole('button',{name:'Retry standings'}).click();
+    await page.waitForFunction(()=>document.querySelectorAll('#moc-community-list .moc-community-entry').length===1);
+    assert.match(await page.locator('#moc-community-status').innerText(),/Published as Retry Minister · rank 1\./);
+    assert.equal(postCount,2,'after publication succeeds, standings retry must not submit the run again');
+    assert.equal(getCount,3);
+  } finally {
+    releaseFirstPost();
+    await browser.close();
+    await new Promise(resolve=>server.close(resolve));
+  }
+});
+
 test('Town requests pause without a countdown', { timeout: 30000 }, async () => {
   const server=await startSiteServer(),browser=await launchBrowser(),page=await browser.newPage({viewport:{width:390,height:844}});
   await page.addInitScript(()=>localStorage.setItem('moc_muted_v2','true'));
   try {
-    await page.goto(`http://127.0.0.1:${server.address().port}/minister.html#scn=cabinetcrisis&seed=2468`,{waitUntil:'domcontentloaded'});
+    await page.goto(`http://127.0.0.1:${server.address().port}/minister.html?debug=1#scn=cabinetcrisis&seed=2468`,{waitUntil:'domcontentloaded'});
     await page.evaluate(()=>{
       document.getElementById('play-overlay')?.remove();window._mocGameStarted=true;
       modelTick=182;cycle=MoC.STARTUP_CYCLE+modelTick;MoC.S.quarter=4;MoC.paused=false;MoC.onTick(modelTick);
@@ -3018,7 +3316,7 @@ test('Minister cabinet crisis starts after phone walkthrough and reaches council
     });
     await page.locator('#moc-town-council').click();
     assert.match(await page.locator('.moc-quarter-trends').innerText(),/vs Q1/);
-    assert.match(await page.locator('.moc-gazette').innerText(),/The specialist list|first quarterly reading/i);
+    assert.match(await page.locator('.moc-gazette').innerText(),/The specialist list|first quarterly reading|No one is currently waiting/i);
     const fluReport=page.locator('details.moc-dilemma').filter({has:page.locator('summary',{hasText:'Flu wave'})}).first();
     assert.equal(await fluReport.getAttribute('open'),'');
     const frozen = await page.evaluate(() => {
@@ -3059,7 +3357,7 @@ test('Minister cabinet crisis starts after phone walkthrough and reaches council
     assert.equal(await page.locator('#moc-shop').count(),0,'funding must be on a separate screen');
     await page.locator('#moc-wiz-next').click();
     assert.ok(await page.locator('#moc-shop [data-buy]').count(), 'fund stage should offer interventions');
-    assert.match(await page.locator('.moc-priority-strip').innerText(),/PRIORITIES BEFORE YOU SPEND/);
+    assert.match(await page.locator('.moc-priority-strip').innerText(),/CURRENT STATE · tick/);
     const canvasBeforeHire = await page.locator('#cv').evaluate((canvas) => canvas.toDataURL());
     await page.getByRole('button', { name: /Buy €80K/ }).click();
     const hireEffect = await page.evaluate(() => window._mocWorldEffects?.hire);
@@ -3214,7 +3512,7 @@ test('Desktop play uses one uncluttered Ministry panel and explains immediate re
     const newspaper = page.locator('.moc-gazette').first();
     assert.equal(await newspaper.evaluate(element => getComputedStyle(element, '::before').content), '"CAMMELOT QUARTERLY"');
     const newspaperText = await newspaper.innerText();
-    assert.match(newspaperText, /Average specialist wait:/);
+    assert.match(newspaperText, /Current referral wait:/);
     assert.match(newspaperText, /Treatment starts:/);
     assert.doesNotMatch(newspaperText, /STUDYING THE DOSSIER|WHAT IS THE MINISTER WAITING FOR|YOU HAVE BEEN WARNED|WHITE COATS WALK OUT/);
   } finally { await browser.close(); await new Promise(resolve => server.close(resolve)); }
@@ -3251,4 +3549,195 @@ test('Android unmute starts media inside the user gesture', { timeout: 30000 }, 
     assert.equal(call.insideGesture, true, 'Android media playback must be called synchronously from the unmute tap');
     assert.equal(await page.evaluate(() => MoC.audio.isMuted()), false);
   } finally { await browser.close(); await new Promise(resolve => server.close(resolve)); }
+});
+// L04 — mobile controls. Expectations are documented in docs/MINISTER_MOBILE_CONTROLS.md.
+// This is emulation (Chromium mobile viewport + touch), not physical-device evidence.
+const L04_VIEWPORTS = [
+  { name: '375x667 portrait', width: 375, height: 667 },
+  { name: '390x844 portrait', width: 390, height: 844 },
+  { name: '412x915 portrait', width: 412, height: 915 },
+  { name: '667x375 short landscape', width: 667, height: 375 },
+  { name: '844x390 short landscape', width: 844, height: 390 },
+];
+const L04_MIN_TOUCH = 44;
+const L04_MIN_PIXEL_FONT = 10;
+
+async function l04SettleLayout(page) {
+  // Screen shake and modal entrance animations transform the layout transiently; measure the resting layout.
+  await page.waitForFunction(() => !document.body.classList.contains('moc-shake')
+    && document.getAnimations().every(animation => !animation.effect?.target?.matches?.('.moc-box') || animation.playState === 'finished'));
+}
+
+async function l04AssertNoHorizontalOverflow(page, viewport, label) {
+  await l04SettleLayout(page);
+  const overflow = await page.evaluate(() => {
+    const width = document.documentElement.clientWidth;
+    const clipped = [...document.querySelectorAll('#top .top-stats .ts, #top button, #site-nav a')].filter(element => {
+      const box = element.getBoundingClientRect();
+      const style = getComputedStyle(element);
+      return box.width > 0 && style.display !== 'none' && style.visibility !== 'hidden' && (box.right > width + 1 || box.left < -1);
+    }).map(element => element.id || element.className || element.textContent.trim().slice(0, 20));
+    const top = document.getElementById('top');
+    const scrollers = ['#top', '#panel', '#moc-council .moc-box', '#moc-endscreen .moc-box']
+      .map(selector => document.querySelector(selector))
+      .filter(element => element && element.getClientRects().length && element.scrollWidth > element.clientWidth + 1)
+      .map(element => element.id || element.className);
+    return { width, doc: document.documentElement.scrollWidth, body: document.body.scrollWidth, clipped, scrollers, topFits: top.scrollWidth <= top.clientWidth + 1 };
+  });
+  assert.ok(overflow.doc <= viewport.width && overflow.body <= viewport.width, `${label}: document must not scroll horizontally at ${viewport.name} (${JSON.stringify(overflow)})`);
+  assert.deepEqual(overflow.clipped, [], `${label}: header controls must stay inside the viewport at ${viewport.name}`);
+  assert.deepEqual(overflow.scrollers, [], `${label}: no panel or modal may scroll horizontally at ${viewport.name}`);
+}
+
+// Every matching visible control must be touch-sized, readable, inside the viewport and not covered once scrolled into view.
+async function l04AssertReachable(page, viewport, selector, label, { minCount = 1 } = {}) {
+  await l04AssertNoHorizontalOverflow(page, viewport, label);
+  const handles = await page.locator(selector).elementHandles();
+  const checked = [];
+  for (const handle of handles) {
+    const result = await handle.evaluate((element, minFont) => {
+      const style = getComputedStyle(element);
+      // checkVisibility also skips content inside closed <details>, which still reports layout boxes.
+      if (!element.getClientRects().length || style.visibility === 'hidden' || !element.checkVisibility({ checkVisibilityCSS: true, contentVisibilityAuto: true })) return null;
+      element.scrollIntoView({ block: 'center', inline: 'nearest' });
+      const box = element.getBoundingClientRect();
+      const hit = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
+      return {
+        // Layout size (not the transformed box) so modal entrance animations cannot shrink a control below the target.
+        name: (element.id || element.textContent || '').trim().slice(0, 30), height: Math.max(box.height, element.offsetHeight), width: Math.max(box.width, element.offsetWidth),
+        left: box.left, right: box.right, font: parseFloat(style.fontSize), minFont,
+        top: box.top, bottom: box.bottom, innerHeight, covered: !(hit && (element === hit || element.contains(hit) || hit.contains(element))),
+      };
+    }, L04_MIN_PIXEL_FONT);
+    if (!result) continue;
+    checked.push(result);
+    const where = `${label} "${result.name}" at ${viewport.name}: ${JSON.stringify(result)}`;
+    assert.ok(result.height >= L04_MIN_TOUCH - 0.1 && result.width >= L04_MIN_TOUCH - 0.1, `touch target below ${L04_MIN_TOUCH}px — ${where}`);
+    assert.ok(result.font >= L04_MIN_PIXEL_FONT, `label below ${L04_MIN_PIXEL_FONT}px — ${where}`);
+    assert.ok(result.left >= -0.5 && result.right <= viewport.width + 0.5, `control outside viewport width — ${where}`);
+    assert.ok(result.top >= -0.5 && result.bottom <= viewport.height + 0.5, `control not reachable by scrolling — ${where}`);
+    assert.equal(result.covered, false, `control covered by another element — ${where}`);
+  }
+  assert.ok(checked.length >= minCount, `${label}: expected at least ${minCount} visible control(s) for ${selector} at ${viewport.name}, found ${checked.length}`);
+}
+
+async function l04DisclosureState(page, selector) {
+  await page.waitForTimeout(250); // chevron rotation is a 120ms transition
+  return page.evaluate(selector => {
+    const details = document.querySelector(selector);
+    const summary = details.querySelector(':scope > summary');
+    const before = getComputedStyle(summary, '::before'), after = getComputedStyle(summary, '::after');
+    return { open: details.open, chevron: parseFloat(before.borderLeftWidth) >= 6 && before.content !== 'none', hint: after.content.replace(/"/g, '').split('/')[0].trim(), rotated: before.transform !== 'none' };
+  }, selector);
+}
+
+test('L04 mobile controls: touch-sized, discoverable disclosures and a reachable return to council at phone sizes', { timeout: 300000 }, async () => {
+  const server = await startSiteServer();
+  const browser = await launchBrowser();
+  try {
+    for (const viewport of L04_VIEWPORTS) {
+      const context = await browser.newContext({ viewport: { width: viewport.width, height: viewport.height }, isMobile: true, hasTouch: true });
+      // No production writes: leaderboard reads are stubbed, anything else on /api is refused.
+      await context.route('**/api/**', route => route.request().method() === 'GET' ? route.fulfill({ status: 200, json: { entries: [] } }) : route.fulfill({ status: 503, json: {} }));
+      const page = await context.newPage();
+      const pageErrors = [];
+      page.on('pageerror', error => pageErrors.push(String(error)));
+      await page.addInitScript(() => localStorage.setItem('moc_muted_v2', 'true'));
+      try {
+        await page.goto(`http://127.0.0.1:${server.address().port}/minister.html?debug=1#scn=cabinetcrisis&seed=2468`, { waitUntil: 'domcontentloaded' });
+        await page.locator('#moc-takeoffice').waitFor();
+        await l04AssertReachable(page, viewport, '#moc-generate-name, #moc-takeoffice', 'opening controls', { minCount: 2 });
+        await page.locator('#moc-takeoffice').tap();
+        for (let step = 0; step < 3; step++) await page.locator('#wc-next').tap();
+        await page.waitForFunction(() => window._mocGameStarted && document.getElementById('moc-town-watch'));
+        await page.locator('#moc-town-toggle').tap();
+        await page.waitForFunction(() => MoC.paused);
+
+        // Town view: toolbar, speed/sound and disclosure summaries.
+        await l04AssertReachable(page, viewport, '#cbar .cb', 'town toolbar', { minCount: 4 });
+        await l04AssertReachable(page, viewport, '#moc-ministry .spd button', 'speed and sound', { minCount: 4 });
+        await l04AssertReachable(page, viewport, '#moc-town-watch > summary, #moc-ministry-figures > summary', 'disclosure summaries', { minCount: 2 });
+        await l04AssertReachable(page, viewport, '#moc-town-toggle, [data-town-person]', 'follow controls', { minCount: 4 });
+
+        // Both disclosures show their state (chevron + SHOW/HIDE) and stay keyboard-operable.
+        for (const selector of ['#moc-town-watch', '#moc-ministry-figures']) {
+          const summary = page.locator(`${selector} > summary`);
+          await summary.scrollIntoViewIfNeeded();
+          const first = await l04DisclosureState(page, selector);
+          const hintFontSize = await summary.evaluate(element => parseFloat(getComputedStyle(element, '::after').fontSize));
+          assert.ok(hintFontSize >= 10, `${selector} SHOW/HIDE label must be at least 10px at ${viewport.name}`);
+          assert.equal(first.chevron, true, `${selector} must draw an expand chevron at ${viewport.name}`);
+          assert.equal(first.hint, first.open ? 'HIDE' : 'SHOW', `${selector} hint must match state at ${viewport.name}`);
+          await summary.focus();
+          await page.keyboard.press('Enter');
+          const second = await l04DisclosureState(page, selector);
+          assert.equal(second.open, !first.open, `${selector} must toggle with the keyboard`);
+          assert.equal(second.hint, second.open ? 'HIDE' : 'SHOW');
+          assert.notEqual(second.rotated, first.rotated, `${selector} chevron must change with state`);
+          await page.keyboard.press('Space');
+          assert.equal((await l04DisclosureState(page, selector)).open, first.open, `${selector} must toggle back with Space`);
+        }
+        await page.evaluate(() => { document.getElementById('moc-town-watch').open = true; });
+        await l04AssertReachable(page, viewport, '#moc-town-toggle', 'pause control', { minCount: 1 });
+
+        // Council: banner, wizard, funding.
+        await page.evaluate(() => { document.getElementById('play-overlay')?.remove(); window._mocForceCouncilReady(2); });
+        await page.locator('#moc-council-ready-banner').waitFor();
+        await l04AssertReachable(page, viewport, '#moc-council-ready', 'council ready banner');
+        await page.locator('#moc-council-ready').tap();
+        await page.locator('#moc-wiz-next').waitFor();
+        await l04AssertReachable(page, viewport, '#moc-inspect-town, #moc-wiz-next, #moc-council .moc-opt', 'council briefing');
+
+        // Inspecting hides the council: the way back must be obvious even if the people list is collapsed.
+        await page.locator('#moc-inspect-town').tap();
+        assert.equal(await page.locator('#moc-council').isVisible(), false);
+        await l04AssertReachable(page, viewport, '#moc-council-return', 'inspect return banner');
+        const returnBannerFontSize = await page.locator('#moc-council-ready-banner strong').evaluate(element => parseFloat(getComputedStyle(element).fontSize));
+        assert.ok(returnBannerFontSize >= 10, `return-to-council banner text must be at least 10px at ${viewport.name}`);
+        assert.equal(await page.locator('#moc-town-watch').evaluate(element => element.open), true, 'inspecting must reveal the Return to council control');
+        await page.locator('#moc-town-watch > summary').tap();
+        assert.equal(await page.locator('#moc-town-council').isVisible(), false, 'collapsed list hides its own return button');
+        await l04AssertReachable(page, viewport, '#moc-council-return', 'return banner with collapsed people list');
+        // Opening a dossier hides the people list; the return banner and the dossier back control must stay usable.
+        await page.evaluate(() => selectAgent(agents.find(agent => agent.type === 'patient' || agent.type === 'citizen')));
+        assert.equal(await page.locator('#panel').getAttribute('data-moc-detail'), 'true');
+        await page.locator('#agent-detail .panel-back').waitFor();
+        await l04AssertReachable(page, viewport, '#moc-council-return, #agent-detail .panel-back', 'dossier return paths', { minCount: 2 });
+        await page.locator('#agent-detail .panel-back').focus();
+        await page.keyboard.press('Enter');
+        assert.equal(await page.locator('#panel').getAttribute('data-moc-detail'), 'false', 'dossier back control must work from the keyboard');
+        await page.locator('#moc-council-return').tap();
+        await page.locator('#moc-wiz-next').waitFor();
+        assert.equal(await page.locator('#moc-council').isVisible(), true, 'return control must reopen the council');
+        assert.equal(await page.locator('#moc-council-ready-banner').count(), 0, 'return banner must go away with the council back');
+
+        for (let guard = 0; guard < 6 && !(await page.locator('#moc-shop').count()); guard++) {
+          if (!(await page.locator('#moc-laws').count())) {
+            const choices = page.locator('#moc-council .moc-opt:not(:disabled)');
+            if (await choices.count()) await choices.first().tap();
+            await l04AssertReachable(page, viewport, '#moc-council .moc-opt, #moc-wiz-next', 'council decision');
+          } else {
+            await l04AssertReachable(page, viewport, '#moc-laws [data-law], #moc-wiz-next, #moc-wiz-back', 'council law', { minCount: 3 });
+          }
+          await page.locator('#moc-wiz-next').tap();
+        }
+        await l04AssertReachable(page, viewport, '#moc-shop [data-buy], #moc-wiz-next, #moc-wiz-back', 'council funding', { minCount: 3 });
+        await page.locator('#moc-wiz-next').tap();
+        await page.waitForFunction(() => !document.getElementById('moc-council'));
+        await l04AssertReachable(page, viewport, '#cbar .cb, #moc-ministry .spd button', 'town after council', { minCount: 8 });
+
+        // Ending.
+        await page.evaluate(() => { MoC.referencePolicy = false; window._mocDebug.endTerm('served'); });
+        await page.locator('#moc-endscreen').waitFor();
+        await page.waitForFunction(() => document.querySelector('#moc-endscreen .moc-box').getAnimations().every(animation => animation.playState === 'finished'));
+        await l04AssertReachable(page, viewport, '#moc-endscreen button, #moc-endscreen summary', 'ending controls');
+        assert.deepEqual(pageErrors, [], `no page errors at ${viewport.name}`);
+      } finally {
+        await context.close();
+      }
+    }
+  } finally {
+    await browser.close();
+    await new Promise(resolve => server.close(resolve));
+  }
 });
