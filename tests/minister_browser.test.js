@@ -967,6 +967,48 @@ test('F08 complete export includes a mid-quarter resident request and its cash c
   });
 });
 
+test('Minister waits for executable identity before starting and reports verification failure', {timeout:30000}, async () => {
+  const server=await startSiteServer(),browser=await launchBrowser(),page=await browser.newPage();
+  try {
+    let moduleRequests=0;
+    await page.route('**/minister-model-core.js',async route=>{
+      moduleRequests++;
+      if(moduleRequests===2) await new Promise(resolve=>setTimeout(resolve,500));
+      await route.continue();
+    });
+    const url=`http://127.0.0.1:${server.address().port}/minister.html#scn=cabinetcrisis&seed=2468`;
+    await page.goto(url,{waitUntil:'domcontentloaded'});
+    await page.evaluate(()=>launchSimulation());
+    assert.equal(moduleRequests,2,'module script and executable identity fetch should both be requested');
+    assert.deepEqual(await page.evaluate(()=>({
+      tick:modelTick,
+      started:!!window._mocGameStarted,
+      record:MoC.record.export(),
+    })),{tick:0,started:false,record:null});
+    await page.waitForFunction(()=>window._mocGameStarted && MoC.record.export()!==null);
+    assert.ok(await page.evaluate(()=>modelTick>=10),'verified startup should pre-tick only after recording begins');
+  } finally {await browser.close();await new Promise(resolve=>server.close(resolve));}
+
+  const failedServer=await startSiteServer(),failedBrowser=await launchBrowser(),failedPage=await failedBrowser.newPage();
+  try {
+    let moduleRequests=0;
+    await failedPage.route('**/minister-model-core.js',async route=>{
+      moduleRequests++;
+      if(moduleRequests===2) return route.abort();
+      await route.continue();
+    });
+    await failedPage.goto(`http://127.0.0.1:${failedServer.address().port}/minister.html#scn=cabinetcrisis&seed=2468`,
+      {waitUntil:'domcontentloaded'});
+    await failedPage.evaluate(()=>launchSimulation());
+    await failedPage.locator('#minister-model-error').waitFor({state:'visible'});
+    assert.deepEqual(await failedPage.evaluate(()=>({
+      tick:modelTick,
+      started:!!window._mocGameStarted,
+      timer:!!autoTimer,
+    })),{tick:0,started:false,timer:false});
+  } finally {await failedBrowser.close();await new Promise(resolve=>failedServer.close(resolve));}
+});
+
 test('F08 real short and long scenario commands replay under distinct render/pause schedules', {timeout:300000}, async t => {
   const server=await startSiteServer(),browser=await launchBrowser();
   const writes=[];

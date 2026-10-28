@@ -1421,6 +1421,24 @@ body:has(.moc-mandate) #moc-objective{display:none!important}
   </div>
 </div>
 
+<div id="minister-model-error" role="alert" style="display:none;position:fixed;inset:12px 12px auto;z-index:3000;padding:16px;background:#5b1717;color:#fff;border:2px solid #ffb300;font:600 14px/1.5 sans-serif;text-align:center;">
+  The Minister simulation could not verify its model. Reload the page or try again later.
+</div>
+<script>
+window.showMinisterModelError = function(message) {
+  var notice = document.getElementById('minister-model-error');
+  if (notice) {
+    notice.textContent = message || 'The Minister simulation could not verify its model. Reload the page or try again later.';
+    notice.style.display = 'block';
+  }
+};
+window.addEventListener('error', function(event) {
+  var target = event.target;
+  if (target instanceof HTMLScriptElement && new URL(target.src).pathname.endsWith('/minister-model-core.js')) {
+    window.showMinisterModelError();
+  }
+}, true);
+</script>
 <script src="minister-model-core.js"></script>
 <script>
 // ════════════════════════════════════════
@@ -10898,29 +10916,38 @@ window.addEventListener('beforeunload', function(event) {
 });
 
 // === Launch simulation (called when walkthrough finishes) ===
+let simulationStarting=false;
 function launchSimulation() {
-  if (window._mocGameStarted || autoTimer || MoC.S.over || MoC.isBlocked?.()) return;
+  if (window._mocGameStarted || autoTimer || simulationStarting || MoC.S.over || MoC.isBlocked?.()) return;
   if (!MoC.scenario && !MoC.IS_BASELINE) return; // MoC: waiting for scenario pick
-  MoC.record?.begin();
-  MoC.paused = false;
-  window._mocGameStarted = true;
-  document.body.classList.remove('moc-walkthrough-active');
-  console.log('Cammelot: launching simulation!');
-  // Pre-tick to populate the world
-  try { for(var i=0;i<10;i++) tick(); } catch(e) {}
-  try { showTownFeed(); } catch(e) {}
-  // Start the tick loop
-  if (!MoC.paused && !MoC.S.over) autoTimer = setInterval(tick, Math.round(350 / ((MoC.S && MoC.S._speed) || 1)));
-  if (MoC.refreshTown) MoC.refreshTown();
-  var pb = document.getElementById('btn-play');
-  if (pb) pb.textContent = '⏸ Pause';
-  // Remove walkthrough card if still present
-  var wc = document.getElementById('welcome-card');
-  if (wc) wc.remove();
-  // Remove any leftover overlays
-  ['walkthrough-overlay','play-overlay','wizard-overlay'].forEach(function(id) {
-    var el = document.getElementById(id);
-    if (el) el.remove();
+  simulationStarting=true;
+  Promise.resolve(MoC.record?.ready).then(function() {
+    simulationStarting=false;
+    if (window._mocGameStarted || autoTimer || MoC.S.over || MoC.isBlocked?.()) return;
+    MoC.record?.begin();
+    MoC.paused = false;
+    window._mocGameStarted = true;
+    document.body.classList.remove('moc-walkthrough-active');
+    console.log('Cammelot: launching simulation!');
+    // Pre-tick to populate the world
+    try { for(var i=0;i<10;i++) tick(); } catch(e) {}
+    try { showTownFeed(); } catch(e) {}
+    // Start the tick loop
+    if (!MoC.paused && !MoC.S.over) autoTimer = setInterval(tick, Math.round(350 / ((MoC.S && MoC.S._speed) || 1)));
+    if (MoC.refreshTown) MoC.refreshTown();
+    var pb = document.getElementById('btn-play');
+    if (pb) pb.textContent = '⏸ Pause';
+    // Remove walkthrough card if still present
+    var wc = document.getElementById('welcome-card');
+    if (wc) wc.remove();
+    // Remove any leftover overlays
+    ['walkthrough-overlay','play-overlay','wizard-overlay'].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.remove();
+    });
+  }).catch(function(error) {
+    simulationStarting=false;
+    window.showMinisterModelError(error?.message);
   });
 }
 
@@ -17205,6 +17232,9 @@ async function initLLMSubsystem() {
     modelExecutableId=identity.modelExecutableId;
     replayExecutableId=identity.replayExecutableId;
     return identity;
+  }).catch(error=>{
+    window.showMinisterModelError(error?.message);
+    throw error;
   });
   const executableId=()=>replayExecutableId;
   const copy=value=>JSON.parse(JSON.stringify(value));
