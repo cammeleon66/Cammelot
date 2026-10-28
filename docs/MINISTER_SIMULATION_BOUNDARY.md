@@ -75,9 +75,10 @@ R01 referral cohort or its five strategies.
    treatment, withdrawal/refusal, deterioration and still-waiting distinct as
    the protocol specifies; the current Minister episode labels are not a
    substitute for that R01 ledger.
-3. **Reference snapshot.** The reference policy observes the same initial run
-   and issues no discretionary commands. At the requested tick, the driver
-   retains `snapshot()` with model, scenario, seed, tick, protocol and schedule
+3. **Reference snapshot.** A separate reference run is initialized from the
+   same frozen inputs, seed and exogenous schedule; its reference policy issues
+   no discretionary commands. At the requested tick, the driver retains
+   `snapshot()` with model, scenario, seed, tick, protocol and schedule
    identity. A treatment arm is compared only with the snapshot having matching
    identities and the same exact tick; absent or mismatched data is unavailable,
    not a benefit. The browser’s paired-reference display follows the same rule.
