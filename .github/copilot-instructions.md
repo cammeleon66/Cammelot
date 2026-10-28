@@ -80,9 +80,16 @@ A single missing variable declaration (e.g., `screenshotMode`) can kill `render(
 
 - `origin` = `msft-common-demos/Cammelot` (internal Microsoft)
 - `personal` = `cammeleon66/Cammelot` (public GitHub Pages)
-- Branch: `feature/agentic-overhaul`
-- GitHub Pages deploys from `master` on `personal` — **merge to master and push** to deploy
-- Personal remote needs `--force-with-lease` for pushes
+- `master` is the protected development branch: all work lands via PR to `master` with the required **Validate** check passing
+- `feature/agentic-overhaul` is the publishing branch (repository default); merging `master` into it triggers the gated GitHub Pages deploy
+- Never force-push or rewrite history on either branch
+
+### Copilot Cloud Agent Rules
+
+- Work on exactly one backlog issue per PR; open the PR against `master` with `Fixes #<issue>`
+- Run `npm test` before finishing; Playwright Chromium is preinstalled by `copilot-setup-steps.yml`
+- Do not push to, merge into or deploy `feature/agentic-overhaul`; publication is done by the maintainer
+- Read `docs/MINISTER_MODEL_CONTRACT.md` and `docs/MINISTER_CLAIM_SOURCES.md` before changing `site/minister.html`; bump the model version for any semantic change
 
 ### Visual Identity
 
