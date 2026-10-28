@@ -340,6 +340,6 @@ Run before a release that touches overlays, using desktop Chrome + NVDA or JAWS,
 
 - The Sources/Methodology button, QA panel, heat map, timeline and other top-bar tools are hidden in the Minister shell and are intentionally unchanged.
 - Other legacy overlays (gazette, moments, welcome walkthrough) are outside this scope; they are not given the dialog treatment.
-- The Minister profile is modal but, outside this scope, not Escape-dismissible; use *Back to work*.
+- The Minister profile is Escape-dismissible; use *Back to work* or press Escape.
 - The canvas map has no text alternative beyond the *People to follow* panel and the town status messages.
 - Screen-reader output has not been verified on real devices; this checklist is the gate.

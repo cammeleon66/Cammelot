@@ -3551,10 +3551,25 @@ test('Android unmute starts media inside the user gesture', { timeout: 30000 }, 
   } finally { await browser.close(); await new Promise(resolve => server.close(resolve)); }
 });
 // ── Issue #12: keyboard, focus and screen-reader behaviour of Minister overlays ──
-async function withAccessibleGame(run, query = '', scenario = 'cabinetcrisis') {
+async function withAccessibleGame(run, query = '', scenario = 'cabinetcrisis', trackProfileObservers = false) {
   const server = await startSiteServer(), browser = await launchBrowser();
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
-  await page.addInitScript(() => localStorage.setItem('moc_muted_v2', 'true'));
+  await page.addInitScript(trackProfileObservers => {
+    localStorage.setItem('moc_muted_v2', 'true');
+    if (!trackProfileObservers) return;
+    const NativeMutationObserver = MutationObserver;
+    window.__mocProfileObservers = [];
+    window.MutationObserver = class extends NativeMutationObserver {
+      observe(target, options) {
+        if (target?.id === 'moc-minprofile') window.__mocProfileObservers.push(this);
+        return super.observe(target, options);
+      }
+      disconnect() {
+        if (window.__mocProfileObservers.includes(this)) this.profileDisconnected = true;
+        return super.disconnect();
+      }
+    };
+  }, trackProfileObservers);
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.route('**/*', route => {
@@ -3648,9 +3663,10 @@ test('Issue 12: council is keyboard operable, Inspect town keeps choices, and ex
     const council = page.locator('#moc-council');
     await council.waitFor();
     const dialog = '#moc-council .moc-box';
+    await page.waitForFunction(() => document.querySelector('#moc-council .moc-box')?.contains(document.activeElement));
     const meta = await page.locator(dialog).evaluate(el => ({
       role: el.getAttribute('role'), modal: el.getAttribute('aria-modal'),
-      name: document.getElementById(el.getAttribute('aria-labelledby'))?.textContent, focused: document.activeElement === el }));
+      name: document.getElementById(el.getAttribute('aria-labelledby'))?.textContent, focused: el.contains(document.activeElement) }));
     assert.equal(meta.role, 'dialog'); assert.equal(meta.modal, 'true');
     assert.match(meta.name, /Quarterly Council/);
     assert.equal(meta.focused, true);
@@ -3659,6 +3675,17 @@ test('Issue 12: council is keyboard operable, Inspect town keeps choices, and ex
     await assertFocusTrapped(page, '#moc-council');
     await page.keyboard.press('Escape');
     assert.equal(await council.count(), 1, 'Escape never closes the council');
+
+    await page.locator('#moc-wiz-next').focus();
+    await page.keyboard.press('Enter');
+    assert.equal(await activeId(page), 'moc-wiz-body');
+    assert.match(await page.locator('#moc-wiz-body').getAttribute('aria-label'), /^Step 2 of [34]: /);
+    await waitForAnnouncement(page, /Step 2 of [34]: /);
+    await page.locator('#moc-wiz-back').focus();
+    await page.keyboard.press('Enter');
+    assert.equal(await activeId(page), 'moc-wiz-body');
+    assert.match(await page.locator('#moc-wiz-body').getAttribute('aria-label'), /^Step 1 of [34]: Briefing$/);
+    await waitForAnnouncement(page, /Step 1 of [34]: Briefing/);
 
     // Inspect town hides the council without discarding it, and hands the keyboard to the town.
     await page.locator('#moc-inspect-town').focus();
@@ -3719,6 +3746,7 @@ test('Issue 12: confidence vote and year-end results are mandatory modal states'
     assert.equal(await vote.count(), 1, 'Escape cannot dodge the vote');
     assert.equal(await page.locator('[data-vote]:enabled').count(), 3, 'all vote choices remain');
     const budget = await page.evaluate(() => MoC.S.budget);
+    await page.locator('[data-vote="sacrifice"]').evaluate(button => button.replaceChildren());
     await page.locator('[data-vote="sacrifice"]').focus();
     await page.keyboard.press('Enter');
     assert.equal(await vote.count(), 0);
@@ -3761,6 +3789,21 @@ test('Issue 12: end of term is a mandatory modal with an assertive announcement'
   }, '?debug=1');
 });
 
+test('Issue 12: Minister profile dismisses with Escape and disconnects its observers', { timeout: 60000 }, async () => {
+  await withAccessibleGame(async page => {
+    await page.evaluate(() => document.getElementById('moc-portrait').click());
+    const profile = page.locator('#moc-minprofile');
+    await profile.waitFor();
+    assert.equal(await profile.getAttribute('data-moc-dismissible'), 'true');
+    assert.equal(await profile.locator('.moc-box').getAttribute('role'), 'dialog');
+    assert.equal(await profile.locator('#moc-minclose').count(), 1);
+    await page.keyboard.press('Escape');
+    assert.equal(await profile.count(), 0);
+    assert.equal(await page.evaluate(() => MoC.paused), false, 'Escape follows the Back to work close behavior');
+    assert.deepEqual(await page.evaluate(() => window.__mocProfileObservers.map(observer => observer.profileDisconnected)), [true, true]);
+  }, '?debug=1', 'cabinetcrisis', true);
+});
+
 test('Issue 12: Stats and Methodology are dismissible dialogs that return focus', { timeout: 60000 }, async () => {
   await withAccessibleGame(async page => {
     const clock = await page.evaluate(() => ({ version: MoC.MODEL_VERSION, seed: MoC.seed }));
@@ -3799,6 +3842,7 @@ test('Issue 12: Stats and Methodology are dismissible dialogs that return focus'
     assert.equal(await activeId(page), 'btn-stats');
     assert.deepEqual(await page.evaluate(() => ({ version: MoC.MODEL_VERSION, seed: MoC.seed })), clock, 'overlays do not alter model identity');
   });
+});
 // L04 — mobile controls. Expectations are documented in docs/MINISTER_MOBILE_CONTROLS.md.
 // This is emulation (Chromium mobile viewport + touch), not physical-device evidence.
 const L04_VIEWPORTS = [

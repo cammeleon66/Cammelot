@@ -14975,15 +14975,13 @@ async function initLLMSubsystem() {
       else if(needsDecision&&n===1)renderStep2();
       else if(n===(needsDecision?2:1))renderStep3();
       else renderStep4();
-      if(n>0){
-        // The previous Next/Back button was replaced: move focus to the new step so it is announced.
-        const wb=document.getElementById('moc-wiz-body');
-        if(wb){
-          wb.setAttribute('role','group'); wb.setAttribute('aria-label','Step '+(n+1)+' of '+STEP_LABELS.length+': '+STEP_LABELS[n]);
-          wb.tabIndex=-1; wb.focus({preventScroll:true}); wb.scrollTop=0;
-        }
-        window.MoCA11y?.announce('Step '+(n+1)+' of '+STEP_LABELS.length+': '+STEP_LABELS[n]+'.');
+      // The previous Next/Back button was replaced: move focus to and announce the new step.
+      const wb=document.getElementById('moc-wiz-body');
+      if(wb){
+        wb.setAttribute('role','group'); wb.setAttribute('aria-label','Step '+(n+1)+' of '+STEP_LABELS.length+': '+STEP_LABELS[n]);
+        wb.tabIndex=-1; wb.focus({preventScroll:true}); wb.scrollTop=0;
       }
+      window.MoCA11y?.announce('Step '+(n+1)+' of '+STEP_LABELS.length+': '+STEP_LABELS[n]+'.');
     }
 
     function markDecided(btn){
@@ -16281,7 +16279,7 @@ async function initLLMSubsystem() {
     const sd = systemDeaths();
     const qq = GS.quarter || 1;
     const ov = document.createElement('div');
-    ov.className = 'moc-overlay'; ov.id = 'moc-minprofile';
+    ov.className = 'moc-overlay'; ov.id = 'moc-minprofile'; ov.dataset.mocDismissible = 'true';
     ov.innerHTML = '<div class="moc-box" style="max-width:440px">'
       + '<h2>\ud83c\udfdb Minister ' + MINISTER.name + '</h2>'
       + '<div class="moc-sub">Appointed to avert the zorginfarct of Cammelot. Term #' + MoC.seed + ', currently Q' + qq + ' of ' + MoC.TOTAL_QUARTERS + '.</div>'
@@ -16740,7 +16738,7 @@ async function initLLMSubsystem() {
           voted=true;
           const v = b.getAttribute('data-vote');
           ov.remove();
-          window.MoCA11y?.announce('Confidence vote: ' + b.firstChild.textContent.trim() + ' chosen.');
+          window.MoCA11y?.announce('Confidence vote: ' + (b.firstChild ? b.firstChild.textContent.trim() : '') + ' chosen.');
           if (v === 'promise') {
             adjustStakeholders(0, 0, 10);
             GS.delayed.push({ atQ: GS.quarter + 3, fx:{trustP:-15}, label:'Parliament remembers your moonshot promises. They were not kept.' });
@@ -17619,7 +17617,7 @@ async function initLLMSubsystem() {
     const insideModal = active && stack.some(function(r){ return r.el.contains(active); });
     let opener = active && active !== document.body && !insideModal ? active : null;
     if (!opener && lastTrigger && lastTrigger.isConnected && !insideModal) opener = lastTrigger;
-    const record = { el: el, opener: opener, name: 'Dialog', observer: null };
+    const record = { el: el, opener: opener, name: 'Dialog', observer: null, attributeObserver: null };
     stack.push(record);
     const dialog = dialogOf(el);
     dialog.setAttribute('role', 'dialog');
@@ -17632,7 +17630,8 @@ async function initLLMSubsystem() {
       rescueFocus(record);
     });
     record.observer.observe(el, { childList: true, subtree: true });
-    new MutationObserver(function(){ sync(); }).observe(el, { attributes: true, attributeFilter: ['style', 'hidden', 'class'] });
+    record.attributeObserver = new MutationObserver(function(){ sync(); });
+    record.attributeObserver.observe(el, { attributes: true, attributeFilter: ['style', 'hidden', 'class'] });
     applyInert();
     if (!dialog.contains(document.activeElement)) focusDialog(el);
   }
@@ -17663,6 +17662,7 @@ async function initLLMSubsystem() {
       if (record.el.isConnected) continue;
       stack.splice(i, 1);
       record.observer && record.observer.disconnect();
+      record.attributeObserver && record.attributeObserver.disconnect();
       if (record.el.dataset.mocDismissible === 'true') announce(record.name.replace(/^[^\p{L}\p{N}]+/u, '') + ' closed.');
       applyInert();
       const top = topRecord();
@@ -17682,7 +17682,7 @@ async function initLLMSubsystem() {
   }
 
   function dismiss(record){
-    const close = record.el.querySelector('[data-moc-close],#stats-close-btn,#methodology-close-btn');
+    const close = record.el.querySelector('[data-moc-close],#stats-close-btn,#methodology-close-btn,#moc-minclose');
     if (close) close.click(); else record.el.remove();
     reconcile();
   }
