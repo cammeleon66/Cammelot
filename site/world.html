@@ -9454,7 +9454,7 @@ function updateUI(){
 
 // ═══ SPRINT 17.1: LOADING SCREEN CONTROLLER ═══
 const LOAD_MESSAGES=['Spawning citizens...','Calibrating diseases...','Building town...','Training GPs...','Stocking pharmacies...','Filing paperwork...','Configuring waiting rooms...','Scheduling appointments...'];
-const LOAD_FACTS=['Did you know? 30% of your GP\'s time goes to paperwork, not you.','The Netherlands has ~12,700 GPs for 17.8 million people.','Average wait for a specialist referral: 6–12 weeks.','Dutch healthcare costs €110 billion per year (2024).','A GP sees ~40 patients per day on average.','Mental health waiting lists exceed 20 weeks in many regions.','1 in 5 Dutch citizens has a chronic condition.','Burnout affects ~25% of healthcare workers in NL.'];
+const LOAD_FACTS=['Model assumption: 30% of simulated GP time goes to administration.','Commonly cited, not verified here: ~12,700 GPs for 17.8 million people.','Model rule: specialist waits are scored against an authored 12-week threshold.','Commonly cited, not verified here: Dutch healthcare spending of ~€110 billion per year.','Commonly cited, not verified here: a GP sees ~40 patients per day.','Commonly cited, not verified here: some mental health waiting lists exceed 20 weeks.','Model note: residents are synthetic; conditions follow configured prevalence assumptions.','Commonly cited, not verified here: burnout affects ~25% of healthcare workers.'];
 let loadMsgIdx=0,loadFactIdx=0,loadMsgTimer=null;
 function startLoadingAnimation(){
   const p=document.getElementById('load-progress'),f=document.getElementById('load-fact');
@@ -9759,7 +9759,7 @@ const LABEL_TOOLTIPS = {
   'Deaths': 'Model-classified system and background-hazard deaths, not proven clinical causes or preventability.',
   'Ghosts': '💀 Deaths: Citizens who have died. Hover the Stats panel to see system vs natural breakdown.',
   'Avg Wait': 'Modeled specialist wait, not a measured national waiting time or a universal legal deadline.',
-  'Wait': '⏳ Average Wait Time: How long citizens wait for specialist care. The Treeknorm says under 4 weeks.',
+  'Wait': '⏳ Average Wait Time: How long citizens wait for specialist care. NZa Treeknorm (elective specialist care): 4 weeks to outpatient/diagnostics, 7 weeks to treatment. The 12-week threshold used in this game is an authored model rule.',
   'Capacity': '⚙ Effective Capacity: How much of GP time actually goes to patients. The rest is admin work, sick leave, etc.',
   'C_eff': '⚙ Effective Capacity: Effective capacity = Total × (1 - Admin - Sick) × AI factor.'
 };
@@ -9852,7 +9852,7 @@ const WIZARD_STEPS = [
   },
   {
     title: "IST vs SOLL",
-    text: "IST shows today's crisis: 30% admin burden, 12-week waits, 8% sick leave. SOLL shows what AI-native healthcare could look like: <5% admin, <4-week waits. Toggle between them and watch the difference.",
+    text: "IST is the model's crisis setting: an assumed 30% admin burden, an authored 12-week wait threshold and 8% sick leave. SOLL is a speculative AI-native scenario: <5% admin, <4-week waits. Toggle between them and watch the difference.",
     highlight: 'toggle'
   }
 ];
@@ -11210,7 +11210,7 @@ document.getElementById('btn-tours').addEventListener('click', function() {
     {
       icon: "\ud83c\udff0",
       title: "Welcome to Cammelot",
-      text: "A simulated Dutch town with 45 AI citizens, 3 GP practices, and 1 hospital. Everything runs on real CBS/RIVM/NZa data.",
+      text: "A simulated Dutch town with 45 AI citizens, 3 GP practices, and 1 hospital. Some inputs draw on CBS/RIVM/NZa figures; residents are synthetic and many parameters are model assumptions.",
       highlight: null
     },
     {

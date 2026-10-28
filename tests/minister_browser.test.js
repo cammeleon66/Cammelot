@@ -53,7 +53,7 @@ test('Public entry pages distinguish evidence, synthetic residents and legacy pr
   for (const file of ['index.html', 'about.html', 'ch0.html', 'ch0-alternative.html', 'ch1.html', 'ch2.html', 'ch3.html', 'world.html', 'minister.html']) {
     const html = readFileSync(join(SITE_ROOT, file), 'utf8');
     assert.match(html, /(?:id="evidence"|href="index\.html#evidence")/, `${file} must link its evidence boundary`);
-    assert.doesNotMatch(html, /strictly factual|5,000 agents \(CBS scaled\)|first preventable death/i, `${file} must not reintroduce unsupported claims`);
+    assert.doesNotMatch(html, /strictly factual|5,000 agents \(CBS scaled\)|first preventable death|Real Dutch data|runs on real CBS|Treeknorm says under 4 weeks|today's crisis/i, `${file} must not reintroduce unsupported claims`);
     if (/^(?:ch[0-3]|world)/.test(file)) {
       assert.match(html, /legacy World/i, `${file} must identify its legacy executable`);
     }
