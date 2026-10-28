@@ -265,6 +265,10 @@ function endpointRecord(episode) {
   const treatment = episode.trace.find(event => event.kind === 'treatment_started');
   const treatmentTick = treatment?.tick ?? null;
   const waitAfterEntryTicks = treatmentTick === null ? null : treatmentTick - episode.arrivalTick;
+  const terminalEvent = episode.trace.find(event => ['treatment_started', 'died_waiting', 'refuse',
+    'relocate', 'other_exit'].includes(event.kind));
+  const observedEndTick = terminalEvent?.tick ?? R01_HORIZON_TICKS;
+  const observedWaitThroughExitTicks = episode.startingWaitTicks + observedEndTick - episode.arrivalTick;
   return {
     id: episode.id,
     age: episode.age,
@@ -276,6 +280,9 @@ function endpointRecord(episode) {
     criticalAt: episode.criticalAt,
     treatmentTick,
     waitAfterEntryTicks,
+    totalReferralToTreatmentTicks: treatmentTick === null
+      ? null : episode.startingWaitTicks + waitAfterEntryTicks,
+    observedWaitThroughExitTicks,
     timely84Days: waitAfterEntryTicks !== null && waitAfterEntryTicks <= R01_TIMELY_TICKS,
     success180Days: waitAfterEntryTicks !== null && waitAfterEntryTicks <= R01_SUCCESS_180D_TICKS
       && !episode.everCritical,
@@ -285,6 +292,11 @@ function endpointRecord(episode) {
 function outcomeFromEpisodes(episodes, lifecycle) {
   const denominator = episodes.length;
   const count = predicate => episodes.filter(predicate).length;
+  const treated = episodes.filter(episode => episode.treatmentTick !== null);
+  const open = episodes.filter(episode => ['handoff_pending', 'information_required', 'specialist_waiting']
+    .includes(episode.finalStage));
+  const completedWaits = treated.map(episode => episode.totalReferralToTreatmentTicks);
+  const observedWaits = episodes.map(episode => episode.observedWaitThroughExitTicks);
   return {
     denominator,
     timely84Days: count(episode => episode.timely84Days),
@@ -296,6 +308,16 @@ function outcomeFromEpisodes(episodes, lifecycle) {
     deathsBeforeTreatment: count(episode => episode.finalStage === 'died_waiting'),
     stillWaiting: count(episode => ['handoff_pending', 'information_required', 'specialist_waiting']
       .includes(episode.finalStage)),
+    completedTotalWait: {
+      count: completedWaits.length,
+      meanTicks: completedWaits.length ? round(mean(completedWaits)) : null,
+      longestTicks: completedWaits.length ? Math.max(...completedWaits) : null,
+    },
+    waitObservedThroughExit: {
+      meanTicks: round(mean(observedWaits)),
+      longestTicks: observedWaits.length ? Math.max(...observedWaits) : null,
+      longestOpenWaitTicks: open.length ? Math.max(...open.map(episode => episode.observedWaitThroughExitTicks)) : null,
+    },
     byAgeBand: Object.fromEntries(['65-74', '75-84'].map(ageBand => {
       const band = episodes.filter(episode => episode.ageBand === ageBand);
       return [ageBand, {
@@ -482,6 +504,7 @@ export function executeRun({ analysis, seed, arm, dataset, horizonTicks = R01_HO
       sha256: sha256(Buffer.from(stableString(events), 'utf8')),
       count: events.length,
       kinds: eventKinds,
+      events,
     },
     lifecycleAtTicks: milestones,
     episodeOutcomes: endpointEpisodes,

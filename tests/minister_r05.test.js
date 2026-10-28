@@ -1,5 +1,6 @@
 import { before, test } from 'node:test';
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import {
   ARMS,
   DEFAULT_SEEDS,
@@ -25,7 +26,7 @@ function smallDataset(seed = 1103) {
       id: `test-${String(index).padStart(3, '0')}`,
       age: 70,
       arrivalTick: 0,
-      startingWaitTicks: 0,
+      startingWaitTicks: 12,
       priority: index % 3,
       informationComplete: true,
       criticalAtTick: 3,
@@ -67,7 +68,12 @@ test('full-horizon policy replay records identities, commands, event digest and 
   assert.equal(first.commands.length > 0, true);
   assert.ok(first.commands.every(item => item.receipt && item.command.patientId));
   assert.deepEqual(first.eventStream, replay.eventStream);
+  assert.equal(first.eventStream.sha256, createHash('sha256')
+    .update(JSON.stringify(first.eventStream.events)).digest('hex'));
   assert.deepEqual(first.episodeOutcomes, replay.episodeOutcomes);
+  assert.ok(first.episodeOutcomes.filter(episode => episode.treatmentTick !== null)
+    .every(episode => episode.totalReferralToTreatmentTicks
+      === episode.startingWaitTicks + episode.waitAfterEntryTicks));
   assert.equal(first.modelVersion, 'minister-r03-cardiology-pathway-3');
   assert.equal(first.protocolVersion, 'r01-cardiology-v1.0');
   for (const id of [first.modelExecutableId, first.replayExecutableId, first.moduleSha256]) {
