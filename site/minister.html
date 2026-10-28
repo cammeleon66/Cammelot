@@ -389,6 +389,7 @@ body:has(#moc-manifesto) #moc-ministry{visibility:hidden!important;pointer-event
 .feed-warn { border-left:3px solid #FF9800; }
 .panel-back { font-size:11px; color:var(--gold); cursor:pointer; padding:4px 0 8px; }
 .panel-back:hover { text-decoration:underline; }
+.panel-back:focus-visible { outline:3px solid var(--gold); outline-offset:2px; }
 
 /* ═══ SPRINT 8: Responsive Layout ═══ */
 @media (max-width: 1024px) {
@@ -403,8 +404,8 @@ body:has(#moc-manifesto) #moc-ministry{visibility:hidden!important;pointer-event
   #chatlog { width: 200px; max-height: 100px; font-size: 10px; bottom: 35px; }
 }
 
-@media (max-width: 768px) {
-  /* Top bar: compact, no overflow */
+@media (max-width: 768px), (max-height: 500px) and (orientation: landscape) {
+  /* Top bar: compact, no overflow (also short landscape phones wider than 768px) */
   #top { padding: 4px 8px; gap: 4px; flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; }
   #top .sub { display: none; }
   .top-title { font-size: 12px; }
@@ -1253,6 +1254,38 @@ body:has(.moc-mandate) #moc-objective{display:none!important}
 @media(max-width:768px){
   #moc-portrait{display:none!important}
   .moc-wiz-nav .moc-continue{max-width:none}
+}
+/* ── L04: touch targets, visible disclosure state, short landscape (docs/MINISTER_MOBILE_CONTROLS.md) ── */
+#site-nav a{display:inline-block;padding:6px 4px;margin:-6px -4px}
+#moc-town-watch>summary,#moc-ministry-figures>summary{gap:8px;user-select:none;-webkit-tap-highlight-color:transparent}
+#moc-town-watch>summary{min-height:44px;font-size:10px;padding:0 8px;margin:0;background:var(--m-blue);border:2px solid var(--m-gold);cursor:pointer}
+#moc-ministry-figures>summary{padding:0 8px;background:var(--m-blue3);border:2px solid #6572ba}
+#moc-town-watch>summary::-webkit-details-marker,#moc-ministry-figures>summary::-webkit-details-marker{display:none}
+#moc-town-watch>summary::before,#moc-ministry-figures>summary::before{content:'';flex:0 0 auto;width:0;height:0;border-left:8px solid var(--m-gold);border-top:5px solid transparent;border-bottom:5px solid transparent;transition:transform .12s}
+#moc-town-watch[open]>summary::before,#moc-ministry-figures[open]>summary::before{transform:rotate(90deg)}
+#moc-town-watch>summary::after,#moc-ministry-figures>summary::after{content:'SHOW';content:'SHOW' / '';flex:0 0 auto;margin-left:auto;padding:3px 6px;border:2px solid var(--m-white);color:var(--m-white);font:10px/1 var(--px)}
+#moc-town-watch[open]>summary::after,#moc-ministry-figures[open]>summary::after{content:'HIDE';content:'HIDE' / ''}
+#moc-town-watch[open]>summary{margin-bottom:6px}
+#moc-town-watch>summary:focus-visible,#moc-ministry-figures>summary:focus-visible{outline:3px solid var(--m-gold);outline-offset:2px}
+#moc-council-ready-banner.is-return{width:auto;max-width:calc(100% - 20px);display:flex;align-items:center;gap:10px;padding:6px 8px}
+#moc-council-ready-banner.is-return strong{font-size:10px}
+#moc-council-ready-banner button{font-size:10px}
+@media(max-width:768px),(max-height:500px) and (orientation:landscape){
+  #cbar{flex-wrap:wrap;justify-content:center;max-width:calc(100% - 12px);box-sizing:border-box}
+  #cbar .cb{min-height:44px;min-width:44px;padding:4px 8px;font-size:11px}
+  #moc-ministry .spd button{min-width:44px;min-height:44px;font-size:10px}
+  #moc-town-watch>summary{font-size:10px}
+  .moc-wiz-nav .moc-continue{font-size:10px}
+  .moc-opt,.moc-buy,.moc-continue,.moc-wiz-back{min-height:44px}
+  .moc-name-row button,#moc-opening-sound,#moc-takeoffice{font-size:10px}
+  .panel-back{display:flex;align-items:center;min-height:44px;padding:0 0 4px;font-size:13px}
+}
+@media(max-height:500px) and (orientation:landscape){
+  #main{flex-direction:row}
+  #game-wrap{flex:1 1 auto;min-width:0;height:auto;min-height:0}
+  #panel,#panel[data-moc-detail]{flex:0 0 auto;width:min(360px,46vw);height:auto;min-height:0;border-top:0;border-left:6px solid var(--frame)}
+  #app{height:100dvh}
+  #moc-council-ready-banner{top:6px}
 }
 </style>
 </head>
@@ -6438,7 +6471,7 @@ function showMemorial(grave) {
   const d = document.getElementById('agent-detail');
   document.querySelector('.panel-header').textContent = 'MEMORIAL';
   const isSystem = grave.cause === 'system_failure';
-  let html = `<div class="panel-back" data-action="showTownFeed">← Ministry</div>`;
+  let html = `<div class="panel-back" data-action="showTownFeed" role="button" tabindex="0">← Ministry</div>`;
   html += `<div class="agent-card">
     <div class="ac-name" style="color:${isSystem ? 'var(--red)' : 'var(--ink2)'}">In Memory of ${grave.name}</div>
     <div class="ac-role">Age ${formatCompletedAge(grave.age)}</div>
@@ -6561,7 +6594,7 @@ function selectAgent(a){
   // Get agent events from EVENT_LOG
   const agentEvents=EVENT_LOG.filter(e=>e.agentId===a.id);
 
-  let html=`<div class="panel-back" data-action="showTownFeed">← Ministry</div>`;
+  let html=`<div class="panel-back" data-action="showTownFeed" role="button" tabindex="0">← Ministry</div>`;
   html+=`<div class="agent-card">
     <div class="portrait-wrap">
       <canvas class="portrait-canvas" id="portrait-cv" width="64" height="64" ${a.hp<=0?'style="filter:grayscale(100%)"':''}></canvas>
@@ -6943,7 +6976,7 @@ function selectBuilding(building){
     const thought=gp.thoughts[(gp.currentThought||0)%gp.thoughts.length];
     gp.currentThought=(gp.currentThought||0)+1;
 
-    let html=`<div class="panel-back" data-action="showTownFeed">← Ministry</div>`;
+    let html=`<div class="panel-back" data-action="showTownFeed" role="button" tabindex="0">← Ministry</div>`;
     html+=`<div class="agent-card">
       <div class="ac-name">${building.label}</div>
       <div class="ac-role">${gp.name} — General Practitioner</div>
@@ -6997,7 +7030,7 @@ function selectBuilding(building){
     const treeViolated=waitList.some(a=>a.waitWeeks>treeWeeks)||inHospital.some(a=>a.waitWeeks>treeWeeks);
     const specialists=agents.filter(a=>a.type==='specialist');
 
-    let html=`<div class="panel-back" data-action="showTownFeed">← Ministry</div>`;
+    let html=`<div class="panel-back" data-action="showTownFeed" role="button" tabindex="0">← Ministry</div>`;
     html+=`<div class="agent-card">
       <div class="ac-name">${building.label}</div>
       <div class="ac-role">Regional Hospital</div>
@@ -9100,7 +9133,7 @@ function showGazette() {
   }
 
   var dateInfo = getSeasonAndDay(modelTick);
-  var html = '<div class="panel-back" data-action="showTownFeed">← Ministry</div>';
+  var html = '<div class="panel-back" data-action="showTownFeed" role="button" tabindex="0">← Ministry</div>';
 
   // Main gazette header
   html += '<div class="gazette-header">';
@@ -10983,6 +11016,9 @@ _bind('wizard-next','click', () => nextWizardStep());
 })();
 
 // Event delegation for dynamically generated panel-back buttons
+document.getElementById('agent-detail').addEventListener('keydown', function(e) {
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('[data-action="showTownFeed"]')) { e.preventDefault(); showTownFeed(); }
+});
 document.getElementById('agent-detail').addEventListener('click', function(e) {
   const back = e.target.closest('[data-action="showTownFeed"]');
   if (back) showTownFeed();
@@ -11154,7 +11190,7 @@ function showMomentsGallery() {
   selectedAgent = null;
   panelIsTownFeed=false;
   var items = MOMENTS.items.slice().reverse();
-  var html = '<div class="panel-back" data-action="showTownFeed">← Ministry</div>';
+  var html = '<div class="panel-back" data-action="showTownFeed" role="button" tabindex="0">← Ministry</div>';
   html += '<div class="moments-gallery">';
   html += '<h3>🃏 DRAMATIC MOMENTS</h3>';
   if (items.length === 0) {
@@ -11336,7 +11372,7 @@ function showInsightsPanel() {
   selectedAgent = null;
   document.querySelector('.panel-header').textContent = '💡 INSIGHTS';
   var insights = INSIGHT_LOG.slice().reverse();
-  var html = '<div class="panel-back" data-action="showTownFeed">← Ministry</div>';
+  var html = '<div class="panel-back" data-action="showTownFeed" role="button" tabindex="0">← Ministry</div>';
   html += '<div style="padding:8px">';
   html += '<h3 style="color:var(--gold);margin:4px 0 8px">💡 Insight Engine</h3>';
   html += '<div style="font-size:11px;color:var(--parchment);opacity:0.7;margin-bottom:10px">';
@@ -11501,7 +11537,7 @@ function showWeeklyReport() {
   panelIsTownFeed=false;
   selectedAgent = null;
   document.querySelector('.panel-header').textContent = '📋 WEEKLY REPORTS';
-  var html = '<div class="panel-back" data-action="showTownFeed">← Ministry</div>';
+  var html = '<div class="panel-back" data-action="showTownFeed" role="button" tabindex="0">← Ministry</div>';
   html += '<div style="padding:8px">';
   html += '<h3 style="color:var(--gold);margin:4px 0 8px">📋 Weekly Report Center</h3>';
 
@@ -14211,6 +14247,17 @@ async function initLLMSubsystem() {
       + '<div class="moc-follow-now"><b>Now:</b> ' + sanitizeText(personStatus(a).replace(/\n/g, ' · ')) + '</div>'
       + '<div class="moc-follow-history"><b>Last care event:</b> ' + (latest ? 'tick ' + latest.cycle + ' · ' + sanitizeText(latest.text || latest.type) : 'none recorded yet') + '</div></article>';
   }
+  // Inspecting the town hides an open council; keep an always-visible way back (not tied to the collapsible people list).
+  function showCouncilReturnBanner(){
+    let banner = document.getElementById('moc-council-ready-banner');
+    if (!banner) {
+      banner = document.createElement('div'); banner.id = 'moc-council-ready-banner'; banner.setAttribute('role', 'status');
+      document.getElementById('game-wrap')?.appendChild(banner);
+    }
+    banner.className = 'is-return';
+    banner.innerHTML = '<strong>COUNCIL ON HOLD</strong><button id="moc-council-return">RETURN TO COUNCIL</button>';
+    banner.querySelector('button').onclick = openPendingCouncil;
+  }
   function openPendingCouncil(){
     document.getElementById('moc-council-ready-banner')?.remove();
     const council = document.getElementById('moc-council');
@@ -14228,6 +14275,7 @@ async function initLLMSubsystem() {
       banner = document.createElement('div'); banner.id = 'moc-council-ready-banner'; banner.setAttribute('role', 'status');
       document.getElementById('game-wrap')?.appendChild(banner);
     }
+    banner.className = '';
     banner.innerHTML = '<strong>COUNCIL READY</strong><span>Quarter ' + q + ' is complete. The town is paused.</span><button id="moc-council-ready">OPEN COUNCIL</button>';
     banner.querySelector('button').onclick = openPendingCouncil;
   }
@@ -14236,7 +14284,7 @@ async function initLLMSubsystem() {
     let el = document.getElementById('moc-town-watch');
     if (!el) {
       el = document.createElement('details'); el.id = 'moc-town-watch'; el.setAttribute('aria-label', 'Watch the town');
-      el.open = window.matchMedia('(max-width:768px)').matches;
+      el.open = window.matchMedia('(max-width:768px), (max-height:500px) and (orientation:landscape)').matches;
       el.innerHTML = '<summary>PEOPLE TO FOLLOW</summary><div id="moc-town-status" role="status"></div>'
         + '<div class="moc-town-people"></div><div id="moc-town-person"></div><div id="moc-town-change"></div>'
         + '<div class="moc-town-actions"><button id="moc-town-toggle">Pause &amp; look</button><button id="moc-town-council" hidden>Council ready</button></div>';
@@ -14855,7 +14903,9 @@ async function initLLMSubsystem() {
       GS.decisionLog.push({tick:modelTick,quarter:q,id,text:action.textContent.trim()});
     },true);
     document.getElementById('moc-inspect-town').onclick = function(){
-      ov.style.display = 'none'; renderTownWatch(); document.getElementById('moc-town-council').focus();
+      ov.style.display = 'none';
+      const watch = document.getElementById('moc-town-watch'); if (watch) watch.open = true;
+      showCouncilReturnBanner(); renderTownWatch(); document.getElementById('moc-town-council').focus();
     };
 
     const STEP_LABELS = needsDecision ? ['Briefing', 'Decision', 'Law', 'Fund'] : ['Briefing', 'Law', 'Fund'];
@@ -15269,6 +15319,40 @@ async function initLLMSubsystem() {
     return window.CAMMELOT_LEADERBOARD_URL
       || (/^(www\.)?cammelot\.org$/i.test(location.hostname) ? publicLeaderboard : '/api/leaderboard');
   }
+  function communityServiceError(message,status){
+    const error=new Error(message);error.communityFailure='service';error.status=status;return error;
+  }
+  async function communityRequest(url,options){
+    let response;
+    try { response=await fetch(url,options); }
+    catch(error) {
+      const networkError=new Error(error&&error.message||'request failed');
+      networkError.communityFailure='network';
+      throw networkError;
+    }
+    let data=null;
+    try { data=await response.json(); } catch(e) {}
+    if(!response.ok) {
+      throw communityServiceError(data&&typeof data.error==='string' ? data.error : 'request rejected',response.status);
+    }
+    if(!data||typeof data!=='object'||Array.isArray(data)) throw communityServiceError('invalid service response');
+    return data;
+  }
+  async function fetchCommunityStandings(url){
+    const data=await communityRequest(url);
+    if(!Array.isArray(data.entries))throw communityServiceError('invalid standings response');
+    return data.entries;
+  }
+  function communityFailureText(error){
+    if(error&&error.communityFailure==='network') return 'The community service is temporarily unavailable';
+    if(error&&error.communityFailure==='service'){
+      if(error.status===403||error.status>=500) return 'The community service is temporarily unavailable';
+      if(error.status===400||error.status===422)
+        return 'Community service validation error (HTTP '+error.status+'): '+error.message;
+      return 'Community service error'+(error.status?' (HTTP '+error.status+')':'')+': '+error.message;
+    }
+    return 'Community service error: '+(error&&error.message||'invalid response');
+  }
 
   // ── G4: End statement (succeed/fail epitaph under the verdict) ──
   function endStatement(r, reason){
@@ -15379,7 +15463,7 @@ async function initLLMSubsystem() {
     html += '<h3>Political outcome</h3><div class="moc-sub" style="text-align:center;font-size:13px">' + endStatement(r, reason) + '</div>';
     html += '<div id="moc-care-comparison">'+careComparisonHtml()+'</div>';
     html += '<section class="moc-community" id="moc-community"><h3>Same-town standings</h3>'
-      + '<p class="moc-sub">Your completed run is published automatically under the public name chosen at the start. Community submissions are unverified.</p>'
+      + '<p class="moc-sub">Your completed run is published automatically under your chosen or generated public name. If publication succeeds, that name and run data are publicly listed. Community submissions are unverified.</p>'
       + '<div class="moc-publish-status" id="moc-community-status" role="status">Publishing result…</div>'
       + '<ol class="moc-community-list" id="moc-community-list" aria-label="Community leaderboard"></ol></section>';
     // Secondary detail: the result and same-date care comparison remain above this section.
@@ -15533,19 +15617,21 @@ async function initLLMSubsystem() {
     }
     async function loadCommunity(){
       const list=document.getElementById('moc-community-list');
-      try {
-        const response=await fetch(communityApi+'?scenario='+encodeURIComponent(GS.scenario)+'&modelVersion='+encodeURIComponent(MoC.MODEL_VERSION)+'&seed='+MoC.seed+'&limit=10');
-        if(!response.ok) throw new Error('unavailable');
-        const data=await response.json();
-        list.replaceChildren();
-        data.entries.forEach(function(entry,index){
-          const row=document.createElement('li');row.className='moc-community-entry';
-          const rank=document.createElement('span');rank.textContent=String(index+1)+'.';
-          const name=document.createElement('strong');name.textContent=entry.username;
-          const score=document.createElement('span');score.textContent=entry.summary.systemDeaths+' deaths · '+entry.score+' pts';
-          row.append(rank,name,score);list.appendChild(row);
-        });
-      } catch(e) { throw new Error('standings unavailable'); }
+      const entries=await fetchCommunityStandings(communityApi+'?scenario='+encodeURIComponent(GS.scenario)+'&modelVersion='+encodeURIComponent(MoC.MODEL_VERSION)+'&seed='+MoC.seed+'&limit=10');
+      list.replaceChildren();
+      if(!entries.length){
+        const empty=document.createElement('li');empty.className='moc-community-empty';
+        empty.textContent='No published runs for this scenario, model and town yet.';
+        list.appendChild(empty);
+        return;
+      }
+      entries.forEach(function(entry,index){
+        const row=document.createElement('li');row.className='moc-community-entry';
+        const rank=document.createElement('span');rank.textContent=String(index+1)+'.';
+        const name=document.createElement('strong');name.textContent=entry.username;
+        const score=document.createElement('span');score.textContent=entry.summary.systemDeaths+' deaths · '+entry.score+' pts';
+        row.append(rank,name,score);list.appendChild(row);
+      });
     }
     async function publishCompletedRun(force){
       if (MoC.record?.replaying) {
@@ -15554,27 +15640,48 @@ async function initLLMSubsystem() {
         return;
       }
       const status=document.getElementById('moc-community-status');
-      if(GS._communityPublishStarted)return;
-      if(!force&&!MoC.referenceAt(modelTick)){
+      if(GS._communityPublishPromise)return GS._communityPublishPromise;
+      if(!GS._communityPublished&&!force&&!MoC.referenceAt(modelTick)){
         status.textContent='Waiting for the same-date reference before publishing…';
         return;
       }
-      GS._communityPublishStarted=true;
-      status.textContent='Publishing completed run…';
-      try {
-        const finalScore=GS._publishedScore || (GS._publishedScore=computeScore(MoC.baseline));
-        const scoreElement=document.getElementById('moc-scoreval');if(scoreElement)scoreElement.textContent=finalScore.score;
-        const response=await fetch(communityApi,{method:'POST',headers:{'content-type':'application/json'},
-          body:JSON.stringify(leaderboardPayload(publicName,finalScore))});
-        const data=String(response.headers.get('content-type')||'').includes('application/json') ? await response.json() : {error:'leaderboard service unavailable'};
-        if(!response.ok) throw new Error(data.error||'submission failed');
-        await loadCommunity();
-        status.textContent=(data.duplicate?'Already published as ':'Published as ')+data.entry.username+' · rank '+data.rank+'.';
-      } catch(e) {
-        GS._communityPublishStarted=false;
-        status.replaceChildren(document.createTextNode('Publication failed: '+e.message+'. '));
-        const retry=document.createElement('button');retry.className='moc-buy';retry.textContent='Retry publication';retry.onclick=function(){publishCompletedRun(true);};status.appendChild(retry);
+      function retryButton(message,label){
+        if(!status)return;
+        status.replaceChildren(document.createTextNode(message+' '));
+        const retry=document.createElement('button');retry.className='moc-buy';retry.textContent=label;
+        retry.onclick=function(){publishCompletedRun(true);};status.appendChild(retry);
       }
+      const operation=(async function(){
+        let publication=GS._communityPublished;
+        if(!publication){
+          status.textContent='Publishing completed run…';
+          try {
+            const finalScore=GS._publishedScore || (GS._publishedScore=computeScore(MoC.baseline));
+            const scoreElement=document.getElementById('moc-scoreval');if(scoreElement)scoreElement.textContent=finalScore.score;
+            const payload=GS._communityPayload || (GS._communityPayload=leaderboardPayload(publicName,finalScore));
+            const data=await communityRequest(communityApi,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)});
+            if(!data.entry||typeof data.entry.username!=='string') throw communityServiceError('invalid publication response');
+            publication=GS._communityPublished=data;
+          } catch(error) {
+            retryButton('Publication failed: '+communityFailureText(error)+'.','Retry publication');
+            return;
+          }
+        }
+        const publishedText=(publication.duplicate?'Already published as ':'Published as ')
+          +publication.entry.username+' · rank '+publication.rank+'.';
+        status.textContent=publishedText;
+        try {
+          await loadCommunity();
+          status.textContent=publishedText;
+        } catch(error) {
+          retryButton(publishedText+' Standings unavailable: '+communityFailureText(error)+'.','Retry standings');
+        }
+      })();
+      const singleFlight=operation.finally(function(){
+        if(GS._communityPublishPromise===singleFlight)GS._communityPublishPromise=null;
+      });
+      GS._communityPublishPromise=singleFlight;
+      return singleFlight;
     }
     GS._publishCompletedRun=publishCompletedRun;
     publishCompletedRun(false);
@@ -16464,7 +16571,7 @@ async function initLLMSubsystem() {
         + '<div class="moc-name-entry"><label for="moc-player-name">YOUR PUBLIC LEADERBOARD NAME</label><div class="moc-name-row">'
         + '<input id="moc-player-name" maxlength="24" autocomplete="nickname" aria-describedby="moc-name-error">'
         + '<button class="moc-buy" id="moc-generate-name" type="button">RANDOM NAME</button></div>'
-        + '<p class="moc-sub" style="margin:5px 0 0">Your completed score is published automatically. No account or email.</p><p class="moc-name-error" id="moc-name-error"></p></div>'
+        + '<p class="moc-sub" style="margin:5px 0 0">Your chosen or randomly generated name and completed run are listed publicly if automatic publication succeeds. Private participation is not available. No account or email.</p><p class="moc-name-error" id="moc-name-error"></p></div>'
         + '<button class="moc-opening-sound" id="moc-opening-sound" type="button">🔊 SOUND ON · TAP TO MUTE</button>'
         + '<section class="moc-opening-board" id="moc-opening-board"><h3>COMMUNITY TOP 5</h3><small>Loading persisted results…</small><ol></ol></section>'
         + '<details style="text-align:left"><summary>Why this game? Model &amp; limits</summary>'
@@ -16486,23 +16593,24 @@ async function initLLMSubsystem() {
       });
       (async function loadOpeningBoard(){
         const board=document.getElementById('moc-opening-board'),list=board.querySelector('ol'),note=board.querySelector('small');
+        let entries;
         try {
-          const response=await fetch(communityEndpoint()+'?scenario='+encodeURIComponent(sc.id)+'&modelVersion='+encodeURIComponent(MoC.MODEL_VERSION)+'&limit=5');
-          if(!response.ok)throw new Error('unavailable');
-          const data=await response.json();
-          if(data.entries.length){
+          entries=await fetchCommunityStandings(communityEndpoint()+'?scenario='+encodeURIComponent(sc.id)+'&modelVersion='+encodeURIComponent(MoC.MODEL_VERSION)+'&limit=5');
+        } catch(error){ note.textContent=communityFailureText(error)+'. The game still works without standings.';list.replaceChildren();return; }
+        try {
+          if(entries.length){
             note.textContent='Persisted community runs · different town seeds · care-first ranking';
-            data.entries.forEach(function(entry,index){
+            entries.forEach(function(entry,index){
               const row=document.createElement('li'),rank=document.createElement('span'),name=document.createElement('strong'),score=document.createElement('span');
               rank.textContent=(index+1)+'.';name.textContent=entry.username;score.textContent=entry.summary.systemDeaths+' deaths · '+entry.score+' pts';
               row.append(rank,name,score);list.appendChild(row);
             });
             return;
           }
-          note.textContent='Simulation examples until the first community runs are published';
+          note.textContent='No published runs for this scenario and model yet. Examples below are illustrative, not player results.';
           [['Benchmark Resilient','4 deaths · 412 pts'],['Benchmark Digital','5 deaths · 386 pts'],['Benchmark Staffing','5 deaths · 351 pts'],['Benchmark Foundation','6 deaths · 443 pts'],['Benchmark No Action','6 deaths · 303 pts']]
             .forEach(function(example,index){const row=document.createElement('li');row.innerHTML='<span>'+(index+1)+'.</span><strong></strong><span></span>';row.children[1].textContent=example[0];row.children[2].textContent=example[1];list.appendChild(row);});
-        } catch(error){ note.textContent='Community board unavailable; the game still works offline.'; }
+        } catch(error){ note.textContent='Standings could not be displayed. The game still works without standings.';list.replaceChildren(); }
       })();
       document.getElementById('moc-takeoffice').addEventListener('click', function(){
         if (!validPlayerName(nameInput.value)) { nameError.textContent = 'Use 2–24 letters or numbers.'; nameInput.focus(); return; }
@@ -17079,11 +17187,11 @@ async function initLLMSubsystem() {
       const cbar = document.getElementById('cbar');
       if (cbar && MoC.scenario) {
         const crtBtn = document.createElement('button');
-        crtBtn.className = 'cb'; crtBtn.title = 'Toggle CRT scanlines'; crtBtn.textContent = '\ud83d\udcfa';
+        crtBtn.className = 'cb'; crtBtn.title = 'Toggle CRT scanlines'; crtBtn.setAttribute('aria-label', 'Toggle CRT scanlines'); crtBtn.textContent = '\ud83d\udcfa';
         crtBtn.addEventListener('click', function(){ setCrt(!document.getElementById('moc-crt')); });
         cbar.appendChild(crtBtn);
         const tourBtn = document.createElement('button');
-        tourBtn.className = 'cb'; tourBtn.title = 'Replay the guided tour'; tourBtn.textContent = '\u2753';
+        tourBtn.className = 'cb'; tourBtn.title = 'Replay the guided tour'; tourBtn.setAttribute('aria-label', 'Replay the guided tour'); tourBtn.textContent = '\u2753';
         tourBtn.addEventListener('click', function(){ if (window.mocReplayTour) window.mocReplayTour(); });
         cbar.appendChild(tourBtn);
       }
