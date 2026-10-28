@@ -15197,11 +15197,20 @@ async function initLLMSubsystem() {
     if(!data||typeof data!=='object'||Array.isArray(data)) throw communityServiceError('invalid service response');
     return data;
   }
+  async function fetchCommunityStandings(url){
+    const data=await communityRequest(url);
+    if(!Array.isArray(data.entries))throw communityServiceError('invalid standings response');
+    return data.entries;
+  }
   function communityFailureText(error){
-    if(error&&error.communityFailure==='service')
+    if(error&&error.communityFailure==='network') return 'Community standings are temporarily unavailable.';
+    if(error&&error.communityFailure==='service'){
+      if(error.status===403||error.status>=500) return 'Community standings are temporarily unavailable.';
+      if(error.status===400||error.status===422)
+        return 'Community service validation error (HTTP '+error.status+'): '+error.message;
       return 'Community service error'+(error.status?' (HTTP '+error.status+')':'')+': '+error.message;
-    if(error&&error.communityFailure==='network') return 'Network error: the community service could not be reached.';
-    return 'Community service error: '+(error&&error.message||'invalid response');
+    }
+    return 'Standings could not be displayed.';
   }
 
   // ── G4: End statement (succeed/fail epitaph under the verdict) ──
@@ -15466,16 +15475,15 @@ async function initLLMSubsystem() {
     }
     async function loadCommunity(){
       const list=document.getElementById('moc-community-list');
-      const data=await communityRequest(communityApi+'?scenario='+encodeURIComponent(GS.scenario)+'&modelVersion='+encodeURIComponent(MoC.MODEL_VERSION)+'&seed='+MoC.seed+'&limit=10');
-      if(!Array.isArray(data.entries)) throw communityServiceError('invalid standings response');
+      const entries=await fetchCommunityStandings(communityApi+'?scenario='+encodeURIComponent(GS.scenario)+'&modelVersion='+encodeURIComponent(MoC.MODEL_VERSION)+'&seed='+MoC.seed+'&limit=10');
       list.replaceChildren();
-      if(!data.entries.length){
+      if(!entries.length){
         const empty=document.createElement('li');empty.className='moc-community-empty';
         empty.textContent='No published runs for this scenario, model and town yet.';
         list.appendChild(empty);
         return;
       }
-      data.entries.forEach(function(entry,index){
+      entries.forEach(function(entry,index){
         const row=document.createElement('li');row.className='moc-community-entry';
         const rank=document.createElement('span');rank.textContent=String(index+1)+'.';
         const name=document.createElement('strong');name.textContent=entry.username;
@@ -16443,12 +16451,14 @@ async function initLLMSubsystem() {
       });
       (async function loadOpeningBoard(){
         const board=document.getElementById('moc-opening-board'),list=board.querySelector('ol'),note=board.querySelector('small');
+        let entries;
         try {
-          const data=await communityRequest(communityEndpoint()+'?scenario='+encodeURIComponent(sc.id)+'&modelVersion='+encodeURIComponent(MoC.MODEL_VERSION)+'&limit=5');
-          if(!Array.isArray(data.entries))throw communityServiceError('invalid standings response');
-          if(data.entries.length){
+          entries=await fetchCommunityStandings(communityEndpoint()+'?scenario='+encodeURIComponent(sc.id)+'&modelVersion='+encodeURIComponent(MoC.MODEL_VERSION)+'&limit=5');
+        } catch(error){ note.textContent=communityFailureText(error)+' The game still works without standings.';list.replaceChildren();return; }
+        try {
+          if(entries.length){
             note.textContent='Persisted community runs · different town seeds · care-first ranking';
-            data.entries.forEach(function(entry,index){
+            entries.forEach(function(entry,index){
               const row=document.createElement('li'),rank=document.createElement('span'),name=document.createElement('strong'),score=document.createElement('span');
               rank.textContent=(index+1)+'.';name.textContent=entry.username;score.textContent=entry.summary.systemDeaths+' deaths · '+entry.score+' pts';
               row.append(rank,name,score);list.appendChild(row);
@@ -16458,7 +16468,7 @@ async function initLLMSubsystem() {
           note.textContent='No published runs for this scenario and model yet. Examples below are illustrative, not player results.';
           [['Benchmark Resilient','4 deaths · 412 pts'],['Benchmark Digital','5 deaths · 386 pts'],['Benchmark Staffing','5 deaths · 351 pts'],['Benchmark Foundation','6 deaths · 443 pts'],['Benchmark No Action','6 deaths · 303 pts']]
             .forEach(function(example,index){const row=document.createElement('li');row.innerHTML='<span>'+(index+1)+'.</span><strong></strong><span></span>';row.children[1].textContent=example[0];row.children[2].textContent=example[1];list.appendChild(row);});
-        } catch(error){ note.textContent=communityFailureText(error)+' The game still works without standings.';list.replaceChildren(); }
+        } catch(error){ note.textContent='Standings could not be displayed. The game still works without standings.';list.replaceChildren(); }
       })();
       document.getElementById('moc-takeoffice').addEventListener('click', function(){
         if (!validPlayerName(nameInput.value)) { nameError.textContent = 'Use 2–24 letters or numbers.'; nameInput.focus(); return; }
