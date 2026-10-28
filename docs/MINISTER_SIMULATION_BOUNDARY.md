@@ -23,8 +23,8 @@ framework:
 ```js
 const run = createRun({ scenario, seed, inputs, schedule });
 const receipt = run.applyCommand(command);
-const tickResult = run.advanceOneTick();
-const events = run.eventsSince(cursor);
+const tickResult = run.advanceOneTick(cursor);
+const events = run.eventsSince(cursor); // exactly tickResult.events
 const snapshot = run.snapshot();
 ```
 
@@ -32,13 +32,57 @@ These are proposed ports, not current exported functions. `createRun` validates
 the scenario, seed, versioned input manifest and external schedule, then returns
 the initial snapshot at elapsed tick zero. `applyCommand` accepts only a
 whitelisted command valid in the current model context and returns its applied,
-no-effect or rejected receipt. `advanceOneTick` advances exactly one synchronous
-logical tick and returns its ending tick and ordered events; it does not read
-wall-clock time. `eventsSince` returns the ordered command/model facts after a
-cursor, including the next cursor. `snapshot` returns a detached,
-JSON-serializable point-in-time value; callers cannot mutate model state through
-it. Commands, events and snapshots carry stable IDs/order and the applicable
-model, scenario, seed, elapsed tick and protocol/schedule identities.
+no-effect or rejected receipt plus an event cursor; events are read from the one
+authoritative event stream. `advanceOneTick(previousCursor)` advances exactly
+one synchronous logical tick and returns its ending tick, snapshot and exactly
+the ordered events returned by `eventsSince(previousCursor)`; it does not read
+wall-clock time. `eventsSince(cursor)` is the sole event source for commands and
+ticks and returns the ordered facts plus the next cursor. `snapshot` returns a
+detached, JSON-serializable point-in-time value; callers cannot mutate model
+state through it.
+
+Every event and snapshot carries one immutable `RunIdentity`, compared as a
+whole rather than field-by-field with omitted identity fields:
+
+```js
+{
+  modelVersion,
+  modelExecutableId,
+  scenario,
+  seed,
+  tick,
+  protocolVersion,
+  scheduleId
+}
+```
+
+`modelExecutableId` is SHA-256 over a canonical UTF-8 manifest of sorted logical
+source-unit names and SHA-256 digests of the exact bytes for every shared,
+outcome-producing model module. Concretely, hash each module's raw bytes to
+lowercase hex, sort entries by logical name, serialize as
+`JSON.stringify(entries.map(({ name, sha256 }) => [name, sha256]))`, encode as
+UTF-8 and SHA-256 that manifest. The browser uses Web Crypto on the verified
+same-origin module response bytes it loads; Node reads those same module files
+and hashes their raw bytes with `node:crypto`. Both use the same manifest names,
+ordering, encoding and hash operation, so the common model identity is equal
+across runtimes and changes when a shared module changes. Browser module assets
+must remain byte-stable for run initialization and their digests must be
+verified before the run starts. Do not use DOM source extraction or a Git
+revision as a substitute for the module bytes.
+
+At present F08 `executableId` hashes `document.currentScript.textContent`, which
+covers the inline Minister executable. After extraction, preserve a distinct
+`replayExecutableId` for the browser command/replay path: its canonical manifest
+must include the command/replay adapter source bytes (the inline script if it
+remains the adapter) and all shared model module bytes. The browser computes
+this composite using the same raw-byte/manifest algorithm. A Node experiment
+run computes the identical `modelExecutableId` from those module files, then
+records its own versioned policy/driver identity; it does not claim to be the
+browser replay executable. Any host adapter that can affect outcomes must be
+included in that host's execution identity. The F08 record carries both replay
+and model executable identities. Version the F08 record/replay contract when
+this identity layout changes; incompatible old records must be refused, not
+silently treated as matching.
 
 | Responsibility | Owns | Must not own |
 |---|---|---|
@@ -78,10 +122,10 @@ R01 referral cohort or its five strategies.
 3. **Reference snapshot.** A separate reference run is initialized from the
    same frozen inputs, seed and exogenous schedule; its reference policy issues
    no discretionary commands. At the requested tick, the driver retains
-   `snapshot()` with model, scenario, seed, tick, protocol and schedule
-   identity. A treatment arm is compared only with the snapshot having matching
-   identities and the same exact tick; absent or mismatched data is unavailable,
-   not a benefit. The browser’s paired-reference display follows the same rule.
+   `snapshot()` and its complete `RunIdentity`. A treatment arm is compared only
+   with the snapshot whose entire `RunIdentity` matches, including exact tick,
+   model executable, protocol and schedule; any mismatch is unavailable, not a
+   benefit. The browser’s paired-reference display follows the same rule.
    R01’s **current-process reference** is not automatically the game's
    `no-discretionary-action-v1` paired policy; R01 must define and version its
    control policy before treating it as a control arm.
@@ -118,19 +162,27 @@ R01 referral cohort or its five strategies.
   extracted source. The `deep_research`, `replay_*`, `scenario_*` and
   `persona_*` outputs under `scripts/output/` are historical World-run
   artifacts. Their own README/metadata may record a date, runner or mode, but
-  they do not establish equivalence to Minister or to a versioned R01 model.
+  World outputs currently have no stable model-version identity or executable
+  content hash, and do not establish equivalence to Minister or to a versioned
+  R01 model. Cammelot maintainers of the World page own any future World-only
+  version space.
 - **Backend:** `src/` is a third, independently implemented Node.js
   development/research model. Its FHIR, agent, disease and orchestration
-  modules do not execute Minister’s care rules. No output from World or the
-  backend is a Minister result merely because it uses similarly named
-  parameters or agents.
+  modules do not execute Minister’s care rules. Backend outputs likewise
+  currently have no stable model-version identity or executable content hash.
+  Cammelot maintainers of `src/` own any future backend-only version space. No
+  output from World or the backend is a Minister result merely because it uses
+  similarly named parameters or agents.
 
 Therefore World, backend and Minister retain separate owners and model-version
-spaces. Do not port rules between them as part of this boundary task. Any future
-reuse requires an explicit source/owner decision, parity fixtures and its own
-versioned evidence. Preserve old outputs as archives with their known
-provenance and limits; rerun an experiment from the selected authoritative
-model rather than attempting to repair historical labels.
+spaces; those spaces are not interchangeable. Minister already has a declared
+model version and F08 executable hash, while World and backend outputs are
+currently unversioned and unidentified by executable. Do not port rules between
+them as part of this boundary task. Any future reuse requires an explicit
+source/owner decision, parity fixtures and its own versioned evidence. Preserve
+old outputs as archives with their known provenance and limits; rerun an
+experiment from the selected authoritative model rather than attempting to
+repair historical labels.
 
 ## Incremental migration and verification
 
@@ -149,26 +201,35 @@ model rather than attempting to repair historical labels.
    canvas/DOM, policy UI, audio, persistence, reference transport and analysis
    outside it. The browser and experiment driver must import that same module;
    do not extract/patch HTML strings or copy the tick logic into a runner.
+   Compute `modelExecutableId` over the shared module bytes in both runtimes as
+   specified above. The browser's F08 `replayExecutableId` must also cover the
+   command/replay adapter bytes, not just `document.currentScript`. A
+   module-only source change with the page shell unchanged must change the
+   identity and make replay of the prior record fail visibly.
 4. **Prove parity before research runs.** Run the existing Minister browser,
    care, paired-reference and F08 replay regressions against the extracted
    implementation. Add direct module fixtures for identical seeded
    initialization, command receipts, patient transition/event order, exact
-   paired snapshots, renderer-independent ticks and same-record replay. Compare
-   full state/events, not only summary metrics.
+   paired snapshots, renderer-independent ticks and same-record replay. Add a
+   negative replay fixture that changes only the shared module bytes while
+   keeping the page shell, declared model version and record unchanged; verify
+   the old record is refused. Compare full state/events, not only summary
+   metrics.
 5. **Unlock R01 separately.** Implement its cohort, strategy policies,
    resource/cost ledger and endpoints only after this parity gate and the
    R01 input/analysis freeze. Run development seeds first; label any protocol
    or outcome-affecting rule changes with new versions before confirmatory
    runs.
 
-Keep `modelVersion` for outcome-affecting rules, `protocolVersion` for the
-paired policy/schedule/matching contract, and command/event/replay schema
-versions distinct. A behavior-preserving extraction does not by itself change
-the model or R01 protocol; changed outcomes or comparison semantics do. The
-F08 executable identity must still reject a record from different executable
-bytes, even when the declared model version is unchanged. Existing replay
-schema and its visible incompatibility behavior remain the compatibility
-contract.
+Keep `modelVersion` for outcome-affecting rules, `modelExecutableId` for the
+shared module bytes, `protocolVersion` for the paired policy/schedule/matching
+contract, and command/event/replay schema versions distinct. A
+behavior-preserving extraction does not by itself change the model or R01
+protocol; changed outcomes or comparison semantics do. `RunIdentity` compares
+these version and run fields as a unit. F08's `replayExecutableId` must still
+reject a record from different page-adapter or module bytes even when the
+declared model version is unchanged. Existing replay incompatibility must be
+visible and fail closed.
 
 No dependency or build tooling is needed for this design. Native browser and
 Node.js ES modules, the existing Node test runner and installed Playwright
