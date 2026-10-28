@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { createReadStream, existsSync, readFileSync, statSync } from 'node:fs';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
@@ -12,6 +13,13 @@ import { ministerModelExecutableId } from '../scripts/minister_model_identity.mj
 const SITE_ROOT = join(process.cwd(), 'site');
 const MIME_TYPES = { '.html': 'text/html', '.js': 'text/javascript' };
 const core = globalThis.MinisterModelCore;
+
+test('Minister script integrity pins the shared module bytes', () => {
+  const moduleBytes = readFileSync(join(SITE_ROOT, 'minister-model-core.js'));
+  const ministerHtml = readFileSync(join(SITE_ROOT, 'minister.html'), 'utf8');
+  const integrity = ministerHtml.match(/<script src="minister-model-core\.js" integrity="([^"]+)"/)?.[1];
+  assert.equal(integrity, `sha256-${createHash('sha256').update(moduleBytes).digest('base64')}`);
+});
 
 function startServer(root) {
   const server = createServer((request, response) => {
@@ -79,6 +87,39 @@ test('Minister browser and Node load the same deterministic model primitives', {
   }
 });
 
+test('F08 refuses startup when identity-fetch bytes differ from the SRI-pinned script', { timeout: 30000 }, async () => {
+  const server = await startServer(SITE_ROOT);
+  const browser = await launchBrowser();
+  try {
+    const changedBytes = Buffer.concat([readFileSync(join(SITE_ROOT, 'minister-model-core.js')), Buffer.from('\n')]);
+    const page = await browser.newPage();
+    await page.route('**/minister-model-core.js', async route => {
+      if (route.request().resourceType() === 'fetch') {
+        return route.fulfill({ status: 200, contentType: 'text/javascript', body: changedBytes });
+      }
+      return route.continue();
+    });
+    await page.goto(`http://127.0.0.1:${server.address().port}/minister.html#scn=cabinetcrisis&seed=2468`,
+      { waitUntil: 'domcontentloaded' });
+    await page.evaluate(() => launchSimulation());
+    await page.locator('#minister-model-error').waitFor({ state: 'visible' });
+    assert.deepEqual(await page.evaluate(() => ({
+      tick: modelTick,
+      started: !!window._mocGameStarted,
+      record: MoC.record.export(),
+      notice: document.querySelector('#minister-model-error').textContent,
+    })), {
+      tick: 0,
+      started: false,
+      record: null,
+      notice: 'Minister model module digest does not match its integrity attribute.',
+    });
+  } finally {
+    await browser.close();
+    await new Promise(resolve => server.close(resolve));
+  }
+});
+
 test('F08 rejects a record when shared module bytes change without a page or model-version change',
   { timeout: 30000 }, async () => {
     const root = await mkdtemp(join(tmpdir(), 'minister-model-identity-'));
@@ -101,7 +142,12 @@ test('F08 rejects a record when shared module bytes change without a page or mod
       });
       await page.close();
 
-      await writeFile(join(root, 'minister-model-core.js'), Buffer.concat([moduleBytes, Buffer.from('\n')]));
+      const changedModule = Buffer.concat([moduleBytes, Buffer.from('\n')]);
+      const originalIntegrity = `sha256-${createHash('sha256').update(moduleBytes).digest('base64')}`;
+      const changedIntegrity = `sha256-${createHash('sha256').update(changedModule).digest('base64')}`;
+      await writeFile(join(root, 'minister-model-core.js'), changedModule);
+      await writeFile(join(root, 'minister.html'),
+        Buffer.from(html.toString('utf8').replace(originalIntegrity, changedIntegrity)));
       const replayPage = await browser.newPage();
       await replayPage.goto(url, { waitUntil: 'domcontentloaded' });
       const replay = await replayPage.evaluate(async record => {

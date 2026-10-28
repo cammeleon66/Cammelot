@@ -1439,7 +1439,7 @@ window.addEventListener('error', function(event) {
   }
 }, true);
 </script>
-<script src="minister-model-core.js"></script>
+<script src="minister-model-core.js" integrity="sha256-QwSMGfmmhWtfKECAtaLW+RviMzmI1BMZc1kQiTme/sc=" crossorigin="anonymous"></script>
 <script>
 // ════════════════════════════════════════
 // MINISTER OF CAMMELOT — G0 GAME LAYER
@@ -17210,6 +17210,8 @@ async function initLLMSubsystem() {
   const inlineAdapterBytes=new TextEncoder().encode(document.currentScript.textContent);
   const digestHex=async bytes=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))]
     .map(value=>value.toString(16).padStart(2,'0')).join('');
+  const digestSRI=async bytes=>'sha256-'+btoa(String.fromCharCode(
+    ...new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))));
   const manifestId=async entries=>{
     const manifest=JSON.stringify(entries.sort((left,right)=>left.name<right.name?-1:left.name>right.name?1:0)
       .map(({name,sha256})=>[name,sha256]));
@@ -17219,6 +17221,10 @@ async function initLLMSubsystem() {
     const response=await fetch(new URL(MODEL_MODULE_NAME,document.baseURI),{cache:'no-store'});
     if(!response.ok)throw new Error('Minister model module could not be verified.');
     const moduleBytes=new Uint8Array(await response.arrayBuffer());
+    const modelScript=document.querySelector('script[src$="minister-model-core.js"]');
+    const expectedSRI=modelScript?.integrity.split(/\s+/).find(value=>value.startsWith('sha256-'));
+    if(!expectedSRI || await digestSRI(moduleBytes)!==expectedSRI)
+      throw new Error('Minister model module digest does not match its integrity attribute.');
     const moduleDigest=await digestHex(moduleBytes);
     const adapterDigest=await digestHex(inlineAdapterBytes);
     return {
