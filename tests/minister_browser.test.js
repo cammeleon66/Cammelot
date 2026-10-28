@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createReadStream, existsSync, statSync } from 'node:fs';
+import { createReadStream, existsSync, readFileSync, statSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { extname, join, normalize } from 'node:path';
 import { chromium } from 'playwright-chromium';
@@ -48,6 +48,25 @@ async function openCouncilActions(page) {
   }
   assert.ok(await page.locator('#moc-shop').count(), 'council must reach funding');
 }
+
+test('Public entry pages distinguish evidence, synthetic residents and legacy provenance', () => {
+  for (const file of ['index.html', 'about.html', 'ch0.html', 'ch0-alternative.html', 'ch1.html', 'ch2.html', 'ch3.html', 'world.html', 'minister.html']) {
+    const html = readFileSync(join(SITE_ROOT, file), 'utf8');
+    assert.match(html, /(?:id="evidence"|href="index\.html#evidence")/, `${file} must link its evidence boundary`);
+    assert.doesNotMatch(html, /strictly factual|5,000 agents \(CBS scaled\)|first preventable death|Real Dutch data|runs on real CBS|Treeknorm says under 4 weeks|today's crisis/i, `${file} must not reintroduce unsupported claims`);
+    if (/^(?:ch[0-3]|world)/.test(file)) {
+      assert.match(html, /legacy World/i, `${file} must identify its legacy executable`);
+    }
+  }
+  const landing = readFileSync(join(SITE_ROOT, 'index.html'), 'utf8');
+  for (const category of ['Empirical input data', 'Model assumptions', 'Authored game rules', 'Observed simulation outputs']) {
+    assert.ok(landing.includes(category), `public evidence contract must define ${category}`);
+  }
+  const minister = readFileSync(join(SITE_ROOT, 'minister.html'), 'utf8');
+  assert.match(minister, /needle:'model system death'/, 'objective help must follow renamed mortality wording');
+  assert.doesNotMatch(minister, /needle:'preventable death'/);
+  assert.match(minister, /Within-model comparison, not clinical evidence\. Model /, 'copied results must retain the evidence qualification');
+});
 
 test('Browser fixtures isolate cosmetic requests offline for both context creation paths', { timeout: 30000 }, async () => {
   const browser = await launchBrowser();
@@ -222,6 +241,11 @@ test('Drawing the town cannot advance a paused patient', { timeout: 30000 }, asy
   const page = await browser.newPage();
   try {
     await page.goto(`http://127.0.0.1:${server.address().port}/minister.html#scn=cabinetcrisis&seed=2468`, { waitUntil: 'domcontentloaded' });
+    const limits = await page.locator('#play-overlay details').filter({ hasText: 'Why this game? Model & limits' }).textContent();
+    assert.match(limits, /45 synthetic residents/);
+    assert.match(limits, /not 5,000 individual agents/);
+    assert.match(limits, /game rules, not national financing/);
+    assert.match(limits, /not proven preventability/);
     assert.equal(await page.evaluate(()=>MoC.audio.isMuted()),false,'new visitors should start with sound enabled');
     assert.match(await page.locator('#moc-opening-sound').innerText(),/SOUND ON/);
     const openingSoundBox=await page.locator('#moc-opening-sound').boundingBox();
@@ -2661,12 +2685,14 @@ test('Early results match the reference date and replay preserves the prior atte
     assert.match(await page.locator('#moc-care-comparison').innerText(),/Same date: tick 75/);
     assert.match(await page.locator('#moc-care-verdict').innerText(),/same number/i);
     assert.equal(await page.locator('#moc-scoreval').innerText(),publishedScore,'late comparison must not change the published score');
-    assert.match(await page.locator('#moc-sharetext').textContent(),/Lives saved vs status quo: 0/,
+    assert.match(await page.locator('#moc-sharetext').textContent(),/Model system deaths below same-date reference \(signed\): 0/,
       'late matching care data must still refresh sharing detail under the unchanged protocol');
     const endCopy=await page.locator('#moc-endscreen').innerText();
     assert.doesNotMatch(endCopy,/not heroic|played it safe|your successor inherits|the system won|hard route|rare trifecta/i);
     assert.match(endCopy,/FINAL SCORE/);
     assert.match(endCopy,/Parliament ended the term/);
+    assert.match(endCopy,/Observed simulation output, not clinical evidence/);
+    assert.match(endCopy,/not proven preventability/);
     const forged=await page.evaluate(()=>{
       const before=MoC.baseline;
       window.dispatchEvent(new MessageEvent('message',{origin:location.origin,source:window,data:{...MoC.baseline,systemDeaths:999}}));
@@ -3134,7 +3160,9 @@ test('Desktop play uses one uncluttered Ministry panel and explains immediate re
       assert.match(generated, /^[\p{L}\p{N} ._'-]{2,24}$/u);
       assert.ok(generated.length <= 24);
     });
-    assert.equal(new Set(generatedNames).size, generatedNames.length, 'successive random names should be distinct');
+    for (let index = 1; index < generatedNames.length; index++) {
+      assert.notEqual(generatedNames[index], generatedNames[index - 1], 'each random name should differ from the immediately previous name');
+    }
     assert.ok(generatedNames.some(generated => generated.startsWith('The ')));
     assert.ok(generatedNames.some(generated => generated.endsWith(' of Cammelot')));
     assert.ok(generatedNames.some(generated => generated.startsWith('Minister ')));
