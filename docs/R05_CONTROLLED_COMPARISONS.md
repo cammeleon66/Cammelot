@@ -1,8 +1,8 @@
 # R05 controlled comparisons: exploratory evidence
 
-**Protocol:** R01, `r01-cardiology-v1.0`  
-**Executable:** R03/R04 shared pathway, `minister-r03-cardiology-pathway-3`  
-**Status:** Eight-seed development batch; exploratory and not confirmatory  
+**Protocol:** R01, `r01-cardiology-v1.0`<br>
+**Executable:** R03/R04 shared pathway, `minister-r03-cardiology-pathway-3`<br>
+**Status:** Eight-seed development batch; exploratory and not confirmatory<br>
 **Runner:** [`scripts/run_r05_comparison.mjs`](../scripts/run_r05_comparison.mjs)
 
 This batch exercises the predeclared five-arm comparison and its falsification
