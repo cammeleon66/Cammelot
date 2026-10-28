@@ -824,9 +824,15 @@ test('F08 complete export includes a mid-quarter resident request and its cash c
       document.getElementById('moc-fa').click();
       MoC.saveReplay();
       const record=JSON.parse(localStorage.getItem(MoC.replayKey));
-      return {delta:MoC.S.budget-before,record};
+      return {delta:MoC.S.budget-before,record,treasury:MoC.treasurySummary()};
     });
     assert.equal(result.delta,-5000);
+    const requestReceipt=result.treasury.transactions.at(-1);
+    assert.equal(requestReceipt.amount,-5000);
+    assert.match(requestReceipt.reason,/case manager/i);
+    assert.equal(requestReceipt.after-requestReceipt.before,-5000);
+    assert.equal(result.treasury.opening+result.treasury.net,result.treasury.closing,
+      'resident-request cash must reconcile with the opening and closing government balance');
     assert.ok(result.record.commandRecord?.commands.some(c=>c.kind==='request' && c.tick===26),
       'actual late resident request must be in the full export, not just displayed receipt');
     assert.ok(result.record.commandRecord.events.some(e=>e.reason.includes('Assign case manager')),
@@ -1350,6 +1356,8 @@ test('F05 scope post-term in-house delivery cannot block a valid council law', {
     assert.equal(await law.isDisabled(),false,'Q10 delivery cannot reserve admin beyond the Q8 terminal horizon');
     await law.click();
     assert.ok(Math.abs(await page.evaluate(()=>M.IST.admin)-0.01)<1e-15);
+    assert.match(await page.locator('#moc-policy-receipt').innerText(),/Law receipt · Task Differentiation Act/);
+    assert.match(await page.locator('#moc-policy-receipt').innerText(),/Treasury cash: €[\d,]+ → €[\d,]+/);
   });
 });
 
@@ -2500,9 +2508,12 @@ test('Care reports preserve adverse outcomes and previews match purchases', { ti
       person.behaviorState='going_to_hospital'; person.waitWeeks=15;
       MoC.care.sync();
       const episode = MoC.care.episodes.find(e=>e.agentId===person.id && e.status==='waiting');
+      const waitingBeforeDeath = MoC.care.snapshot();
       person.hp=0;
       MoC.care.sync();
-      return { noForcedDeath, difference, wrongDate, wrongModel, exit:episode.status, validated:MoC.comparisonValidated };
+      const afterDeath = MoC.care.snapshot();
+      return { noForcedDeath, difference, wrongDate, wrongModel, exit:episode.status, validated:MoC.comparisonValidated,
+        waitingBeforeDeath,afterDeath,roi:buildROIHTML(),er:buildERPressureHTML() };
     });
     assert.equal(result.noForcedDeath,true);
     assert.equal(result.difference.livesDifference,-2);
@@ -2510,15 +2521,42 @@ test('Care reports preserve adverse outcomes and previews match purchases', { ti
     assert.equal(result.wrongModel,null);
     assert.equal(result.exit,'died_waiting');
     assert.equal(result.validated,true,'paired protocol is available; actual benefits still require matching reference data');
+    assert.ok(result.waitingBeforeDeath.waiting>0);
+    assert.equal(result.afterDeath.waiting,result.waitingBeforeDeath.waiting-1,
+      'a death removes one person from the current queue without erasing the closed episode');
+    assert.equal(result.afterDeath.deathsWaiting,result.waitingBeforeDeath.deathsWaiting+1,
+      'the closed death episode remains in the outcome record');
+    assert.match(result.roi,/not government cash/i);
+    assert.match(result.roi,/different time scopes and are not added into a total/i);
+    assert.doesNotMatch(result.roi,/Total System Cost/);
+    assert.match(result.er,/Unavailable \(zero baseline\)/);
+    assert.doesNotMatch(result.er,/SOLL reduces ER pressure by/);
     await page.evaluate(() => { document.getElementById('play-overlay')?.remove(); window._mocForceCouncil(2); });
     await openCouncilActions(page);
     const card = page.locator('[data-buy="scribes1"]');
     assert.match(await card.evaluate(el=>el.closest('.moc-item').innerText), /30% → 18%/);
+    assert.match(await card.evaluate(el=>el.closest('.moc-item').innerText),/One-time treasury cost €100,000/);
+    assert.match(await card.evaluate(el=>el.closest('.moc-item').innerText),/GP burnout mean \(n=\d+\)\s+0% → 4%/);
     const burnoutBefore=await page.evaluate(()=>agents.filter(a=>a.type==='gp').map(a=>a.burnoutLevel||0));
     await card.click();
     assert.ok(Math.abs(await page.evaluate(()=>M.IST.admin)-0.184)<1e-9,
       'model9 retains adoption-scaled effect precision; percent copy rounds for display only');
-    assert.match(await page.locator('#moc-policy-receipt').innerText(),/30% → 18%/);
+    const receipt=await page.locator('#moc-policy-receipt').innerText();
+    assert.match(receipt,/Admin burden: 30% → 18%/);
+    const cashReceipt=receipt.match(/Treasury cash: €([\d,]+) → €([\d,]+) \(−€([\d,]+)\)/);
+    assert.ok(cashReceipt,'purchase receipt states its opening cash, closing cash and debit');
+    const purchase=await page.evaluate(()=>MoC.treasurySummary().transactions.at(-1));
+    assert.equal(Number(cashReceipt[1].replace(/,/g,'')),purchase.before);
+    assert.equal(Number(cashReceipt[2].replace(/,/g,'')),purchase.after);
+    assert.equal(Number(cashReceipt[3].replace(/,/g,'')),-purchase.amount);
+    assert.match(receipt,/GP burnout mean \(n=\d+\): 0% → 4%/);
+    const updatedPriorities=await page.locator('#moc-priority-summary').innerText();
+    assert.match(updatedPriorities,/CURRENT STATE · tick/);
+    assert.match(updatedPriorities,/Dependence: 4 pts/);
+    assert.match(updatedPriorities,/GP burnout mean: 4% \(n=\d+\)/);
+    const treasury=await page.evaluate(()=>MoC.treasurySummary());
+    assert.equal(treasury.transactions.at(-1).amount,-100000);
+    assert.equal(treasury.opening+treasury.net,treasury.closing);
     const rollout=await page.evaluate(()=>({burnout:agents.filter(a=>a.type==='gp').map(a=>a.burnoutLevel||0),strain:MoC.S.rolloutStrain,adoption:MoC.S.adoptionRate}));
     assert.ok(rollout.burnout.every((value,index)=>value>burnoutBefore[index]));
     assert.ok(rollout.strain>0);
@@ -2529,6 +2567,39 @@ test('Care reports preserve adverse outcomes and previews match purchases', { ti
     await browser.close();
     await new Promise(resolve=>server.close(resolve));
   }
+});
+
+test('L02 grant and automatic cash receipts reconcile and empty cohorts stay unavailable', { timeout: 30000 }, async () => {
+  await withResourceTown(async page=>{
+    const result=await page.evaluate(()=>{
+      _mocDebug.applyFx({budget:80000},'Research grant award');
+      _mocDebug.applyFx({budget:-12000},'Automatic quarterly cash adjustment');
+      const treasury=MoC.treasurySummary();
+      const care=MoC.care.snapshot();
+      const roi=buildROIHTML();
+      const er=buildERPressureHTML();
+      _mocDebug.endTerm('served');
+      document.querySelector('#moc-treasury-record summary').click();
+      return {treasury,care,roi,er,ending:document.getElementById('moc-endscreen').innerText,
+        closing:MoC.treasurySummary().closing};
+    });
+    assert.deepEqual(result.treasury.transactions.map(entry=>entry.amount),[80000,-12000]);
+    assert.match(result.treasury.transactions[0].reason,/grant/i);
+    assert.match(result.treasury.transactions[1].reason,/automatic quarterly cash adjustment/i);
+    assert.equal(result.treasury.opening+result.treasury.net,result.treasury.closing);
+    assert.equal(result.closing,result.treasury.closing);
+    assert.equal(result.care.waiting,0);
+    assert.equal(result.care.completedReferralWaitN,0);
+    assert.equal(result.care.meanWaitToTreatmentWeeks,null);
+    assert.match(result.ending,/Political outcome/);
+    assert.match(result.ending,/Care performance/);
+    assert.match(result.ending,/No one waiting \(n=0\)/);
+    assert.match(result.ending,/Unavailable \(n=0 treatment-start episodes\)/);
+    assert.match(result.ending,/Opening government cash .* recorded net transactions = ending government cash/);
+    assert.match(result.roi,/not government cash/i);
+    assert.match(result.er,/Unavailable \(zero baseline\)/);
+    assert.doesNotMatch(result.er,/SOLL reduces ER pressure by/);
+  },'?debug=1');
 });
 
 test('Early results match the reference date and replay preserves the prior attempt', { timeout: 45000 }, async () => {
@@ -2567,6 +2638,8 @@ test('Early results match the reference date and replay preserves the prior atte
     const endCopy=await page.locator('#moc-endscreen').innerText();
     assert.doesNotMatch(endCopy,/not heroic|played it safe|your successor inherits|the system won|hard route|rare trifecta/i);
     assert.match(endCopy,/FINAL SCORE/);
+    assert.match(endCopy,/Political outcome/);
+    assert.match(endCopy,/Care performance/);
     assert.match(endCopy,/Parliament ended the term/);
     const forged=await page.evaluate(()=>{
       const before=MoC.baseline;

@@ -13008,7 +13008,7 @@ async function initLLMSubsystem() {
     const completedWait=player.completedReferralWaitN
       ? player.meanWaitToTreatmentWeeks.toFixed(1)+' weeks (n='+player.completedReferralWaitN+')'
       : 'Unavailable (n=0 treatment-start episodes)';
-    let html='<h3>Care performance</h3><p class="moc-sub">Ending snapshot at tick '+player.tick+'; current queue and completed referral waits are separate cohorts. Same-date values below compare your town / no-action reference.</p>'
+    let html='<h3>Care performance</h3><p class="moc-sub">Ending snapshot at tick '+player.tick+'. Same date: tick '+player.tick+'. Current queue and completed referral waits are separate cohorts; paired values compare your town / no-action reference.</p>'
       + '<div class="moc-score-row"><span>Current referral queue mean wait</span><b>'+waitText(player)+'</b></div>'
       + '<div class="moc-score-row"><span>Closed referral-to-treatment-start wait (mean)</span><b>'+completedWait+'</b></div>'
       + '<div class="moc-score-row"><span>Cumulative treatment starts by tick '+player.tick+'</span><b>'+player.treatments+'</b></div>';
@@ -15460,8 +15460,9 @@ async function initLLMSubsystem() {
       if ((GS.platformMaturity || 0) > 0) html += '\ud83c\udfd7 <b>Platform maturity:</b> Level ' + (GS.platformMaturity || 0) + ' of 2 \u2014 ' + ((GS.platformMaturity || 0) >= 2 ? 'regional model' : 'foundation built') + '<br>';
       html += '</div>';
     })();
+    html += '</details>';
     html += treasuryReportHtml();
-    html += '</details><details class="moc-result-details"><summary>Game score calculation</summary><h3>Game scorecard</h3>';
+    html += '<details class="moc-result-details"><summary>Game score calculation</summary><h3>Game scorecard</h3>';
     html += '<div class="moc-score-row"><span>Preventable deaths (your term)</span><b>' + r.sd + '</b></div>';
     const careResult = MoC.care.snapshot();
     html += '<div class="moc-score-row"><span>Admin burden reduced</span><b>' + r.adminGain + ' pts (now ' + Math.round(M.IST.admin * 100) + '%)</b></div>';
