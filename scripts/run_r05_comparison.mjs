@@ -591,7 +591,7 @@ function summarizeDistribution(records, analysis, arm, value) {
     seeds: rows.map(record => record.seed),
     values: values.map(round),
     mean: round(mean(values)),
-    confidenceInterval95: pairedInterval(values.map(item => item - mean(values))),
+    confidenceInterval95: pairedInterval(values),
     minimum: round(Math.min(...values)),
     maximum: round(Math.max(...values)),
   };
