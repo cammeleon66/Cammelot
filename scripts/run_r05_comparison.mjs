@@ -163,7 +163,11 @@ function costItem({ id, category, timing = 'one_time', tick = 0, from, periodTic
 
 export function makeLifecycleInput({ id, armId, horizonTicks = R01_HORIZON_TICKS,
   adoptionTargetBasisPoints = 10000, implementationStartTick = 0, cashMultiplier = 1,
-  failedCommissioningAttempts = 0, reworkWorkPerFailure = 0, profileMultiplier = 1 } = {}) {
+  failedCommissioningAttempts = 0, reworkWorkPerFailure = 0, profileMultiplier = 1,
+  implementationWorkRequired = BASE_LIFECYCLE.implementationWorkRequired,
+  implementationWorkPerTick = BASE_LIFECYCLE.implementationWorkPerTick,
+  commissioningDelayTicks = BASE_LIFECYCLE.commissioningDelayTicks,
+  adoptionRampTicks = BASE_LIFECYCLE.adoptionRampTicks } = {}) {
   const source = 'R05 scenario assumption only; not a sourced price, rate, or forecast.';
   const profile = COST_PROFILE[armId];
   if (!profile) throw new RangeError(`No lifecycle profile exists for ${armId}.`);
@@ -174,11 +178,11 @@ export function makeLifecycleInput({ id, armId, horizonTicks = R01_HORIZON_TICKS
     workCap: parameter(5000, 'staff_hour', 'Common illustrative work envelope.', source),
     implementationStartTick: parameter(implementationStartTick, 'tick',
       'Prespecified deployment-start sensitivity in model ticks.', source),
-    implementationWorkRequired: parameter(BASE_LIFECYCLE.implementationWorkRequired, 'staff_hour',
+    implementationWorkRequired: parameter(implementationWorkRequired, 'staff_hour',
       'Common illustrative implementation work.', source),
-    implementationWorkPerTick: parameter(BASE_LIFECYCLE.implementationWorkPerTick, 'staff_hour_per_tick',
+    implementationWorkPerTick: parameter(implementationWorkPerTick, 'staff_hour_per_tick',
       'Common bounded implementation rate.', source),
-    commissioningDelayTicks: parameter(BASE_LIFECYCLE.commissioningDelayTicks, 'tick',
+    commissioningDelayTicks: parameter(commissioningDelayTicks, 'tick',
       'Common delay between implementation and commissioning attempt.', source),
     failedCommissioningAttempts: parameter(failedCommissioningAttempts, 'attempt',
       'Deterministic stress setting; not a failure probability.', source),
@@ -186,7 +190,7 @@ export function makeLifecycleInput({ id, armId, horizonTicks = R01_HORIZON_TICKS
       'Explicit rework work after the commissioning-failure control.', source),
     adoptionTargetBasisPoints: parameter(adoptionTargetBasisPoints, 'basis_point',
       'Adoption sensitivity; not an observed uptake rate.', source),
-    adoptionRampTicks: parameter(BASE_LIFECYCLE.adoptionRampTicks, 'tick',
+    adoptionRampTicks: parameter(adoptionRampTicks, 'tick',
       'Common illustrative linear adoption ramp.', source),
     recoveryWorkPerTick: parameter(8, 'staff_hour_per_tick', 'Illustrative recovery work rate.', source),
     staffHoursPerCoordinationUnit: parameter(1, 'staff_hour_per_coordination_unit',
