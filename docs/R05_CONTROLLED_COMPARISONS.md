@@ -124,19 +124,45 @@ returned.
 
 ## Results
 
-Results from the fixed eight-seed batch are reported below after the reproducible
-runner completes. Per-seed estimates and both interval bounds are retained; no
+Results from the fixed eight-seed batch are reported below. Per-seed estimates and both interval bounds are retained; no
 single seed, scalar score, or favorable endpoint is selectively substituted for
 the paired comparison.
 
-| Contrast / check | Estimate |
+Batch: eight development seeds, 224 complete runs, pathway
+`minister-r03-cardiology-pathway-3`, module SHA-256 `22da5b80…23db4`
+(`modelExecutableId` `11f50e90…f894`). Arm means across seeds (primary analysis,
+336 episodes per run):
+
+| Arm | 84-day proxy | 180-day proxy | Deaths before treatment | Critical before treatment | Treatment starts | Cash spent (scenario units, 5 y) |
+|---|---|---|---|---|---|---|
+| Current process | 0.7567 | 0.6376 | 36.00 | 121.75 | 300.0 | 0 |
+| Organizational reform | 0.7567 | 0.6376 | 36.00 | 121.75 | 300.0 | 1,550 |
+| Conventional integration | 0.7556 | 0.6417 | 36.63 | 120.38 | 299.4 | 3,075 |
+| Agentic coordination | 0.7556 | 0.6417 | 36.63 | 120.38 | 299.4 | 7,250 |
+| Non-agentic modernization | 0.7556 | 0.6417 | 36.63 | 120.38 | 299.4 | 5,450 |
+
+| Contrast / check | Estimate (paired, agentic minus comparator) |
 |---|---|
-| Agentic versus current process, 84-day proxy | To be filled from the fixed batch output. |
-| Agentic versus current process, 180-day proxy | To be filled from the fixed batch output. |
-| Agentic versus conventional integration | Same pathway mechanism; report as a parity check. |
-| Zero-adoption control | Expected null result; per-seed assertion required. |
-| Commissioning failure | Per-seed lifecycle and failure-event assertion required. |
-| Conventional cost counterexample | Constructed scenario result; not an economic estimate. |
+| Agentic versus current process, 84-day proxy | −0.0011 (95% CI −0.0044 to 0.0021); sign-flip p = 0.625, Holm p = 1.0 |
+| Agentic versus current process, 180-day proxy | +0.0041 (95% CI 0.0011 to 0.0070); sign-flip p = 0.016, Holm p = 0.125 |
+| Agentic versus organizational reform | Identical to the current-process contrast (see downstream bottleneck below) |
+| Agentic versus conventional integration / non-agentic modernization | 0 on both proxies for every seed (mechanism parity holds) |
+| Zero-adoption control | Matches current process on every seed while spending 7,250 cash units |
+| Commissioning failure | One failed attempt per seed; 180-day proxy 0.6410 versus 0.6417 without failure; cash 7,370 versus 7,250 |
+| Conventional cost counterexample | Equal outcomes on every seed; agentic stress arm spends 14,500 versus 3,075 cash units |
+| Low adoption (50% / 75%) | 180-day proxy 0.6376 / 0.6388; at 50% adoption no difference from the current process remains |
+| Deployment delay (6 / 12 months) | 180-day proxy 0.6373 in both delays; the small benefit seen with immediate start disappears |
+
+No co-primary contrast survives Holm adjustment. All four predeclared
+falsification checks passed. Organizational reform received 972 additional
+coordination-capacity units over five years (per run) but produced no outcome
+change: with `treatmentStartsPerTick = 1`, downstream specialist starts bind
+before coordination capacity does. The handoff-efficiency arms show a small,
+non-significant 180-day improvement accompanied by slightly more deaths before
+treatment (36.63 versus 36.00) and a slightly lower 84-day share; these
+point estimates move in opposite directions and should not be read as a net
+benefit. In this bounded pathway, no arm demonstrates an end-to-end advantage
+that would justify its assumed lifecycle cost.
 
 ## Interpretation and limitations
 

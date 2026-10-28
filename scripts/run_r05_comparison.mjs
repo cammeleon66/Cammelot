@@ -659,8 +659,11 @@ function analysisReport(records, seeds) {
       cumulativeCashAtTick1040: atFiveYears.map(life => life?.ledger.cash.spent ?? 0),
       cumulativeWorkAtTick208: atOneYear.map(life => life?.ledger.work.spent ?? 0),
       cumulativeWorkAtTick1040: atFiveYears.map(life => life?.ledger.work.spent ?? 0),
-      cumulativeBenefitsAtTick208: atOneYear.map(life => life?.benefit.coordinationUnitsAvoided ?? 0),
-      cumulativeBenefitsAtTick1040: atFiveYears.map(life => life?.benefit.coordinationUnitsAvoided ?? 0),
+      // Handoff-efficiency arms avoid coordination units; organizational reform adds capacity units instead.
+      cumulativeCoordinationUnitsAvoidedAtTick208: atOneYear.map(life => life?.benefit.coordinationUnitsAvoided ?? 0),
+      cumulativeCoordinationUnitsAvoidedAtTick1040: atFiveYears.map(life => life?.benefit.coordinationUnitsAvoided ?? 0),
+      cumulativeCapacityUnitsGrantedAtTick208: atOneYear.map(life => life?.benefit.capacityUnitsGranted ?? 0),
+      cumulativeCapacityUnitsGrantedAtTick1040: atFiveYears.map(life => life?.benefit.capacityUnitsGranted ?? 0),
     };
   });
   const lowAdoption = [5000, 7500].flatMap(basisPoints => PROJECT_ARMS
