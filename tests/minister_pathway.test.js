@@ -11,6 +11,7 @@ async function createFixture(overrides = {}) {
     seed: 60475,
     modelExecutableId: await ministerModelExecutableId(),
     protocolVersion: core.R01_PROTOCOL_VERSION,
+    interventionId: overrides.interventionId || 'conventional_integration',
     inputs: {
       horizonTicks: 8,
       coordinationUnitsPerTick: 2,
@@ -97,7 +98,7 @@ async function deterministicTrace() {
 
 test('bounded pathway records ordered patient traces, resource use, and distinct exits', async () => {
   const result = await deterministicTrace();
-  assert.equal(result.snapshot.runIdentity.modelVersion, 'minister-r03-cardiology-pathway-1');
+  assert.equal(result.snapshot.runIdentity.modelVersion, 'minister-r03-cardiology-pathway-2');
   assert.equal(result.snapshot.runIdentity.protocolVersion, 'r01-cardiology-v1.0');
   assert.equal(result.snapshot.runIdentity.scheduleId, 'fixture-schedule-v1');
   assert.ok(result.events.every((event, index) => event.sequence === index + 1));
@@ -105,6 +106,88 @@ test('bounded pathway records ordered patient traces, resource use, and distinct
 
 test('same seed, inputs, and schedule reproduce full events and snapshots', async () => {
   assert.deepEqual(await deterministicTrace(), await deterministicTrace());
+});
+
+async function handoffCapacity(interventionId) {
+  const run = await createFixture({
+    interventionId,
+    inputs: {
+      horizonTicks: 1,
+      coordinationUnitsPerTick: 3,
+      treatmentStartsPerTick: 1,
+      episodes: [0, 1, 2, 3].map(index => ({
+        id: `referral-${index}`, age: 70 + index, arrivalTick: 0, startingWaitTicks: 0,
+      })),
+    },
+    schedule: { id: 'paired-handoff-capacity-v1', events: [] },
+  });
+  let commandSequence = 1;
+  for (let index = 0; index < 4; index++) {
+    const receipt = run.applyCommand({
+      id: `handoff-${index}`,
+      sequence: commandSequence,
+      kind: 'complete_handoff',
+      patientId: `referral-${index}`,
+    });
+    if (receipt.status === 'applied') commandSequence++;
+  }
+  const startCursor = run.snapshot().eventCursor;
+  const result = run.advanceOneTick(startCursor);
+  return { run, result, snapshot: run.snapshot() };
+}
+
+test('hand-checkable pathway fixture shows a bottleneck shift, not added care capacity', async () => {
+  const fragmented = await handoffCapacity('current_process');
+  const integrated = await handoffCapacity('conventional_integration');
+  assert.deepEqual({
+    routed: fragmented.snapshot.metrics.specialistWaiting + fragmented.snapshot.metrics.treatmentStarts,
+    handoffPending: fragmented.snapshot.metrics.handoffPending,
+    starts: fragmented.snapshot.metrics.treatmentStarts,
+    capacity: fragmented.snapshot.resources.specialist.startsPerTick,
+  }, { routed: 1, handoffPending: 3, starts: 1, capacity: 1 });
+  assert.deepEqual({
+    routed: integrated.snapshot.metrics.specialistWaiting + integrated.snapshot.metrics.treatmentStarts,
+    handoffPending: integrated.snapshot.metrics.handoffPending,
+    starts: integrated.snapshot.metrics.treatmentStarts,
+    capacity: integrated.snapshot.resources.specialist.startsPerTick,
+  }, { routed: 3, handoffPending: 1, starts: 1, capacity: 1 });
+  assert.equal(fragmented.snapshot.metrics.arrivals, integrated.snapshot.metrics.arrivals);
+  assert.equal(fragmented.snapshot.runIdentity.seed, integrated.snapshot.runIdentity.seed);
+  assert.equal(fragmented.snapshot.runIdentity.scheduleId, integrated.snapshot.runIdentity.scheduleId);
+  assert.equal(fragmented.result.snapshot.resources.specialist.startsThisTick, 1);
+});
+
+test('local handoff improvement fails to improve timely treatment when specialist starts bind', async () => {
+  const baseline = await handoffCapacity('current_process');
+  const improvedHandoff = await handoffCapacity('conventional_integration');
+  const timelyTreatment = snapshot => snapshot.metrics.treatmentStarts;
+  assert.equal(improvedHandoff.snapshot.metrics.specialistWaiting
+      + improvedHandoff.snapshot.metrics.treatmentStarts,
+    3, 'integration routes more patients into the downstream queue');
+  assert.equal(baseline.snapshot.metrics.specialistWaiting
+      + baseline.snapshot.metrics.treatmentStarts,
+    1, 'baseline leaves referrals in the upstream handoff stage');
+  assert.equal(timelyTreatment(improvedHandoff.snapshot), timelyTreatment(baseline.snapshot),
+    'one specialist treatment-start slot per tick binds the end-to-end result');
+  assert.equal(improvedHandoff.snapshot.resources.specialist.startsPerTick, 1);
+  assert.equal(baseline.snapshot.resources.specialist.startsPerTick, 1);
+});
+
+test('R01 alternatives change named workflow mechanisms without bonuses or care-capacity changes', async () => {
+  const ids = ['current_process', 'organizational_reform', 'conventional_integration',
+    'agentic_coordination', 'non_agentic_modernization'];
+  const runs = await Promise.all(ids.map(id => handoffCapacity(id)));
+  const profiles = runs.map(({ snapshot }) => snapshot.resources.coordination);
+  assert.deepEqual(profiles.map(profile => profile.mechanism),
+    ids.map(id => core.R01_INTERVENTIONS[id].mechanism));
+  assert.deepEqual(profiles.map(profile => profile.handoffActionUnits), [2, 2, 1, 1, 1]);
+  assert.deepEqual(profiles.map(profile => profile.capacityPerTick), [3, 4, 3, 3, 3]);
+  assert.ok(profiles.every(profile => !/bonus/i.test(profile.mechanism)),
+    'intervention descriptions specify mechanisms, not outcome bonuses');
+  assert.deepEqual(runs.map(({ snapshot }) => snapshot.resources.specialist.startsPerTick), [1, 1, 1, 1, 1]);
+  assert.deepEqual(runs.map(({ snapshot }) => snapshot.metrics.treatmentStarts), [1, 1, 1, 1, 1]);
+  assert.deepEqual(runs[2].snapshot.metrics, runs[3].snapshot.metrics,
+    'agentic coordination receives no automatic advantage over conventional integration');
 });
 
 test('refusal, relocation, and other exit remain separate terminal states', async () => {

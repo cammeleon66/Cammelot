@@ -37,12 +37,40 @@
   }
 
   const R03_SCENARIO = 'r03-cardiology-pathway-v1';
-  const R03_MODEL_VERSION = 'minister-r03-cardiology-pathway-1';
+  const R03_MODEL_VERSION = 'minister-r03-cardiology-pathway-2';
   const R01_PROTOCOL_VERSION = 'r01-cardiology-v1.0';
+  const R01_INTERVENTIONS = Object.freeze({
+    current_process: Object.freeze({
+      coordinationCapacityBonus: 0,
+      handoffActionUnits: 2,
+      mechanism: 'Fragmented handoff requires two status and record actions.',
+    }),
+    organizational_reform: Object.freeze({
+      coordinationCapacityBonus: 1,
+      handoffActionUnits: 2,
+      mechanism: 'One additional human coordinator work unit per tick.',
+    }),
+    conventional_integration: Object.freeze({
+      coordinationCapacityBonus: 0,
+      handoffActionUnits: 1,
+      mechanism: 'Shared referral status and required records remove one duplicate handoff action.',
+    }),
+    agentic_coordination: Object.freeze({
+      coordinationCapacityBonus: 0,
+      handoffActionUnits: 1,
+      mechanism: 'Non-clinical agent actions use the same integrated handoff effort and capacity.',
+    }),
+    non_agentic_modernization: Object.freeze({
+      coordinationCapacityBonus: 0,
+      handoffActionUnits: 1,
+      mechanism: 'A single rules-based workflow removes one duplicate handoff action.',
+    }),
+  });
   const TERMINAL_STAGES = new Set(['treatment_started', 'died_waiting', 'refused', 'relocated', 'other_exit']);
   const clone = value => JSON.parse(JSON.stringify(value));
 
-  function createRun({ scenario, seed, modelExecutableId, protocolVersion, inputs, schedule } = {}) {
+  function createRun({ scenario, seed, modelExecutableId, protocolVersion, interventionId = 'current_process',
+    inputs, schedule } = {}) {
     if (scenario !== R03_SCENARIO) throw new RangeError('Unsupported R03 pathway scenario.');
     if (!Number.isInteger(seed) || seed < 0 || seed > 0xFFFFFFFF)
       throw new RangeError('Seed must be an unsigned 32-bit integer.');
@@ -53,12 +81,16 @@
     if (!inputs || !Array.isArray(inputs.episodes) || inputs.episodes.length < 1 || inputs.episodes.length > 336)
       throw new RangeError('R03 requires between 1 and 336 referral episodes.');
     const horizonTicks = inputs.horizonTicks;
+    const intervention = R01_INTERVENTIONS[interventionId];
+    if (!intervention) throw new RangeError('Unsupported R01 intervention.');
     const coordinationUnitsPerTick = inputs.coordinationUnitsPerTick;
     const treatmentStartsPerTick = inputs.treatmentStartsPerTick;
     if (!Number.isInteger(horizonTicks) || horizonTicks < 1 || horizonTicks > 100000)
       throw new RangeError('Horizon must be a positive bounded number of ticks.');
     if (!Number.isInteger(coordinationUnitsPerTick) || coordinationUnitsPerTick < 1 || coordinationUnitsPerTick > 1000)
       throw new RangeError('Coordination capacity must be a positive bounded integer.');
+    if (coordinationUnitsPerTick + intervention.coordinationCapacityBonus > 1000)
+      throw new RangeError('Intervention-adjusted coordination capacity exceeds its bound.');
     if (!Number.isInteger(treatmentStartsPerTick) || treatmentStartsPerTick < 1 || treatmentStartsPerTick > 1000)
       throw new RangeError('Treatment-start capacity must be a positive bounded integer.');
     if (!schedule || typeof schedule.id !== 'string' || schedule.id.length < 1 || schedule.id.length > 128
@@ -122,6 +154,7 @@
       return { tick: event.tick, patientId: event.patientId, kind: event.kind, order: index };
     }).sort((left, right) => left.tick - right.tick || left.order - right.order);
 
+    const effectiveCoordinationCapacity = coordinationUnitsPerTick + intervention.coordinationCapacityBonus;
     const identity = {
       modelVersion: R03_MODEL_VERSION,
       modelExecutableId,
@@ -129,6 +162,7 @@
       seed,
       protocolVersion,
       scheduleId: schedule.id,
+      interventionId,
     };
     const events = [];
     const receipts = new Map();
@@ -267,8 +301,11 @@
       return clone({
         runIdentity: identityAt(),
         resources: {
-          coordination: { capacityPerTick: coordinationUnitsPerTick, usedThisTick: coordinationUsedThisTick,
-            unitsUsed: coordinationUnitsUsed },
+          coordination: { capacityPerTick: effectiveCoordinationCapacity,
+            baselineCapacityPerTick: coordinationUnitsPerTick,
+            usedThisTick: coordinationUsedThisTick, unitsUsed: coordinationUnitsUsed,
+            handoffActionUnits: intervention.handoffActionUnits,
+            mechanism: intervention.mechanism },
           specialist: { startsPerTick: treatmentStartsPerTick, startsThisTick: treatmentStartsThisTick,
             starts: treatmentStarts },
         },
@@ -313,8 +350,11 @@
       const patient = patients.find(item => item.id === command.patientId);
       if (!patient || patient.stage === 'scheduled') return reject('referral_not_arrived');
       if (TERMINAL_STAGES.has(patient.stage)) return reject('referral_already_closed', 'no_effect');
-      const requiresCoordination = command.kind === 'request_information' || command.kind === 'complete_handoff';
-      if (requiresCoordination && coordinationUsedThisTick >= coordinationUnitsPerTick)
+      const coordinationUnitsRequired = command.kind === 'complete_handoff'
+        ? intervention.handoffActionUnits
+        : command.kind === 'request_information' ? 1 : 0;
+      if (coordinationUnitsRequired > 0
+          && coordinationUsedThisTick + coordinationUnitsRequired > effectiveCoordinationCapacity)
         return reject('coordination_capacity');
 
       const from = patient.stage;
@@ -322,16 +362,16 @@
       let reason;
       if (command.kind === 'request_information') {
         if (from !== 'handoff_pending' || patient.informationComplete) return reject('information_not_required', 'no_effect');
-        coordinationUsedThisTick++;
-        coordinationUnitsUsed++;
+        coordinationUsedThisTick += coordinationUnitsRequired;
+        coordinationUnitsUsed += coordinationUnitsRequired;
         to = 'information_required';
         reason = 'A coordinator requested the missing referral information.';
         transition(patient, to, 'information_requested', reason, { resource: 'coordination' });
       } else if (command.kind === 'complete_handoff') {
         if (from !== 'handoff_pending') return reject('handoff_not_ready', 'no_effect');
         if (!patient.informationComplete) return reject('required_information_missing');
-        coordinationUsedThisTick++;
-        coordinationUnitsUsed++;
+        coordinationUsedThisTick += coordinationUnitsRequired;
+        coordinationUnitsUsed += coordinationUnitsRequired;
         to = 'specialist_waiting';
         reason = 'The complete referral was handed to the specialist queue.';
         transition(patient, to, 'handoff_completed', reason, { resource: 'coordination' });
@@ -383,6 +423,7 @@
     R03_SCENARIO,
     R03_MODEL_VERSION,
     R01_PROTOCOL_VERSION,
+    R01_INTERVENTIONS,
     createRun,
   });
 })(globalThis);
