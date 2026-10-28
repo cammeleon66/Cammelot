@@ -307,3 +307,39 @@ If the hiring pilot is still confusing, stop adding content and simplify it. If 
 ## 9. First execution instruction
 
 Start with **0A**, not a redesign: add the failing no-action, negative-difference, hiring/norm, effect-preview and render-rate/reference fixtures; produce a concise run/clock audit. Then implement **0B and phase 1** until G0/G1 are green. The first playable checkpoint is the **specialist-hiring loop**, not another set of menus.
+
+## 10. Accessibility scope and manual screen-reader checklist (issue #12)
+
+**Agreed scope (presentation only; no model, version, clock, determinism or shell change).** Keyboard-operable quarterly councils; mandatory request, confidence-vote, year-end and end-of-term states; dismissible Stats and Methodology overlays.
+
+| State | Dismissible | Escape | Opening focus | Focus on close |
+|---|---|---|---|---|
+| Stats, Methodology | Yes (close button, backdrop, Escape) | Closes the overlay | The dialog | Control focused before opening |
+| Town request, confidence vote, year-end result, end of term, council, manifesto, Minister profile | No | Ignored; a status message explains why. No choice is lost or auto-resolved | The dialog (heading is its name, first paragraph its description) | Request: previous control. Year-end: Open council. Council: town controls |
+
+Every open modal is `role="dialog"` + `aria-modal="true"`, traps Tab/Shift+Tab, and makes the rest of the page `inert` (live regions excepted). *Inspect town* hides the council without discarding it; focus moves to *Return to council* and the background is released until it returns. Status text is announced through `#moc-a11y-status` (polite) and `#moc-a11y-alert` (assertive, end of term only). Automated coverage: the `Issue 12:` tests in `tests/minister_browser.test.js`.
+
+### Manual screen-reader checklist
+
+Run before a release that touches overlays, using desktop Chrome + NVDA or JAWS, desktop Safari + VoiceOver, iOS VoiceOver and Android TalkBack. Mouse use is not needed except where stated. Record the browser, screen reader and result for each line in [MINISTER_RELEASE_STATUS.md](MINISTER_RELEASE_STATUS.md).
+
+1. **Stats.** Tab to *Stats* and activate. Expect the dialog name ("Simulation summary…") to be read, focus inside the dialog, and the map and top bar not reachable by Tab or virtual cursor. Press Escape: "…closed" is announced and focus is back on *Stats*. Repeat with the close button.
+2. **Methodology** (button is hidden in the Minister shell; use `showMethodology()` in the console). Same expectations; summaries expand/collapse with Enter/Space.
+3. **Town request.** Wait for or force a request. Name and "Time is paused" are read. Tab cycles only the two choices; Escape is announced as not closing it. Choose one: "Decision applied …" with the changes is announced and focus is on *Continue to town*. Activate: focus returns to the control used before the request.
+4. **Council ready banner.** The "Council ready" status is read; *Open council* is reachable by Tab.
+5. **Council.** Dialog name "Quarterly Council …", step list read as a list with the current step marked. Next/Back move focus to the new step and announce "Step n of m: label". Escape does nothing and says so.
+6. **Council decision.** Options are buttons with their cost/effect text. After choosing, "Decision recorded…" is announced, focus is on *Next*, and Next is enabled. Escape keeps the decision.
+7. **Inspect town.** Activate: "Council hidden…choices are kept" is announced, focus is on *Return to council* (the town panel is expanded), and the town can be read normally. Return: council reappears with the same step and choices, background inert again.
+8. **Law and funding.** Enacting a law announces it and moves focus to *Next*. Buying an intervention updates the receipt and the budget/slots status ("Implementation slots…") is announced, with focus kept on that line.
+9. **Confidence vote and year-end.** Dialog names "Motion of no confidence" / "Year n results"; Escape is ignored; the chosen vote outcome is announced; after year-end focus lands on *Open council*.
+10. **End of term.** "End of term. Final score …" is announced assertively; Tab stays in the result; Escape is ignored; *Try another approach* and *Export complete command record* are reachable.
+11. **Visible focus.** At 100% and 200% zoom every focused control in the above shows a ring of at least 3px that is not clipped or hidden behind another element.
+12. **No lost keyboard.** After every close, pressing Tab moves to a sensible control, never to the start of the page.
+
+### Known limits (not yet resolved)
+
+- The Sources/Methodology button, QA panel, heat map, timeline and other top-bar tools are hidden in the Minister shell and are intentionally unchanged.
+- Other legacy overlays (gazette, moments, welcome walkthrough) are outside this scope; they are not given the dialog treatment.
+- The Minister profile is Escape-dismissible; use *Back to work* or press Escape.
+- The canvas map has no text alternative beyond the *People to follow* panel and the town status messages.
+- Screen-reader output has not been verified on real devices; this checklist is the gate.
