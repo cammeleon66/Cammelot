@@ -7,7 +7,7 @@
 
 <!-- Open Graph Meta Tags -->
 <meta property="og:title" content="Chapter 1: The Mechanics of the Simulation - Cammelot">
-<meta property="og:description" content="Forty-five citizens, three GPs, one hospital. How a 16-bit pixel simulation models real Dutch healthcare data.">
+<meta property="og:description" content="Legacy World mechanics: fictional residents, selected data and authored rules. Historical results are not validation of the current Minister game.">
 <meta property="og:image" content="https://cammelot.org/og-image.png">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://cammelot.org/ch1.html">
@@ -15,7 +15,7 @@
 <!-- Twitter Card Meta Tags -->
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Chapter 1: The Mechanics of the Simulation - Cammelot">
-<meta name="twitter:description" content="Forty-five citizens, three GPs, one hospital. How a 16-bit pixel simulation models real Dutch healthcare data.">
+<meta name="twitter:description" content="Legacy World mechanics: fictional residents, selected data and authored rules. Historical results are not validation of the current Minister game.">
 <meta name="twitter:image" content="https://cammelot.org/og-image.png">
 
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='4' y='20' width='24' height='12' fill='%23c0392b'/%3E%3Crect x='4' y='16' width='6' height='4' fill='%23c0392b'/%3E%3Crect x='13' y='16' width='6' height='4' fill='%23c0392b'/%3E%3Crect x='22' y='16' width='6' height='4' fill='%23c0392b'/%3E%3Crect x='12' y='8' width='8' height='12' fill='%23e74c3c'/%3E%3Crect x='14' y='4' width='4' height='4' fill='%23c0392b'/%3E%3Crect x='14' y='24' width='4' height='8' fill='%23922b21'/%3E%3C/svg%3E">
@@ -678,10 +678,13 @@ abbr[title]:hover::before {
     <section class="chapter visible" id="mechanics">
       <div class="chapter-label">Chapter 1</div>
       <h2>The Mechanics of the Simulation</h2>
+      <div class="insight-callout warning"><strong>Legacy World mechanics — not current Minister</strong>
+        The historical runner extracts <code>site/world.html</code>; it does not execute Minister or the modular backend. The June 2026 200-run artifact does not record its executable revision. Historical numbers and implementation descriptions below are not certified against today's code. See the <a href="index.html#evidence">evidence classes and source checklist</a>.
+      </div>
 
-      <p>The primary objective of this project is to generate quantifiable data for discussion rather than relying on subjective opinions. Cammelot is a digital representation of a Dutch town that operates directly within a web browser; it follows the lives of forty-five citizens with names, ages, and medical histories drawn from <abbr title="Centraal Bureau voor de Statistiek - Statistics Netherlands">CBS</abbr> and RIVM datasets. As these digital citizens move through the town, they develop illnesses, visit general practitioners, and wait for specialist referrals. When the healthcare system fails to process them in time, these agents experience health declines that are recorded and measured.</p>
+      <p>Cammelot follows 45 fictional residents in a browser model. Names, families and medical histories are synthetic, not personal records from CBS or RIVM. Selected aggregate statistics motivate inputs; authored disease and access rules determine the outcomes we observe inside the executable.</p>
 
-      <p>Every event within Cammelot is traceable and backed by real-world figures. Consultation costs are taken from the <abbr title="Nederlandse Zorgautoriteit - Dutch Healthcare Authority">NZa</abbr> tariff tables, and waiting times are checked against the Treeknorm, which is the legal standard for care access in the Netherlands. By keeping the population small at forty-five citizens and three GPs, the simulation allows us to track every individual outcome while still producing enough data to see clear patterns across 200 separate runs.</p>
+      <p>Not every event or coefficient is backed by measured data. Tariff references, model cost proxies and authored budget rules must be distinguished. Treeknorm access standards provide policy context; the game's 12-week threshold is a model setting, not a universal statutory deadline. Repeated runs quantify variation under those assumptions, not real-world effectiveness.</p>
     </section>
 
     <section class="chapter visible" id="the-town">
@@ -708,18 +711,18 @@ abbr[title]:hover::before {
     <section class="chapter visible" id="the-citizens">
       <h3>The Citizens as Autonomous Agents</h3>
 
-      <p>Each citizen in the town is an “agent” with a persistent identity and a memory of their own experiences. They have specific jobs, family structures, and personalities that influence their behavior. Their health profiles are built using RIVM data, which means the likelihood of a citizen having a condition like type 2 diabetes or dementia is based on their age to match current Dutch population trends.</p>
+      <p>Each synthetic citizen has a persistent identity, authored profile and modeled history. Age and selected prevalence assumptions influence initial conditions; this small population is not a representative sample of current Dutch patients.</p>
 
       <p>These citizens are more than just data points in a spreadsheet; they are state machines that remember every GP visit and every week spent on a waiting list. Disease progression is managed through a Markov chain, which is a mathematical model that determines how a patient moves from being “healthy” to “mildly ill” and eventually “critical.”</p>
 
-      <p>To give an example of how this works, consider a citizen who has both <abbr title="Chronic Obstructive Pulmonary Disease">COPD</abbr> and heart disease. The simulation uses “relative risk multipliers” from medical research to show how these two conditions interact. Having both illnesses makes each one progress faster, which means that a long wait for a specialist is more dangerous for this person than for a citizen with only one health issue.</p>
+      <p>Comorbidity research motivates interactions between conditions, but an epidemiological association is not a calibrated disease-transition multiplier. The implemented coefficients and delay-related deterioration remain assumptions, not validated individual risk estimates.</p>
 
       <div class="stats-table-wrap">
         <table class="stats-table">
           <thead>
             <tr>
               <th>Attribute</th>
-              <th>Source</th>
+              <th>Historical attribution (not verification)</th>
               <th>How It’s Used</th>
             </tr>
           </thead>
@@ -746,21 +749,21 @@ abbr[title]:hover::before {
               <th>Provider</th>
               <th>Type</th>
               <th>Capacity</th>
-              <th>Source</th>
+              <th>Model choice, not a validated capacity norm</th>
             </tr>
           </thead>
           <tbody>
-            <tr><td class="metric-name">Dr. de Jong</td><td>GP</td><td>2,400 patients</td><td><abbr title="Landelijke Huisartsen Vereniging - Dutch National Association of GPs">LHV</abbr> normpraktijk</td></tr>
-            <tr><td class="metric-name">Dr. Bakker</td><td>GP</td><td>2,000 patients</td><td>LHV normpraktijk</td></tr>
-            <tr><td class="metric-name">Dr. Visser</td><td>GP</td><td>1,800 patients</td><td>LHV normpraktijk</td></tr>
-            <tr><td class="metric-name">Cardiology</td><td>Specialist</td><td>12/week</td><td>NZa capacity norms</td></tr>
-            <tr><td class="metric-name">Endocrinology</td><td>Specialist</td><td>15/week</td><td>NZa capacity norms</td></tr>
-            <tr><td class="metric-name">Pulmonology</td><td>Specialist</td><td>10/week</td><td>NZa capacity norms</td></tr>
+            <tr><td class="metric-name">Dr. de Jong</td><td>GP</td><td>2,400 patients</td><td>Historical design assumption</td></tr>
+            <tr><td class="metric-name">Dr. Bakker</td><td>GP</td><td>2,000 patients</td><td>Historical design assumption</td></tr>
+            <tr><td class="metric-name">Dr. Visser</td><td>GP</td><td>1,800 patients</td><td>Historical design assumption; not a current Minister practice</td></tr>
+            <tr><td class="metric-name">Cardiology</td><td>Specialist</td><td>12/week</td><td>Authored capacity, not an NZa norm</td></tr>
+            <tr><td class="metric-name">Endocrinology</td><td>Specialist</td><td>15/week</td><td>Authored capacity, not an NZa norm</td></tr>
+            <tr><td class="metric-name">Pulmonology</td><td>Specialist</td><td>10/week</td><td>Authored capacity, not an NZa norm</td></tr>
           </tbody>
         </table>
       </div>
 
-      <p>Every interaction has a financial value. A regular GP consult is priced at €12.43, while a day in the hospital costs roughly €850. These are not estimates; they are the actual rates used in the Dutch healthcare system.</p>
+      <p>The legacy model uses €12.43 for a GP consultation and approximately €850 per hospital day. These are model cost inputs; they are not universal current Dutch prices. The consultation's exact tariff year/code requires verification, and the hospital-day amount is an unverified proxy. Neither establishes the Minister game's budget or intervention prices.</p>
     </section>
 
     <section class="chapter visible" id="simulation-loop">
@@ -784,7 +787,7 @@ abbr[title]:hover::before {
     <section class="chapter visible" id="what-we-measure">
       <h3>What the Simulation Measures</h3>
 
-      <p>We collect four main types of data that match the indicators used by the <abbr title="Integraal Zorgakkoord - Dutch National Healthcare Agreement 2023–2026">IZA</abbr> (Integraal Zorgakkoord) to judge healthcare performance.</p>
+      <p>We collect four model-output categories for discussion. These are project-selected measures, not a certified IZA performance framework.</p>
 
       <div class="metric-callout">
         <div class="metric-card">
@@ -805,11 +808,11 @@ abbr[title]:hover::before {
         </div>
       </div>
 
-      <p><strong>Mortality:</strong> We track how many deaths are caused specifically by system delays. We look at how many weeks a patient waited beyond the legal limit and which specific bottleneck caused the fatal delay.</p>
+      <p><strong>Mortality:</strong> The executable classifies deaths under system and background-hazard rules. A system classification may include terminal disease progression; it does not prove that waiting caused the death or that clinical care could have prevented it.</p>
 
-      <p><strong>Wait Times:</strong> Every wait is measured against the Treeknorm standards, such as the four-week limit for diagnostics and the seven-to-twelve-week limit for treatments.</p>
+      <p><strong>Wait Times:</strong> The model uses an authored threshold. This must not be confused with the separately defined Dutch access standards for outpatient consultation, diagnostics and treatment.</p>
 
-      <p><strong>Costs:</strong> The system calculates the total cost of all consultations and hospital stays. It also calculates how much money is saved when a hospitalization is prevented, which is estimated at €5,845 per case.</p>
+      <p><strong>Costs:</strong> Cost outputs multiply modeled activity by selected prices. The legacy €5,845 avoided-admission value is an unverified assumption, not measured savings or a national reimbursement tariff.</p>
 
       <p><strong>Fairness:</strong> We look for structural bias by checking if certain groups, such as the elderly or people with multiple conditions, are getting worse results than others.</p>
     </section>
@@ -819,11 +822,11 @@ abbr[title]:hover::before {
 
       <p>A single run of the simulation can tell a specific story, but running it two hundred times is necessary to find a reliable pattern. Because the simulation uses “stochastic” elements, which means it involves random chance, every run is slightly different. One citizen might survive in one run because they were lucky enough to be at the front of a queue, but they might die in the next run because the doctor was on sick leave.</p>
 
-      <p>By running the scenario 200 times, we can use standard statistics like means and confidence intervals to see the “signal” through the “noise.” This allows us to say with confidence whether a change, such as adding an AI scribe, actually improves the system or if the results were just a matter of luck. This methodology is the minimum required to make credible claims about how system-level changes affect the health of a population.</p>
+      <p>Means and uncertainty summaries can describe stochastic variation inside the model. They do not validate the assumptions or establish that an AI scribe improves real care. The archived runner's approximate significance calculations and missing executable revision limit reproducibility and interpretation.</p>
 
       <div class="insight-callout">
         <strong>Why 200?</strong>
-        With 45 citizens per run, individual variation is high. At N=200 runs, the standard error of the mean is small enough to detect effect sizes of 0.3 or larger at p&lt;0.05. This is the minimum needed to make credible claims about system-level changes.
+        Two hundred runs is a historical experiment size, not a demonstrated minimum or a power guarantee. Required sample size depends on effect size, variance, dependence and the specified comparison.
       </div>
     </section>
 
@@ -832,6 +835,7 @@ abbr[title]:hover::before {
 
 <div style="margin-top:2.5rem;padding-top:1.5rem;border-top:1px solid var(--border);">
 <h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.85rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:1rem;">Data Sources &amp; References</h3>
+<p>Historical bibliography labels are not verification of every adjacent number or a claim that it is current. The <a href="https://github.com/cammeleon66/Cammelot/blob/master/docs/MINISTER_CLAIM_SOURCES.md" target="_blank" rel="noopener">dated claim checklist</a> separates verified context, model assumptions and unresolved attributions.</p>
 <ol style="font-size:0.78rem;line-height:1.8;color:var(--text-muted);padding-left:1.2rem;">
   <li><strong>CBS</strong> - <a href="https://www.cbs.nl/nl-nl/nieuws/2025/07/172-duizend-mensen-overleden-in-2024" target="_blank" rel="noopener" style="color:var(--red);text-decoration:underline;text-underline-offset:2px;">172 duizend mensen overleden in 2024</a> (mortality statistics)</li>
   <li><strong>CBS</strong> - <a href="https://www.cbs.nl/nl-nl/nieuws/2025/47/bijna-een-derde-werktijd-zorg-gaat-op-aan-administratie" target="_blank" rel="noopener" style="color:var(--red);text-decoration:underline;text-underline-offset:2px;">Bijna een derde werktijd zorg gaat op aan administratie</a> (~31% admin burden)</li>

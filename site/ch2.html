@@ -7,7 +7,7 @@
 
 <!-- Open Graph Meta Tags -->
 <meta property="og:title" content="Chapter 2: Analysis of the Current System - Cammelot">
-<meta property="og:description" content="Why Dutch healthcare is breaking, and how Cammelot models it. 301,000 worker shortage. 30% admin burden. 12-week waits.">
+<meta property="og:description" content="A legacy scenario analysis of care access and administrative burden. Selected assumptions and unverified historical results, not national measurements.">
 <meta property="og:image" content="https://cammelot.org/og-image.png">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://cammelot.org/ch2.html">
@@ -15,7 +15,7 @@
 <!-- Twitter Card Meta Tags -->
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Chapter 2: Analysis of the Current System - Cammelot">
-<meta name="twitter:description" content="Why Dutch healthcare is breaking, and how Cammelot models it. 301,000 worker shortage. 30% admin burden. 12-week waits.">
+<meta name="twitter:description" content="A legacy scenario analysis of care access and administrative burden. Selected assumptions and unverified historical results, not national measurements.">
 <meta name="twitter:image" content="https://cammelot.org/og-image.png">
 
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='4' y='20' width='24' height='12' fill='%23c0392b'/%3E%3Crect x='4' y='16' width='6' height='4' fill='%23c0392b'/%3E%3Crect x='13' y='16' width='6' height='4' fill='%23c0392b'/%3E%3Crect x='22' y='16' width='6' height='4' fill='%23c0392b'/%3E%3Crect x='12' y='8' width='8' height='12' fill='%23e74c3c'/%3E%3Crect x='14' y='4' width='4' height='4' fill='%23c0392b'/%3E%3Crect x='14' y='24' width='4' height='8' fill='%23922b21'/%3E%3C/svg%3E">
@@ -683,29 +683,33 @@ abbr[title]:hover::before {
     <section class="chapter visible" id="current-system">
       <div class="chapter-label">Chapter 2</div>
       <h2>Analysis of the Current System</h2>
+      <div class="insight-callout warning"><strong>Legacy World analysis — evidence boundary</strong>
+        These are historical scenario descriptions, not national measurements or current Minister results. The archived runner executes <code>site/world.html</code>, separately from Minister and the modular backend. The June 2026 artifact records no executable revision; individual results below remain unverified. See the <a href="index.html#evidence">evidence classes and source checklist</a>.
+      </div>
 
-      <p>To address systemic issues in healthcare, we must first demonstrate the specific areas where the current model is failing by using verifiable data. While the Netherlands is frequently ranked as having one of the best healthcare systems in Europe, it is currently experiencing a “care gridlock” known as a zorginfarct. This is not a future projection but a present reality where 38% of specialist referrals exceed legal waiting standards and many general practitioner (<abbr title="General Practitioner - huisarts in Dutch">GP</abbr>) practices are closed to new patients. Research from 2023 indicates a projected shortfall of 301,000 healthcare workers by 2035; this number represents a structural impossibility because the system cannot function with the workforce that will be available.</p>
+      <p>This legacy scenario explores pressure from waiting lists, administration and staffing. Earlier drafts mixed national projections with model inputs and outputs. In particular, the 38% figure is not established here as a proportion of individual specialist referrals. A staffing projection is conditional on its assumptions, not proof of an inevitable collapse.</p>
+      <p><a href="https://www.rijksoverheid.nl/actueel/nieuws/2025/12/19/nieuwe-berekening-laat-zien-zorgakkoorden-kunnen-personeelstekort-flink-verminderen" target="_blank" rel="noopener">VWS, 19 December 2025</a>, projected a 2035 care-and-welfare shortfall near 301,000 workers, including employees and self-employed workers. Its scenario including agreement measures projected 227,000. These are conditional national projections, not GP-only counts, observed outcomes or results of this game.</p>
 
       <div class="metric-callout">
         <div class="metric-card">
           <div class="metric-value ist">301K</div>
-          <div class="metric-label">Worker shortage by 2035</div>
+          <div class="metric-label">Historical 2035 projection; see dated source checklist</div>
         </div>
         <div class="metric-card">
           <div class="metric-value ist">30%</div>
-          <div class="metric-label">GP time on administration</div>
+          <div class="metric-label">Selected admin assumption</div>
         </div>
         <div class="metric-card">
           <div class="metric-value ist">11%</div>
-          <div class="metric-label">Data interoperability</div>
+          <div class="metric-label">Unverified interoperability claim</div>
         </div>
         <div class="metric-card">
           <div class="metric-value ist">62%</div>
-          <div class="metric-label">Effective GP capacity</div>
+          <div class="metric-label">Legacy capacity sketch, not a measurement</div>
         </div>
       </div>
 
-      <p>The pressure on the system is driven largely by an aging population. Currently, 20% of Dutch citizens are over the age of 65. Within the group aged 75 and older, 96% have at least one chronic condition and nearly half have two or more. The healthcare system was originally designed to provide acute care for a younger population, and the architecture of the system has not evolved to meet these new demographic needs.</p>
+      <p>Population aging and chronic conditions motivate the model. Its selected 20% senior share and legacy 96%/multimorbidity prevalence labels require their original years, condition definitions and population denominators; they are not an exact description of the 45-resident sample or calibrated disease trajectories.</p>
 
       <p>There are three primary factors driving the current failure of the system, and each factor serves to worsen the others.</p>
     </section>
@@ -713,7 +717,7 @@ abbr[title]:hover::before {
     <section class="chapter visible" id="admin-burden">
       <h3>1. The Administrative Burden</h3>
 
-      <p>A Dutch GP spends 30% of their working time on administrative tasks such as documentation, insurance coding, and quality reporting. This is an architectural fact of the system where every new regulation or reporting requirement adds minutes to a patient’s visit without removing any existing tasks. For example, a GP who could theoretically see 200 patients per week is limited to approximately 124 consultations because the remaining 76 slots are consumed by the system’s own reporting requirements. When combined with an 8% sick leave rate, a GP operates at only 62% of their theoretical capacity.</p>
+      <p>The legacy sketch selects 30% administration and 8% absence. Subtracting both gives 62% on paper; it does not measure Dutch GP productivity or prove a consultation limit. Sector-level surveys do not establish every GP's workload, and the current Minister service-work calculation is different.</p>
 
       <div class="insight-callout warning">
         <strong>The compounding effect</strong>
@@ -724,11 +728,11 @@ abbr[title]:hover::before {
     <section class="chapter visible" id="waiting-lists">
       <h3>2. Breaches of the Treeknorm</h3>
 
-      <p>The Treeknorm represents the legal maximum time a patient should wait for specialist care, which is generally four weeks for diagnostics and seven to twelve weeks for treatment. In practice, these norms are frequently ignored.</p>
+      <p><a href="https://puc.overheid.nl/nza/doc/PUC_754550_22/1/" target="_blank" rel="noopener">NZa regulation NR/REG-2421, effective 1 January 2024, articles 1(o) and 6</a> describes the agreed standards for elective medical-specialist care: four weeks for outpatient access/diagnostics and seven weeks for treatment. This is not the game's 12-week threshold. The historical specialty figures below have not been verified by reporting period or denominator; they are not current national rates.</p>
 
       <div class="stats-table-wrap">
         <table class="stats-table">
-          <thead><tr><th>Department</th><th>Norm</th><th>Actual</th><th>Source</th></tr></thead>
+          <thead><tr><th>Department</th><th>Historical standard</th><th>Unverified historical claim</th><th>Original attribution, not verification</th></tr></thead>
           <tbody>
             <tr><td class="metric-name">Ophthalmology</td><td>7 weeks</td><td class="sig">12 weeks</td><td><abbr title="Nederlandse Zorgautoriteit - Dutch Healthcare Authority">NZa</abbr> 2024</td></tr>
             <tr><td class="metric-name">Neurology</td><td>7 weeks</td><td class="sig">+50% since 2022</td><td>NZa 2024</td></tr>
@@ -744,11 +748,11 @@ abbr[title]:hover::before {
     <section class="chapter visible" id="data-fragmentation">
       <h3>3. Data Fragmentation</h3>
 
-      <p>The Dutch healthcare network consists of roughly 12,000 GP practices and 90 hospital organisations, yet only 11% of health data is shared effectively between them. Most providers still use EDIFACT, which is a messaging standard from the 1980s originally created for shipping logistics. This lack of communication means that five different providers treating the same patient may maintain five independent and disconnected records.</p>
+      <p>Fragmented information exchange motivates this scenario. Earlier drafts claimed 12,000 GP practices, 90 hospital organisations and 11% interoperability without verified definitions or denominators. Those figures are not established inputs for a national extrapolation. A messaging standard alone does not determine whether information is clinically usable.</p>
 
       <div class="insight-callout">
         <strong>The coordination cost</strong>
-        Adding a new specialist system to the Dutch healthcare network takes 3–18 months of integration work. In Cammelot’s <abbr title="Agent-to-Agent - protocol for autonomous software agents to communicate">A2A</abbr> mesh, it takes five minutes: publish an agent card, join the mesh. The gap between these two numbers is the cost of the current architecture.
+        The earlier “3–18 months versus five minutes” comparison was not a measured benchmark. Publishing a demonstration Agent Card does not include real clinical integration, authorization, governance or deployment work.
       </div>
     </section>
 
@@ -773,13 +777,13 @@ abbr[title]:hover::before {
         </table>
       </div>
 
-      <p>In this formula, L<sub>admin</sub> represents the 30% administrative loss and V<sub>ziekte</sub> represents the 8% loss due to sick leave. In the current system, there is no AI assistance, so E<sub>ai</sub> is set to 1.0. This means a practice meant for 2,400 patients can only effectively manage 1,488 people before the quality of care begins to decline and burnout occurs.</p>
+      <p>These are selected legacy coefficients. Multiplying a notional list size by 0.62 does not establish a safe patient-list limit, a burnout threshold or a measured clinical effect. The table is an assumption sketch, not the current Minister resource calculation.</p>
     </section>
 
     <section class="chapter visible" id="hp-drain">
       <h3>Health Deterioration and Mortality</h3>
 
-      <p>Mortality in this simulation is a direct result of delays in the system. When a citizen waits longer than the Treeknorm allows, their health points (<abbr title="Health Points - a citizen’s remaining health value in the simulation">HP</abbr>) begin to drain according to this formula:</p>
+      <p>The legacy delay rule subtracts health points beyond an authored threshold. Its coefficients are not calibrated to observed mortality. Other disease and background-hazard rules also produce deaths, so the system-death label is not proof of delay causation:</p>
 
       <div class="insight-callout" style="text-align:center;font-family:'Space Grotesk',sans-serif;font-size:1rem;font-weight:600;letter-spacing:0.02em;background:var(--code-bg);border-left-color:var(--red);">
         HP<sub>drain</sub> = drainRate × (t<sub>wait</sub> − T<sub>treeknorm</sub>) × severityMultiplier × (1 + adminBurden)
@@ -799,7 +803,7 @@ abbr[title]:hover::before {
         </table>
       </div>
 
-      <p>The “drain rate” increases based on how serious the illness is. For a patient in a critical state, health points drop four times faster than for someone with a mild condition. The simulation also accounts for the fact that administrative overhead slows down every step of the care chain, which further accelerates how quickly a patient’s health declines. The model distinguishes between “natural mortality,” such as a person dying of old age at 92, and “system-failure mortality,” where a person dies specifically because they waited 18 weeks for a cardiologist.</p>
+      <p>Severity and administrative burden modify the authored drain rule. Model-classified system deaths and background-hazard deaths are separate counters, not validated clinical causes of death. In particular, a terminal disease transition can enter the system category without proving that care delay caused it.</p>
     </section>
 
     <section class="chapter visible" id="disease-engine">
@@ -828,7 +832,7 @@ abbr[title]:hover::before {
             </table>
           </div>
 
-          <p><strong>Comorbidity multipliers</strong> model documented clinical interactions:</p>
+          <p><strong>Comorbidity multipliers</strong> are unvalidated model coefficients motivated by clinical associations. The source labels below do not verify these exact progression multipliers:</p>
           <div class="stats-table-wrap">
             <table class="stats-table">
               <thead><tr><th>Interaction</th><th>Relative Risk</th><th>Source</th></tr></thead>
@@ -842,23 +846,23 @@ abbr[title]:hover::before {
         </div>
       </details>
 
-      <p>Waiting for treatment does not just delay help; it actively moves patients toward worse health states. We also model how different diseases interact. For example, clinical research shows that having COPD increases the risk of cardiovascular disease by 2.5 times. These “relative risk multipliers” ensure that the simulation reflects the actual danger that multimorbid patients face when the system is backed up.</p>
+      <p>Clinical associations between conditions motivate the design but do not calibrate tick-level progression. An odds ratio for comorbidity is not interchangeable with a relative risk or an individual disease-transition probability. These multipliers do not establish the actual danger of a particular wait.</p>
     </section>
 
     <section class="chapter visible" id="baseline-results">
-      <h3>Observations from 200 Simulation Runs</h3>
+      <h3>Archived, unverified result claims</h3>
 
-      <p>When we average the results of 200 independent runs for the current system, the following patterns emerge:</p>
+      <p>The following figures were reported in the legacy World narrative. Their exact executable revision, seed history and correspondence to the June 2026 archive are unverified. They are not national observations and must not be used to validate Minister:</p>
 
       <div class="stats-table-wrap">
         <table class="stats-table">
           <thead><tr><th>Metric</th><th>IST Mean</th><th>Interpretation</th></tr></thead>
           <tbody>
-            <tr><td class="metric-name">System-failure deaths</td><td class="sig">4.2 / run</td><td>Deaths from wait time exceeding Treeknorm</td></tr>
-            <tr><td class="metric-name">Treeknorm violations</td><td class="sig">38%</td><td>Referrals exceeding legal wait norm</td></tr>
+            <tr><td class="metric-name">Model-classified system deaths</td><td class="sig">4.2 / run</td><td>Historical classification, not proven delay causation</td></tr>
+            <tr><td class="metric-name">Model wait-threshold breaches</td><td class="sig">38%</td><td>Unverified historical model figure, not a national legal-breach rate</td></tr>
             <tr><td class="metric-name">Avg specialist wait</td><td>9.4 weeks</td><td>Across all departments</td></tr>
             <tr><td class="metric-name">GP burnout events</td><td>1.8 / run</td><td>GP at capacity ceiling</td></tr>
-            <tr><td class="metric-name">Cost per citizen / year</td><td>€2,847</td><td>NZa tariff-based (GP + specialist + hospital)</td></tr>
+            <tr><td class="metric-name">Cost per citizen / year</td><td>€2,847</td><td>Unverified historical cost output using mixed prices and proxies</td></tr>
           </tbody>
         </table>
       </div>
@@ -881,7 +885,7 @@ abbr[title]:hover::before {
             <li><strong>N=45 is small.</strong> With only 45 citizens, the results can vary significantly between runs, which is why we focus on the average results across 200 iterations rather than any single outcome.</li>
             <li><strong>Disease progression is simplified.</strong> The five-state Markov chain omits remission, acute exacerbations, and treatment response variation.</li>
             <li><strong>Uniform patient complexity.</strong> A 5-minute prescription renewal and a 45-minute multimorbidity assessment are treated equivalently.</li>
-            <li><strong>Mortality from delay is modeled, not observed.</strong> The direction is evidence-supported (delayed treatment worsens outcomes). The specific drain rates are calibrated parameters, not measured values.</li>
+            <li><strong>Mortality from delay is modeled, not observed.</strong> Drain rates and causal attribution are unvalidated assumptions, not clinically calibrated parameters.</li>
             <li><strong>Parameters derive from published sources</strong> (CBS, <abbr title="Rijksinstituut voor Volksgezondheid en Milieu - Dutch National Institute for Public Health">RIVM</abbr>, NZa, <abbr title="Integraal Zorgakkoord - Dutch National Healthcare Agreement 2023–2026">IZA</abbr>, LHV) but the model is a simplification. The goal is to identify qualitative patterns in how the healthcare system responds to stress.</li>
           </ul>
         </div>
@@ -913,6 +917,7 @@ abbr[title]:hover::before {
 
 <div style="margin-top:2.5rem;padding-top:1.5rem;border-top:1px solid var(--border);">
 <h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.85rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:1rem;">Data Sources &amp; References</h3>
+<p>Historical bibliography labels are not verification of every adjacent number or a claim that it is current. The <a href="https://github.com/cammeleon66/Cammelot/blob/master/docs/MINISTER_CLAIM_SOURCES.md" target="_blank" rel="noopener">dated claim checklist</a> separates verified context, model assumptions and unresolved attributions.</p>
 <ol style="font-size:0.78rem;line-height:1.8;color:var(--text-muted);padding-left:1.2rem;">
   <li><strong>CBS</strong> - <a href="https://www.cbs.nl/nl-nl/nieuws/2025/07/172-duizend-mensen-overleden-in-2024" target="_blank" rel="noopener" style="color:var(--red);text-decoration:underline;text-underline-offset:2px;">172 duizend mensen overleden in 2024</a> (mortality statistics)</li>
   <li><strong>CBS</strong> - <a href="https://www.cbs.nl/nl-nl/nieuws/2025/47/bijna-een-derde-werktijd-zorg-gaat-op-aan-administratie" target="_blank" rel="noopener" style="color:var(--red);text-decoration:underline;text-underline-offset:2px;">Bijna een derde werktijd zorg gaat op aan administratie</a> (~31% admin burden)</li>

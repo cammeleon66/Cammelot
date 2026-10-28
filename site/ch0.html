@@ -843,18 +843,21 @@ code {
     <section class="chapter" id="chapter-0">
       <div class="chapter-label">Chapter 0</div>
       <h2>Why I Built This</h2>
+      <div class="insight-callout warning"><strong>Legacy World narrative — provenance limits</strong>
+        This chapter describes the separate <code>site/world.html</code> experiment, not current Minister behavior. The June 2026 archive records 100 runs per mode and 3,000 cycles through <code>scripts/research_run.cjs</code>, but no executable revision. Individual figures below remain unverified against an exact historical executable. The modular backend is a separate implementation. See the <a href="index.html#evidence">evidence classes and source checklist</a>.
+      </div>
       <div class="hook">"I have worked in Big Tech for the last six years. You should assume I'm biased toward AI. That's exactly why I built something that could prove me wrong."</div>
 
       <p>I have worked in Big Tech for the last six years. You should assume I'm biased toward AI.</p>
 
       <p>That's exactly why I built a system that could prove me wrong. In several important ways, it did.</p>
-      <p><strong>Cammelot</strong> is a simulated Dutch town. Forty-five citizens with names, ages, pre-existing conditions, and GP assignments. Three general practitioners. One hospital. The citizens walk around a 16-bit pixel map that looks like it belongs on a 1994 Super Nintendo. Their diseases are drawn from 2025 RIVM prevalence data. Their healthcare costs come from NZa tariffs. Their waiting times follow the Treeknorm - the Dutch legal norm for how long you should wait for specialist care.</p>
+      <p><strong>Cammelot</strong> is a fictional Dutch town with 45 synthetic residents. No personal medical histories are drawn from CBS or RIVM records. Selected aggregate statistics and tariff references provide context; disease transitions, care costs and access thresholds remain simplified assumptions. The historical design described three GPs; current Minister models two practices and a hospital. Treeknorm access standards are not a universal 12-week statutory limit.</p>
 
       <p>I built it because I was tired of the vibes.</p>
 
       <p>“AI will solve the care gridlock.” How? Which interventions? In what order? With what side effects?</p>
 
-      <p>"AI is overhyped." Compared to what? The system that's already producing a 301,000-worker shortage by 2035?</p>
+      <p>"AI is overhyped." Compared to which alternative? VWS's 19 December 2025 projection put the 2035 care-and-welfare shortfall near 301,000 workers without the modeled agreement measures, or 227,000 with them. Those are conditional national projections, not observed shortages or Cammelot outputs.</p>
 
       <p>Both sides argue with anecdotes and intuition. I wanted a machine that produces numbers. Not predictions. Outputs you can measure. Run it, measure it, break it, run it again. Two hundred times. With statistics.</p>
       <h3>The architecture: how it actually works</h3>
@@ -869,7 +872,7 @@ code {
 
       <p><strong>3. Planning.</strong> Based on memory and reflection, agents act. Patients visit GPs. GPs triage and refer. Specialists process queues. The system runs forward one tick. Repeat 3,000 times.</p>
 
-      <p>Disease progression is driven by <strong>Markov chains</strong> - probabilistic state machines calibrated to RIVM data. A patient with COPD transitions between states: healthy → mild → moderate → severe → terminal. Each tick, the chain rolls. Comorbidities multiply the odds: diabetes worsens heart disease (1.4×), hypertension compounds both (1.3×). When a patient reaches terminal, their sprite turns grey. They become a ghost.</p>
+      <p>Disease progression uses <strong>Markov chains</strong>: probabilistic state machines with authored transition rates. RIVM prevalence data do not calibrate those transitions. The legacy 1.4× and 1.3× comorbidity coefficients are unvalidated model choices, not individual clinical risk estimates. Terminal states and health-point rules produce model-classified deaths, not proven preventable deaths.</p>
 
       <p>Providers communicate through <strong>A2A (Agent-to-Agent) protocol</strong>. Every GP and specialist publishes an Agent Card - a machine-readable description of their skills, current wait time, and queue depth. Referrals flow as structured messages. Wait times are real-time, not estimated. Think of it as an evolution of the Personal Health Train concept that the Netherlands pioneered through Health-RI - but with stateful agents that discover each other, instead of stateless containers dispatched to known nodes.</p>
       <h3>Two worlds: IST and SOLL</h3>
@@ -879,42 +882,42 @@ code {
       <details>
         <summary>IST ("Ist-Zustand" - the current state) — full parameters</summary>
         <div class="details-content">
-          <p>This is today's Dutch healthcare system, parameterized from CBS, NZa, LHV, and IZA data:</p>
+          <p>These are historical model settings, not measurements of today's Dutch healthcare system. Source context does not validate their combination:</p>
           <ul>
-            <li><strong>30% of GP time</strong> lost to administrative paperwork (NZa/LHV)</li>
-            <li><strong>8% workforce capacity</strong> lost to sick leave (CBS)</li>
-            <li><strong>12-week Treeknorm ceiling</strong> for specialist care (NZa)</li>
+            <li><strong>30% administration</strong> — selected baseline assumption, not a universal GP measurement</li>
+            <li><strong>8% absence</strong> — selected baseline assumption, not an individual clinician's measured absence</li>
+            <li><strong>12-week wait threshold</strong> — authored model setting, not the Dutch specialist-access standard</li>
             <li><strong>Basic clinical triage</strong> - severity-based, but without AI enhancement</li>
             <li><strong>No proactive monitoring</strong> - problems are detected when patients show up</li>
             <li><strong>No AI assistance</strong> - efficiency multiplier is 1.0</li>
             <li><strong>Standard disease progression</strong> - Markov chains tick identically for treated and untreated patients</li>
           </ul>
-          <p>The effective GP capacity in IST: <code>C_total × (1 - 0.30 - 0.08) × 1.0 = 62%</code>. Your GP is operating at sixty-two percent before they see their first patient.</p>
+          <p>The historical additive sketch gives <code>C_total × (1 - 0.30 - 0.08) × 1.0 = 62%</code>. This is arithmetic on assumptions, not measured GP productivity or the current Minister service-work formula.</p>
         </div>
       </details>
 
       <details>
         <summary>SOLL ("Soll-Zustand" - the target state) — full parameters</summary>
         <div class="details-content">
-          <p>This is what an AI-native primary care system <em>could</em> look like. Every parameter has a source, and I'll be honest about which are evidence-based and which are aspirational:</p>
+          <p>The following are aspirational legacy settings. The combined effects have not been clinically calibrated or validated:</p>
           <ul>
-            <li><strong>5% admin load</strong> - ambient AI scribes handle documentation (IZA 2030 target: 20%. I'm more aggressive.)</li>
+            <li><strong>5% admin load</strong> — authored target, not a verified IZA target or measured scribe effect</li>
             <li><strong>5% sick leave</strong> - reduced through better workforce support (aspirational)</li>
-            <li><strong>4-week Treeknorm</strong> - AI-driven scheduling + capacity optimization (aspirational - the hardest one)</li>
+            <li><strong>4-week model wait target</strong> — aspirational scheduling assumption, not an AI-modified legal standard</li>
             <li><strong>Severity-based triage</strong> - sickest patients jump the queue, not first-come</li>
             <li><strong>Digital Twin monitoring</strong> - continuous risk assessment for every citizen. Alert threshold: 25% risk (vs. 60% in IST). This means problems are flagged much earlier.</li>
-            <li><strong>1.34× AI efficiency multiplier</strong> - GPs see 34% more patients effectively (IZA/Vilans research estimate)</li>
+            <li><strong>1.34× AI efficiency multiplier</strong> — unvalidated scenario coefficient, not an established IZA/Vilans effect size</li>
             <li><strong>0.3× HP drain</strong> - patients waiting in SOLL deteriorate 70% slower (because of active monitoring + ketenzorg)</li>
             <li><strong>Treatment-modified disease progression</strong> - ketenzorg and hospital care actually slow Markov transitions: 20% deceleration on worsening, 5% chance of improving one state</li>
             <li><strong>Fairness guardrail</strong> - if any age group's average wait exceeds 120% of the population mean, optimization biases auto-disable</li>
           </ul>
-          <p>The effective GP capacity in SOLL: <code>C_total × (1 - 0.05 - 0.05) × 1.34 = ~121%</code>. The same GP, nearly double the output.</p>
+          <p>This legacy sketch gives <code>C_total × (1 - 0.05 - 0.05) × 1.34 = ~121%</code>. It is a different assumption set from the 83% sketch elsewhere in the archive; neither is current Minister output or a clinical productivity estimate.</p>
         </div>
       </details>
 
       <div class="insight-callout">
         <strong>Key difference</strong>
-        IST runs at 62% GP capacity. SOLL runs at 121%. Same GPs, same town — different architecture.
+        The historical 62% and 121% values follow selected inputs. They do not establish that changing architecture produces those gains in practice.
       </div>
       <h3>Wait - that's a lot of changes at once</h3>
 
@@ -935,13 +938,13 @@ code {
         <div class="details-content">
           <ul>
             <li><strong>100 independent runs per state</strong> (IST and SOLL) - 200 total simulations</li>
-            <li><strong>3,000 cycles per run</strong> - roughly 10 simulated years</li>
+            <li><strong>3,000 cycles per run</strong> — legacy clock; not Minister's 208 ticks per model year</li>
             <li><strong>Welch's t-test</strong> for significance (unequal variances)</li>
             <li><strong>Cohen's d</strong> for effect size (how big is the difference, not just "is it nonzero")</li>
             <li><strong>95% confidence intervals</strong> on every metric</li>
             <li><strong>Every null result published</strong> alongside every positive one</li>
           </ul>
-          <p>N = 45 agents is small. I know. The small-population variance is high - especially for elderly subgroups, where 3 agents per run means a single death swings mortality by 33 percentage points. I'll flag this limitation every time it matters. And I'll show you the raw data, not just the averages.</p>
+          <p>This is the archived protocol description, not certification of the calculations. The historical runner uses approximate significance thresholds, and its artifact lacks an executable revision. Small populations, repeated-run dependence, multiple comparisons and unvalidated assumptions limit interpretation; run count alone does not establish statistical power.</p>
         </div>
       </details>
       <h3>Why you should be skeptical of me</h3>
