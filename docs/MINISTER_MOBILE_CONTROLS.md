@@ -9,7 +9,7 @@
 | 1 — primary play | Toolbar (`#cbar`), speed/sound, "People to follow" and "Town figures" disclosures, Pause/Council buttons, council banner and return, wizard Back/Next, council options, law/funding buttons, dossier "← Ministry", opening and ending buttons | at least 44 × 44 CSS px (width may be larger) | at least 10 px computed (enforced by the browser test); pixel-font labels are not smaller than 10 px |
 | 2 — site chrome | "Back to Cammelot", "About", theme toggle | at least 24 × 24 CSS px (WCAG 2.2 SC 2.5.8) | 11 px or more |
 
-Layout expectations at 375, 390 and 412 px portrait and short landscape (height up to 500 px, e.g. 667 × 375 and 844 × 390):
+Layout expectations at 375, 390 and 412 px portrait and short landscape (the `(max-height: 500px) and (orientation: landscape)` breakpoint, e.g. 667 × 375 and 844 × 390):
 
 - The document, header and panels do not scroll or clip horizontally.
 - Every tier 1 control can be scrolled fully into view and is not covered by another element.
@@ -22,6 +22,15 @@ Known tier 2 exceptions: the opening screen's secondary disclosure links ("Why t
 ## Automated coverage
 
 `tests/minister_browser.test.js` → "L04 mobile controls …" drives a full run (opening, town, disclosures, council, inspect, funding, ending) in Chromium mobile emulation with touch at 375×667, 390×844, 412×915, 667×375 and 844×390. It checks size, font, viewport containment, hit-testing and horizontal overflow. Leaderboard reads are stubbed and writes are refused, so nothing is published.
+
+## Before/after browser screenshots
+
+Captured in Chromium at 375×667 and 768×1024 with the cabinet-crisis scenario, seed 2468. Before images use `master` at `f0c86dc`; after images show the updated branch with the inspector return banner.
+
+| Viewport | Before | After |
+|----------|--------|-------|
+| 375 × 667 | [Screenshot](screenshots/minister-mobile-before-375.png) | [Screenshot](screenshots/minister-mobile-after-375.png) |
+| 768 × 1024 | [Screenshot](screenshots/minister-mobile-before-768.png) | [Screenshot](screenshots/minister-mobile-after-768.png) |
 
 ## What emulation does not prove
 

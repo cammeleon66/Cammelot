@@ -3366,6 +3366,8 @@ test('L04 mobile controls: touch-sized, discoverable disclosures and a reachable
           const summary = page.locator(`${selector} > summary`);
           await summary.scrollIntoViewIfNeeded();
           const first = await l04DisclosureState(page, selector);
+          const hintFontSize = await summary.evaluate(element => parseFloat(getComputedStyle(element, '::after').fontSize));
+          assert.ok(hintFontSize >= 10, `${selector} SHOW/HIDE label must be at least 10px at ${viewport.name}`);
           assert.equal(first.chevron, true, `${selector} must draw an expand chevron at ${viewport.name}`);
           assert.equal(first.hint, first.open ? 'HIDE' : 'SHOW', `${selector} hint must match state at ${viewport.name}`);
           await summary.focus();
@@ -3392,6 +3394,8 @@ test('L04 mobile controls: touch-sized, discoverable disclosures and a reachable
         await page.locator('#moc-inspect-town').tap();
         assert.equal(await page.locator('#moc-council').isVisible(), false);
         await l04AssertReachable(page, viewport, '#moc-council-return', 'inspect return banner');
+        const returnBannerFontSize = await page.locator('#moc-council-ready-banner strong').evaluate(element => parseFloat(getComputedStyle(element).fontSize));
+        assert.ok(returnBannerFontSize >= 10, `return-to-council banner text must be at least 10px at ${viewport.name}`);
         assert.equal(await page.locator('#moc-town-watch').evaluate(element => element.open), true, 'inspecting must reveal the Return to council control');
         await page.locator('#moc-town-watch > summary').tap();
         assert.equal(await page.locator('#moc-town-council').isVisible(), false, 'collapsed list hides its own return button');
