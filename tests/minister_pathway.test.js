@@ -98,7 +98,7 @@ async function deterministicTrace() {
 
 test('bounded pathway records ordered patient traces, resource use, and distinct exits', async () => {
   const result = await deterministicTrace();
-  assert.equal(result.snapshot.runIdentity.modelVersion, 'minister-r03-cardiology-pathway-2');
+  assert.equal(result.snapshot.runIdentity.modelVersion, 'minister-r03-cardiology-pathway-3');
   assert.equal(result.snapshot.runIdentity.protocolVersion, 'r01-cardiology-v1.0');
   assert.equal(result.snapshot.runIdentity.scheduleId, 'fixture-schedule-v1');
   assert.ok(result.events.every((event, index) => event.sequence === index + 1));
