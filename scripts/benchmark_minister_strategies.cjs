@@ -368,7 +368,7 @@ async function runPlayer(page, base, scenario, seed, strategy, loaded = false) {
   const result = await page.evaluate(async () => {
     const horizonTicks = MoC.TOTAL_QUARTERS * MoC.QUARTER_TICKS;
     const care = MoC.S._finalSnapshot || MoC.care.snapshot();
-    const executableSha256 = await MoC.record.ready;
+    const executableIdentity = await MoC.record.ready;
     const history = JSON.parse(localStorage.getItem('moc_runs_' + MoC.MODEL_VERSION) || '[]');
     const saved = history.slice().reverse().find(item => item.seed === MoC.seed && item.scenario === MoC.S.scenario);
     const prior = MoC.previousRun;
@@ -378,7 +378,7 @@ async function runPlayer(page, base, scenario, seed, strategy, loaded = false) {
     return {
       modelVersion: MoC.MODEL_VERSION,
       referenceProtocol: MoC.REFERENCE_PROTOCOL,
-      executableSha256,
+      executableIdentity,
       seed: MoC.seed,
       scenario: MoC.S.scenario,
       horizonTicks,
@@ -583,8 +583,10 @@ async function main() {
       executable: {
         modelVersion: firstRun?.modelVersion || null,
         referenceProtocol: firstRun?.referenceProtocol || null,
-        inlineScriptSha256: firstRun?.executableSha256 || null,
+        modelExecutableId: firstRun?.executableIdentity?.modelExecutableId || null,
+        replayExecutableId: firstRun?.executableIdentity?.replayExecutableId || null,
         ministerHtmlSha256: pageSha256,
+        modelModuleSha256: createHash('sha256').update(readFileSync(join(root, 'minister-model-core.js'))).digest('hex'),
       },
       design: {
         seeds: options.seeds,

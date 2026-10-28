@@ -16,7 +16,9 @@ test('Minister strategy benchmark records a local versioned run and matched no-a
   const run = group.runs[0];
 
   assert.equal(evidence.executable.modelVersion, 'minister-care-10-access-time-replay');
-  assert.match(evidence.executable.inlineScriptSha256, /^[a-f0-9]{64}$/);
+  assert.match(evidence.executable.modelExecutableId, /^[a-f0-9]{64}$/);
+  assert.match(evidence.executable.replayExecutableId, /^[a-f0-9]{64}$/);
+  assert.match(evidence.executable.modelModuleSha256, /^[a-f0-9]{64}$/);
   assert.match(evidence.executable.ministerHtmlSha256, /^[a-f0-9]{64}$/);
   assert.equal(run.scenario, 'cabinetcrisis');
   assert.equal(run.seed, 2468);
