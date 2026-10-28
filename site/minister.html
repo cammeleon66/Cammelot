@@ -10886,7 +10886,11 @@ setTimeout(function() {
 // Sprint 29: Attract mode disabled for cleaner UX
 // resetAttractTimer();
 window.addEventListener('resize',()=>{userZoomed=false;zoom=1;render();});
-// beforeunload save removed for website version
+window.addEventListener('beforeunload', function(event) {
+  if (MoC.IS_BASELINE || !window._mocGameStarted || MoC.S.over || window._mocRestartConfirmed) return;
+  event.preventDefault();
+  event.returnValue = '';
+});
 
 // === Launch simulation (called when walkthrough finishes) ===
 function launchSimulation() {
@@ -16358,6 +16362,7 @@ async function initLLMSubsystem() {
         + '<h2>' + sc.name.toUpperCase() + '</h2>'
         + '<p class="moc-sub">' + years + ' years · ' + fmtK(sc.budget) + ' · ' + sc.quarters + ' quarters</p>'
         + '<p class="moc-sub">Patients are waiting. Staff are stretched. Choose what to fund, then watch the town.</p>'
+        + '<p class="moc-sub" id="moc-save-disclosure"><b>No mid-term save or resume:</b> The active town, budget and choices stay only in this page. Reloading or leaving ends this term and starts the same town over. Completed results and previous-attempt summaries, plus some preferences such as your name and sound setting, may be stored in this browser; they do not save an active term. Some browsers, especially on mobile, may not show a leave warning, so do not rely on one.</p>'
         + (MoC.versionMismatch ? '<p class="moc-sub">This link uses a different model version. The town opens under '+MoC.MODEL_VERSION+'; older outcomes are not comparable.</p>' : '')
         + (MoC.previousRun ? '<p class="moc-sub" id="moc-previous-attempt">Same town, same external conditions. Your previous attempt ended at tick '+MoC.previousRun.tick+'. Try a different approach.</p>' : '')
         + '<p class="moc-sub"><b>' + (sc.id === 'cabinetcrisis'
@@ -16937,7 +16942,11 @@ async function initLLMSubsystem() {
       if (rb) {
         const clone = rb.cloneNode(true);
         rb.parentNode.replaceChild(clone, rb);
-        clone.addEventListener('click', function(){ if (confirm('Resign and start a new term?')) location.reload(); });
+        clone.addEventListener('click', function(){
+          if (!confirm('Restart this same town? Your active term and choices will be lost.')) return;
+          window._mocRestartConfirmed = true;
+          location.reload();
+        });
       }
       // G5: minister portrait, year-1 objective, mute hookup
       if (MoC.scenario) {
