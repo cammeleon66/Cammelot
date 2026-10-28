@@ -9801,8 +9801,9 @@ function buildROIHTML() {
   var overNormWeeks = agents.filter(function(a) { return a.waitWeeks > p.tree && a.hp > 0; })
     .reduce(function(sum, a) { return sum + (a.waitWeeks - p.tree); }, 0);
   var currentOverNormCostEUR = Math.round(overNormWeeks * SIM_TREEKNORM_WEEK_EUR);
-  var sollAdmin = Math.round(gpHoursPerCycle * 0.05 * NZA_GP_CONSULT_EUR * modelTick);
-  var adminDifference = adminWasteEUR - sollAdmin;
+  var assumedSollAdmin = 0.05;
+  var adminDifference = Math.round(gpHoursPerCycle * (p.admin - assumedSollAdmin) * NZA_GP_CONSULT_EUR * modelTick);
+  var currentAdminPercent = (p.admin * 100).toFixed(1);
   var interval = 'elapsed ticks 0–' + modelTick + ' (' + (modelTick / MoC.TICKS_PER_WEEK).toFixed(2) + ' weeks; ' + gps.length + ' GPs)';
   var adminProxy = modelTick > 0 && gps.length > 0 ? '€' + adminWasteEUR.toLocaleString() : 'Unavailable (no elapsed interval or GP cohort)';
   var adminDifferenceLabel = modelTick > 0 && gps.length > 0 ? '€' + adminDifference.toLocaleString() : 'Unavailable (no elapsed interval or GP cohort)';
@@ -9813,7 +9814,7 @@ function buildROIHTML() {
       '<div class="stats-row"><span class="sk">Administrative-time proxy (elapsed window)</span><span class="sv sr">' + adminProxy + '</span></div>' +
       '<div class="stats-row"><span class="sk">Model-classified system-death proxy (cumulative; ' + sysDeaths + ' × €5,845)</span><span class="sv sr">€' + systemDeathCostEUR.toLocaleString() + '</span></div>' +
       '<div class="stats-row"><span class="sk">Current living over-norm wait proxy (' + overNormWeeks.toFixed(1) + ' person-weeks; current snapshot)</span><span class="sv ' + (currentOverNormCostEUR > 0 ? 'sr' : '') + '">€' + currentOverNormCostEUR.toLocaleString() + '</span></div>' +
-      '<div class="stats-row"><span class="sk">Illustrative admin-only difference (assumed 30% vs 5%; same elapsed window)</span><span class="sv sg">' + adminDifferenceLabel + '</span></div>' +
+      '<div class="stats-row"><span class="sk">Illustrative admin-only difference (current ' + currentAdminPercent + '% vs assumed 5%; same elapsed window)</span><span class="sv sg">' + adminDifferenceLabel + '</span></div>' +
       '<div style="font-size:8px;color:var(--ink2);margin-top:6px;font-style:italic">€5,845 per model-classified death and €150 per over-norm person-week are game estimates, not official NZa tariffs. The 5% admin comparison is an assumption, not a simulated SOLL outcome.</div>' +
     '</div>';
 }
@@ -13009,24 +13010,32 @@ async function initLLMSubsystem() {
     function row(label,p,r,unit=''){
       return '<div class="moc-score-row"><span>'+label+'</span><b>'+p+unit+' / '+r+unit+'</b></div>';
     }
+    function valueRow(label,value){
+      return '<div class="moc-score-row"><span>'+label+'</span><b>'+value+'</b></div>';
+    }
     function waitText(snapshot){ return currentReferralWait(snapshot); }
     const completedWait=player.completedReferralWaitN
       ? player.meanWaitToTreatmentWeeks.toFixed(1)+' weeks (n='+player.completedReferralWaitN+')'
       : 'Unavailable (n=0 treatment-start episodes)';
+    const systemDeaths=diff
+      ? row('Model-classified system deaths (yours / no-action reference)',player.systemDeaths,reference.systemDeaths)
+      : valueRow('Model-classified system deaths (yours)',player.systemDeaths);
+    const deathsBeforeTreatment=diff
+      ? row('Deaths before treatment (yours / no-action reference)',player.deathsWaiting,reference.deathsWaiting)
+      : valueRow('Deaths before treatment (yours)',player.deathsWaiting);
     let html='<h3>Care performance</h3><p class="moc-sub">Ending snapshot at tick '+player.tick+'. Same date: tick '+player.tick+'. Current queue and completed referral waits are separate cohorts; paired values compare your town / no-action reference.</p>'
       + '<div class="moc-score-row"><span>Current referral queue mean wait</span><b>'+waitText(player)+'</b></div>'
       + '<div class="moc-score-row"><span>Closed referral-to-treatment-start wait (mean)</span><b>'+completedWait+'</b></div>'
-      + '<div class="moc-score-row"><span>Cumulative treatment starts by tick '+player.tick+'</span><b>'+player.treatments+'</b></div>';
+      + '<div class="moc-score-row"><span>Cumulative treatment starts by tick '+player.tick+'</span><b>'+player.treatments+'</b></div>'
+      + systemDeaths + deathsBeforeTreatment;
     if (!diff) html+='<p class="moc-sub" role="status">Reference pending or unavailable for this date. No benefit claimed.</p>';
     else {
       const deathText=diff.livesDifference>0 ? diff.livesDifference+' fewer model-classified system deaths'
         : diff.livesDifference<0 ? Math.abs(diff.livesDifference)+' more model-classified system deaths' : 'The same number of model-classified system deaths';
       html+='<p class="moc-sub" id="moc-care-verdict">'+deathText+'. Other outcomes may differ.</p>'
-        +row('System deaths',player.systemDeaths,reference.systemDeaths)
         +'<div class="moc-score-row"><span>Death difference (reference − yours)</span><b id="moc-livesval">'+(diff.livesDifference>0?'+':'')+diff.livesDifference+'</b></div>'
         +row('Cumulative treatment starts',player.treatments,reference.treatments)
-        +'<div class="moc-score-row"><span>Current referral queue mean (n waiting)</span><b>'+waitText(player)+' / '+waitText(reference)+'</b></div>'
-        +row('Deaths before treatment',player.deathsWaiting,reference.deathsWaiting);
+        +'<div class="moc-score-row"><span>Current referral queue mean (n waiting)</span><b>'+waitText(player)+' / '+waitText(reference)+'</b></div>';
       const mean=s=>s.staffBurnout.length?s.staffBurnout.reduce((sum,a)=>sum+a.burnout,0)/s.staffBurnout.length:0;
       html+='<details><summary>Care context</summary>'
         +row('People waiting',player.waiting,reference.waiting)
@@ -14455,7 +14464,7 @@ async function initLLMSubsystem() {
     add('Parliament',GS.trustP,GS.trustP<election.trustFloor);
     add('Deaths',care.systemDeaths+'/'+election.deathCap,care.systemDeaths>election.deathCap);
     add('Current mean referral wait',currentReferralWait(care),care.waiting>0 && care.meanWait>M.IST.tree);
-    add('Digital fragility',fragility()+'%',fragility()>=50);
+    add('Digital fragility',fragility()+'%',fragility()>=60);
     add('Dependence',GS.dependence+' pts',GS.dependence>=7);
     const burnout=averageGPBurnout();
     add('Adoption',Math.round(GS.adoptionRate*100)+'%',GS.adoptionRate<0.85);

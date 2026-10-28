@@ -1995,7 +1995,10 @@ test('F04 eight emergencies share one place with bounded visible overflow and no
       return {first,second,third,observedDrain,expectedDrain,observedWait,expectedWait,
         deadEpisode:episode.status,releaseTick:endUse.endTick,replacementTick:replacement.startTick,
         visible:document.querySelector('#moc-emergency-overflow').textContent,
-        details:document.querySelector('.moc-resource-report').textContent,referencePolicy:MoC.referencePolicy,roster:f.people.length};
+        details:document.querySelector('.moc-resource-report').textContent,
+        emergencyThroughput:[...document.querySelectorAll('.moc-resource-report .moc-score-row')]
+          .find(row=>row.children[0]?.textContent==='Emergency starts / completions in interval')?.children[1]?.textContent,
+        referencePolicy:MoC.referencePolicy,roster:f.people.length};
     });
     assert.equal(result.referencePolicy,false);
     assert.equal(result.first.resources.routine.slots,1);
@@ -2011,6 +2014,7 @@ test('F04 eight emergencies share one place with bounded visible overflow and no
       `overflow uses the existing untreated HP rule: observed ${result.observedDrain}, expected ${result.expectedDrain}, wait ${result.observedWait}/${result.expectedWait}`);
     assert.ok(Math.abs(result.observedWait-result.expectedWait)<1e-9);
     assert.equal(result.third.emergencyStarts,2);
+    assert.equal(result.third.resources.emergency.starts,2);
     assert.equal(result.third.resources.emergency.completions,1);
     assert.equal(result.third.emergencyOverflow,5);
     assert.equal(result.deadEpisode,'died_waiting');
@@ -2020,7 +2024,7 @@ test('F04 eight emergencies share one place with bounded visible overflow and no
     assert.equal(result.third.routineStarts,1);
     assert.equal(result.third.routineDisplacements,0);
     assert.match(result.visible,/Emergency overflow: 5 waiting/);
-    assert.match(result.details,/Emergency starts \/ completions/);
+    assert.equal(result.emergencyThroughput,'2 / 1','in-interval emergency throughput reports actual starts and completions');
   });
 });
 
@@ -2692,28 +2696,43 @@ test('Care reports preserve adverse outcomes and previews match purchases', { ti
   }
 });
 
-test('L02 grant and automatic cash receipts reconcile and empty cohorts stay unavailable', { timeout: 30000 }, async () => {
+test('L02 Pilot Grant receipt reconciles through treasury ledger and empty cohorts stay unavailable', { timeout: 30000 }, async () => {
   await withResourceTown(async page=>{
+    await openQuietFunding(page,2);
+    const grant=page.locator('[data-buy="pilotgrant"]');
+    assert.equal(await grant.isDisabled(),false,'the real Pilot Grant purchase path must be available');
+    const before=await page.evaluate(()=>MoC.treasurySummary().closing);
+    await grant.click();
+    const receipt=await page.locator('#moc-policy-receipt').innerText();
     const result=await page.evaluate(()=>{
-      _mocDebug.applyFx({budget:80000},'Research grant award');
-      _mocDebug.applyFx({budget:-12000},'Automatic quarterly cash adjustment');
       const treasury=MoC.treasurySummary();
       const care=MoC.care.snapshot();
       const roi=buildROIHTML();
       const er=buildERPressureHTML();
+      const referenceAvailable=!!MoC.referenceAt(care.tick);
       _mocDebug.endTerm('served');
       document.querySelector('#moc-treasury-record summary').click();
-      return {treasury,care,roi,er,ending:document.getElementById('moc-endscreen').innerText,
+      return {treasury,care,roi,er,referenceAvailable,comparison:document.querySelector('#moc-care-comparison').innerText,
+        ending:document.getElementById('moc-endscreen').innerText,
         closing:MoC.treasurySummary().closing};
     });
-    assert.deepEqual(result.treasury.transactions.map(entry=>entry.amount),[80000,-12000]);
-    assert.match(result.treasury.transactions[0].reason,/grant/i);
-    assert.match(result.treasury.transactions[1].reason,/automatic quarterly cash adjustment/i);
+    assert.equal(result.treasury.transactions.at(-1).amount,-30000);
+    assert.match(result.treasury.transactions.at(-1).reason,/AI Pilot Grant/i);
     assert.equal(result.treasury.opening+result.treasury.net,result.treasury.closing);
     assert.equal(result.closing,result.treasury.closing);
+    assert.match(receipt,/AI Pilot Grant/);
+    const cashReceipt=receipt.match(/Treasury cash: €([\d,]+) → €([\d,]+) \(−€([\d,]+)\)/);
+    assert.ok(cashReceipt,'the real purchase receipt states opening cash, closing cash and debit');
+    assert.equal(Number(cashReceipt[1].replace(/,/g,'')),before);
+    assert.equal(Number(cashReceipt[2].replace(/,/g,'')),before-30000);
+    assert.equal(Number(cashReceipt[3].replace(/,/g,'')),30000);
     assert.equal(result.care.waiting,0);
     assert.equal(result.care.completedReferralWaitN,0);
     assert.equal(result.care.meanWaitToTreatmentWeeks,null);
+    assert.equal(result.referenceAvailable,false,'this fixture has no same-date comparison reference');
+    assert.match(result.comparison,/Reference pending or unavailable/);
+    assert.match(result.comparison,/Model-classified system deaths \(yours\)\s+0/);
+    assert.match(result.comparison,/Deaths before treatment \(yours\)\s+0/);
     assert.match(result.ending,/Political outcome/);
     assert.match(result.ending,/Care performance/);
     assert.match(result.ending,/No one waiting \(n=0\)/);
@@ -2723,6 +2742,23 @@ test('L02 grant and automatic cash receipts reconcile and empty cohorts stay una
     assert.match(result.er,/Unavailable \(zero baseline\)/);
     assert.doesNotMatch(result.er,/SOLL reduces ER pressure by/);
   },'?debug=1');
+});
+
+test('L02 ROI difference labels current admin and computes against the assumed five percent', {timeout:30000}, async()=>{
+  await withResourceTown(async page=>{
+    const result=await page.evaluate(()=>{
+      M[mode].admin=0.184;
+      modelTick=4;
+      const host=document.createElement('div');
+      host.innerHTML=buildROIHTML();
+      const row=[...host.querySelectorAll('.stats-row')].find(item=>item.querySelector('.sk')?.textContent.includes('Illustrative admin-only difference'));
+      const gps=agents.filter(agent=>agent.type==='gp').length;
+      return {label:row.querySelector('.sk').textContent,value:row.querySelector('.sv').textContent,
+        expected:'€'+Math.round((gps*0.25)*(0.184-0.05)*12.43*4).toLocaleString()};
+    });
+    assert.match(result.label,/current 18\.4% vs assumed 5%/);
+    assert.equal(result.value,result.expected,'the displayed difference is current modeled admin burden minus the 5% assumption');
+  });
 });
 
 test('Early results match the reference date and replay preserves the prior attempt', { timeout: 45000 }, async () => {
