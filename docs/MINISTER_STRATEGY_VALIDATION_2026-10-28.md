@@ -50,7 +50,7 @@ The full machine-readable trace is [`scripts/output/minister_strategy_validation
 
 ## Release checks and limitations
 
-- Focused regression: `node --test tests/minister_strategy_benchmark.test.js` passed 1/1. The full `npm test` suite was **NOT RUN** under the time constraint for this task.
+- Focused regression: `node --test tests/minister_strategy_benchmark.test.js` passed 1/1. The full `npm test` suite (235 tests, including this regression) passed 235/235 in CI Validate run [40688972163](https://github.com/cammeleon66/Cammelot/actions/runs/40688972163) on `f958c59`.
 - Physical-device checks: **NOT PERFORMED**. No physical Android Chrome or iPhone Safari checks were conducted.
 - Human checks: **NOT PERFORMED**. No uncoached playtests or healthcare-domain review were conducted. These remain release limitations; automated browser tests do not substitute for them.
 - Unresolved evidence risks: the sample contains three predeclared seeds, the strategies use fixed UI-text heuristics, and there is no random-seed or holdout study. No sampled discretionary Full Term run reached year 10. Several policies ended in failed votes, protest, or no-confidence, and these adverse outcomes are retained.

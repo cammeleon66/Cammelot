@@ -196,8 +196,8 @@ release-evidence limitation. The evidence is specific to these declared runs:
 it is not a win-rate estimate, clinical validation, or evidence that one policy
 is universally superior. The report explicitly records that physical-device
 checks, uncoached playtests and healthcare-domain review were **NOT PERFORMED**.
-The focused benchmark regression passed 1/1; the full `npm test` suite was
-**NOT RUN** under the task's time constraint.
+The focused benchmark regression passed 1/1; the full `npm test` suite
+passed 235/235 in CI Validate run [40688972163](https://github.com/cammeleon66/Cammelot/actions/runs/40688972163) on `f958c59`.
 The benchmark runs against a loopback static server; all 31 observed POST
 attempts were to its local `/api/leaderboard` path and were blocked before
 network access. No production leaderboard was contacted or written.
