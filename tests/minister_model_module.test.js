@@ -9,6 +9,7 @@ import { extname, isAbsolute, join, relative, resolve } from 'node:path';
 import { chromium } from 'playwright-chromium';
 import '../site/minister-model-core.js';
 import { ministerModelExecutableId } from '../scripts/minister_model_identity.mjs';
+import { costItem, driveLifecycleRun, lifecycleInput, lifecycleRunInput } from './fixtures/r04_lifecycle_fixture.mjs';
 
 const SITE_ROOT = join(process.cwd(), 'site');
 const MIME_TYPES = { '.html': 'text/html', '.js': 'text/javascript' };
@@ -38,16 +39,32 @@ function runR03ParityTrace({ fixture, modelExecutableId }) {
   const model = globalThis.MinisterModelCore;
   const run = model.createRun({ ...fixture, modelExecutableId });
   const cursor = run.eventsSince(0).cursor;
-  run.applyCommand({ id: 'handoff-a', sequence: 1, kind: 'complete_handoff', patientId: 'pending-a' });
-  run.applyCommand({ id: 'handoff-b', sequence: 2, kind: 'complete_handoff', patientId: 'pending-b' });
-  run.advanceOneTick(cursor);
+  const receipts = [];
+  receipts.push(run.applyCommand({ id: 'handoff-a', sequence: 1, kind: 'complete_handoff', patientId: 'pending-a' }));
+  receipts.push(run.applyCommand({ id: 'handoff-b', sequence: 2, kind: 'complete_handoff', patientId: 'pending-b' }));
+  const firstTick = run.advanceOneTick(cursor);
   const informationRequest = run.applyCommand({ id: 'request-info', sequence: 3,
     kind: 'request_information', patientId: 'new-c' });
+  receipts.push(informationRequest);
   const secondTick = run.advanceOneTick(informationRequest.eventCursor);
-  run.applyCommand({ id: 'handoff-c', sequence: 4, kind: 'complete_handoff', patientId: 'new-c' });
-  run.advanceOneTick(secondTick.cursor);
-  return { events: run.eventsSince(0).events, snapshot: run.snapshot() };
+  receipts.push(run.applyCommand({ id: 'handoff-c', sequence: 4, kind: 'complete_handoff', patientId: 'new-c' }));
+  const thirdTick = run.advanceOneTick(secondTick.cursor);
+  return { events: run.eventsSince(0).events, snapshot: run.snapshot(), receipts,
+    ticks: [firstTick, secondTick, thirdTick] };
 }
+
+// R04 lifecycle fixture: failed commissioning with rework, one interruption with recovery, a finite
+// work budget and a per-handoff review item exercise every lifecycle event kind.
+const R04_PARITY_FIXTURE = lifecycleRunInput({ horizonTicks: 30, arrivalTicks: 12, lifecycle: lifecycleInput({
+  parameters: { failedCommissioningAttempts: 1, reworkWorkPerFailure: 4, adoptionTargetBasisPoints: 7500,
+    adoptionRampTicks: 4, workCap: 70, cashCap: 5000 },
+  costItems: [costItem('design', 'design_procurement', 'one_time', 3000, 10, { tick: 0 }),
+    costItem('licence', 'licenses_compute', 'recurring', 150, 0, { from: 'commissioning', periodTicks: 4 }),
+    costItem('review', 'clinician_review_override', 'per_adopted_handoff', 0, 1),
+    costItem('diagnosis', 'incident_handling', 'on_commissioning_failure', 200, 2),
+    costItem('incident', 'incident_handling', 'on_interruption', 300, 3),
+    costItem('retire', 'decommissioning', 'one_time', 700, 5, { tick: 90 })],
+  interruptions: [{ id: 'outage', startTick: 14, recoveryWork: 6 }, { id: 'early', startTick: 2, recoveryWork: 1 }] }) });
 
 test('Minister script integrity pins the shared module bytes', () => {
   const moduleBytes = readFileSync(join(SITE_ROOT, 'minister-model-core.js'));
@@ -170,6 +187,36 @@ test('R03 browser pathway events and final snapshot match the Node fixture', { t
     });
     assert.deepEqual(browserResult.events, nodeResult.events);
     assert.deepEqual(browserResult.snapshot, nodeResult.snapshot);
+    assert.deepEqual(browserResult.receipts, nodeResult.receipts);
+    assert.deepEqual(browserResult.ticks, nodeResult.ticks);
+  } finally {
+    await browser.close();
+    await new Promise(resolve => server.close(resolve));
+  }
+});
+
+test('R04 lifecycle ledger, events and per-tick outputs match between Node and browser', { timeout: 30000 }, async () => {
+  const server = await startServer(SITE_ROOT);
+  const browser = await launchBrowser();
+  try {
+    const modelExecutableId = await ministerModelExecutableId();
+    const nodeResult = driveLifecycleRun({ fixture: R04_PARITY_FIXTURE, modelExecutableId });
+    const kinds = new Set(nodeResult.events.map(event => event.kind));
+    for (const kind of ['lifecycle_approved', 'implementation_progress', 'commissioning_failed', 'commissioned',
+      'adoption_started', 'benefit_realized', 'cost_paid', 'service_interrupted', 'recovery_progress',
+      'service_recovered', 'interruption_not_applicable'])
+      assert.ok(kinds.has(kind), `parity fixture covers ${kind}`);
+    const { ledger } = nodeResult.snapshot.lifecycle;
+    assert.equal(ledger.cash.authorised, ledger.cash.spent + ledger.cash.remaining);
+    assert.equal(ledger.work.authorised, ledger.work.spent + ledger.work.remaining);
+    const page = await browser.newPage();
+    await page.goto(`http://127.0.0.1:${server.address().port}/minister.html#scn=cabinetcrisis&seed=2468`,
+      { waitUntil: 'domcontentloaded' });
+    const browserResult = await page.evaluate(driveLifecycleRun, {
+      fixture: R04_PARITY_FIXTURE,
+      modelExecutableId,
+    });
+    assert.deepEqual(browserResult, nodeResult);
   } finally {
     await browser.close();
     await new Promise(resolve => server.close(resolve));

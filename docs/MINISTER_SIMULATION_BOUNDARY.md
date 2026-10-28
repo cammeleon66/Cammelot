@@ -307,25 +307,47 @@ specialist start in the tick, both arms start exactly one treatment. The
 downstream treatment slot is the reason the local handoff improvement does not
 change the end-to-end treatment count in this fixture.
 
-**Model-version decision.** R03 is a distinct executable with model version
-`minister-r03-cardiology-pathway-2` and protocol `r01-cardiology-v1.0`; its
-version is bumped from R03 v1 because the explicit intervention-to-resource
-mapping changes pathway outcomes. This does not change Minister
+**Model-version decision.** R03 is a distinct executable with protocol
+`r01-cardiology-v1.0`. Its version moved from R03 v1 to
+`minister-r03-cardiology-pathway-2` because the explicit intervention-to-resource
+mapping changed pathway outcomes, and from v2 to `minister-r03-cardiology-pathway-3`
+because R04 (below) adds an optional lifecycle/operating-economics block, new
+ordered event kinds and a `lifecycle` snapshot section to the same shared module.
+Runs without a lifecycle block reproduce the v2 pathway transitions, but the
+snapshot shape and module bytes differ, so v2 and v3 records are not
+interchangeable. None of this changes Minister
 `minister-care-10-access-time-replay` or its public browser care rules. Browser
-parity was checked against commit `4e6616b` with the same Cabinet Crisis seed
+parity for v2 was checked against commit `4e6616b` with the same Cabinet Crisis seed
 60475 through elapsed tick 80: the complete JSON state, care snapshot, resident
 outcomes, queues, event log (excluding wall-clock timestamps), graves, and
-environment log were byte-identical. The unchanged Minister browser/care/
-paired-reference/F08 tests also passed in the full 238-test run. The separate
-module parity test confirms Node and browser load the same deterministic
-primitives, and the negative replay test refuses a record after only the shared
+environment log were byte-identical. For v3 the game shell is unchanged except
+the SRI digest of the shared module; the unchanged Minister browser/care/
+paired-reference/F08 tests are part of `npm test`. The separate module parity
+tests compare complete events, receipts, per-tick outputs and final snapshots
+between Node and the browser for both a legacy R03 fixture and an R04 lifecycle
+fixture, and the negative replay test refuses a record after only the shared
 module bytes change.
 
+### R04 lifecycle and operating economics (R03 pathway only)
+
+`createRun` accepts an optional `inputs.lifecycle` block
+(`r04-lifecycle-ledger-v1`) that distinguishes approval (authorising finite cash
+and work budgets, with nothing spent), spending, implementation progress,
+commissioning, adoption and realized benefit, each with an explicit tick. It
+applies only to the R03 research pathway; the live game never routes through it.
+The input schema, units, deterministic rules, provenance status of each
+parameter and limits are specified in
+[Minister lifecycle economics](MINISTER_LIFECYCLE_ECONOMICS.md). The intervention
+mechanisms are the unchanged R01 workflow mechanisms; the lifecycle only decides
+*when and how much* of that mechanism is available, and charges for it. Costs are
+never outcome bonuses, so a pathway improvement can fail lifecycle economics.
+
 This bounded fixture does not implement the approved 336-episode workload, five
-years of follow-up, implementation lifecycle costs, policy drivers for all
-arms, named-resident mapping, 180-day/84-day endpoints, uncertainty analysis,
-equity reporting, or confirmatory R01 runs. Its results are software fixtures
-and modeled process illustrations, not clinical or economic evidence.
+years of follow-up, calibrated or sourced lifecycle cost inputs (R04 supplies the
+mechanism and ledger, not a cost base), policy drivers for all arms,
+named-resident mapping, 180-day/84-day endpoints, uncertainty analysis, equity
+reporting, or confirmatory R01 runs. Its results are software fixtures and
+modeled process illustrations, not clinical or economic evidence.
 
 Keep `modelVersion` for outcome-affecting rules, `modelExecutableId` for the
 shared module bytes, `protocolVersion` for the paired policy/schedule/matching
