@@ -5,15 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <!-- Social Sharing Meta (Sprint 8) -->
 <meta property="og:title" content="Minister of Cammelot — Can You Avert the Zorginfarct?">
-<meta property="og:description" content="You get the town, EUR 780,000 and 10 years. Run the Dutch healthcare system before it runs out. A playable stress-test built on real CBS/RIVM/NZa data.">
+<meta property="og:description" content="A fictional healthcare policy game: 45 synthetic residents, authored budgets and explicit model assumptions. Explore two-year or ten-year scenarios, not clinical predictions.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://cammelot.org/minister.html">
 <meta property="og:image" content="https://cammelot.org/assets/og-preview.png">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Minister of Cammelot — Can You Avert the Zorginfarct?">
-<meta name="twitter:description" content="You get the town, EUR 780,000 and 10 years. Run the Dutch healthcare system before it runs out.">
+<meta name="twitter:description" content="A fictional healthcare policy game with synthetic residents and authored budgets. Compare choices within a model, not real-world treatment effects.">
 <meta name="twitter:image" content="https://cammelot.org/assets/og-preview.png">
-<meta name="description" content="Minister of Cammelot: a playable stress-test of Dutch healthcare. Real data, real trade-offs, one budget. Can you avert the zorginfarct?">
+<meta name="description" content="Minister of Cammelot: a fictional healthcare policy game informed by Dutch context. Model assumptions and authored rules, not clinical predictions or national financing.">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏛</text></svg>">
 <meta name="theme-color" content="#FFB300">
 <title>Minister of Cammelot — The Healthcare Crisis Game</title>
@@ -1264,7 +1264,8 @@ body:has(.moc-mandate) #moc-objective{display:none!important}
   <h2 style="color:#FFB300;font-size:26px;margin-bottom:8px;letter-spacing:3px;">🏛 MINISTER OF CAMMELOT</h2>
   <p style="color:#c4a882;font-size:14px;max-width:440px;text-align:center;line-height:1.7;margin-bottom:8px;">
     Congratulations on your appointment, Minister.<br>
-    The town is yours: 45 citizens, 3 GPs, 1 hospital, and a healthcare system on the brink.
+    A fictional role: 45 synthetic residents, 2 GP practices, 1 hospital.<br>
+    Town scale and budgets are game abstractions, not national financing.
   </p>
   <p style="color:#e07050;font-size:13px;margin-bottom:24px;font-weight:600;">Can you avert the zorginfarct? Choose how to play:</p>
   <button id="play-btn" style="background:linear-gradient(135deg,#FFB300,#FF8F00);border:none;color:#1a0e05;font:700 16px 'Inter',sans-serif;padding:14px 40px;border-radius:8px;cursor:pointer;letter-spacing:1px;box-shadow:0 4px 20px rgba(255,179,0,0.3);">
@@ -1299,9 +1300,9 @@ body:has(.moc-mandate) #moc-objective{display:none!important}
 <div class="ts"><div class="n g" id="hBudget">€780K</div><div class="l">Budget</div></div>
 <div class="ts"><div class="n" id="hTrust">60</div><div class="l">Trust</div></div>
       <div class="ts"><div class="n y" id="hScore">0</div><div class="l">Score</div></div>
-      <div class="ts"><div class="n g" id="hLives">—</div><div class="l">Lives +/-</div></div>
-      <div class="ts"><div class="n" id="hP">5,000</div><div class="l">Alive</div></div>
-      <div class="ts"><div class="n" id="hG" data-value="0" data-prefix="💀 ">0</div><div class="l" title="Human Cost of Inaction: avoidable deaths from system delay">Impact</div></div>
+      <div class="ts"><div class="n g" id="hLives">—</div><div class="l">Model +/-</div></div>
+      <div class="ts"><div class="n" id="hP">—</div><div class="l">Alive</div></div>
+      <div class="ts"><div class="n" id="hG" data-value="0" data-prefix="💀 ">0</div><div class="l" title="Model-classified deaths; not proven clinical preventability">Impact</div></div>
       <div class="ts"><div class="n y" id="hW">4w</div><div class="l">Avg Wait</div></div>
       <div class="ts"><div class="n" id="hE">62%</div><div class="l">Capacity</div></div>
       <div class="ts"><div class="n" id="hBurn">0%</div><div class="l">GP Burnout</div></div>
@@ -1381,7 +1382,7 @@ body:has(.moc-mandate) #moc-objective{display:none!important}
         <div class="so-row"><span class="k">Treeknorm Limit</span><span class="v y" id="oT">12 weeks</span></div>
         <div class="so-row"><span class="k">FHIR Resources</span><span class="v" id="oF">0</span></div>
         <div class="so-row"><span class="k">Waste (Admin)</span><span class="v r" id="oW">€0</span></div>
-        <div class="so-row"><span class="k">IZA Postbus</span><span class="v r">CLOSED Jul '25</span></div>
+        <div class="so-row"><span class="k">Historical IZA notice</span><span class="v r">Closure: 1 Jul 2025</span></div>
       </div>
     </div>
   </div>
@@ -1422,13 +1423,13 @@ const MoC = (function(){
       budget:780000, trust:60,
       story:'Your predecessor left one thing on the desk: a folder marked <b>THE CRISIS</b>, and a sticky note \u2014 <i>"Sorry."</i><br><br>Outside, Cammelot is waking up. Dr. de Jong is already twelve patients behind. In the Zonnebloem care home, Hendrik Veenstra (70) waits for a cardiology referral that should have come four weeks ago.<br><br>The folder is heavy. The coffee is cold. The town is yours now.',
       dateline:'Monday 07:40 \u00b7 Ministry of Health, Cammelot',
-      brief:{ situation:'The system runs at 62% effective capacity. Waits already breach the norm. Nothing is on fire yet \u2014 but the fuse is lit.',
+      brief:{ situation:'Administration and absence constrain modeled care capacity. Nothing is on fire yet \u2014 but the fuse is lit.',
         threats:['Demand rises every year as the town ages', 'Every tech shortcut adds fragility \u2014 hacks and outages hit harder', 'One heavy flu season can overwhelm the IC and force triage'],
-        win:'Serve 10 years. Save more lives than the status quo would.' } },
+        win:'Serve 10 model years. Compare care outcomes with the same-date no-action reference.' } },
     sprint: { id:'sprint', name:'Crisis Sprint', icon:'\u26a1', quarters:12, daily:true,
       desc:'Today\u2019s shared scenario: 3 years, \u20ac300K, system already on fire (~6 min).',
       budget:300000, trust:50,
-      story:'You were sworn in an hour ago, in a corridor, because the pressroom was full of angry GPs. The last minister lasted eight months.<br><br>The queue outside the hospital starts before dawn now. Someone hands you a coffee and a list of names \u2014 everyone currently waiting past the legal limit.<br><br>It is three pages long.',
+      story:'You were sworn in an hour ago, in a corridor, because the pressroom was full of angry GPs. The last minister lasted eight months.<br><br>The queue outside the hospital starts before dawn now. Someone hands you a coffee and a list of names \u2014 everyone currently waiting past the model access threshold.<br><br>It is three pages long.',
       dateline:'Tuesday 11:15 \u00b7 Town hall corridor, Cammelot',
       setup:function(){ MoC.S.specialistCapacity = 1; M.IST.sick = 0.11; M.IST.drain = 1.15;
         agents.forEach(function(a){ if ((a.type==='patient'||a.type==='citizen') && a.conditions && a.conditions.length && Math.random() < 0.4) a.waitWeeks = 8 + Math.random() * 8; }); },
@@ -1467,7 +1468,7 @@ const MoC = (function(){
     cabinetcrisis: { id:'cabinetcrisis', name:'Cabinet Crisis', icon:'🚨', quarters:8,
       desc:'Two years, seven councils after the opening quarter, €400K. Keep care running and survive the final vote. Play at your own pace.',
       budget:400000, trust:50,
-      story:'The coalition nearly fell last night. Your chief of staff woke you at 05:15: <i>"We need a decision by nine."</i><br><br>Dr. de Jong\'s waiting room is already three weeks over the legal limit. Parliament has tabled two motions. The Gazette has your photo under the headline: <i>HOW LONG?</i><br><br>Seven allocation councils remain, from Q2 through Q8. The opening quarter has no purchase window.',
+      story:'The coalition nearly fell last night. Your chief of staff woke you at 05:15: <i>"We need a decision by nine."</i><br><br>Dr. de Jong\'s waiting room is under pressure. Parliament has tabled two motions. The Gazette has your photo under the headline: <i>HOW LONG?</i><br><br>Seven allocation councils remain, from Q2 through Q8. The opening quarter has no purchase window.',
       dateline:'Tuesday 05:15 · The Minister\'s residence, Cammelot',
       setup:function(){
         MoC.S.specialistCapacity = 1.5; M.IST.sick = 0.10; M.IST.drain = 1.12;
@@ -1848,7 +1849,7 @@ const M={IST:{admin:.3,sick:.08,tree:12,ai:1,drain:1},SOLL:{admin:.05,sick:.05,t
 const M_ORIG={IST:{admin:.3,sick:.08,tree:12,ai:1,drain:1},SOLL:{admin:.05,sick:.05,tree:4,ai:1.34,drain:.3}};
 // NZa 2025 tariffs and simulation cost estimates
 const NZA_GP_CONSULT_EUR = 12.43;        // Official NZa regular GP consultation rate
-const SIM_PREVENTABLE_DEATH_EUR = 5845;  // NZa avg DBC hospitalization cost (€4,900 ward + €945 overhead) — VWS/NZa 2024 Marktscan Ziekenhuiszorg
+const SIM_PREVENTABLE_DEATH_EUR = 5845;  // Unvalidated system-death cost proxy, not an NZa tariff or measured saving.
 const SIM_TREEKNORM_WEEK_EUR = 150;      // Simulation estimate (not official)
 let playgroundActive=false;
 let panelIsTownFeed=true;
@@ -6689,7 +6690,7 @@ function selectAgent(a){
       <div class="hp-outer" data-tooltip="Health Points. Drains when waiting too long for care. At 0, the citizen dies."><div class="hp-inner ${hp>50?'g':hp>20?'y':hp>0?'r':'d'}" style="width:${hp}%"></div><div class="hp-label">${hp} / 100 HP</div></div>
       <div class="ac-row"><span class="k">Activity</span><span class="state-badge ${a.behaviorState||'roaming'}">${stateLabel}</span></div>
       ${a.waitWeeks>0?`<div class="ac-row"><span class="k">Wait time</span><span class="v ${a.waitWeeks>12?'bad':a.waitWeeks>6?'mid':'ok'}" data-tooltip="How long this citizen has been waiting for specialist treatment">${Math.round(a.waitWeeks*10)/10} weeks</span></div>`:''}
-      ${a.waitWeeks>10?`<div class="ac-row"><span class="k" style="color:var(--red)">⚠ Risk</span><span class="v bad" style="font-size:10px" data-tooltip="Waiting this long with conditions raises risk of deterioration or preventable death">Delayed care — deterioration risk</span></div>`:''}
+      ${a.waitWeeks>10?`<div class="ac-row"><span class="k" style="color:var(--red)">⚠ Risk</span><span class="v bad" style="font-size:10px" data-tooltip="Model warning: authored delay and disease rules can reduce health; not a clinical risk estimate">Delayed care — model risk</span></div>`:''}
       ${a.gpName?`<div class="ac-row"><span class="k">GP</span><span class="v">${a.gpName}</span></div>`:''}
       ${a.healingTicksLeft>0?`<div class="ac-row"><span class="k">Recovery</span><span class="v ok">Healing (${a.healingTicksLeft} ticks)</span></div>`:''}
       ${a.insideBuilding?`<div class="ac-row"><span class="k">Location</span><span class="v mid">${BUILDINGS.find(b=>b.id===a.insideBuilding)?.label||a.insideBuilding}</span></div>`:''}
@@ -9990,16 +9991,16 @@ function showMethodology(){
     '<div class="stats-header" style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:2px solid var(--frame2);background:rgba(0,0,0,.08)">' +
     '<h3 style="margin:0;font-size:14px;color:var(--ink)">📚 Methodology &amp; Sources</h3>' +
     '<button class="stats-close" id="methodology-close-btn" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--ink2);padding:2px 6px">✕</button></div>' +
-    '<div style="padding:10px 14px;font-size:11px;line-height:1.5;color:var(--ink)">' +
+    '<div style="padding:10px 14px;font-size:11px;line-height:1.5;color:var(--ink)"><p>Empirical input data, model assumptions, authored game rules and observed simulation outputs are different evidence classes. This fictional town and budget are not national financing. <a href="index.html#evidence" target="_blank" rel="noopener">Dated source checklist and limits</a>.</p>' +
 
-    '<details open><summary style="font-weight:700;font-size:12px;cursor:pointer;margin-bottom:4px">🏘 Demographics (CBS 2024)</summary>' +
-    '<div class="stats-row"><span class="sk">Population</span><span class="sv">5,000 agents (CBS scaled)</span></div>' +
-    '<div class="stats-row"><span class="sk">Seniors 65+</span><span class="sv">20% (CBS vergrijzing 2025)</span></div>' +
-    '<div class="stats-row"><span class="sk">Chronic prevalence 75+</span><span class="sv">96% ≥1 condition (RIVM)</span></div>' +
-    '<div class="stats-row"><span class="sk">Natural mortality</span><span class="sv">~48/year (CBS 2024)</span></div>' +
+    '<details open><summary style="font-weight:700;font-size:12px;cursor:pointer;margin-bottom:4px">🏘 Selected demographic assumptions</summary>' +
+    '<div class="stats-row"><span class="sk">Population assumption</span><span class="sv">45 synthetic residents; 5,000 town scale</span></div>' +
+    '<div class="stats-row"><span class="sk">Senior share assumption</span><span class="sv">20%; not an exact population match</span></div>' +
+    '<div class="stats-row"><span class="sk">Legacy 75+ prevalence label</span><span class="sv">96%; exact definition/year unverified</span></div>' +
+    '<div class="stats-row"><span class="sk">Background-hazard proxy</span><span class="sv">48/5,000 per year before age multipliers; unvalidated</span></div>' +
     '<div style="margin:4px 0 8px"><a href="https://www.cbs.nl/" target="_blank" rel="noopener" style="color:#42A5F5;font-size:10px">🔗 cbs.nl</a></div></details>' +
 
-    '<details><summary style="font-weight:700;font-size:12px;cursor:pointer;margin-bottom:4px">🩺 Conditions (RIVM 2024)</summary>' +
+    '<details><summary style="font-weight:700;font-size:12px;cursor:pointer;margin-bottom:4px">🩺 Legacy prevalence labels (dates/definitions unverified)</summary>' +
     '<div class="stats-row"><span class="sk">Arthrosis M17</span><span class="sv">1.6M prevalence</span></div>' +
     '<div class="stats-row"><span class="sk">Diabetes E11</span><span class="sv">1.2M prevalence</span></div>' +
     '<div class="stats-row"><span class="sk">COPD J44</span><span class="sv">600K+</span></div>' +
@@ -10007,26 +10008,26 @@ function showMethodology(){
     '<div class="stats-row"><span class="sk">Dementia F03</span><span class="sv">300K+</span></div>' +
     '<div style="margin:4px 0 8px"><a href="https://www.volksgezondheidenzorg.info/" target="_blank" rel="noopener" style="color:#42A5F5;font-size:10px">🔗 volksgezondheidenzorg.info</a></div></details>' +
 
-    '<details><summary style="font-weight:700;font-size:12px;cursor:pointer;margin-bottom:4px">💶 Financial (NZa 2025)</summary>' +
+    '<details><summary style="font-weight:700;font-size:12px;cursor:pointer;margin-bottom:4px">💶 Selected cost inputs and proxies</summary>' +
     '<div class="stats-row"><span class="sk">GP consultation</span><span class="sv">€12.43</span></div>' +
-    '<div class="stats-row"><span class="sk">Preventable death</span><span class="sv">€5,845 saved</span></div>' +
+    '<div class="stats-row"><span class="sk">System-death cost proxy</span><span class="sv">€5,845; not measured savings</span></div>' +
     '<div class="stats-row"><span class="sk">Treeknorm violation</span><span class="sv">€150/week</span></div>' +
     '<div class="stats-row"><span class="sk">Hospital day</span><span class="sv">€850</span></div>' +
     '<div class="stats-row"><span class="sk">MTVP</span><span class="sv">€3.23/patient/quarter</span></div>' +
     '<div style="margin:4px 0 8px"><a href="https://www.nza.nl/" target="_blank" rel="noopener" style="color:#42A5F5;font-size:10px">🔗 nza.nl</a></div>' +
-    '<p style="font-size:9px;color:#999;margin-top:6px;font-style:italic">Note: GP consultation rate (€12.43) is an official NZa tariff. "Preventable death cost" (€5,845) and "Treeknorm violation cost" (€150/week) are simulation estimates for illustration — they are not official regulatory penalties.</p></details>' +
+    '<p style="font-size:9px;color:#999;margin-top:6px;font-style:italic">Legacy cost inputs, not universal current tariffs. The exact consultation year/code and MTVP amount are unverified here. Hospital-day, system-death and wait-breach costs are illustrative proxies, not measured savings, a value of life or regulatory penalties.</p></details>' +
 
     '<details><summary style="font-weight:700;font-size:12px;cursor:pointer;margin-bottom:4px">⏱ Wait Times (Treeknorm)</summary>' +
-    '<div class="stats-row"><span class="sk">Diagnostics max</span><span class="sv">4 weeks</span></div>' +
-    '<div class="stats-row"><span class="sk">Treatment max</span><span class="sv">7–12 weeks</span></div>' +
-    '<div class="stats-row"><span class="sk">Current reality</span><span class="sv">12+ weeks ophthalmology</span></div>' +
-    '<div style="margin:4px 0 8px"><a href="https://www.rijksoverheid.nl/" target="_blank" rel="noopener" style="color:#42A5F5;font-size:10px">🔗 rijksoverheid.nl</a></div></details>' +
+    '<div class="stats-row"><span class="sk">NZa NR/REG-2421 (2024), art. 6</span><span class="sv">Outpatient/diagnostics 4 weeks; treatment 7 weeks</span></div>' +
+    '<div class="stats-row"><span class="sk">Minister specialist threshold</span><span class="sv">12 weeks; authored model rule</span></div>' +
+    '<div class="stats-row"><span class="sk">Ophthalmology 12+ weeks</span><span class="sv">Historical claim; reporting period/denominator unverified</span></div>' +
+    '<div style="margin:4px 0 8px"><a href="https://puc.overheid.nl/nza/doc/PUC_754550_22/1/" target="_blank" rel="noopener" style="color:#42A5F5;font-size:10px">NZa primary regulation: elective medical-specialist care</a></div></details>' +
 
-    '<details><summary style="font-weight:700;font-size:12px;cursor:pointer;margin-bottom:4px">🏥 IZA Parameters</summary>' +
-    '<div class="stats-row"><span class="sk">Transformation budget</span><span class="sv">€2.8B</span></div>' +
-    '<div class="stats-row"><span class="sk">Staff shortfall 2025</span><span class="sv">66,400</span></div>' +
-    '<div class="stats-row"><span class="sk">Staff shortfall 2035</span><span class="sv">301,000</span></div>' +
-    '<div class="stats-row"><span class="sk">Hybrid care target</span><span class="sv">70% by 2026</span></div>' +
+    '<details><summary style="font-weight:700;font-size:12px;cursor:pointer;margin-bottom:4px">🏥 Historical policy attributions (not game parameters; see checklist)</summary>' +
+    '<div class="stats-row"><span class="sk">Legacy IZA envelope attribution</span><span class="sv">€2.8B; unverified here, not a balance</span></div>' +
+    '<div class="stats-row"><span class="sk">Old 2025 shortfall projection</span><span class="sv">66,400; not an observed count</span></div>' +
+    '<div class="stats-row"><span class="sk">Historical 2035 projection</span><span class="sv">301,000; conditional, not certain</span></div>' +
+    '<div class="stats-row"><span class="sk">Original hybrid-care target</span><span class="sv">70% of eligible pathways by end-2026; not confirmed achieved</span></div>' +
     '<div style="margin:4px 0 8px"><a href="https://www.dejuistezorgopdejuisteplek.nl/" target="_blank" rel="noopener" style="color:#42A5F5;font-size:10px">🔗 dejuistezorgopdejuisteplek.nl</a></div></details>' +
 
     '<details><summary style="font-weight:700;font-size:12px;cursor:pointer;margin-bottom:4px">🔬 Simulation Formulas</summary>' +
@@ -10135,7 +10136,7 @@ function buildStatsHTML(){
       <hr class="stats-divider">
       <div class="stats-group"><h4>Cost Accumulation</h4>
         <div class="stats-row"><span class="sk">Admin Waste</span><span class="sv sr">€${adminWaste.toLocaleString()}</span></div>
-        <div class="stats-row"><span class="sk">Preventable Deaths</span><span class="sv sr">€${preventableDeathCost.toLocaleString()} (${sysDeath} × €5,845)</span></div>
+        <div class="stats-row"><span class="sk">System-death cost proxy (unvalidated)</span><span class="sv sr">€${preventableDeathCost.toLocaleString()} (${sysDeath} × €5,845)</span></div>
         <div class="stats-row"><span class="sk">Total System Cost</span><span class="sv sr" style="font-size:13px">€${totalCost.toLocaleString()}</span></div>
       </div>
 
@@ -10179,7 +10180,7 @@ function updateUI(){
   // Deaths — Sprint 16: animated counter
   animateNumber('hG', dead);
   document.getElementById('hG').dataset.prefix = '💀 ';
-  document.getElementById('hG').dataset.suffix = sysDeath > 0 ? ' (' + sysDeath + ' preventable, ' + mode + ')' : '';
+  document.getElementById('hG').dataset.suffix = sysDeath > 0 ? ' (' + sysDeath + ' model system deaths, ' + mode + ')' : '';
   document.getElementById('hG').className='n'+(dead>0?' r':' g');
 
   // Sprint S1: Death counter flash when deaths increase
@@ -10280,7 +10281,7 @@ function updateUI(){
 
 // ═══ SPRINT 17.1: LOADING SCREEN CONTROLLER ═══
 const LOAD_MESSAGES=['Spawning citizens...','Calibrating diseases...','Building town...','Training GPs...','Stocking pharmacies...','Filing paperwork...','Configuring waiting rooms...','Scheduling appointments...'];
-const LOAD_FACTS=['Did you know? 30% of your GP\'s time goes to paperwork, not you.','The Netherlands has ~12,700 GPs for 17.8 million people.','Average wait for a specialist referral: 6–12 weeks.','Dutch healthcare costs €110 billion per year (2024).','A GP sees ~40 patients per day on average.','Mental health waiting lists exceed 20 weeks in many regions.','1 in 5 Dutch citizens has a chronic condition.','Burnout affects ~25% of healthcare workers in NL.'];
+const LOAD_FACTS=['Model assumption: 30% of simulated GP time goes to administration.','Commonly cited, not verified here: ~12,700 GPs for 17.8 million people.','Model rule: specialist waits are scored against an authored 12-week threshold.','Commonly cited, not verified here: Dutch healthcare spending of ~€110 billion per year.','Commonly cited, not verified here: a GP sees ~40 patients per day.','Commonly cited, not verified here: some mental health waiting lists exceed 20 weeks.','Model note: residents are synthetic; conditions follow configured prevalence assumptions.','Commonly cited, not verified here: burnout affects ~25% of healthcare workers.'];
 let loadMsgIdx=0,loadFactIdx=0,loadMsgTimer=null;
 function startLoadingAnimation(){
   const p=document.getElementById('load-progress'),f=document.getElementById('load-fact');
@@ -10303,7 +10304,7 @@ function playIntroPan(onComplete){
   const overlay=document.getElementById('intro-overlay'),textEl=document.getElementById('intro-text');
   if(!overlay||!textEl){if(onComplete)onComplete();return;}
   overlay.style.display='block';
-  const msgs=[{text:'This is Cammelot. Population 5,000.',duration:2500},{text:'3 GP practices. 1 Hospital.',duration:2500},{text:'And a healthcare crisis.',duration:3000}];
+  const msgs=[{text:'Cammelot: 45 synthetic residents; town scale 5,000.',duration:2500},{text:'2 modeled GP practices. 1 hospital.',duration:2500},{text:'An authored healthcare scenario, not a forecast.',duration:3000}];
   userZoomed=true;
   const worldW=mapImgW,worldH=mapImgH;
   const startZm=Math.max(cv.width/worldW,cv.height/worldH)*1.5;
@@ -10574,12 +10575,12 @@ document.getElementById('ticker-content')?.addEventListener('click', function(ev
 const METRIC_TOOLTIPS = {
   'hC': '⏰ Elapsed model time: one tick is 1/4 week; four ticks make one week. The displayed cycle starts at 30.',
   'hP': '👥 Living Citizens: Currently alive out of the starting population. Number in parentheses shows citizens in hospital.',
-  'hG': '💀 Deaths: Citizens lost. Includes both natural deaths and system failures (preventable deaths from waiting too long).',
-  'hW': '⏳ Average Wait Time: How long citizens wait for specialist care. The legal maximum (Treeknorm) is 4 weeks.',
+  'hG': 'Model-classified deaths: system rules include terminal disease and HP depletion; background-hazard deaths are separate. These are not validated causes or proven preventable deaths.',
+  'hW': 'Mean modeled specialist wait. The 12-week model threshold is not a universal Dutch legal maximum.',
   'hE': 'GP clinical work units/week after administration, absence and productivity. Not realized visits or specialist starts.',
   'oA': 'Admin Burden — Dutch GPs spend this much time on administrative tasks instead of treating patients.',
   'oS': 'Sick Leave — Percentage of healthcare capacity lost to staff illness (ziekteverzuim).',
-  'oT': 'Treeknorm — The legal maximum waiting time for specialist care in the Netherlands.',
+  'oT': 'Model access threshold. Dutch Treeknorm standards have separate consultation, diagnostic and treatment definitions; the model uses its own fixed threshold.',
   'oF': 'FHIR Resources — Total medical records generated in the simulation (FHIR R4 standard).',
   'oW': 'Waste — Estimated cost of administrative burden based on NZa GP consultation rates (€12.43).',
   'sF': 'FHIR — Fast Healthcare Interoperability Resources. Total medical records created.',
@@ -10589,10 +10590,10 @@ const LABEL_TOOLTIPS = {
   'Alive': '👥 Living Citizens: Currently alive out of the starting population.',
   'Pop': '👥 Population: Total citizens in the simulation, based on CBS demographic data.',
   'Cycle': '⏰ Elapsed model time: one tick is 1/4 week; four ticks make one week. The displayed cycle starts at 30.',
-  'Deaths': '💀 Deaths: Citizens lost. Includes both natural deaths and system failures (preventable).',
+  'Deaths': 'Model-classified system and background-hazard deaths; neither classification establishes clinical preventability.',
   'Ghosts': '💀 Deaths: Citizens who have died. Hover the Stats panel to see system vs natural breakdown.',
-  'Avg Wait': '⏳ Average Wait Time: How long citizens wait for specialist care. The legal maximum (Treeknorm) is 4 weeks.',
-  'Wait': '⏳ Average Wait Time: How long citizens wait for specialist care. The Treeknorm says under 4 weeks.',
+  'Avg Wait': 'Mean modeled specialist wait, not a measured national waiting time or a universal legal deadline.',
+  'Wait': '⏳ Average Wait Time: How long citizens wait for specialist care. NZa Treeknorm (elective specialist care): 4 weeks to outpatient/diagnostics, 7 weeks to treatment. The 12-week threshold used in this game is an authored model rule.',
   'Capacity': 'GP service work is separate from routine starts/week and finite treatment places.',
   'C_eff': 'GP work/week = 4 × min(on-duty GPs, total GPs × (1 - absence)) × (1 - admin) × GP productivity.'
 };
@@ -10685,7 +10686,7 @@ const WIZARD_STEPS = [
   },
   {
     title: "IST vs SOLL",
-    text: "IST shows today's crisis: 30% admin burden, 12-week waits, 8% sick leave. SOLL shows what AI-native healthcare could look like: <5% admin, <4-week waits. Toggle between them and watch the difference.",
+    text: "IST is the model's crisis setting: an assumed 30% admin burden, an authored 12-week wait threshold and 8% sick leave. SOLL is a speculative AI-native scenario: <5% admin, <4-week waits. Toggle between them and watch the difference.",
     highlight: 'toggle'
   }
 ];
@@ -11241,9 +11242,9 @@ function runInsightEngine() {
       INSIGHT_FIRED[yearKey] = true;
       var firstDeath = deathsThisYear[0];
       addInsight('first_death',
-        'Breaking: First preventable death in Year ' + yearNum,
+        'First model-classified system death in Year ' + yearNum,
         firstDeath.agentName + ' died after the system failed to provide timely care. ' +
-        'This marks the first preventable mortality event of Year ' + yearNum + '.',
+        'This is the first model-classified system mortality event of Year ' + yearNum + '.',
         'Victim: ' + firstDeath.agentName + ' at cycle ' + firstDeath.cycle
       );
     }
@@ -11317,9 +11318,9 @@ function runInsightEngine() {
       var treeViolations = agents.filter(function(a) { return a.hp > 0 && a.waitWeeks > p.tree; }).length;
       addInsight('milestone',
         'Cycle ' + cycle + ' Summary: ' + aliveCount + ' alive, ' + totalDeaths + ' lost',
-        mode + ' mode — ' + sysDeaths + ' preventable deaths so far. ' +
+        mode + ' mode — ' + sysDeaths + ' model-classified system deaths so far. ' +
         treeViolations + ' patients currently exceeding Treeknorm wait limits.',
-        'Preventable: ' + sysDeaths + ' | Treeknorm violations: ' + treeViolations
+        'Model system deaths: ' + sysDeaths + ' | Model wait-threshold breaches: ' + treeViolations
       );
     }
   }
@@ -11431,7 +11432,7 @@ function generateWeeklyReport() {
   if (systemDeaths.length > 0) {
     var worstDeath = systemDeaths[systemDeaths.length - 1];
     var worstAgent = agents.find(function(a) { return a.id === worstDeath.agentId; });
-    worstMoment = worstDeath.agentName + (worstAgent ? ' (' + formatCompletedAge(worstAgent.age) + ')' : '') + ' died — preventable system failure.';
+    worstMoment = worstDeath.agentName + (worstAgent ? ' (' + formatCompletedAge(worstAgent.age) + ')' : '') + ' died — model system classification, not proven preventability.';
   }
   var gpAgents = agents.filter(function(a) { return a.type === 'gp'; });
   var avgBurnout = gpAgents.length > 0 ? Math.round(gpAgents.reduce(function(s, g) { return s + (g.burnoutLevel || 0); }, 0) / gpAgents.length) : 0;
@@ -11513,7 +11514,7 @@ function showWeeklyReport() {
       // Deaths section
       html += '<div style="margin-bottom:6px"><div style="font-weight:600;font-size:11px;color:var(--parchment);margin-bottom:3px">💀 MORTALITY</div>';
       html += '<div style="font-size:11px;color:var(--parchment);opacity:.85">';
-      html += 'Total: <b>' + r.deaths.total + '</b> · Preventable: <b style="color:var(--red)">' + r.deaths.preventable + '</b> · Natural: ' + r.deaths.natural;
+      html += 'Total: <b>' + r.deaths.total + '</b> · Model system: <b style="color:var(--red)">' + r.deaths.preventable + '</b> · Background hazard: ' + r.deaths.natural;
       html += '<br>By age: ';
       Object.keys(r.deaths.byAge).forEach(function(k) {
         if (r.deaths.byAge[k] > 0) html += k + ': ' + r.deaths.byAge[k] + ' ';
@@ -11537,7 +11538,7 @@ function showWeeklyReport() {
       html += '<div style="font-size:11px;color:var(--parchment);opacity:.85">';
       html += 'Admin Waste: <b style="color:#ff6b00">€' + r.financial.adminWaste.toLocaleString() + '</b>';
       html += ' · Treatment: €' + r.financial.treatmentCosts.toLocaleString();
-      html += '<br>Preventable Death Cost: €' + r.financial.preventableDeathCost.toLocaleString();
+      html += '<br>System-death cost proxy (unvalidated): €' + r.financial.preventableDeathCost.toLocaleString();
       html += ' · Treeknorm Cost: €' + r.financial.treeknormCost.toLocaleString();
       html += '<br>💡 Savings Potential (SOLL): <b style="color:var(--green)">€' + r.financial.savingsPotential.toLocaleString() + '</b>';
       html += '</div></div>';
@@ -11826,24 +11827,24 @@ const TOURS = {
     name: "Welcome to Cammelot",
     desc: "A 60-second intro to the simulation and how to explore it.",
     steps: [
-      { text: "Welcome to Cammelot \u2014 a simulated Dutch town of 5,000 AI citizens. Each one has a name, age, health profile, and daily routine. Let\u2019s show you around.", highlight: '#cv' },
+      { text: "Cammelot follows 45 synthetic residents in a town-scale setting of 5,000, not 5,000 individually simulated people. Names and medical histories are fictional.", highlight: '#cv' },
       { text: "Try clicking on a citizen walking through town. You\u2019ll see their health data: HP, conditions, GP visits, and life history.", highlight: '#cv' },
       { text: "Now try clicking on a GP practice (the building icons). You\u2019ll see the doctor\u2019s queue, burnout level, and daily capacity.", highlight: '#cv' },
       { text: "See the \ud83d\udcf0 Gazette button? Click it anytime to read town trends, health news, and system stats \u2014 like a local newspaper.", highlight: '#btn-gazette' },
-      { text: "Notice the IST / SOLL toggle at the top. IST shows today\u2019s healthcare reality. SOLL shows what an AI-native system could achieve. Toggle between them to compare.", highlight: '#bi' },
+      { text: "IST and SOLL are parameter presets, not measured healthcare reality or established AI effects. Minister policy choices change the active model assumptions.", highlight: '#bi' },
       { text: "That\u2019s it! Explore freely \u2014 click citizens, read the Gazette, toggle IST/SOLL, and watch how the system evolves over time. Enjoy Cammelot.", highlight: '#cv' }
     ]
   },
   ist_vs_soll: {
     name: "IST vs SOLL",
-    desc: "Compare current reality with an AI-native healthcare future.",
+    desc: "Compare selected baseline and target assumptions, not clinical predictions.",
     steps: [
-      { text: "You\u2019re watching IST mode \u2014 the current Dutch healthcare system. GPs are stretched thin between patients and paperwork.", highlight: '#bi' },
+      { text: "IST is a selected model baseline. Its administration, absence and productivity values are assumptions, not universal GP measurements.", highlight: '#bi' },
       { text: "Administration and absence reduce GP clinical work. The counter reports available work units per model week, not completed visits.", highlight: '#hE' },
       { text: "The SOLL preset changes model parameters, including GP productivity. It is an assumption comparison, not evidence of better outcomes.", highlight: '#bs' },
-      { text: "Watch the wait times fall. AI triage helps ensure patients are seen within the Treeknorm \u2014 the 4-week legal maximum.", highlight: '#hW' },
-      { text: "Same population, same diseases \u2014 but better outcomes. More treatments completed, fewer citizens falling through the cracks.", highlight: '#cv' },
-      { text: "Toggle between IST and SOLL anytime using these buttons. The difference in outcomes makes the case for healthcare AI.", highlight: '.mode-tog' }
+      { text: "Watch actual queue and treatment outputs. The model wait threshold is not a universal legal maximum, and AI does not guarantee access.", highlight: '#hW' },
+      { text: "Outcomes follow the implemented rules and available capacity. Better model outcomes do not establish clinical effectiveness.", highlight: '#cv' },
+      { text: "Compare assumptions carefully. An in-place preset change is not a paired experiment; Minister provides a separate same-date reference.", highlight: '.mode-tog' }
     ]
   },
   gp_day: {
@@ -12151,7 +12152,7 @@ document.getElementById('btn-tours').addEventListener('click', function() {
           objEl.style.display = '';
         }
         if (!window._mocGameStarted) {
-          objEl.innerHTML = '\ud83c\udfaf Year 1 (Q1/4): Keep preventable deaths to 0 <span style="color:#8a94d8">+80 pts</span> \u00b7 <span style="color:var(--m-green,#4caf50);font-weight:700">\u2713 ON TRACK</span>';
+          objEl.innerHTML = '\ud83c\udfaf Year 1 (Q1/4): Keep model system deaths to 0 <span style="color:#8a94d8">+80 pts</span> \u00b7 <span style="color:var(--m-green,#4caf50);font-weight:700">\u2713 ON TRACK</span>';
           objEl.style.borderColor = 'var(--m-green,#4caf50)';
         }
       }
@@ -13841,7 +13842,7 @@ async function initLLMSubsystem() {
         const recent = GRAVE_MARKERS.filter(function(g){ return g.cause === 'system_failure' && g.cycle > modelTick - MoC.TICKS_PER_YEAR; }).length;
         return recent === 0 ? 12 : 0;
       },
-      text:function(){ return 'Inspectorate review: no model-classified system-delay death was recorded in the last four quarters.'; },
+      text:function(){ return 'Inspectorate review: no model-classified system death was recorded in the last four quarters.'; },
       auto:function(){ applyFx({trust:5}, 'Inspectorate praise. Trust +5.'); } },
     // G15: AI efficiency dividend — makes scribes2 feel worth buying
     { id:'aidividend', name:'\ud83e\udd16 AI efficiency dividend', once:true,
@@ -14008,7 +14009,7 @@ async function initLLMSubsystem() {
       a:{ label:'Fund the assistant', fx:{budget:-15000, admin:-0.02}, note:'-\u20ac15K \u00b7 admin -2%' },
       b:{ label:'Decline', fx:{trust:-3}, note:'All trust -3' } },
     { id:'press', text:'The Gazette asks for a response on current waiting times.',
-      a:{ label:'Face the press', fxFn:function(){ return systemDeaths() <= 2 ? {trust:5} : {trust:-5}; }, note:'Trust +5 if few preventable deaths, else -5' },
+      a:{ label:'Face the press', fxFn:function(){ return systemDeaths() <= 2 ? {trust:5} : {trust:-5}; }, note:'Trust +5 if few model system deaths, else -5' },
       b:{ label:'No comment', fx:{trust:-3}, note:'Trust -3' } },
     { id:'flu', text:'RIVM forecasts a heavy flu season. A regional vaccination campaign would cost \u20ac20K.',
       a:{ label:'Fund the campaign', fx:{budget:-20000, drainMult:0.95}, note:'-\u20ac20K \u00b7 drain -5%' },
@@ -14345,18 +14346,18 @@ async function initLLMSubsystem() {
     let kind = 'calm', headline = 'NO SIRENS, SOME PAPERWORK';
     if (GS._finaleActive) { kind = 'flu'; headline = 'FLU WAVE FILLS THE WARDS'; }
     else if (GS.activeStates && GS.activeStates.struck && GS.trustD < 40) { kind = 'strike'; headline = 'GP STRIKE CUTS ROUTINE CARE'; }
-    else if (lastQGraves.length) { kind = 'death'; const g = lastQGraves[0]; headline = lastQGraves.length > 1 ? lastQGraves.length + ' PREVENTABLE DEATHS THIS QUARTER' : (g.name + ', ' + formatCompletedAge(g.age) + ', DIES WAITING').toUpperCase(); }
+    else if (lastQGraves.length) { kind = 'death'; const g = lastQGraves[0]; headline = lastQGraves.length > 1 ? lastQGraves.length + ' MODEL SYSTEM DEATHS THIS QUARTER' : (g.name + ', ' + formatCompletedAge(g.age) + ', DIES — MODEL SYSTEM CATEGORY').toUpperCase(); }
     else if (evt && evt.kind === 'cyber') { kind = 'hack'; headline = (evt.group || 'RANSOMWARE') + ': RECORDS OFFLINE'; }
     else if (evt && (evt.id === 'lockstep' || evt.id === 'ddos' || evt.id === 'lab')) { kind = 'hack'; headline = evt.id === 'lockstep' ? 'RANSOMWARE: RECORDS OFFLINE' : evt.id === 'lab' ? 'LAB OUTAGE DELAYS PROCEDURES' : 'PATIENT PORTAL OFFLINE'; }
     else if (GS._electionNear) { kind = 'election'; headline = 'VOTE NEARS; TARGETS DO NOT MOVE'; }
     else if (GS.activeStates && GS.activeStates.citAvoid) { kind = 'queue'; headline = 'LOW TRUST DELAYS GP VISITS'; }
     else if (parseFloat(avgWait) > M.IST.tree) { kind = 'queue'; headline = 'SPECIALIST WAIT PASSES 12 WEEKS'; }
-    else if (sd === 0 && q > 4) { kind = 'praise'; headline = 'NO SYSTEM-DELAY DEATHS RECORDED'; }
+    else if (sd === 0 && q > 4) { kind = 'praise'; headline = 'NO MODEL SYSTEM DEATHS RECORDED'; }
     const lines = [];
     if (lastQGraves.length) {
       const g = lastQGraves[0];
-      const how = Math.round(g.waitWeeks) > 0 ? 'died after ' + Math.round(g.waitWeeks) + ' weeks on the list' : 'died before ever reaching the specialist list';
-      lines.push(g.name + ' (' + formatCompletedAge(g.age) + ') ' + how + '.' + (lastQGraves.length > 1 ? ' ' + (lastQGraves.length - 1) + ' other preventable deaths.' : ''));
+      const how = Math.round(g.waitWeeks) > 0 ? 'died with a recorded wait of ' + Math.round(g.waitWeeks) + ' weeks' : 'died with no recorded specialist wait';
+      lines.push(g.name + ' (' + formatCompletedAge(g.age) + ') ' + how + '.' + (lastQGraves.length > 1 ? ' ' + (lastQGraves.length - 1) + ' other model system deaths.' : ''));
     }
     if (GS.activeStates && GS.activeStates.docWTR) lines.push('GPs are working to rule. Sick leave is elevated.');
     if (GS.activeStates && GS.activeStates.citAvoid) lines.push('Low trust is delaying care-seeking.');
@@ -14920,7 +14921,7 @@ async function initLLMSubsystem() {
         html += '</div></details>';
       }
       html += '<div class="moc-sub">Quarter ' + q + ' of ' + MoC.TOTAL_QUARTERS + ' \u00b7 '
-        + (newDeaths > 0 ? '\u26a0 ' + newDeaths + ' preventable death' + (newDeaths > 1 ? 's' : '') + ' last quarter' : 'No preventable deaths last quarter') + '</div>';
+        + (newDeaths > 0 ? '\u26a0 ' + newDeaths + ' model system death' + (newDeaths > 1 ? 's' : '') + ' last quarter' : 'No model system deaths last quarter') + '</div>';
       // G9: pending narrative banners — consumed once
       if (!bannersConsumed) {
         bannersConsumed = true;
@@ -14965,7 +14966,7 @@ async function initLLMSubsystem() {
           + '<div class="moc-obj-status ' + (onTrack ? 'on' : 'off') + '">'
           + (onTrack ? '\u2713 On track' : '\u2717 Failing') + '</div>';
         const METRIC_HINTS = [
-          { needle:'preventable death', hint:function(){ return 'Deaths this year: ' + (systemDeaths() - (obj._sd || 0)) + '. ' + (newDeaths > 0 ? newDeaths + ' died last quarter. Reduce wait times and admin overload.' : 'None yet this year. Keep it that way.'); } },
+          { needle:'model system death', hint:function(){ return 'Model system deaths this year: ' + (systemDeaths() - (obj._sd || 0)) + '. ' + (newDeaths > 0 ? newDeaths + ' recorded last quarter. Delay and disease rules both matter.' : 'None yet this year. Keep it that way.'); } },
           { needle:'referral wait', hint:function(){ return 'Current referral wait: ' + currentReferralWait(MoC.care.snapshot()) + '. Target: 8w or less.'; } },
           { needle:'trust', hint:function(){ return 'Citizens ' + GS.trustC + ' / Doctors ' + GS.trustD + ' / Parliament ' + GS.trustP + '. All three must stay above 10 or your term ends.'; } },
           { needle:'fragil', hint:function(){ return 'Fragility is now ' + fragility() + '%. Each tech purchase raises dependence. Resilience items reduce it.'; } }
@@ -15269,21 +15270,21 @@ async function initLLMSubsystem() {
 
   // ── G4: Post-game data reveal (play-first-explain-later) ──
   const REVEALS = {
-    lockstep: { t:'LOCKSTEP is real.', d:'In April 2026, ransomware group Embargo breached the cloud platform of the dominant Dutch hospital EHR vendor. ~100GB of patient data was taken; the vendor negotiated in secret; the minister demanded accountability. Hospitals running on-premise were untouched \u2014 the single-vendor cloud was the weak point.' },
-    outage: { t:'The grid is genuinely full.', d:'Dutch grid congestion (netcongestie) is so severe that care institutions have been refused new connections; regulators warned in 2023 it threatens healthcare accessibility. Backup power is not paranoia \u2014 it is policy.' },
-    ddos: { t:'The DDoS wave happened.', d:'In January 2023, pro-Russian hacktivists (Killnet) hit the websites of several Dutch university hospitals, including UMC Groningen. Portals went dark; clinical systems held. Nuisance, not catastrophe \u2014 exactly as in the game.' },
-    lab: { t:'The pathology blackout is London, 2024.', d:'The Synnovis ransomware attack cost the NHS 1,100+ cancelled operations and triggered an emergency O-negative blood appeal, because cross-matching was impossible without lab systems.' },
-    codeblack: { t:'Code Black nearly happened.', d:'In late 2021, Dutch ICs came within a rounding error of formal triage ("code zwart"). The national patient-transfer system was the only thing between the Netherlands and battlefield medicine.' },
-    meds: { t:'The medicine shortage is a record, every year.', d:'Dutch pharmacists logged roughly 2,300 shortage notifications per year in 2023-2025. Some 80% of active ingredients come from Asia; substitution, import and rationing are the real three options.' },
-    edclosure: { t:'Night closures are real.', d:'Emergency departments in Zutphen, Den Haag (Bronovo), Stadskanaal and Hoogeveen closed or cut hours in recent years. The patients did not disappear \u2014 they went to the neighbours.' },
-    distrust: { t:'Parliament HAS frozen algorithms.', d:'In 2020 a Dutch court struck down the SyRI welfare-fraud algorithm on human-rights grounds; in 2021 the childcare-benefits algorithm scandal brought down the entire cabinet. Algorithmic distrust is not a game mechanic \u2014 it is Dutch political reality.' },
-    gpretire: { t:'The retiring GP is everywhere.', d:'Dozens of practices in regions like Groningen and Zeeland are searching for successors. When no one comes, thousands of patients redistribute to already-full practices.' },
-    scribes: { t:'The AI scribes exist.', d:'Ambient scribing tools are live in 30+ Dutch hospitals today, with vendors claiming 60%+ reductions in documentation time. The Admin Paradox \u2014 freed hours becoming more patients, not more attention \u2014 is the open research question.' },
+    lockstep: { t:'LOCKSTEP is an authored scenario.', d:'The vendor, timing, disruption and policy effects are fictional game rules. The earlier specific breach narrative is not verified here and does not establish that one hosting model is safe or unsafe.' },
+    outage: { t:'Resilience is a model question.', d:'This event explores dependence on electricity and fallback arrangements. Its probability, duration and effects are authored; they are not a forecast or a statement of regulatory requirements.' },
+    ddos: { t:'The DDoS event is an abstraction.', d:'The game distinguishes portal disruption from clinical-system failure. The selected impacts are not a reconstruction of a particular hospital incident.' },
+    lab: { t:'Laboratory disruption is a scenario.', d:'The event asks how care changes when laboratory service is unavailable. Its cancellations and consequences are authored, not a measured reconstruction of the 2024 Synnovis incident.' },
+    codeblack: { t:'Code Black is a game threshold.', d:'The escalation rule is fictional and does not reproduce Dutch intensive-care triage criteria, a legal emergency declaration or a measured historical near-miss.' },
+    meds: { t:'Medicine supply is simplified.', d:'Substitution, alternative supply and delay are authored choices. The earlier shortage counts and sourcing percentages are unverified here; the game is not medication advice.' },
+    edclosure: { t:'Service closure is an authored shock.', d:'Changes in local access motivate this scenario, but the named event is not a verified chronology of hospital closures or a forecast of patient displacement.' },
+    distrust: { t:'Political trust is an authored rule.', d:'Trust losses and algorithm freezes are game mechanics, not a legal interpretation of a court judgment or a claim about parliamentary powers. See the source checklist for independently verified legal context.' },
+    gpretire: { t:'GP succession is a scenario premise.', d:'The retirement event changes modeled local capacity. Its frequency and population impact are assumptions, not verified regional workforce counts.' },
+    scribes: { t:'Scribe benefits are assumptions.', d:'The game chooses productivity and administration effects. Vendor documentation-time claims do not establish realized consultation capacity or clinical benefit. The earlier adoption counts and percentages are unverified here.' },
     // G17: Point Solution Paradox reveals
-    fragmentation: { t:'The fragmentation problem is real.', d:'A 2024 Dutch Health Authority analysis found hundreds of disconnected health AI tools across Dutch hospitals \u2014 with 2 in 100 validated in clinical practice and 1 in 1,000 reaching scale. Pacmed CEO Wouter Kroese: "The bottleneck is never the algorithm. It\u2019s shared infrastructure, governance, and clinical adoption." Academic hospitals keep building point solutions while the hard problems \u2014 validation, scale, interoperability \u2014 stay unsolved.' },
-    platform: { t:'Platform-first is the minority choice.', d:'Shared health data platforms \u2014 at Erasmus MC, Amsterdam UMC, and regional consortia \u2014 dramatically reduce AI duplication and accelerate adoption. But they require 2\u20134 years of investment before payoff, no press release, and no paper citation. Almost no hospital or municipality chooses this path voluntarily. The typical choice: the pilot.' },
+    fragmentation: { t:'Fragmentation costs are modeled.', d:'Silo counts, penalties and thresholds are authored rules. The earlier attributed validation percentages and quotation are unverified and are not used as evidence for these effect sizes.' },
+    platform: { t:'Platform benefits are a hypothesis.', d:'Coordination gains, implementation time and payoff are selected game assumptions. They are not measured effects at named hospitals or evidence that one investment sequence is generally superior.' },
     // G19: Adoption paradox reveal
-    adoption: { t:'Buying the tool is the easy part.', d:'A 2023 Radboudumc/KPMG analysis found that 70-80% of clinical AI tools in Dutch hospitals reached fewer than 5% of eligible patients in deployment. The gap between "live" and "used" is filled by change management, workflow redesign, and training \u2014 none of which appear in a vendor demo. The tools work. The adoption doesn\u2019t.' }
+    adoption: { t:'Adoption is a model assumption.', d:'The game separates procurement from use through authored adoption rules. The earlier attributed 70–80% and under-5% figures are unverified; they do not establish clinical effectiveness or a national adoption rate.' }
   };
   function dataRevealHtml(){
     let h = '';
@@ -15301,7 +15302,7 @@ async function initLLMSubsystem() {
       keys.slice(0, 5).forEach(function(k){
         evtBlock += '<b style="color:#FFD54F">' + REVEALS[k].t + '</b><br>' + REVEALS[k].d + '<br><br>';
       });
-      evtBlock += '<i>Full sources: cammelot.org methodology and the game design bibliography.</i></div></details>';
+      evtBlock += '<i>Authored scenarios are not empirical effect estimates. <a href="https://github.com/cammeleon66/Cammelot/blob/master/docs/MINISTER_CLAIM_SOURCES.md" target="_blank" rel="noopener">Primary-source checklist, dates and unresolved claims</a>.</i></div></details>';
     }
     return h + evtBlock;
   }
@@ -15334,9 +15335,9 @@ async function initLLMSubsystem() {
       const streakTag = (GS.scenario === 'sprint' && streakData.count > 1) ? ' \u00b7 \ud83d\udd25 ' + streakData.count + '-day streak' : '';
       const verdictTag = reason ? ' \u00b7 ' + verdict(rr, reason) : '';
       return 'Minister of Cammelot #' + MoC.seed + ' \u2014 ' + scName + verdictTag + '\n' + trail + '\nScore: ' + rr.score
-        + (rr.baseSd !== null ? ' \u00b7 Lives saved vs status quo: ' + rr.livesSaved : '') + streakTag
+        + (rr.baseSd !== null ? ' \u00b7 Model system deaths below same-date reference (signed): ' + rr.livesSaved : '') + streakTag
         + (GS.challengeScore !== null ? '\nChallenge target: ' + GS.challengeScore + ' \u2014 ' + (rr.score > GS.challengeScore ? 'BEATEN \u2705' : 'not beaten') : '')
-        + '\nModel '+MoC.MODEL_VERSION+' · ending tick '+modelTick
+        + '\nWithin-model comparison, not clinical evidence. Model '+MoC.MODEL_VERSION+' · ending tick '+modelTick
         + '\nTry the same town: https://cammelot.org/minister.html#scn=' + GS.scenario + '&seed=' + MoC.seed + '&v='+MoC.MODEL_VERSION;
     }
     const shareText = buildShareText(r, reason);
@@ -15352,7 +15353,7 @@ async function initLLMSubsystem() {
     const lb = recordRun(r, reason);
     const ov = document.createElement('div');
     ov.className = 'moc-overlay'; ov.id = 'moc-endscreen';
-    let html = '<div class="moc-box"><h2>\ud83c\udfdb End of Term</h2>';
+    let html = '<div class="moc-box"><h2>\ud83c\udfdb End of Term</h2><p class="moc-sub">Observed simulation output, not clinical evidence. System deaths are model classifications, not proven preventability. The minister role, budget and policy powers are fictional. <a href="index.html#evidence" target="_blank" rel="noopener">Evidence classes and sources</a>.</p>';
     html += '<section class="moc-score-hero"><b class="moc-score-number" id="moc-scoreval">' + r.score + '</b><div>'
       + '<div class="moc-score-label">FINAL SCORE</div><div class="moc-score-meta">' + (publicName || 'Generated public name') + ' · seed ' + MoC.seed + '</div></div></section>';
     // G8c: verdict as stamp + staged reveal + score count-up
@@ -15397,7 +15398,7 @@ async function initLLMSubsystem() {
       html += '<h3>The names</h3><div class="moc-dead">' + deadList.join('<br>')
         + (r.sd > 6 ? '<br>\u2026and ' + (r.sd - 6) + ' more.' : '') + '</div>';
     } else {
-      html += '<h3>The names</h3><div class="moc-dead">No model-classified system-delay deaths were recorded.</div>';
+      html += '<h3>The names</h3><div class="moc-dead">No model-classified system deaths were recorded.</div>';
     }
     // G14: Defining moments block
     (function(){
@@ -15450,7 +15451,7 @@ async function initLLMSubsystem() {
       html += '<h3>Handover</h3><div class="moc-sub" style="line-height:1.75">';
       if (owned.length) html += '\ud83d\udda5 <b>Systems built:</b> ' + owned.join(', ') + '<br>';
       if (lawsPassed2.length) html += '\ud83d\udcdc <b>Laws on the books:</b> ' + lawsPassed2.length + ' (permanent)<br>';
-      html += '\u2620 <b>Preventable deaths:</b> ' + deaths + '<br>';
+      html += '\u2620 <b>Model system deaths:</b> ' + deaths + '<br>';
       html += '\ud83d\udd0b <b>Digital dependence:</b> ' + dep + ' pts (' + (dep >= 8 ? 'critical' : dep >= 5 ? 'elevated' : 'managed') + ')<br>';
       // G17: fragmentation and platform legacy
       if ((GS.fragmentation || 0) > 0) {
@@ -15463,7 +15464,7 @@ async function initLLMSubsystem() {
     html += '</details>';
     html += treasuryReportHtml();
     html += '<details class="moc-result-details"><summary>Game score calculation</summary><h3>Game scorecard</h3>';
-    html += '<div class="moc-score-row"><span>Preventable deaths (your term)</span><b>' + r.sd + '</b></div>';
+    html += '<div class="moc-score-row"><span>Model-classified system deaths (your term)</span><b>' + r.sd + '</b></div>
     const careResult = MoC.care.snapshot();
     html += '<div class="moc-score-row"><span>Admin burden reduced</span><b>' + r.adminGain + ' pts (now ' + Math.round(M.IST.admin * 100) + '%)</b></div>';
     html += '<div class="moc-score-row"><span>Current referral queue / fixed model norm</span><b>' + (careResult.waiting ? careResult.meanWait.toFixed(1)+'w' : 'No one waiting') + ' / 12w</b></div>';
@@ -15821,13 +15822,13 @@ async function initLLMSubsystem() {
     renderMinistry();
   };
   const OBJECTIVES = [
-    { text:'Keep preventable deaths at <b>0</b> this year', bonus:120,
+    { text:'Keep model system deaths at <b>0</b> this year', bonus:120,
       start:function(){ this._sd = systemDeaths(); }, check:function(){ return systemDeaths() === this._sd; } },
     { text:'End the year with Trust <b>\u2265 55</b>', bonus:80, start:function(){}, check:function(){ return GS.trust >= 55; } },
     { text:'Get current referral waits to <b>\u2264 8 weeks</b>', bonus:100, start:function(){}, check:function(){ return MoC.care.snapshot().meanWait <= 8; } },
     { text:'Keep Fragility <b>below 50</b> all year', bonus:80,
       start:function(){ this._ok = fragility()<50; }, check:function(){ return this._ok; } },
-    { text:'No more than <b>1</b> preventable death this year', bonus:90,
+    { text:'No more than <b>1</b> model system death this year', bonus:90,
       start:function(){ this._sd = systemDeaths(); }, check:function(){ return systemDeaths() - this._sd <= 1; } }
   ];
   function objectiveBar(){
@@ -16126,7 +16127,7 @@ async function initLLMSubsystem() {
       + '<div class="moc-sub">Appointed to avert the zorginfarct of Cammelot. Term #' + MoC.seed + ', currently Q' + qq + ' of ' + MoC.TOTAL_QUARTERS + '.</div>'
       + '<div class="moc-score-row"><span>Citizens \u00b7 Doctors \u00b7 Parliament</span><b>' + GS.trustC + ' \u00b7 ' + GS.trustD + ' \u00b7 ' + GS.trustP + '</b></div>'
       + '<div class="moc-score-row"><span>Budget remaining</span><b>' + fmtK(GS.budget) + '</b></div>'
-      + '<div class="moc-score-row"><span>Preventable deaths on your watch</span><b>' + sd + '</b></div>'
+      + '<div class="moc-score-row"><span>Model system deaths on your watch</span><b>' + sd + '</b></div>'
       + '<div class="moc-score-row"><span>Interventions & decisions taken</span><b>' + GS.interventions.length + '</b></div>'
       + '<div class="moc-score-row"><span>Tech dependence</span><b>' + GS.dependence + ' pts</b></div>'
       + '<div class="moc-sub" style="margin-top:10px">Political status: ' + (GS.trustC + GS.trustD + GS.trustP > 180 ? 'broad support' : sd > 5 ? 'mortality scrutiny' : 'contested mandate') + '.</div>'
@@ -16253,7 +16254,7 @@ async function initLLMSubsystem() {
       + trustBarRow('cross', 'Doctors', GS.trustD)
       + trustBarRow('bank', 'Parliament', GS.trustP)
       + '<div class="mrow">' + pixIcon('clock') + ' Avg wait<b class="' + (parseFloat(avgWait) <= M.IST.tree ? 'g' : 'r') + '">' + avgWait + 'w / ' + M.IST.tree + 'w</b></div>'
-      + '<div class="mrow">' + pixIcon('skull') + ' Preventable deaths<b class="' + (sd === 0 ? 'g' : sd < 5 ? 'y' : 'r') + '">' + sd + '</b></div>'
+      + '<div class="mrow">' + pixIcon('skull') + ' Model system deaths<b class="' + (sd === 0 ? 'g' : sd < 5 ? 'y' : 'r') + '">' + sd + '</b></div>'
       + '<div class="mrow">' + pixIcon('heart') + ' Reference comparison<b>' + livesLine + '</b></div>'
       + '<div class="mrow">' + pixIcon('plug') + ' Fragility<b class="' + (fragility() < 30 ? 'g' : fragility() < 60 ? 'y' : 'r') + '">' + fragility() + '</b></div>'
       + (function(){
@@ -16444,7 +16445,7 @@ async function initLLMSubsystem() {
         + (MoC.versionMismatch ? '<p class="moc-sub">This link uses a different model version. The town opens under '+MoC.MODEL_VERSION+'; older outcomes are not comparable.</p>' : '')
         + (MoC.previousRun ? '<p class="moc-sub" id="moc-previous-attempt">Same town, same external conditions. Your previous attempt ended at tick '+MoC.previousRun.tick+'. Try a different approach.</p>' : '')
         + '<p class="moc-sub"><b>' + (sc.id === 'cabinetcrisis'
-          ? 'Finish with all three trust scores at 35 or above, 5 or fewer preventable deaths, and no stage-3 cascade.'
+          ? 'Finish with all three trust scores at 35 or above, 5 or fewer model system deaths, and no stage-3 cascade.'
           : b.win) + '</b></p>'
         + '<div class="moc-name-entry"><label for="moc-player-name">YOUR PUBLIC LEADERBOARD NAME</label><div class="moc-name-row">'
         + '<input id="moc-player-name" maxlength="24" autocomplete="nickname" aria-describedby="moc-name-error">'
@@ -16454,7 +16455,7 @@ async function initLLMSubsystem() {
         + '<section class="moc-opening-board" id="moc-opening-board"><h3>COMMUNITY TOP 5</h3><small>Loading persisted results…</small><ol></ol></section>'
         + '<details style="text-align:left"><summary>Why this game? Model &amp; limits</summary>'
         + '<p class="moc-sub">How do you improve healthcare while keeping it running? Test staffing, technology and resilience against the same town without your interventions. More technology is not the goal.</p>'
-        + '<p class="moc-sub">Simulated people, not clinical predictions. Results depend on model assumptions. Annual targets earn bonus points; they are not the whole goal. <a href="about.html" target="_blank" rel="noopener">Research context</a>.</p></details>'
+        + '<p class="moc-sub">45 synthetic residents represent a town-scale setting of 5,000, not 5,000 individual agents. Two modeled GP practices and a hospital serve them. Your fictional minister role, budget and policy powers are game rules, not national financing. Dated empirical inputs provide context; model assumptions and authored rules produce simulation outputs, not clinical predictions. System deaths include terminal disease and HP rules, not proven preventability. Annual targets award game points. <a href="index.html#evidence" target="_blank" rel="noopener">Evidence classes and source checklist</a>.</p></details>'
         + '<button class="moc-continue" id="moc-takeoffice">TAKE OFFICE</button></div>';
       const nameInput = document.getElementById('moc-player-name');
       const nameError = document.getElementById('moc-name-error');
@@ -16607,8 +16608,8 @@ async function initLLMSubsystem() {
     const PROMISES = [
       { id:'waits', label:'Waits \u22648w', text:'Bring current referral waits to 8 weeks or less', check:function(){ return MoC.care.snapshot().meanWait <= 8; },
         metric:function(){ return { name:'Current referral wait', value:MoC.care.snapshot().meanWait, unit:'w', target:8, targetText:'\u2264 8 weeks', max:24 }; } },
-      { id:'nodeaths', label:'<3 deaths', text:'Fewer than 3 preventable deaths by the election', check:function(){ return systemDeaths() < 3; },
-        metric:function(){ return { name:'Preventable deaths', value:systemDeaths(), unit:'', target:3, targetText:'< 3 deaths', max:10 }; } },
+      { id:'nodeaths', label:'<3 deaths', text:'Fewer than 3 model system deaths by the election', check:function(){ return systemDeaths() < 3; },
+        metric:function(){ return { name:'Model system deaths', value:systemDeaths(), unit:'', target:3, targetText:'< 3 deaths', max:10 }; } },
       { id:'admin', label:'Admin <15%', text:'Cut GP admin burden below 15%', check:function(){ return M.IST.admin < 0.15; },
         metric:function(){ return { name:'GP paperwork', value:M.IST.admin * 100, unit:'%', target:15, targetText:'< 15%', max:50 }; } },
       { id:'digital', label:'2+ tech', text:'Digitise care (2+ tech systems live)', check:function(){ return (GS.owned.scribes1?1:0)+(GS.owned.scribes2?1:0)+(GS.owned.a2a?1:0)+(GS.owned.twin?1:0) >= 2; },
@@ -16627,7 +16628,7 @@ async function initLLMSubsystem() {
       ov.className = 'moc-overlay'; ov.id = 'moc-manifesto';
       const promiseCount = MoC.TOTAL_QUARTERS >= 16 ? 3 : 2;
       let html = '<div class="moc-box" style="max-width:540px"><h2>📜 YOUR MANIFESTO</h2>'
-        + '<div class="moc-sub">Pick <b>' + promiseCount + ' promises</b> for the Year ' + Math.ceil(MoC.TOTAL_QUARTERS / 8) + ' election. To stay in office: keep at least 2, keep each trust score at 45 or above, limit preventable deaths to 8, and avoid a stage-3 cascade.</div>'
+        + '<div class="moc-sub">Pick <b>' + promiseCount + ' promises</b> for the Year ' + Math.ceil(MoC.TOTAL_QUARTERS / 8) + ' election. To stay in office: keep at least 2, keep each trust score at 45 or above, limit model system deaths to 8, and avoid a stage-3 cascade.</div>'
         + '<div class="moc-dilemma"><div class="ec-head">📜 CAMPAIGN PROMISES (pick ' + promiseCount + ')</div>';
       PROMISES.forEach(function(p, i){
         html += '<button class="moc-opt" data-promise="' + i + '">' + p.text + '</button>';
@@ -16676,7 +16677,7 @@ async function initLLMSubsystem() {
       const reasons = [];
       if (minPromises > 0 && keptCount < minPromises) reasons.push('fewer than ' + minPromises + ' promises kept (' + keptCount + '/' + totalPicked + ')');
       if (!allTrustPass) reasons.push('trust too low (need all >=' + trustFloor + ': citizens ' + GS.trustC + ', doctors ' + GS.trustD + ', parliament ' + GS.trustP + ')');
-      if (sd > deathCap) reasons.push('too many preventable deaths (' + sd + ', cap is ' + deathCap + ')');
+      if (sd > deathCap) reasons.push('too many model system deaths (' + sd + ', cap is ' + deathCap + ')');
       if (cascadeStage3) reasons.push('stage-3 cascade active (doctor exodus or digital rot)');
       const passes = reasons.length === 0;
       const strong = passes && keptCount >= totalPicked && allTrustStrong && sd === 0;
@@ -16694,7 +16695,7 @@ async function initLLMSubsystem() {
           id, name, value:GS[id], unit:'/100', target:election.trustFloor,
           targetText:'\u2265 ' + election.trustFloor + '/100', max:100, met:GS[id] >= election.trustFloor
         })),
-        { id:'deaths', name:'Preventable deaths', value:election.sd, unit:'', target:election.deathCap,
+        { id:'deaths', name:'Model system deaths', value:election.sd, unit:'', target:election.deathCap,
           targetText:'\u2264 ' + election.deathCap + ' deaths', max:10, met:election.sd <= election.deathCap },
         { id:'cascade', name:'Crisis escalation', value:cascade, unit:'/3', target:3,
           targetText:'Below stage 3', max:3, met:cascade < 3 }
