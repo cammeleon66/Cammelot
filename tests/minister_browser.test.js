@@ -3593,6 +3593,299 @@ test('Android unmute starts media inside the user gesture', { timeout: 30000 }, 
     assert.equal(await page.evaluate(() => MoC.audio.isMuted()), false);
   } finally { await browser.close(); await new Promise(resolve => server.close(resolve)); }
 });
+// ── Issue #12: keyboard, focus and screen-reader behaviour of Minister overlays ──
+async function withAccessibleGame(run, query = '', scenario = 'cabinetcrisis', trackProfileObservers = false) {
+  const server = await startSiteServer(), browser = await launchBrowser();
+  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  await page.addInitScript(trackProfileObservers => {
+    localStorage.setItem('moc_muted_v2', 'true');
+    if (!trackProfileObservers) return;
+    const NativeMutationObserver = MutationObserver;
+    window.__mocProfileObservers = [];
+    window.MutationObserver = class extends NativeMutationObserver {
+      observe(target, options) {
+        if (target?.id === 'moc-minprofile') window.__mocProfileObservers.push(this);
+        return super.observe(target, options);
+      }
+      disconnect() {
+        if (window.__mocProfileObservers.includes(this)) this.profileDisconnected = true;
+        return super.disconnect();
+      }
+    };
+  }, trackProfileObservers);
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.route('**/*', route => {
+    const request = route.request();
+    if (request.method() !== 'GET') return route.abort();
+    if (!request.url().startsWith(`http://127.0.0.1:${server.address().port}/`))
+      return route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+    return route.continue();
+  });
+  try {
+    await page.goto(`http://127.0.0.1:${server.address().port}/minister.html${query || '?a11y=1'}#scn=${scenario}&seed=2468`, { waitUntil: 'domcontentloaded' });
+    await page.locator('#moc-takeoffice').click();
+    for (let step = 0; step < 3; step++) await page.locator('#wc-next').click();
+    await page.waitForFunction(() => window._mocGameStarted && document.getElementById('moc-town-watch'));
+    await page.evaluate(() => { document.getElementById('moc-town-watch').open = true; });
+    await run(page);
+    assert.deepEqual(errors, []);
+  } finally { await browser.close(); await new Promise(resolve => server.close(resolve)); }
+}
+const activeId = page => page.evaluate(() => document.activeElement?.id || document.activeElement?.tagName);
+const inertCount = page => page.evaluate(() => document.querySelectorAll('[inert]').length);
+const focusInside = (page, selector) => page.evaluate(selector => !!document.querySelector(selector)?.contains(document.activeElement), selector);
+async function assertFocusTrapped(page, selector) {
+  for (const key of ['Tab', 'Shift+Tab']) {
+    for (let index = 0; index < 40; index++) {
+      await page.keyboard.press(key);
+      assert.equal(await focusInside(page, selector), true, `${key} press ${index + 1} must stay inside ${selector}`);
+    }
+  }
+}
+const waitForAnnouncement = (page, pattern, region = 'moc-a11y-status') =>
+  page.waitForFunction(([id, source]) => new RegExp(source, 'i').test(document.getElementById(id)?.textContent || ''), [region, pattern.source], { timeout: 5000 });
+async function assertBackgroundInert(page, dialogSelector) {
+  const leaks = await page.evaluate(dialogSelector => {
+    const dialog = document.querySelector(dialogSelector);
+    const live = [...document.querySelectorAll('[data-moc-a11y-live]')];
+    const reachable = [...document.querySelectorAll('button,a[href],input,select,summary,[tabindex]')]
+      .filter(el => !dialog.contains(el) && !live.some(l => l.contains(el)) && !el.closest('[inert]') && !el.disabled && el.getClientRects().length);
+    return reachable.map(el => el.id || el.className || el.tagName).slice(0, 5);
+  }, dialogSelector);
+  assert.deepEqual(leaks, [], 'no control outside the modal may stay keyboard- or pointer-reachable');
+}
+
+test('Issue 12: town request is a labelled modal, traps focus, ignores Escape and restores focus', { timeout: 60000 }, async () => {
+  await withAccessibleGame(async page => {
+    await page.locator('#moc-town-toggle').focus();
+    await page.evaluate(() => window._mocForceFlash(1));
+    const flash = page.locator('.moc-flash');
+    await flash.waitFor();
+    const meta = await flash.evaluate(el => ({
+      role: el.getAttribute('role'), modal: el.getAttribute('aria-modal'),
+      name: document.getElementById(el.getAttribute('aria-labelledby'))?.textContent,
+      description: document.getElementById(el.getAttribute('aria-describedby'))?.textContent,
+      focused: document.activeElement === el,
+    }));
+    assert.equal(meta.role, 'dialog');
+    assert.equal(meta.modal, 'true');
+    assert.ok(meta.name && meta.name.length > 3, 'request needs an accessible name');
+    assert.match(meta.description, /Time is paused/);
+    assert.equal(meta.focused, true, 'opening focus moves into the request dialog');
+    await assertBackgroundInert(page, '.moc-flash');
+    await assertFocusTrapped(page, '.moc-flash');
+
+    await page.keyboard.press('Escape');
+    assert.equal(await flash.count(), 1, 'Escape must not dismiss a mandatory request');
+    assert.equal(await page.locator('#moc-fa').isEnabled() && await page.locator('#moc-fb').isEnabled(), true, 'both choices stay available');
+    await waitForAnnouncement(page, /Escape does not close/);
+
+    await page.locator('#moc-fa').focus();
+    const outline = await page.locator('#moc-fa').evaluate(el => getComputedStyle(el).outlineWidth + ' ' + getComputedStyle(el).outlineStyle);
+    assert.match(outline, /^3px (solid|auto)$/, 'keyboard focus must have a visible ring');
+    await page.keyboard.press('Enter');
+    await page.locator('#moc-flash-continue').waitFor();
+    assert.equal(await activeId(page), 'moc-flash-continue');
+    await waitForAnnouncement(page, /Decision applied/);
+    await page.keyboard.press('Escape');
+    assert.equal(await flash.count(), 1, 'Escape must not skip the applied result');
+    await page.keyboard.press('Enter');
+    assert.equal(await flash.count(), 0);
+    assert.equal(await inertCount(page), 0, 'background is released after the request closes');
+    assert.equal(await activeId(page), 'moc-town-toggle', 'focus returns to the control that was focused before the request');
+  });
+});
+
+test('Issue 12: council is keyboard operable, Inspect town keeps choices, and exit restores focus', { timeout: 90000 }, async () => {
+  await withAccessibleGame(async page => {
+    const before = await page.evaluate(() => ({ tick: modelTick, cycle, paused: MoC.paused }));
+    await page.evaluate(() => window._mocForceCouncilReady(2));
+    await page.locator('#moc-council-ready').focus();
+    await page.keyboard.press('Enter');
+    const council = page.locator('#moc-council');
+    await council.waitFor();
+    const dialog = '#moc-council .moc-box';
+    await page.waitForFunction(() => document.querySelector('#moc-council .moc-box')?.contains(document.activeElement));
+    const meta = await page.locator(dialog).evaluate(el => ({
+      role: el.getAttribute('role'), modal: el.getAttribute('aria-modal'),
+      name: document.getElementById(el.getAttribute('aria-labelledby'))?.textContent, focused: el.contains(document.activeElement) }));
+    assert.equal(meta.role, 'dialog'); assert.equal(meta.modal, 'true');
+    assert.match(meta.name, /Quarterly Council/);
+    assert.equal(meta.focused, true);
+    assert.equal(await page.locator('#moc-wiz-tabs [aria-current="step"]').count(), 1);
+    await assertBackgroundInert(page, '#moc-council');
+    await assertFocusTrapped(page, '#moc-council');
+    await page.keyboard.press('Escape');
+    assert.equal(await council.count(), 1, 'Escape never closes the council');
+
+    await page.locator('#moc-wiz-next').focus();
+    await page.keyboard.press('Enter');
+    assert.equal(await activeId(page), 'moc-wiz-body');
+    assert.match(await page.locator('#moc-wiz-body').getAttribute('aria-label'), /^Step 2 of [34]: /);
+    await waitForAnnouncement(page, /Step 2 of [34]: /);
+    await page.locator('#moc-wiz-back').focus();
+    await page.keyboard.press('Enter');
+    assert.equal(await activeId(page), 'moc-wiz-body');
+    assert.match(await page.locator('#moc-wiz-body').getAttribute('aria-label'), /^Step 1 of [34]: Briefing$/);
+    await waitForAnnouncement(page, /Step 1 of [34]: Briefing/);
+
+    // Inspect town hides the council without discarding it, and hands the keyboard to the town.
+    await page.locator('#moc-inspect-town').focus();
+    await page.keyboard.press('Enter');
+    assert.equal(await council.isVisible(), false);
+    assert.equal(await inertCount(page), 0, 'town is usable while the council is hidden');
+    assert.equal(await activeId(page), 'moc-town-council');
+    await waitForAnnouncement(page, /Council hidden.*choices are kept/);
+    await page.keyboard.press('Enter');
+    assert.equal(await council.isVisible(), true);
+    assert.equal(await focusInside(page, dialog), true);
+    await assertBackgroundInert(page, '#moc-council');
+
+    // Walk every council step with the keyboard only; a decision survives Escape.
+    for (let step = 0; step < 4 && !(await page.locator('#moc-shop').count()); step++) {
+      const choice = page.locator('#moc-council .moc-opt:not(:disabled)').first();
+      if (await choice.count()) {
+        assert.equal(await page.locator('#moc-wiz-next').isDisabled(), true, 'decision is mandatory before Next');
+        await choice.focus();
+        await page.keyboard.press('Escape');
+        assert.equal(await council.count(), 1);
+        assert.equal(await page.locator('#moc-wiz-next').isDisabled(), true, 'Escape must not auto-resolve the decision');
+        await page.keyboard.press('Enter');
+        assert.equal(await activeId(page), 'moc-wiz-next', 'focus moves to Next after the chosen option is disabled');
+        await waitForAnnouncement(page, /Decision recorded/);
+        await page.keyboard.press('Escape');
+        assert.equal(await page.locator('#moc-wiz-next').isEnabled(), true, 'recorded decision survives Escape');
+      }
+      await page.locator('#moc-wiz-next').focus();
+      await page.keyboard.press('Enter');
+      assert.equal(await activeId(page), 'moc-wiz-body', 'new step receives focus');
+      await waitForAnnouncement(page, /Step \d of \d/);
+    }
+    assert.ok(await page.locator('#moc-shop').count(), 'council reaches funding by keyboard');
+    await page.locator('#moc-wiz-next').focus();
+    await page.keyboard.press('Enter');
+    assert.equal(await council.count(), 0);
+    assert.equal(await inertCount(page), 0);
+    assert.equal(await activeId(page), 'moc-town-toggle', 'focus returns to the town controls after the council');
+    assert.equal(await page.evaluate(() => MoC.paused), false);
+    assert.ok(await page.evaluate(() => modelTick) >= before.tick, 'accessibility changes must not rewind or edit the model clock');
+  });
+});
+
+test('Issue 12: confidence vote and year-end results are mandatory modal states', { timeout: 60000 }, async () => {
+  await withAccessibleGame(async page => {
+    await page.locator('#moc-town-toggle').focus();
+    await page.evaluate(() => { Object.assign(MoC.S, { trustP: 18, trustC: 60, trustD: 60 }); MoC.onQuarter(2); });
+    const vote = page.locator('#moc-vote');
+    await vote.waitFor();
+    const dialog = '#moc-vote .moc-box';
+    assert.equal(await page.locator(dialog).getAttribute('role'), 'dialog');
+    assert.match(await page.locator(dialog).evaluate(el => document.getElementById(el.getAttribute('aria-labelledby')).textContent), /NO CONFIDENCE/);
+    assert.equal(await focusInside(page, dialog), true);
+    await assertBackgroundInert(page, '#moc-vote');
+    await assertFocusTrapped(page, '#moc-vote');
+    await page.keyboard.press('Escape');
+    assert.equal(await vote.count(), 1, 'Escape cannot dodge the vote');
+    assert.equal(await page.locator('[data-vote]:enabled').count(), 3, 'all vote choices remain');
+    const budget = await page.evaluate(() => MoC.S.budget);
+    await page.locator('[data-vote="sacrifice"]').evaluate(button => button.replaceChildren());
+    await page.locator('[data-vote="sacrifice"]').focus();
+    await page.keyboard.press('Enter');
+    assert.equal(await vote.count(), 0);
+    assert.equal(await page.evaluate(() => MoC.S.budget), budget - 100000, 'vote outcome is unchanged by accessibility handling');
+    await waitForAnnouncement(page, /Confidence vote/);
+    assert.equal(await inertCount(page), 0);
+    assert.notEqual(await activeId(page), 'BODY', 'focus is not lost after the vote closes');
+  });
+
+  await withAccessibleGame(async page => {
+    await page.evaluate(() => { Object.assign(MoC.S, { trustP: 60, trustC: 60, trustD: 60 }); MoC.onQuarter(5); });
+    const yearEnd = page.locator('#moc-yearend');
+    await yearEnd.waitFor();
+    assert.match(await page.locator('#moc-yearend .moc-box').evaluate(el => document.getElementById(el.getAttribute('aria-labelledby')).textContent), /Year \d+ Results/);
+    await assertBackgroundInert(page, '#moc-yearend');
+    await assertFocusTrapped(page, '#moc-yearend');
+    await page.keyboard.press('Escape');
+    assert.equal(await yearEnd.count(), 1, 'Escape cannot skip year-end results');
+    await page.locator('#moc-yearend-btn').focus();
+    await page.keyboard.press('Enter');
+    assert.equal(await yearEnd.count(), 0);
+    assert.equal(await activeId(page), 'moc-council-ready', 'focus moves on to the next required action');
+    assert.equal(await inertCount(page), 0);
+  });
+});
+
+test('Issue 12: end of term is a mandatory modal with an assertive announcement', { timeout: 60000 }, async () => {
+  await withAccessibleGame(async page => {
+    await page.evaluate(() => _mocDebug.endTerm('served'));
+    const end = page.locator('#moc-endscreen');
+    await end.waitFor();
+    assert.equal(await page.locator('#moc-endscreen .moc-box').getAttribute('aria-modal'), 'true');
+    assert.equal(await focusInside(page, '#moc-endscreen .moc-box'), true);
+    await waitForAnnouncement(page, /End of term\. Final score/, 'moc-a11y-alert');
+    await assertBackgroundInert(page, '#moc-endscreen');
+    await assertFocusTrapped(page, '#moc-endscreen');
+    await page.keyboard.press('Escape');
+    assert.equal(await end.count(), 1, 'Escape must not leave the ended term');
+    assert.equal(await page.locator('#moc-again').isEnabled(), true);
+  }, '?debug=1');
+});
+
+test('Issue 12: Minister profile dismisses with Escape and disconnects its observers', { timeout: 60000 }, async () => {
+  await withAccessibleGame(async page => {
+    await page.evaluate(() => document.getElementById('moc-portrait').click());
+    const profile = page.locator('#moc-minprofile');
+    await profile.waitFor();
+    assert.equal(await profile.getAttribute('data-moc-dismissible'), 'true');
+    assert.equal(await profile.locator('.moc-box').getAttribute('role'), 'dialog');
+    assert.equal(await profile.locator('#moc-minclose').count(), 1);
+    await page.keyboard.press('Escape');
+    assert.equal(await profile.count(), 0);
+    assert.equal(await page.evaluate(() => MoC.paused), false, 'Escape follows the Back to work close behavior');
+    assert.deepEqual(await page.evaluate(() => window.__mocProfileObservers.map(observer => observer.profileDisconnected)), [true, true]);
+  }, '?debug=1', 'cabinetcrisis', true);
+});
+
+test('Issue 12: Stats and Methodology are dismissible dialogs that return focus', { timeout: 60000 }, async () => {
+  await withAccessibleGame(async page => {
+    const clock = await page.evaluate(() => ({ version: MoC.MODEL_VERSION, seed: MoC.seed }));
+    for (const spec of [
+      { button: '#btn-stats', open: null, overlay: '.stats-overlay', name: /SIMULATION SUMMARY/, closeLabel: 'Close statistics', announce: /SIMULATION SUMMARY.*closed/ },
+      { button: '#btn-stats', open: () => showMethodology(), overlay: '.methodology-overlay', name: /Methodology/, closeLabel: 'Close methodology', announce: /Methodology.*closed/ },
+    ]) {
+      await page.locator(spec.button).focus();
+      // The Sources button is hidden in the Minister shell, so Methodology is opened through its real entry point.
+      if (spec.open) await page.evaluate(spec.open); else await page.keyboard.press('Enter');
+      const overlay = page.locator(spec.overlay);
+      await overlay.waitFor();
+      const dialog = overlay.locator('.stats-panel');
+      assert.equal(await dialog.getAttribute('role'), 'dialog');
+      assert.equal(await dialog.getAttribute('aria-modal'), 'true');
+      assert.match(await dialog.evaluate(el => document.getElementById(el.getAttribute('aria-labelledby')).textContent), spec.name);
+      assert.match(await overlay.locator('button[aria-label]').first().getAttribute('aria-label'), new RegExp(spec.closeLabel));
+      assert.equal(await dialog.evaluate(el => document.activeElement === el), true, 'opening focus is in the dialog');
+      await assertBackgroundInert(page, spec.overlay);
+      await assertFocusTrapped(page, `${spec.overlay} .stats-panel`);
+      await page.keyboard.press('Tab');
+      const ring = await page.evaluate(() => { const style = getComputedStyle(document.activeElement); return style.outlineWidth + ' ' + style.outlineStyle; });
+      assert.match(ring, /^3px (solid|auto)$/, 'dialog controls show a visible keyboard focus ring');
+      await page.keyboard.press('Escape');
+      assert.equal(await overlay.count(), 0, 'Escape dismisses a dismissible panel');
+      assert.equal(await activeId(page), spec.button.slice(1), 'focus returns to the opener');
+      assert.equal(await inertCount(page), 0);
+      await waitForAnnouncement(page, spec.announce);
+    }
+    // The visible close button and a second open/close cycle still work after Escape.
+    await page.locator('#btn-stats').focus();
+    await page.keyboard.press('Enter');
+    await page.locator('#stats-close-btn').focus();
+    await page.keyboard.press('Enter');
+    assert.equal(await page.locator('.stats-overlay').count(), 0);
+    assert.equal(await activeId(page), 'btn-stats');
+    assert.deepEqual(await page.evaluate(() => ({ version: MoC.MODEL_VERSION, seed: MoC.seed })), clock, 'overlays do not alter model identity');
+  });
+});
 // L04 — mobile controls. Expectations are documented in docs/MINISTER_MOBILE_CONTROLS.md.
 // This is emulation (Chromium mobile viewport + touch), not physical-device evidence.
 const L04_VIEWPORTS = [
