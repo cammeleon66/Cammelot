@@ -44,19 +44,19 @@ const T_CRITICAL_95 = Object.freeze({
 const COST_PROFILE = Object.freeze({
   organizational_reform: Object.freeze({
     design: 500, data: 0, migration: 0, training: 400, security: 0,
-    license: 0, maintenance: 100, oversight: 8,
+    license: 0, maintenance: 100, upgrades: 30, decommissioning: 100, oversight: 8, clinicianReview: 6,
   }),
   conventional_integration: Object.freeze({
     design: 800, data: 300, migration: 600, training: 400, security: 100,
-    license: 80, maintenance: 50, oversight: 12,
+    license: 80, maintenance: 50, upgrades: 45, decommissioning: 200, oversight: 12, clinicianReview: 8,
   }),
   agentic_coordination: Object.freeze({
     design: 2400, data: 300, migration: 600, training: 800, security: 300,
-    license: 250, maintenance: 200, oversight: 24,
+    license: 250, maintenance: 200, upgrades: 120, decommissioning: 400, oversight: 24, clinicianReview: 16,
   }),
   non_agentic_modernization: Object.freeze({
     design: 1600, data: 300, migration: 1200, training: 600, security: 200,
-    license: 130, maintenance: 100, oversight: 16,
+    license: 130, maintenance: 100, upgrades: 80, decommissioning: 300, oversight: 16, clinicianReview: 12,
   }),
 });
 const COMMON_CAPACITIES = Object.freeze({ coordinationUnitsPerTick: 2, treatmentStartsPerTick: 1 });
@@ -213,9 +213,17 @@ export function makeLifecycleInput({ id, armId, horizonTicks = R01_HORIZON_TICKS
     ...(profile.maintenance ? [costItem({ id: 'maintenance-upgrades', category: 'maintenance',
       timing: 'recurring', from: 'commissioning', periodTicks: core.TICKS_PER_YEAR,
       cash: cash(profile.maintenance), source })] : []),
+    costItem({ id: 'system-upgrades', category: 'upgrades',
+      timing: 'recurring', from: 'commissioning', periodTicks: core.TICKS_PER_YEAR,
+      cash: cash(profile.upgrades), source }),
     costItem({ id: 'human-oversight', category: 'human_oversight',
       timing: 'recurring', from: 'commissioning', periodTicks: core.TICKS_PER_YEAR,
       work: profile.oversight, source }),
+    costItem({ id: 'clinician-review-override', category: 'clinician_review_override',
+      timing: 'recurring', from: 'commissioning', periodTicks: core.TICKS_PER_YEAR,
+      work: profile.clinicianReview, source }),
+    costItem({ id: 'decommissioning-liability', category: 'decommissioning',
+      tick: horizonTicks + 1, cash: cash(profile.decommissioning), work: 4, source }),
     ...(failedCommissioningAttempts > 0 ? [costItem({ id: 'commissioning-incident',
       category: 'incident_handling', timing: 'on_commissioning_failure',
       cash: cash(120), work: 4, source })] : []),

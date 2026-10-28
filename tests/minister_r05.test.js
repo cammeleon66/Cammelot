@@ -136,6 +136,10 @@ test('zero adoption is a null control and a commissioning failure is explicitly 
     ['failed', 'passed']);
   assert.ok(failed.eventStream.kinds.commissioning_failed > 0);
   assert.ok(failed.finalSnapshot.lifecycle.ledger.byCategory.incident_handling.cash > 0);
+  assert.ok(failed.finalSnapshot.lifecycle.ledger.byCategory.upgrades.cash > 0);
+  assert.ok(failed.finalSnapshot.lifecycle.ledger.byCategory.clinician_review_override.work > 0);
+  assert.ok(failed.finalSnapshot.lifecycle.ledger.residualLiabilities
+    .some(item => item.itemId === 'decommissioning-liability'));
 });
 
 test('incomplete run is rejected before a partial summary can be returned', () => {
