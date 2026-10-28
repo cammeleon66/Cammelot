@@ -1,0 +1,31 @@
+name: Backlog autopilot
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: backlog-autopilot
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  drive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/agentic-overhaul
+          fetch-depth: 0
+          token: ${{ secrets.AUTOPILOT_TOKEN }}
+      - name: Drive the B-series queue
+        env:
+          GH_TOKEN: ${{ secrets.AUTOPILOT_TOKEN }}
+        run: |
+          git config user.name "cammeleon66"
+          git config user.email "220189744+cammeleon66@users.noreply.github.com"
+          bash .github/scripts/autopilot.sh
