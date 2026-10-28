@@ -1254,6 +1254,15 @@ body:has(.moc-mandate) #moc-objective{display:none!important}
   #moc-portrait{display:none!important}
   .moc-wiz-nav .moc-continue{max-width:none}
 }
+/* ── Accessibility: live region, dialog focus and visible keyboard focus ── */
+.moc-a11y-live{position:absolute!important;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0}
+[data-moc-dialog]:focus-visible,#moc-wiz-body:focus-visible,#moc-budget-line:focus-visible{outline:3px solid var(--m-gold,#FFB300);outline-offset:-3px}
+.moc-overlay :is(button,summary,a,input,select,textarea):focus-visible,
+.moc-flash button:focus-visible,
+#moc-council-ready-banner button:focus-visible,
+#moc-town-watch :is(button,summary):focus-visible,
+#moc-ministry :is(button,summary,a):focus-visible{outline:3px solid var(--m-gold,#FFB300);outline-offset:2px;box-shadow:0 0 0 5px #0b0b1e}
+.stats-overlay :is(button,summary,a):focus-visible{outline:3px solid #1a237e;outline-offset:2px;box-shadow:0 0 0 5px #fff}
 </style>
 </head>
 <body>
@@ -9971,6 +9980,7 @@ function toggleStats(){
   statsVisible=true;
   const overlay=document.createElement('div');
   overlay.className='stats-overlay';
+  overlay.dataset.mocDismissible='true';
   overlay.addEventListener('click',function(e){if(e.target===overlay){overlay.remove();statsVisible=false;}});
   overlay.innerHTML=buildStatsHTML();
   gw.appendChild(overlay);
@@ -9990,11 +10000,12 @@ function showMethodology(){
   if(existing){existing.remove();return;}
   const overlay=document.createElement('div');
   overlay.className='stats-overlay methodology-overlay';
+  overlay.dataset.mocDismissible='true';
   overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remove();});
   overlay.innerHTML='<div class="stats-panel" style="max-width:540px;padding:0">' +
     '<div class="stats-header" style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:2px solid var(--frame2);background:rgba(0,0,0,.08)">' +
     '<h3 style="margin:0;font-size:14px;color:var(--ink)">📚 Methodology &amp; Sources</h3>' +
-    '<button class="stats-close" id="methodology-close-btn" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--ink2);padding:2px 6px">✕</button></div>' +
+    '<button class="stats-close" id="methodology-close-btn" aria-label="Close methodology and sources" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--ink2);padding:2px 6px">✕</button></div>' +
     '<div style="padding:10px 14px;font-size:11px;line-height:1.5;color:var(--ink)">' +
 
     '<details open><summary style="font-weight:700;font-size:12px;cursor:pointer;margin-bottom:4px">🏘 Demographics (CBS 2024)</summary>' +
@@ -10095,7 +10106,7 @@ function buildStatsHTML(){
   const totalCost=adminWaste+preventableDeathCost;
 
   return `<div class="stats-panel">
-    <div class="stats-header"><h3>📊 SIMULATION SUMMARY — Cycle ${cycle}</h3><button class="stats-close" id="stats-close-btn">✕</button></div>
+    <div class="stats-header"><h3>📊 SIMULATION SUMMARY — Cycle ${cycle}</h3><button class="stats-close" id="stats-close-btn" aria-label="Close statistics">✕</button></div>
     <div class="stats-body">
       <div class="stats-group"><h4>Population</h4>
         <div class="stats-row"><span class="sk">Total</span><span class="sv">${totalPop}</span></div>
@@ -14144,7 +14155,10 @@ async function initLLMSubsystem() {
   function openPendingCouncil(){
     document.getElementById('moc-council-ready-banner')?.remove();
     const council = document.getElementById('moc-council');
-    if (council) { council.style.display = ''; document.getElementById('moc-inspect-town')?.focus(); }
+    if (council) {
+      council.style.display = ''; window.MoCA11y?.sync();
+      window.MoCA11y?.focusDialog(council); window.MoCA11y?.announce('Council reopened. Your choices so far are kept.');
+    }
     else if (GS._councilDue) {
       const q = GS._councilDue; GS._councilDue = null;
       openCouncil(q);
@@ -14487,6 +14501,7 @@ async function initLLMSubsystem() {
   function renderShop(wizardMode){
     const wrap = document.getElementById('moc-shop');
     if (!wrap) return;
+    const shopHadFocus = wrap.contains(document.activeElement);
     // Refresh the State of the System panel live after every purchase/decision
     const sysOld = document.getElementById('moc-syspanel');
     if (sysOld) sysOld.outerHTML = systemPanelHtml();
@@ -14547,6 +14562,11 @@ async function initLLMSubsystem() {
         + (GS._bruisedMandate > 0 ? ' <span style="color:#ff7043">(bruised mandate)</span>' : '')
         + ' \u2014 your civil service can only roll out ' + effectiveCapDisplay + ' changes per quarter \u00b7 Budget: <b style="color:' + budgetColor + '">' + fmtK(GS.budget) + budgetAlert + '</b>'
         + (GS.trustP < 35 ? ' \u00b7 <span style="color:var(--m-red)">\u26a0 Parliament withholds co-funding: prices +25%</span>' : '');
+    }
+    if (shopHadFocus && !wrap.contains(document.activeElement)) {
+      // The focused Buy button was replaced; land on the live budget/slots summary.
+      const line = document.getElementById('moc-budget-line');
+      if (line) line.focus({preventScroll:true});
     }
     // G18-E: system panel toggle — clone-and-replace strips any stacked listeners from prior renderShop calls
     const toggleBtn = document.querySelector('#moc-syspanel .moc-syspanel-toggle');
@@ -14763,7 +14783,10 @@ async function initLLMSubsystem() {
       GS.decisionLog.push({tick:modelTick,quarter:q,id,text:action.textContent.trim()});
     },true);
     document.getElementById('moc-inspect-town').onclick = function(){
-      ov.style.display = 'none'; renderTownWatch(); document.getElementById('moc-town-council').focus();
+      ov.style.display = 'none'; window.MoCA11y?.sync(); renderTownWatch();
+      const townWatch = document.getElementById('moc-town-watch'); if (townWatch) townWatch.open = true; // a closed <details> would swallow the focus
+      document.getElementById('moc-town-council').focus();
+      window.MoCA11y?.announce('Council hidden so you can inspect the town. Time stays paused and your choices are kept. Use Return to council to continue.');
     };
 
     const STEP_LABELS = needsDecision ? ['Briefing', 'Decision', 'Law', 'Fund'] : ['Briefing', 'Law', 'Fund'];
@@ -14775,9 +14798,10 @@ async function initLLMSubsystem() {
     function renderTabs(){
       const t = document.getElementById('moc-wiz-tabs');
       if (!t) return;
+      t.setAttribute('role', 'list'); t.setAttribute('aria-label', 'Council steps');
       t.innerHTML = STEP_LABELS.map(function(label, i){
         const cls = i < wizStep ? 'done' : i === wizStep ? 'active' : '';
-        return '<span class="moc-wiz-tab ' + cls + '">' + (i < wizStep ? '\u2713 ' : (i + 1) + '. ') + label + '</span>';
+        return '<span role="listitem"' + (i === wizStep ? ' aria-current="step"' : '') + ' class="moc-wiz-tab ' + cls + '">' + (i < wizStep ? '\u2713 ' : (i + 1) + '. ') + label + '</span>';
       }).join('');
     }
 
@@ -14807,10 +14831,19 @@ async function initLLMSubsystem() {
     function goTo(n){
       wizStep = n;
       renderTabs();
-      if(n===0)return renderStep0();
-      if(needsDecision&&n===1)return renderStep2();
-      if(n===(needsDecision?2:1))return renderStep3();
-      return renderStep4();
+      if(n===0)renderStep0();
+      else if(needsDecision&&n===1)renderStep2();
+      else if(n===(needsDecision?2:1))renderStep3();
+      else renderStep4();
+      if(n>0){
+        // The previous Next/Back button was replaced: move focus to the new step so it is announced.
+        const wb=document.getElementById('moc-wiz-body');
+        if(wb){
+          wb.setAttribute('role','group'); wb.setAttribute('aria-label','Step '+(n+1)+' of '+STEP_LABELS.length+': '+STEP_LABELS[n]);
+          wb.tabIndex=-1; wb.focus({preventScroll:true}); wb.scrollTop=0;
+        }
+        window.MoCA11y?.announce('Step '+(n+1)+' of '+STEP_LABELS.length+': '+STEP_LABELS[n]+'.');
+      }
     }
 
     function markDecided(btn){
@@ -14820,6 +14853,9 @@ async function initLLMSubsystem() {
       const nxt = document.getElementById('moc-wiz-next');
       if (nxt) nxt.disabled = false;
       if (document.getElementById('moc-shop')) renderShop(true);
+      // The chosen option is now disabled; keep keyboard focus alive on Next and say what happened.
+      if (nxt) nxt.focus();
+      window.MoCA11y?.announce('Decision recorded' + (btn && btn.firstChild ? ': ' + btn.firstChild.textContent.trim() : '') + '. Next is now available.');
     }
 
     // === Step 0: Gazette + pending banners ===
@@ -15051,6 +15087,7 @@ async function initLLMSubsystem() {
               toast.style.cssText = 'position:fixed;top:56px;left:50%;transform:translateX(-50%);background:#2a1508;border:2px solid #FFB300;border-radius:8px;padding:8px 20px;color:#F5E6C8;font:600 12px Inter,sans-serif;z-index:9999;pointer-events:none;transition:opacity .4s';
               toast.textContent = '\u2696 1 law already enacted this quarter \u2014 you can pass another next council';
               document.body.appendChild(toast);
+              window.MoCA11y?.announce(toast.textContent);
               setTimeout(function(){ toast.style.opacity = '0'; setTimeout(function(){ toast.remove(); }, 450); }, 2600);
               return;
             }
@@ -15073,6 +15110,8 @@ async function initLLMSubsystem() {
             if (law.beat) GS.pendingBeat = law.beat;
             b.textContent = '\u2713 Enacted';
             ov.querySelectorAll('[data-law]').forEach(function(o){ o.disabled = true; });
+            document.getElementById('moc-wiz-next')?.focus();
+            window.MoCA11y?.announce('Law enacted: ' + law.name + '. Funding is next.');
           });
         });
       }
@@ -15084,7 +15123,7 @@ async function initLLMSubsystem() {
       body.innerHTML=prioritySummaryHtml()
         + '<div class="moc-dilemma"><div class="ec-head">🏗 FUND INTERVENTIONS</div>'
         + '<div class="dq">Choose up to two changes. Compare each immediate effect with the priorities above; delayed or uncertain outcomes are labeled separately.</div></div>'
-        + '<div class="moc-sub" id="moc-budget-line"></div><div class="moc-shop" id="moc-shop"></div>';
+        + '<div class="moc-sub" id="moc-budget-line" role="status" tabindex="-1"></div><div class="moc-shop" id="moc-shop"></div>';
       renderShop(true);
       renderNav(true,'Watch the town ▶',false);
     }
@@ -15417,6 +15456,7 @@ async function initLLMSubsystem() {
       + '<button class="moc-buy" id="moc-export-record">Export complete command record</button><p id="moc-replay-status" role="status"></p></div></div>';
     ov.innerHTML = html;
     document.body.appendChild(ov);
+    window.MoCA11y?.announce('End of term. Final score ' + r.score + '. Review the result, then choose Try another approach or export the command record.', true);
     GS._rebuildShare = buildShareText;
     // G8c: staged reveal of end-screen sections + score count-up
     const kids = [...ov.querySelectorAll('.moc-box > *')];
@@ -15948,6 +15988,8 @@ async function initLLMSubsystem() {
         + '</div><button id="moc-flash-continue">Continue to town</button>';
       el.querySelector('#moc-flash-continue').focus();
       el.querySelector('#moc-flash-continue').onclick = cleanup;
+      window.MoCA11y?.announce('Decision applied: ' + option.l.replace(/<[^>]+>/g, '') + '. '
+        + (changes.length ? changes.join('. ') : 'No immediate modeled change this time.') + '. Continue to town when ready.');
     }
     el.querySelector('#moc-fa').addEventListener('click', function(){ decide(flash.a); });
     el.querySelector('#moc-fb').addEventListener('click', function(){ decide(flash.b); });
@@ -16494,6 +16536,7 @@ async function initLLMSubsystem() {
           voted=true;
           const v = b.getAttribute('data-vote');
           ov.remove();
+          window.MoCA11y?.announce('Confidence vote: ' + b.firstChild.textContent.trim() + ' chosen.');
           if (v === 'promise') {
             adjustStakeholders(0, 0, 10);
             GS.delayed.push({ atQ: GS.quarter + 3, fx:{trustP:-15}, label:'Parliament remembers your moonshot promises. They were not kept.' });
@@ -16864,6 +16907,7 @@ async function initLLMSubsystem() {
           : '';
         const yov = document.createElement('div');
         yov.className = 'moc-overlay'; yov.id = 'moc-yearend';
+        yov.dataset.mocReturnFocus = '#moc-council-ready';
         yov.innerHTML = '<div class="moc-box" style="max-width:480px;text-align:center">'
           + '<h2>\ud83c\udfaf Year ' + yr.year + ' Results</h2>'
           + '<div style="font-family:\'Press Start 2P\',monospace;font-size:16px;padding:14px 0;color:' + (yr.achieved ? 'var(--m-green)' : 'var(--m-red)') + '">'
@@ -16876,6 +16920,7 @@ async function initLLMSubsystem() {
         document.body.appendChild(yov);
         document.getElementById('moc-yearend-btn').addEventListener('click', function(){
           yov.remove();
+          window.MoCA11y?.announce('Year ' + yr.year + ' results closed. The council is ready to open.');
           councilReady(q);
         });
       } else {
@@ -17262,6 +17307,225 @@ async function initLLMSubsystem() {
     exportButton.textContent='Export record';exportButton.onclick=()=>MoC.record.download();
     document.getElementById('cbar')?.appendChild(exportButton);
   });
+})();
+
+// ═══ ACCESSIBILITY: modal focus management, inert background, Escape policy, status announcements ═══
+// Presentation-only layer. It never touches simulation state, the model clock or randomness.
+(function(){
+  'use strict';
+  const MODAL_SELECTOR = '.moc-overlay,.moc-flash,.stats-overlay';
+  const FOCUSABLE = 'a[href],button:not([disabled]),input:not([disabled]):not([type="hidden"]),select:not([disabled]),textarea:not([disabled]),summary,[tabindex]:not([tabindex="-1"]),[contenteditable="true"]';
+  const FALLBACK_FOCUS = ['#moc-town-toggle','#moc-town-watch > summary','#btn-play','#btn-stats'];
+  const stack = [];            // open modal records, oldest first
+  const inerted = new Set();   // elements this layer made inert (never touches author-set inert)
+  let lastTrigger = null;
+  let announceTimer = 0;
+  let uid = 0;
+
+  function region(id, role, live){
+    let el = document.getElementById(id);
+    if (el) return el;
+    el = document.createElement('div');
+    el.id = id; el.className = 'moc-a11y-live'; el.dataset.mocA11yLive = 'true';
+    el.setAttribute('role', role); el.setAttribute('aria-live', live); el.setAttribute('aria-atomic', 'true');
+    document.body.appendChild(el);
+    return el;
+  }
+  const polite = region('moc-a11y-status', 'status', 'polite');
+  const assertive = region('moc-a11y-alert', 'alert', 'assertive');
+
+  function announce(message, urgent){
+    const target = urgent ? assertive : polite;
+    const text = String(message || '').replace(/\s+/g, ' ').trim();
+    if (!text) return;
+    target.textContent = '';
+    clearTimeout(announceTimer);
+    // Clearing first makes identical consecutive messages announce again.
+    announceTimer = setTimeout(function(){ target.textContent = text; }, 40);
+  }
+
+  function visible(el){
+    if (!el || !el.isConnected || el.hidden) return false;
+    const style = getComputedStyle(el);
+    return style.display !== 'none' && style.visibility !== 'hidden';
+  }
+  function focusable(el){
+    return visible(el) && !el.closest('[inert]') && !el.disabled && el.getClientRects().length > 0;
+  }
+  function dialogOf(el){ return el.querySelector(':scope > .moc-box, :scope > .stats-panel') || el; }
+  function topRecord(){
+    for (let i = stack.length - 1; i >= 0; i--) if (visible(stack[i].el)) return stack[i];
+    return null;
+  }
+  function focusables(root){
+    return Array.from(root.querySelectorAll(FOCUSABLE)).filter(function(el){ return focusable(el); });
+  }
+  function tryFocus(el){
+    if (!el || !focusable(el)) return false;
+    // Do not let a restored focus scroll away from the panel position the game has just chosen.
+    el.focus({ preventScroll: true });
+    return document.activeElement === el;
+  }
+
+  function ensureId(el, prefix){ if (!el.id) el.id = prefix + (++uid); return el.id; }
+  function label(record){
+    const dialog = dialogOf(record.el);
+    const heading = dialog.querySelector('h2,h3,h4');
+    if (heading) {
+      dialog.setAttribute('aria-labelledby', ensureId(heading, 'moc-dlg-title-'));
+      record.name = heading.textContent.replace(/\s+/g, ' ').trim();
+    } else {
+      dialog.removeAttribute('aria-labelledby'); dialog.setAttribute('aria-label', 'Dialog'); record.name = 'Dialog';
+    }
+    const detail = dialog.querySelector('.moc-sub,.dq,.ft');
+    if (detail) dialog.setAttribute('aria-describedby', ensureId(detail, 'moc-dlg-desc-'));
+    else dialog.removeAttribute('aria-describedby');
+  }
+
+  function applyInert(){
+    const top = topRecord();
+    const keep = new Set();
+    for (let node = top && top.el; node && node !== document.documentElement; node = node.parentElement) keep.add(node);
+    const wanted = new Set();
+    if (top) {
+      keep.forEach(function(node){
+        const parent = node.parentElement;
+        if (!parent) return;
+        Array.from(parent.children).forEach(function(sibling){
+          if (keep.has(sibling) || sibling.dataset.mocA11yLive || /^(SCRIPT|STYLE|LINK|META)$/.test(sibling.tagName)) return;
+          wanted.add(sibling);
+        });
+      });
+    }
+    inerted.forEach(function(el){
+      if (!wanted.has(el) || !el.isConnected) { el.inert = false; inerted.delete(el); }
+    });
+    wanted.forEach(function(el){
+      if (!el.inert) { el.inert = true; inerted.add(el); }
+    });
+  }
+
+  function register(el){
+    if (stack.some(function(r){ return r.el === el; })) return;
+    const active = document.activeElement;
+    const insideModal = active && stack.some(function(r){ return r.el.contains(active); });
+    let opener = active && active !== document.body && !insideModal ? active : null;
+    if (!opener && lastTrigger && lastTrigger.isConnected && !insideModal) opener = lastTrigger;
+    const record = { el: el, opener: opener, name: 'Dialog', observer: null };
+    stack.push(record);
+    const dialog = dialogOf(el);
+    dialog.setAttribute('role', 'dialog');
+    dialog.setAttribute('aria-modal', 'true');
+    dialog.setAttribute('data-moc-dialog', el.dataset.mocDismissible === 'true' ? 'dismissible' : 'required');
+    if (!dialog.hasAttribute('tabindex')) dialog.tabIndex = -1;
+    label(record);
+    record.observer = new MutationObserver(function(){
+      label(record);
+      rescueFocus(record);
+    });
+    record.observer.observe(el, { childList: true, subtree: true });
+    new MutationObserver(function(){ sync(); }).observe(el, { attributes: true, attributeFilter: ['style', 'hidden', 'class'] });
+    applyInert();
+    if (!dialog.contains(document.activeElement)) focusDialog(el);
+  }
+
+  function focusDialog(el){
+    const dialog = dialogOf(el);
+    const preferred = dialog.querySelector('[data-moc-autofocus]');
+    if (tryFocus(preferred)) return;
+    dialog.focus({ preventScroll: true });
+  }
+  function rescueFocus(record){
+    if (topRecord() !== record) return;
+    const dialog = dialogOf(record.el);
+    if (!dialog.contains(document.activeElement)) focusDialog(record.el);
+  }
+
+  function restoreFocus(record){
+    const candidates = [];
+    if (record.el.dataset.mocReturnFocus) candidates.push(document.querySelector(record.el.dataset.mocReturnFocus));
+    candidates.push(record.opener);
+    FALLBACK_FOCUS.forEach(function(selector){ candidates.push(document.querySelector(selector)); });
+    for (let i = 0; i < candidates.length; i++) if (tryFocus(candidates[i])) return;
+  }
+
+  function reconcile(){
+    for (let i = stack.length - 1; i >= 0; i--) {
+      const record = stack[i];
+      if (record.el.isConnected) continue;
+      stack.splice(i, 1);
+      record.observer && record.observer.disconnect();
+      if (record.el.dataset.mocDismissible === 'true') announce(record.name.replace(/^[^\p{L}\p{N}]+/u, '') + ' closed.');
+      applyInert();
+      const top = topRecord();
+      const lost = !document.activeElement || document.activeElement === document.body || !document.body.contains(document.activeElement);
+      if (top) { if (lost || !dialogOf(top.el).contains(document.activeElement)) focusDialog(top.el); }
+      else if (lost) restoreFocus(record);
+    }
+  }
+
+  function sync(){
+    reconcile();
+    document.querySelectorAll(MODAL_SELECTOR).forEach(function(el){
+      if (el.closest('[data-moc-a11y-live]')) return;
+      if (visible(el)) register(el);
+    });
+    applyInert();
+  }
+
+  function dismiss(record){
+    const close = record.el.querySelector('[data-moc-close],#stats-close-btn,#methodology-close-btn');
+    if (close) close.click(); else record.el.remove();
+    reconcile();
+  }
+
+  document.addEventListener('click', function(event){
+    const trigger = event.target && event.target.closest && event.target.closest('button,a,summary,[tabindex]');
+    if (trigger && !trigger.closest(MODAL_SELECTOR)) lastTrigger = trigger;
+  }, true);
+
+  document.addEventListener('keydown', function(event){
+    const top = topRecord();
+    if (!top) return;
+    if (event.key === 'Escape') {
+      if (event.defaultPrevented || event.isComposing) return;
+      if (top.el.dataset.mocDismissible === 'true') {
+        event.preventDefault(); event.stopPropagation();
+        dismiss(top);
+      } else {
+        // Mandatory decisions, year-end and end-of-term states are not dismissible and keep every choice.
+        announce('Escape does not close this dialog. Use the buttons inside it to continue.');
+      }
+      return;
+    }
+    if (event.key !== 'Tab') return;
+    const dialog = dialogOf(top.el);
+    const items = focusables(dialog);
+    const active = document.activeElement;
+    if (!items.length) { event.preventDefault(); dialog.focus(); return; }
+    const first = items[0], last = items[items.length - 1];
+    if (!dialog.contains(active)) { event.preventDefault(); (event.shiftKey ? last : first).focus(); }
+    else if (event.shiftKey && (active === first || active === dialog)) { event.preventDefault(); last.focus(); }
+    else if (!event.shiftKey && active === last) { event.preventDefault(); first.focus(); }
+  }, true);
+
+  document.addEventListener('focusin', function(event){
+    const top = topRecord();
+    if (!top || !event.target || event.target.closest('[data-moc-a11y-live]')) return;
+    if (!dialogOf(top.el).contains(event.target)) focusDialog(top.el);
+  }, true);
+
+  new MutationObserver(sync).observe(document.body, { childList: true });
+  const gameWrap = document.getElementById('game-wrap');
+  if (gameWrap) new MutationObserver(sync).observe(gameWrap, { childList: true });
+
+  window.MoCA11y = {
+    announce: announce,
+    sync: sync,
+    focusDialog: function(el){ if (typeof el === 'string') el = document.querySelector(el); if (el) focusDialog(el); },
+    openDialogs: function(){ return stack.filter(function(r){ return visible(r.el); }).map(function(r){ return r.el.id || r.el.className; }); }
+  };
+  sync();
 })();
 
 </script>
