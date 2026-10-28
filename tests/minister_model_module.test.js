@@ -13,6 +13,41 @@ import { ministerModelExecutableId } from '../scripts/minister_model_identity.mj
 const SITE_ROOT = join(process.cwd(), 'site');
 const MIME_TYPES = { '.html': 'text/html', '.js': 'text/javascript' };
 const core = globalThis.MinisterModelCore;
+const R03_PARITY_FIXTURE = {
+  scenario: core.R03_SCENARIO,
+  seed: 60475,
+  protocolVersion: core.R01_PROTOCOL_VERSION,
+  interventionId: 'conventional_integration',
+  inputs: {
+    horizonTicks: 8,
+    coordinationUnitsPerTick: 2,
+    treatmentStartsPerTick: 1,
+    episodes: [
+      { id: 'pending-a', age: 70, arrivalTick: 0, startingWaitTicks: 8, criticalAtTick: 1, deathAtTick: 1 },
+      { id: 'pending-b', age: 80, arrivalTick: 0, startingWaitTicks: 4, criticalAtTick: 1 },
+      { id: 'new-c', age: 75, arrivalTick: 1, startingWaitTicks: 0, informationComplete: false },
+    ],
+  },
+  schedule: {
+    id: 'fixture-schedule-v1',
+    events: [{ tick: 2, patientId: 'new-c', kind: 'information_available' }],
+  },
+};
+
+function runR03ParityTrace({ fixture, modelExecutableId }) {
+  const model = globalThis.MinisterModelCore;
+  const run = model.createRun({ ...fixture, modelExecutableId });
+  const cursor = run.eventsSince(0).cursor;
+  run.applyCommand({ id: 'handoff-a', sequence: 1, kind: 'complete_handoff', patientId: 'pending-a' });
+  run.applyCommand({ id: 'handoff-b', sequence: 2, kind: 'complete_handoff', patientId: 'pending-b' });
+  run.advanceOneTick(cursor);
+  const informationRequest = run.applyCommand({ id: 'request-info', sequence: 3,
+    kind: 'request_information', patientId: 'new-c' });
+  const secondTick = run.advanceOneTick(informationRequest.eventCursor);
+  run.applyCommand({ id: 'handoff-c', sequence: 4, kind: 'complete_handoff', patientId: 'new-c' });
+  run.advanceOneTick(secondTick.cursor);
+  return { events: run.eventsSince(0).events, snapshot: run.snapshot() };
+}
 
 test('Minister script integrity pins the shared module bytes', () => {
   const moduleBytes = readFileSync(join(SITE_ROOT, 'minister-model-core.js'));
@@ -114,6 +149,27 @@ test('F08 refuses startup when identity-fetch bytes differ from the SRI-pinned s
       record: null,
       notice: 'Minister model module digest does not match its integrity attribute.',
     });
+  } finally {
+    await browser.close();
+    await new Promise(resolve => server.close(resolve));
+  }
+});
+
+test('R03 browser pathway events and final snapshot match the Node fixture', { timeout: 30000 }, async () => {
+  const server = await startServer(SITE_ROOT);
+  const browser = await launchBrowser();
+  try {
+    const modelExecutableId = await ministerModelExecutableId();
+    const nodeResult = runR03ParityTrace({ fixture: R03_PARITY_FIXTURE, modelExecutableId });
+    const page = await browser.newPage();
+    await page.goto(`http://127.0.0.1:${server.address().port}/minister.html#scn=cabinetcrisis&seed=2468`,
+      { waitUntil: 'domcontentloaded' });
+    const browserResult = await page.evaluate(runR03ParityTrace, {
+      fixture: R03_PARITY_FIXTURE,
+      modelExecutableId,
+    });
+    assert.deepEqual(browserResult.events, nodeResult.events);
+    assert.deepEqual(browserResult.snapshot, nodeResult.snapshot);
   } finally {
     await browser.close();
     await new Promise(resolve => server.close(resolve));
