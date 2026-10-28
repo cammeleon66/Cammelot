@@ -409,6 +409,7 @@ These improve evidence and quality; they do not mean the currently deployed game
 These require people or physical devices and cannot be honestly checked by automation.
 
 - [ ] Test the latest build on physical Android Chrome and iPhone Safari in portrait and landscape, including sound and end-screen publishing; record devices, OS and browser versions.
+- [ ] Complete the L04 mobile-control checks in [MINISTER_MOBILE_CONTROLS.md](MINISTER_MOBILE_CONTROLS.md#what-emulation-does-not-prove) on the same devices (touch targets, disclosure discoverability, return to council, landscape reach).
 - [ ] Complete five uncoached playtests; at least four players should explain the target, one followed person, one trade-off, political versus care outcome and a replay choice.
 - [ ] Include one healthcare-domain reviewer for the system-death classification, deterioration assumptions and emergency-capacity model.
 - [ ] Assign an operational owner and retention period for production leaderboard backups.
