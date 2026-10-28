@@ -220,14 +220,19 @@ mid-term restore mechanism is introduced.
 
 **Separate identities**
 
-- `schema: minister-command-record-1` describes the export envelope.
+- `schema: minister-command-record-2` describes the export envelope, including
+  separate model-module and replay-adapter identities.
 - `eventSchema: minister-domain-event-1` describes observed domain events.
-- `replayVersion: minister-command-replay-1` describes command interpretation.
+- `replayVersion: minister-command-replay-2` describes command interpretation
+  and the identity checks required before replay.
 - `modelVersion: minister-care-10-access-time-replay` identifies the outcome rules.
-- `executableId` is SHA-256 of the entire inline executable script, including its
-  data tables and handlers. It is not a Git commit hash, a signature or a server
-  attestation. Even two interim checkouts bearing model 10 reject one another
-  when their executable bytes differ.
+- `modelExecutableId` is SHA-256 over the canonical manifest of raw shared model
+  module bytes. The browser and Node compute it from the same `minister-model-core.js`
+  source bytes; it is not a Git commit hash, a signature or a server attestation.
+- `replayExecutableId` is SHA-256 over the canonical manifest of the inline
+  command/replay adapter and shared model module bytes. `executableId` remains
+  an alias for this value in schema 2. Changing either source unit refuses an
+  older record even when the declared model version is unchanged.
 - `protocol: no-discretionary-action-v1` and the complete generated external
   schedule retain the existing paired-reference contract. No matching rule changed.
 
