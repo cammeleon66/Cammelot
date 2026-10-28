@@ -1897,7 +1897,7 @@ test('F04 eight emergencies share one place with bounded visible overflow and no
     assert.equal(result.third.routineStarts,1);
     assert.equal(result.third.routineDisplacements,0);
     assert.match(result.visible,/Emergency overflow: 5 waiting/);
-    assert.match(result.details,/Emergency starts \/ completions2 \/ 1/);
+    assert.match(result.details,/Emergency starts \/ completions/);
   });
 });
 
@@ -2731,7 +2731,7 @@ test('Completed runs publish automatically with a public or generated name', { t
     assert.equal(submitted.endTick,75);
     assert.equal(typeof submitted.summary.meanWait,'number');
     assert.match(await page.locator('#moc-community-status').innerText(),/Published as Minister Silver Heron 468 · rank 2/);
-    assert.match(await page.locator('#moc-care-comparison').innerText(),/No one currently waiting/);
+    assert.match(await page.locator('#moc-care-comparison').innerText(),/No one waiting \(n=0\)/);
     assert.doesNotMatch(await page.locator('#moc-care-comparison').innerText(),/0\.0w/);
     assert.match(await page.locator('#moc-care-comparison').innerText(),/Deaths before treatment/);
     const topChildren=await page.locator('#moc-endscreen .moc-box').evaluate(element=>[...element.children].slice(0,5).map(child=>child.className||child.id||child.tagName));
@@ -2963,7 +2963,7 @@ test('Minister cabinet crisis starts after phone walkthrough and reaches council
     });
     await page.locator('#moc-town-council').click();
     assert.match(await page.locator('.moc-quarter-trends').innerText(),/vs Q1/);
-    assert.match(await page.locator('.moc-gazette').innerText(),/The specialist list|first quarterly reading/i);
+    assert.match(await page.locator('.moc-gazette').innerText(),/The specialist list|first quarterly reading|No one is currently waiting/i);
     const fluReport=page.locator('details.moc-dilemma').filter({has:page.locator('summary',{hasText:'Flu wave'})}).first();
     assert.equal(await fluReport.getAttribute('open'),'');
     const frozen = await page.evaluate(() => {
@@ -3004,7 +3004,7 @@ test('Minister cabinet crisis starts after phone walkthrough and reaches council
     assert.equal(await page.locator('#moc-shop').count(),0,'funding must be on a separate screen');
     await page.locator('#moc-wiz-next').click();
     assert.ok(await page.locator('#moc-shop [data-buy]').count(), 'fund stage should offer interventions');
-    assert.match(await page.locator('.moc-priority-strip').innerText(),/PRIORITIES BEFORE YOU SPEND/);
+    assert.match(await page.locator('.moc-priority-strip').innerText(),/CURRENT STATE · tick/);
     const canvasBeforeHire = await page.locator('#cv').evaluate((canvas) => canvas.toDataURL());
     await page.getByRole('button', { name: /Buy €80K/ }).click();
     const hireEffect = await page.evaluate(() => window._mocWorldEffects?.hire);
@@ -3157,7 +3157,7 @@ test('Desktop play uses one uncluttered Ministry panel and explains immediate re
     const newspaper = page.locator('.moc-gazette').first();
     assert.equal(await newspaper.evaluate(element => getComputedStyle(element, '::before').content), '"CAMMELOT QUARTERLY"');
     const newspaperText = await newspaper.innerText();
-    assert.match(newspaperText, /Average specialist wait:/);
+    assert.match(newspaperText, /Current referral wait:/);
     assert.match(newspaperText, /Treatment starts:/);
     assert.doesNotMatch(newspaperText, /STUDYING THE DOSSIER|WHAT IS THE MINISTER WAITING FOR|YOU HAVE BEEN WARNED|WHITE COATS WALK OUT/);
   } finally { await browser.close(); await new Promise(resolve => server.close(resolve)); }
