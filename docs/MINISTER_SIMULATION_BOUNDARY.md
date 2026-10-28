@@ -70,19 +70,20 @@ must remain byte-stable for run initialization and their digests must be
 verified before the run starts. Do not use DOM source extraction or a Git
 revision as a substitute for the module bytes.
 
-At present F08 `executableId` hashes `document.currentScript.textContent`, which
-covers the inline Minister executable. After extraction, preserve a distinct
-`replayExecutableId` for the browser command/replay path: its canonical manifest
-must include the command/replay adapter source bytes (the inline script if it
-remains the adapter) and all shared model module bytes. The browser computes
-this composite using the same raw-byte/manifest algorithm. A Node experiment
-run computes the identical `modelExecutableId` from those module files, then
-records its own versioned policy/driver identity; it does not claim to be the
-browser replay executable. Any host adapter that can affect outcomes must be
-included in that host's execution identity. The F08 record carries both replay
-and model executable identities. Version the F08 record/replay contract when
-this identity layout changes; incompatible old records must be refused, not
-silently treated as matching.
+F08 now carries separate `modelExecutableId` and `replayExecutableId` values.
+The browser computes the model identity from the raw bytes of
+`site/minister-model-core.js`; its replay identity uses a canonical manifest of
+those bytes and the inline command/replay adapter. The Node identity helper reads
+the same module bytes and uses the same canonical manifest algorithm.
+`executableId` remains an alias for the replay identity in command-record schema
+2. The declared model version remains unchanged by this behavior-preserving
+extraction. The shared module currently contains deterministic clock and random
+primitives; it is not yet the complete `createRun` boundary described above.
+A Node experiment run records its own versioned policy/driver identity and does
+not claim to be the browser replay executable. Any host adapter that can affect
+outcomes must be included in that host's execution identity. A module-only byte
+change changes the model and replay identities and refuses an older record.
+Incompatible records must fail visibly rather than silently matching.
 
 | Responsibility | Owns | Must not own |
 |---|---|---|

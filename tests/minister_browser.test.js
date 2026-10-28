@@ -19,6 +19,7 @@ const launchBrowser = async () => {
 };
 const MIME_TYPES = {
   '.html': 'text/html',
+  '.js': 'text/javascript',
   '.json': 'application/json',
   '.jpeg': 'image/jpeg',
   '.jpg': 'image/jpeg',
