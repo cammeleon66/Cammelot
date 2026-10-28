@@ -151,6 +151,80 @@ function responseScore(text, strategy) {
     + money * 0.02 + (words('health prevention resilience workforce') ? 5 : 0);
 }
 
+async function setLedgerSource(page, source) {
+  await page.evaluate(value => {
+    if (window.__ministerTrustBudgetLedger) window.__ministerTrustBudgetLedger.source = value;
+  }, source);
+}
+
+async function installTrustBudgetLedger(page) {
+  return page.evaluate(() => {
+    const state = MoC.S;
+    const fields = {
+      citizens: 'trustC',
+      doctors: 'trustD',
+      parliament: 'trustP',
+      budget: 'budget',
+    };
+    const ledger = {
+      source: 'simulation',
+      baseline: Object.fromEntries(Object.entries(fields).map(([name, key]) => [name, state[key]])),
+      entries: [],
+    };
+    window.__ministerTrustBudgetLedger = ledger;
+
+    for (const [name, key] of Object.entries(fields)) {
+      let value = state[key];
+      const descriptor = Object.getOwnPropertyDescriptor(state, key);
+      if (descriptor && descriptor.configurable === false)
+        throw new Error(`Cannot instrument non-configurable Minister state field: ${key}`);
+      Object.defineProperty(state, key, {
+        configurable: true,
+        enumerable: true,
+        get: () => value,
+        set: next => {
+          const before = value;
+          value = next;
+          if (Number.isFinite(before) && Number.isFinite(next) && before !== next) {
+            ledger.entries.push({
+              source: ledger.source,
+              tick: modelTick,
+              metric: name,
+              amount: next - before,
+              before,
+              after: next,
+            });
+          }
+        },
+      });
+    }
+
+    const originalTick = tick;
+    window.tick = function instrumentedTick(...args) {
+      const firstEntry = ledger.entries.length;
+      const eventCount = state.eventLog?.length || 0;
+      const cascadeStages = JSON.stringify(Object.fromEntries(
+        Object.entries(state.cascades || {}).map(([id, cascade]) => [id, cascade.stage || 0]),
+      ));
+      ledger.source = 'simulation';
+      try {
+        return originalTick.apply(this, args);
+      } finally {
+        const eventOccurred = (state.eventLog?.length || 0) > eventCount;
+        const nextCascadeStages = JSON.stringify(Object.fromEntries(
+          Object.entries(state.cascades || {}).map(([id, cascade]) => [id, cascade.stage || 0]),
+        ));
+        const source = eventOccurred ? 'event' : nextCascadeStages !== cascadeStages ? 'cascade' : 'simulation';
+        for (const entry of ledger.entries.slice(firstEntry)) {
+          if (entry.source === 'simulation') entry.source = source;
+        }
+        ledger.source = 'simulation';
+      }
+    };
+    return ledger.baseline;
+  });
+}
+
 async function chooseResponse(buttons, strategy, stage, trace, page) {
   const count = await buttons.count();
   if (!count) return false;
@@ -159,7 +233,12 @@ async function chooseResponse(buttons, strategy, stage, trace, page) {
   for (let index = 1; index < texts.length; index += 1) {
     if (responseScore(texts[index], strategy) > responseScore(texts[selected], strategy)) selected = index;
   }
-  await buttons.nth(selected).click();
+  await setLedgerSource(page, stage === 'event decision' ? 'event' : 'response');
+  try {
+    await buttons.nth(selected).click();
+  } finally {
+    await setLedgerSource(page, 'simulation');
+  }
   trace.selectedChoices.push({
     stage,
     tick: await page.evaluate(() => modelTick),
@@ -246,7 +325,12 @@ async function chooseLaw(page, strategy, trace) {
     }
     const skipped = unavailable[0];
     if (skipped) trace.fallbacks.push({ kind: 'law', from: skipped.track, to: track, reason: skipped.reason });
-    await page.locator(`#moc-laws [data-law="${candidate.id}"]`).click();
+    await setLedgerSource(page, 'law');
+    try {
+      await page.locator(`#moc-laws [data-law="${candidate.id}"]`).click();
+    } finally {
+      await setLedgerSource(page, 'simulation');
+    }
     trace.lawChoices.push({ tick: await page.evaluate(() => modelTick), track, id: candidate.id, label: candidate.label });
     return;
   }
@@ -285,7 +369,12 @@ async function choosePurchases(page, strategy, trace) {
       continue;
     }
     const label = state.label;
-    await page.locator(`#moc-shop [data-buy="${id}"]`).click();
+    await setLedgerSource(page, 'purchase');
+    try {
+      await page.locator(`#moc-shop [data-buy="${id}"]`).click();
+    } finally {
+      await setLedgerSource(page, 'simulation');
+    }
     trace.purchaseChoices.push({ quarter, id, label });
     if (previousSkipped) trace.fallbacks.push({ kind: 'purchase', from: previousSkipped.id, to: id, reason: previousSkipped.reason });
     previousSkipped = null;
@@ -322,6 +411,7 @@ async function advanceCouncil(page, strategy, trace) {
 async function runPlayer(page, base, scenario, seed, strategy, loaded = false) {
   const trace = { selectedChoices: [], lawChoices: [], skippedLaws: [], purchaseChoices: [], skippedPurchases: [], fallbacks: [] };
   const pageErrors = await beginPlayerRun(page, base, scenario, seed, strategy, trace, loaded);
+  const ledgerBaseline = await installTrustBudgetLedger(page);
   let iterations = 0;
   let lastTick = -1;
   let stalled = 0;
@@ -375,6 +465,54 @@ async function runPlayer(page, base, scenario, seed, strategy, loaded = false) {
     const priorAtTick = prior?.snapshots?.[care.tick] || null;
     const difference = (current, previous) => current == null || previous == null ? null : current - previous;
     const promiseList = MoC.S.PROMISES || [];
+    const actualVote = MoC.S.electionSnapshot?.result || null;
+    const evaluation = actualVote || window._mocEvaluateElection?.() || null;
+    const voteHeld = MoC.S.scenario === 'cabinetcrisis'
+      ? care.tick >= horizonTicks
+      : !!MoC.S._electionHeld;
+    const trustFloor = evaluation?.trustFloor ?? (MoC.S.scenario === 'cabinetcrisis' ? 35 : 45);
+    const deathCap = evaluation?.deathCap ?? (MoC.S.scenario === 'cabinetcrisis' ? 5 : 8);
+    const cascadeStage = Math.max(0, ...Object.values(MoC.S.cascades || {}).map(item => item.stage || 0));
+    const keptPromises = (MoC.S.promises || []).filter(index => promiseList[index]?.check()).length;
+    const totalPromises = (MoC.S.promises || []).length;
+    const minimumPromises = MoC.S.scenario === 'cabinetcrisis' ? 0 : Math.min(2, totalPromises);
+    const ledger = window.__ministerTrustBudgetLedger || { baseline: {}, entries: [] };
+    const finalValues = {
+      citizens: MoC.S.trustC,
+      doctors: MoC.S.trustD,
+      parliament: MoC.S.trustP,
+      budget: MoC.S.budget,
+    };
+    const reconciliation = Object.fromEntries(Object.entries(finalValues).map(([metric, finalValue]) => {
+      const changes = ledger.entries.filter(entry => entry.metric === metric);
+      const amount = changes.reduce((sum, entry) => sum + entry.amount, 0);
+      const reconstructed = ledger.baseline[metric] + amount;
+      return [metric, {
+        initial: ledger.baseline[metric],
+        change: amount,
+        reconstructed,
+        final: finalValue,
+        difference: finalValue - reconstructed,
+        reconciles: Math.abs(finalValue - reconstructed) < 1e-8,
+      }];
+    }));
+    const finalVoteCriteria = {
+      voteHeld,
+      evaluatedAtTick: actualVote ? MoC.S.electionSnapshot?.tick ?? care.tick : care.tick,
+      evaluation: voteHeld ? 'actual vote' : 'ending-state projection; no final vote was held',
+      outcome: MoC.S._cabinetResult || MoC.S._electionResult || null,
+      trustFloor,
+      deathCap,
+      gates: [
+        { id: 'citizen-trust', value: MoC.S.trustC, target: trustFloor, operator: '>=', passed: MoC.S.trustC >= trustFloor },
+        { id: 'doctor-trust', value: MoC.S.trustD, target: trustFloor, operator: '>=', passed: MoC.S.trustD >= trustFloor },
+        { id: 'parliament-support', value: MoC.S.trustP, target: trustFloor, operator: '>=', passed: MoC.S.trustP >= trustFloor },
+        { id: 'model-system-deaths', value: evaluation?.sd ?? care.systemDeaths, target: deathCap, operator: '<=', passed: (evaluation?.sd ?? care.systemDeaths) <= deathCap },
+        { id: 'stage-3-cascade', value: cascadeStage, target: 3, operator: '<', passed: cascadeStage < 3 },
+        { id: 'promises-kept', value: keptPromises, target: minimumPromises, operator: '>=', passed: keptPromises >= minimumPromises },
+      ],
+      failedGates: (evaluation?.reasons || []).slice(),
+    };
     return {
       modelVersion: MoC.MODEL_VERSION,
       referenceProtocol: MoC.REFERENCE_PROTOCOL,
@@ -392,6 +530,8 @@ async function runPlayer(page, base, scenario, seed, strategy, loaded = false) {
       cabinetReasons: MoC.S._cabinetReasons || [],
       electionResult: MoC.S._electionResult || null,
       election: MoC.S.electionSnapshot || null,
+      finalVoteCriteria,
+      gateFailure: finalVoteCriteria.failedGates.length ? finalVoteCriteria.failedGates.join('; ') : null,
       manifesto: (MoC.S.promises || []).map(index => ({
         id: promiseList[index]?.id || null,
         label: promiseList[index]?.text || null,
@@ -400,6 +540,11 @@ async function runPlayer(page, base, scenario, seed, strategy, loaded = false) {
       care,
       trust: { citizens: MoC.S.trustC, doctors: MoC.S.trustD, parliament: MoC.S.trustP },
       budget: MoC.S.budget,
+      trustBudgetLedger: {
+        baseline: ledger.baseline,
+        entries: ledger.entries,
+        reconciliation,
+      },
       dependence: MoC.S.dependence,
       fragmentation: MoC.S.fragmentation,
       laws: Object.entries(MoC.S.laws || {}).map(([id, quarter]) => ({ id, quarter })),
@@ -425,6 +570,13 @@ async function runPlayer(page, base, scenario, seed, strategy, loaded = false) {
   });
   if (pageErrors.length) throw new Error(`${strategy.id}/${scenario}/${seed}: ${pageErrors.join('; ')}`);
   if (!result.endReason) throw new Error(`${strategy.id}/${scenario}/${seed}: no ending at tick ${result.endingTick}`);
+  const mismatches = Object.entries(result.trustBudgetLedger.reconciliation)
+    .filter(([, check]) => !check.reconciles)
+    .map(([metric, check]) => `${metric} mismatch ${check.difference}`);
+  if (mismatches.length)
+    throw new Error(`${strategy.id}/${scenario}/${seed}: trust/budget ledger failed reconciliation: ${mismatches.join(', ')}`);
+  if (!ledgerBaseline || Object.keys(ledgerBaseline).length !== 4)
+    throw new Error(`${strategy.id}/${scenario}/${seed}: trust/budget ledger baseline was not captured`);
   return { ...result, trace };
 }
 
