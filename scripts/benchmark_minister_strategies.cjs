@@ -398,13 +398,14 @@ async function choosePurchases(page, purchasePolicy, trace) {
   const quarter = await page.evaluate(() => MoC.S.quarter);
   let bought = 0;
   let previousSkipped = null;
-  const deferredIds = new Set(trace.deferredPurchaseIds || []);
+  const deferredSince = new Map(Object.entries(trace.deferredPurchaseQuarters || {})
+    .map(([id, firstQuarter]) => [id, Number(firstQuarter)]));
   for (let index = 0; index < purchasePolicy.purchases.length; index += 1) {
     const id = purchasePolicy.purchases[index];
-    const retry = deferredIds.has(id);
+    const retry = deferredSince.has(id);
     if (bought >= 2) {
       trace.skippedPurchases.push({ quarter, id, retry, reason: 'deferred: two-purchase council limit' });
-      deferredIds.add(id);
+      if (!deferredSince.has(id)) deferredSince.set(id, quarter);
       continue;
     }
     const state = await page.evaluate(itemId => {
@@ -424,10 +425,10 @@ async function choosePurchases(page, purchasePolicy, trace) {
         : `no player-visible purchase control (currently owned: ${state.owned})`;
       trace.skippedPurchases.push({ quarter, id, retry, reason });
       if (state.owned === 0) {
-        deferredIds.add(id);
+        if (!deferredSince.has(id)) deferredSince.set(id, quarter);
         previousSkipped = previousSkipped || { id, reason };
       } else {
-        deferredIds.delete(id);
+        deferredSince.delete(id);
       }
       continue;
     }
@@ -439,13 +440,22 @@ async function choosePurchases(page, purchasePolicy, trace) {
       await setLedgerSource(page, 'simulation');
     }
     trace.purchaseChoices.push({ quarter, id, label });
-    if (retry) trace.purchaseRetries.push({ quarter, id, retriedAtQuarter: quarter });
-    deferredIds.delete(id);
+    if (retry) {
+      const deferredAtQuarter = deferredSince.get(id);
+      trace.purchaseRetries.push({
+        id,
+        deferredAtQuarter,
+        retriedAtQuarter: quarter,
+        quartersDeferred: quarter - deferredAtQuarter,
+      });
+    }
+    deferredSince.delete(id);
     if (previousSkipped) trace.fallbacks.push({ kind: 'purchase', from: previousSkipped.id, to: id, reason: previousSkipped.reason });
     previousSkipped = null;
     bought += 1;
   }
-  trace.deferredPurchaseIds = [...deferredIds];
+  trace.deferredPurchaseQuarters = Object.fromEntries(deferredSince);
+  trace.deferredPurchaseIds = [...deferredSince.keys()];
 }
 
 async function advanceCouncil(page, policies, trace) {
@@ -485,6 +495,7 @@ async function runPlayer(page, base, scenario, seed, policies, loaded = false) {
     skippedPurchases: [],
     purchaseRetries: [],
     deferredPurchaseIds: [],
+    deferredPurchaseQuarters: {},
     fallbacks: [],
   };
   const pageErrors = await beginPlayerRun(page, base, scenario, seed, {
