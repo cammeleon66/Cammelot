@@ -104,6 +104,7 @@ The website uses an **academic, grounded research tone** — not marketing langu
 - **1024px** — tablet: column layout, compact chatlog
 - **768px** — phone: chatlog hidden, 40vh game / 60vh panel, compact top bar
 - **480px** — small phone: 35vh/65vh split, minimal stats and buttons
+- **500px height + landscape** — short landscape: compact header and side-by-side map/panel, including widths above 768px
 
 ## Key Reference Files
 
