@@ -138,9 +138,9 @@ R01 referral cohort or its five strategies.
    versioned policy, sending its allowed workflow commands to `applyCommand`.
    It must create arms from the same frozen inputs and paired seed/schedule,
    use the same `advanceOneTick` model, and retain every referral outcome and
-   requested snapshot. These workflow commands, the 336-episode workload and
-   its R01 endpoint adapter are not implemented by this design or the current
-   Minister council UI; implement and validate them incrementally under R03.
+   requested snapshot. A bounded command/run fixture is implemented under R03;
+   the 336-episode workload, full five-arm policies and R01 endpoint adapter
+   remain unimplemented by this design and the current Minister council UI.
 
 ## Authority, versions and historical outputs
 
@@ -221,6 +221,111 @@ repair historical labels.
    R01 input/analysis freeze. Run development seeds first; label any protocol
    or outcome-affecting rule changes with new versions before confirmatory
    runs.
+
+### R03 bounded workflow implementation
+
+The shared `site/minister-model-core.js` exports a deterministic R03 `createRun`
+for a bounded workflow fixture; it is separate from Minister model 10 and does
+not route the live game through this new workflow. It accepts a frozen episode
+list, identified external schedule, seed, capacities, intervention identifier,
+and executable identity. Its run methods are `applyCommand`, `advanceOneTick`,
+`eventsSince`, and `snapshot`. State mutation is limited to one tick transition
+or a validated, whitelisted non-clinical command. The experiment driver—not the
+renderer—chooses policy commands.
+
+The stage states are:
+
+| State | Meaning |
+|---|---|
+| `scheduled` | Demand has not arrived yet. |
+| `handoff_pending` | Referral is present and awaits non-clinical handoff work. |
+| `information_required` | A coordinator requested missing information; it remains in this state until the shared external schedule supplies it. |
+| `specialist_waiting` | Handoff is complete and the episode is waiting for an existing treatment-start slot. |
+| `treatment_started` | Terminal: a shared specialist treatment-start slot was consumed. |
+| `died_waiting` | Terminal: death occurred before treatment under the frozen fixture schedule. |
+| `refused`, `relocated`, `other_exit` | Distinct terminal exits; none is counted as treatment or a successful referral. |
+
+Clinical condition is orthogonal to workflow stage. The fixture records
+`clinicalState` (`stable` or `critical`), `everCritical`, and `criticalAt`;
+therefore later treatment does not erase a prior critical-state crossing.
+Scheduled death is processed before treatment starts at the same tick. The
+current fixture does not model recovery, an intermediate treated state, live
+clinical validation, or the full 180-day R01 endpoint adapter.
+
+Each snapshot contains the entire run identity, named resource capacities and
+use, stage/outcome counts, and each episode's trace. A trace item is an ordered
+pointer to the authoritative run event:
+
+```json
+{
+  "id": "patient-17",
+  "arrivalTick": 0,
+  "startingWaitTicks": 8,
+  "elapsedWaitTicks": 9,
+  "stage": "specialist_waiting",
+  "clinicalState": "stable",
+  "everCritical": false,
+  "criticalAt": null,
+  "trace": [{
+    "eventId": "event-4",
+    "tick": 1,
+    "kind": "handoff_completed",
+    "from": "handoff_pending",
+    "to": "specialist_waiting",
+    "reason": "The complete referral was handed to the specialist queue.",
+    "resource": "coordination"
+  }]
+}
+```
+
+Events have a monotonically increasing sequence, elapsed tick, patient (or
+`null` for a run-level receipt), transition, reason, and complete run identity.
+`eventsSince(cursor)` is the authoritative ordered stream; a tick returns the
+same event slice and next cursor. Snapshots and event slices are detached JSON
+values. Each command receipt records applied, rejected, or no-effect status;
+rejected commands do not change pathway state or consume a clinical slot.
+
+The deterministic R01 intervention configurations alter named workflow
+mechanisms, not outcome scores:
+
+| R01 alternative | Declared mechanism in the fixture |
+|---|---|
+| Current process | Two coordination work units per handoff. |
+| Organizational reform | Adds one bounded human-coordinator work unit per tick; handoff effort stays two units. |
+| Conventional integration | Shared referral status/records reduce handoff effort to one unit. |
+| Agentic coordination | Non-clinical agent commands use the same one-unit integrated handoff and capacity as conventional integration; no autonomous outcome or capacity bonus is applied. |
+| Non-agentic modernization | One rules-based workflow reduces handoff effort to one unit by removing duplicate entry. |
+
+These are explicit illustrative mechanism assumptions, not estimated effects
+or a complete implementation of the five R01 arms. All arms retain identical
+specialist treatment-start capacity, clinical event rules, patient inputs and
+external schedule. Policies must submit allowed commands; configuration alone
+never starts treatment. The hand-checkable four-referral fixture shows the
+local metric move: conventional integration routes three referrals to the
+specialist side while the fragmented workflow routes one. With one available
+specialist start in the tick, both arms start exactly one treatment. The
+downstream treatment slot is the reason the local handoff improvement does not
+change the end-to-end treatment count in this fixture.
+
+**Model-version decision.** R03 is a distinct executable with model version
+`minister-r03-cardiology-pathway-2` and protocol `r01-cardiology-v1.0`; its
+version is bumped from R03 v1 because the explicit intervention-to-resource
+mapping changes pathway outcomes. This does not change Minister
+`minister-care-10-access-time-replay` or its public browser care rules. Browser
+parity was checked against commit `4e6616b` with the same Cabinet Crisis seed
+60475 through elapsed tick 80: the complete JSON state, care snapshot, resident
+outcomes, queues, event log (excluding wall-clock timestamps), graves, and
+environment log were byte-identical. The unchanged Minister browser/care/
+paired-reference/F08 tests also passed in the full 238-test run. The separate
+module parity test confirms Node and browser load the same deterministic
+primitives, and the negative replay test refuses a record after only the shared
+module bytes change.
+
+This bounded fixture does not implement the approved 336-episode workload, five
+years of follow-up, implementation lifecycle costs, policy drivers for all
+arms, named-resident mapping, 180-day/84-day endpoints, uncertainty analysis,
+equity reporting, or confirmatory R01 runs. Its results are software fixtures
+and modeled process illustrations, not clinical or economic evidence.
 
 Keep `modelVersion` for outcome-affecting rules, `modelExecutableId` for the
 shared module bytes, `protocolVersion` for the paired policy/schedule/matching
