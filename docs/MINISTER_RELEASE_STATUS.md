@@ -1,6 +1,6 @@
 # Minister of Cammelot — release status
 
-Updated: 2026-10-27
+Updated: 2026-10-28
 Public game: https://cammelot.org/minister.html
 Verified public model: `minister-care-10-access-time-replay` (publication evidence below)
 Reference protocol: `no-discretionary-action-v1`
@@ -170,6 +170,37 @@ frames. Final exact-source CI and review clearance are recorded on the PR.
   production leaderboard writes and clinical effectiveness are not claimed.
 - Issues 6, 7 and 8 are closed. All nine simulation-foundation backlog issues
   are complete; remaining public-release and research work is still separate.
+
+### L07 strategy and release-readiness evidence
+
+The bounded strategy-validation report and complete run-level JSON are in
+[MINISTER_STRATEGY_VALIDATION_2026-10-28.md](MINISTER_STRATEGY_VALIDATION_2026-10-28.md)
+and
+[`scripts/output/minister_strategy_validation_2026-10-28.json`](../scripts/output/minister_strategy_validation_2026-10-28.json).
+They were generated on 2026-10-28 from source revision
+`897a7fdef3498f98abdf987dcccc8fab873221f1` using model
+`minister-care-10-access-time-replay`, reference protocol
+`no-discretionary-action-v1`, inline executable SHA-256
+`6d8da15da7c3f21b23882542f1f5739012246df26e2687087f2153a2bf2cb588`,
+and `site/minister.html` SHA-256
+`78080d5fbf7308be8beeb51ef8903c81179df4f5b8b673d8b71ce00133e2009b`.
+The run covered five policies over seeds 2468, 1357 and 7777 in both public
+scenarios, six balanced repeats, and six same-seed no-action references. Every
+reference reached its declared horizon; every player result has a same-tick
+reference comparison. Repeated balanced runs matched their first attempts.
+
+The observed election failures and early protest/no-confidence endings are
+retained. No discretionary Full Term run reached the 2,080-tick year-10
+`served` ending, so player exposure through the full term is an unresolved
+release-evidence limitation. The evidence is specific to these declared runs:
+it is not a win-rate estimate, clinical validation, or evidence that one policy
+is universally superior. The report explicitly records that physical-device
+checks, uncoached playtests and healthcare-domain review were **NOT PERFORMED**.
+The focused benchmark regression passed 1/1; the full `npm test` suite was
+**NOT RUN** under the task's time constraint.
+The benchmark runs against a loopback static server; all 31 observed POST
+attempts were to its local `/api/leaderboard` path and were blocked before
+network access. No production leaderboard was contacted or written.
 
 ## Model 9: workforce/productivity (F05)
 
