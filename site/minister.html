@@ -1008,6 +1008,26 @@ body.embed-mode #app{display:block!important}
 .moc-score-label{font:8px/1.5 var(--px);color:var(--m-white)}
 .moc-score-meta{font:15px/1.2 var(--vt);color:#bdc5ef;margin-top:4px}
 .moc-publish-status{margin:8px 0;padding:8px;border-left:3px solid var(--m-gold);background:#080d29;font:16px/1.2 var(--vt);color:#bdc5ef}
+.moc-why{margin:12px 0;padding:10px 12px;background:var(--m-blue3);border:3px solid var(--m-gold);border-radius:3px;overflow-wrap:anywhere}
+.moc-why[data-ending-kind="won"]{border-color:var(--m-green)}
+.moc-why h3{margin-top:0}
+.moc-why-sub{margin:14px 0 6px;font:19px/1.1 var(--vt);color:var(--m-gold);letter-spacing:.5px}
+.moc-gates,.moc-contrib{list-style:none;margin:6px 0;padding:0}
+.moc-gate{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:4px 12px;align-items:center;margin:5px 0;padding:6px 8px;background:#080d29;border:2px solid #6572ba;border-left-width:6px;font:17px/1.2 var(--vt);color:#dde2ff}
+.moc-gate.fail{border-color:var(--m-red)}
+.moc-gate.ok{border-color:var(--m-green)}
+.moc-gate-values b{font-size:21px;color:var(--m-white)}
+.moc-gate-state{font:8px/1.4 var(--px);white-space:nowrap}
+.moc-gate.fail .moc-gate-state{color:var(--m-red)}
+.moc-gate.ok .moc-gate-state{color:var(--m-green)}
+.moc-gate-note{grid-column:1/-1;font:15px/1.2 var(--vt);color:#bdc5ef}
+.moc-contrib li{display:flex;justify-content:space-between;gap:10px;padding:4px 0;border-bottom:1px dashed rgba(240,240,228,.18);font:17px/1.2 var(--vt);color:#dde2ff}
+.moc-contrib li b{flex:none;color:var(--m-white);font-size:19px}
+.moc-why-recon,.moc-why-empty{margin:4px 0}
+.moc-why-hint{margin:6px 0 0;padding:8px 10px;background:#080d29;border-left:4px solid var(--m-gold);font:18px/1.3 var(--vt);color:#dde2ff}
+@media(max-width:1024px){.moc-why{padding:10px}}
+@media(max-width:768px){.moc-gate{grid-template-columns:minmax(0,1fr) auto}.moc-gate-state{grid-column:1/-1}.moc-why-sub{font-size:18px}}
+@media(max-width:480px){.moc-why{padding:8px;border-width:2px}.moc-gate{grid-template-columns:minmax(0,1fr);gap:3px}.moc-gate-values b{font-size:19px}.moc-contrib li{flex-wrap:wrap}.moc-why-hint{font-size:17px}}
 .moc-result-details{margin:10px 0;border:1px solid #6572ba;border-radius:3px;background:var(--m-blue3)}
 .moc-result-details>summary{display:flex;align-items:center;min-height:44px;box-sizing:border-box;padding:8px 10px;cursor:pointer;color:var(--m-gold);font:18px/1.1 var(--vt)}
 .moc-result-details>*:not(summary){margin-left:10px;margin-right:10px}
@@ -13139,11 +13159,28 @@ async function initLLMSubsystem() {
     window._mocTrustC = GS.trustC; // world renderer reads this for citizen moods
     MoC.updateHUD();
   }
+  // B04: presentation-only trust ledger. It records each applied (post-clamp) change to a
+  // stakeholder trust score with a cause label. It never alters a score, rule, RNG draw or reference.
+  const TRUST_METRICS = { citizens:'trustC', doctors:'trustD', parliament:'trustP' };
+  const trustLedger = { baseline:{ citizens:GS.trustC, doctors:GS.trustD, parliament:GS.trustP }, entries:[] };
+  let trustCause = 'Other trust change', trustDecision = null;
+  function withTrustCause(cause, fn){
+    const previous = trustCause;
+    trustCause = cause;
+    try { return fn(); } finally { trustCause = previous; }
+  }
+  function adjustTrustAs(cause, dc, dd, dp){ withTrustCause(cause, function(){ adjustStakeholders(dc, dd, dp); }); }
+  MoC.trustLedger = trustLedger;
   function adjustStakeholders(dc, dd, dp){
     if (GS.endReason) return;
+    const before = { citizens:GS.trustC, doctors:GS.trustD, parliament:GS.trustP };
     GS.trustC = clamp01(GS.trustC + (dc || 0));
     GS.trustD = clamp01(GS.trustD + (dd || 0));
     GS.trustP = clamp01(GS.trustP + (dp || 0));
+    for (const metric of Object.keys(TRUST_METRICS)) {
+      const after = GS[TRUST_METRICS[metric]], amount = after - before[metric];
+      if (Number.isFinite(amount) && amount !== 0) trustLedger.entries.push({ tick:modelTick, metric, amount, before:before[metric], after, cause:trustCause });
+    }
     syncTrustAvg();
   }
   // Legacy call sites (flash decisions, engine hooks) hit all three equally
@@ -13399,8 +13436,10 @@ async function initLLMSubsystem() {
   }
   function commitFx(fx, next, reason){
     if (fx.budget) recordTreasury(fx.budget, reason);
-    if (fx.trust) MoC.adjustTrust(fx.trust);
-    if (fx.trustC || fx.trustD || fx.trustP) adjustStakeholders(fx.trustC, fx.trustD, fx.trustP);
+    if (fx.trust || fx.trustC || fx.trustD || fx.trustP) withTrustCause(trustDecision || String(reason || 'Policy effect'), function(){
+      if (fx.trust) MoC.adjustTrust(fx.trust);
+      if (fx.trustC || fx.trustD || fx.trustP) adjustStakeholders(fx.trustC, fx.trustD, fx.trustP);
+    });
     if (fx.dep) GS.dependence = Math.max(0, GS.dependence + fx.dep);
     if (GS.objective?._ok !== undefined && fragility()>=50) GS.objective._ok=false;
     Object.assign(M.IST,next.p);
@@ -13453,7 +13492,11 @@ async function initLLMSubsystem() {
     try { for (const plan of choicePlans(option)) projectCarePlan(plan,true); }
     catch (error) { return reportCareInputError(error); }
     const plan=choicePlan(option);
-    if (!applyCarePlan(plan,true)) return false;
+    const previousDecision=trustDecision;
+    trustDecision=option.label ? 'Decision: '+String(option.label) : previousDecision;
+    let applied;
+    try { applied=applyCarePlan(plan,true); } finally { trustDecision=previousDecision; }
+    if (!applied) return false;
     if (option.side) choiceSide(option.side, true);
     if (option.after) option.after();
     return plan;
@@ -14860,14 +14903,14 @@ async function initLLMSubsystem() {
     GS._sdLastQ = sdNow;
     if (newDeaths > 0) {
       const impact=deathTrustImpact(newDeaths);
-      adjustStakeholders(impact.citizens,impact.doctors,impact.parliament);
+      adjustTrustAs('Model system deaths ('+newDeaths+' new in the quarter)',impact.citizens,impact.doctors,impact.parliament);
     }
-    else adjustStakeholders(1, 1, 1);
+    else adjustTrustAs('Quarterly recovery with no new model system deaths',1, 1, 1);
     // Doctors: workload pressure — but relief is felt too
-    if (M.IST.admin > 0.25 && M.IST.sick > 0.09) adjustStakeholders(0, -2, 0);
-    else if (M.IST.admin > 0.25 || M.IST.sick > 0.09) adjustStakeholders(0, -1, 0);
-    else if (M.IST.admin < 0.12) adjustStakeholders(0, 2, 0);
-    else adjustStakeholders(0, 1, 0);
+    if (M.IST.admin > 0.25 && M.IST.sick > 0.09) adjustTrustAs('GP workload: high paperwork and staff absence',0, -2, 0);
+    else if (M.IST.admin > 0.25 || M.IST.sick > 0.09) adjustTrustAs('GP workload: high paperwork or staff absence',0, -1, 0);
+    else if (M.IST.admin < 0.12) adjustTrustAs('GP workload: low paperwork',0, 2, 0);
+    else adjustTrustAs('GP workload: moderate',0, 1, 0);
     // Lose checks
     if (GS.trustP <= 15) { councilOpen = false; window._councilWizardMode = false; return endTerm('noconfidence'); }
     if (GS.trustD <= 15 || (GS.activeStates && GS.activeStates.struck && GS._strikeUnresolvedQ >= 1 && GS.trustD < 22)) { councilOpen = false; window._councilWizardMode = false; return endTerm('strike'); }
@@ -15561,6 +15604,269 @@ async function initLLMSubsystem() {
     return h + evtBlock;
   }
 
+  // ── B04: post-game explanation (presentation only) ──
+  // Reads the final state and recorded ledgers. It changes no score, rule, RNG draw, reference or leaderboard payload.
+  const WHY_LIMITS = { trust:15, strikeTrust:22, deaths:15, budget:-150000, households:4, winScore:400, strongTrust:60 };
+  const WHY_OP = { '>':'>', '>=':'\u2265', '<':'<', '<=':'\u2264', '=':'=' };
+  const WHY_METRIC_NAMES = { citizens:'Citizen trust', doctors:'Doctor trust', parliament:'Parliament trust' };
+  function whyNumber(value){ return Number.isInteger(value) ? String(value) : String(Math.round(value * 10) / 10); }
+  function whySigned(value){ return (value > 0 ? '+' : value < 0 ? '\u2212' : '') + whyNumber(Math.abs(value)); }
+  function whyCompare(actual, op, required){
+    return op === '>' ? actual > required : op === '>=' ? actual >= required : op === '<' ? actual < required
+      : op === '<=' ? actual <= required : actual === required;
+  }
+  function whyGate(spec){
+    const numeric = typeof spec.actual === 'number';
+    const passed = spec.passed !== undefined ? spec.passed : whyCompare(spec.actual, spec.op, spec.required);
+    const money = !!spec.money;
+    const text = function(value){ return money ? euroAmount(value) : typeof value === 'number' ? whyNumber(value) : String(value); };
+    return { id:spec.id, metric:spec.metric, label:spec.label, actual:spec.actual, op:spec.op, required:spec.required, passed:passed,
+      numeric:numeric, actualText:text(spec.actual), requiredText:(WHY_OP[spec.op] || spec.op) + ' ' + text(spec.required),
+      note:spec.note || '', historic:!!spec.historic };
+  }
+  function whyCascadeStage(){
+    const cascades = GS.cascades || {};
+    return Math.max(0, (cascades.exodus && cascades.exodus.stage) || 0, (cascades.rot && cascades.rot.stage) || 0);
+  }
+  // Term-ending limits tested during every term; values are read from the final state.
+  function whyLimitGates(reason){
+    const sd = systemDeaths();
+    const gates = [
+      whyGate({ id:'parliament-trust', metric:'parliament', label:'Parliament trust', actual:GS.trustP, op:'>', required:WHY_LIMITS.trust }),
+      whyGate({ id:'doctor-trust', metric:'doctors', label:'Doctor trust', actual:GS.trustD, op:'>', required:WHY_LIMITS.trust }),
+      whyGate({ id:'citizen-trust', metric:'citizens', label:'Citizen trust', actual:GS.trustC, op:'>', required:WHY_LIMITS.trust }),
+      whyGate({ id:'system-deaths-limit', metric:'deaths', label:'Model system deaths', actual:sd, op:'<', required:WHY_LIMITS.deaths }),
+      whyGate({ id:'budget-floor', metric:'budget', label:'Government cash', actual:GS.budget, op:'>=', required:WHY_LIMITS.budget, money:true })
+    ];
+    // Mechanisms that end a term above the plain trust limits.
+    if (reason === 'noconfidence' && GS.trustP > WHY_LIMITS.trust)
+      gates.unshift(whyGate({ id:'parliament-confidence-vote', metric:'parliament', label:'Parliament trust (confidence-vote line)', actual:GS.trustP, op:'>', required:22,
+        note:'Below this line a confidence vote is called; the term ended when the vote was lost.' }));
+    if (reason === 'strike' && GS.trustD > WHY_LIMITS.trust)
+      gates.unshift(whyGate({ id:'doctor-trust-strike', metric:'doctors', label:'Doctor trust (unresolved strike)', actual:GS.trustD, op:'>=', required:WHY_LIMITS.strikeTrust,
+        note:'A strike left unresolved ends the term while doctor trust is below this line.' }));
+    if (reason === 'protest' && GS.trustC > WHY_LIMITS.trust)
+      gates.unshift(whyGate({ id:'household-departures', metric:'households', label:'Household departures', actual:(GS._relocatedHouseholds || []).length, op:'<', required:WHY_LIMITS.households,
+        note:'Four households leaving ends the term in public protest.' }));
+    return gates;
+  }
+  // The authored final-vote gates (mid-term election or Cabinet Crisis final vote), read live.
+  function whyVoteGates(){
+    const evaluate = window._mocEvaluateElection;
+    if (typeof evaluate !== 'function') return [];
+    const ev = evaluate();
+    const picked = (GS.promises || []).length;
+    const minPromises = GS.scenario === 'cabinetcrisis' ? 0 : picked > 0 ? Math.min(2, picked) : 0;
+    const gates = [];
+    if (minPromises > 0) gates.push(whyGate({ id:'promises-kept', metric:'promises', label:'Promises kept', actual:ev.keptCount, op:'>=', required:minPromises }));
+    gates.push(whyGate({ id:'vote-citizen-trust', metric:'citizens', label:'Citizen trust', actual:GS.trustC, op:'>=', required:ev.trustFloor }));
+    gates.push(whyGate({ id:'vote-doctor-trust', metric:'doctors', label:'Doctor trust', actual:GS.trustD, op:'>=', required:ev.trustFloor }));
+    gates.push(whyGate({ id:'vote-parliament-trust', metric:'parliament', label:'Parliament trust', actual:GS.trustP, op:'>=', required:ev.trustFloor }));
+    gates.push(whyGate({ id:'vote-system-deaths', metric:'deaths', label:'Model system deaths', actual:ev.sd, op:'<=', required:ev.deathCap }));
+    gates.push(whyGate({ id:'vote-cascade', metric:'cascade', label:'Crisis escalation stage', actual:whyCascadeStage(), op:'<', required:3 }));
+    return { gates:gates, ev:ev };
+  }
+  function whyWinGates(r){
+    const gates = [];
+    if (GS.scenario === 'cabinetcrisis') {
+      const ev = typeof window._mocEvaluateElection === 'function' ? window._mocEvaluateElection() : null;
+      gates.push(whyGate({ id:'strong-citizen-trust', metric:'citizens', label:'Citizen trust (strong mandate)', actual:GS.trustC, op:'>=', required:WHY_LIMITS.strongTrust }));
+      gates.push(whyGate({ id:'strong-doctor-trust', metric:'doctors', label:'Doctor trust (strong mandate)', actual:GS.trustD, op:'>=', required:WHY_LIMITS.strongTrust }));
+      gates.push(whyGate({ id:'strong-parliament-trust', metric:'parliament', label:'Parliament trust (strong mandate)', actual:GS.trustP, op:'>=', required:WHY_LIMITS.strongTrust }));
+      gates.push(whyGate({ id:'strong-system-deaths', metric:'deaths', label:'Model system deaths (strong mandate)', actual:systemDeaths(), op:'<=', required:0 }));
+      return { gates:gates, ev:ev };
+    }
+    if (GS.scenario !== 'sandbox' && MoC.TOTAL_QUARTERS >= 16) {
+      const held = GS._electionResult || 'not held';
+      gates.push(whyGate({ id:'midterm-election', metric:'mandate', label:'Mid-term election result' + (GS.electionSnapshot ? ' (tick ' + GS.electionSnapshot.tick + ')' : ''),
+        actual:held, op:'=', required:'strong', passed:GS._electionResult === 'strong', historic:true,
+        note:'Recorded at the mid-term election, not at the final tick.' }));
+    }
+    gates.push(whyGate({ id:'win-score', metric:'score', label:'Final score', actual:r.score, op:'>=', required:WHY_LIMITS.winScore }));
+    return { gates:gates, ev:null };
+  }
+  // Top contributors to a failed or closest-margin metric, from the recorded ledgers.
+  function whyContributors(gate){
+    const metric = gate.metric;
+    function top(groups){
+      return groups.filter(function(g){ return g.amount < 0; }).sort(function(a, b){ return a.amount - b.amount; }).slice(0, 3);
+    }
+    if (WHY_METRIC_NAMES[metric]) {
+      const groups = {}, entries = trustLedger.entries.filter(function(e){ return e.metric === metric; });
+      let recorded = 0;
+      entries.forEach(function(e){
+        recorded += e.amount;
+        const g = groups[e.cause] || (groups[e.cause] = { cause:e.cause, amount:0, count:0 });
+        g.amount += e.amount; g.count++;
+      });
+      const opening = trustLedger.baseline[metric], finalValue = GS[TRUST_METRICS[metric]];
+      const gap = finalValue - (opening + recorded);
+      if (Math.abs(gap) > 1e-8) groups.__direct = { cause:'Direct state change outside the ledger', amount:gap, count:1 };
+      return { kind:'ledger', unit:'', opening:opening, recorded:recorded + (Math.abs(gap) > 1e-8 ? gap : 0), final:finalValue,
+        items:top(Object.keys(groups).map(function(k){ return groups[k]; })) };
+    }
+    if (metric === 'budget') {
+      const summary = MoC.treasurySummary(), groups = {};
+      summary.transactions.forEach(function(t){
+        const g = groups[t.reason] || (groups[t.reason] = { cause:t.reason, amount:0, count:0 });
+        g.amount += t.amount; g.count++;
+      });
+      return { kind:'ledger', money:true, opening:summary.opening, recorded:summary.net, final:summary.closing,
+        items:top(Object.keys(groups).map(function(k){ return groups[k]; })) };
+    }
+    if (metric === 'deaths') {
+      const years = {};
+      GRAVE_MARKERS.filter(function(g){ return g.cause === 'system_failure'; }).forEach(function(g){
+        const y = Math.ceil(g.cycle / MoC.TICKS_PER_YEAR);
+        years[y] = (years[y] || 0) + 1;
+      });
+      const items = Object.keys(years).map(function(y){ return { cause:'Year ' + y, amount:-years[y], count:years[y], deaths:true }; })
+        .sort(function(a, b){ return a.amount - b.amount || parseInt(a.cause.slice(5), 10) - parseInt(b.cause.slice(5), 10); }).slice(0, 3);
+      return { kind:'deaths', final:systemDeaths(), items:items };
+    }
+    if (metric === 'promises') {
+      const list = GS.PROMISES || [];
+      const unmet = (GS.promises || []).filter(function(i){ return list[i] && !list[i].check(); }).slice(0, 3)
+        .map(function(i){ return { cause:list[i].text, amount:0, count:0, unmet:true }; });
+      return { kind:'promises', items:unmet };
+    }
+    if (metric === 'cascade') {
+      const cascades = GS.cascades || {};
+      const items = ['exodus', 'rot'].filter(function(k){ return cascades[k] && cascades[k].stage >= 1; })
+        .map(function(k){ return { cause:(k === 'exodus' ? 'Doctor exodus' : 'Digital rot') + ' cascade, stage ' + cascades[k].stage, amount:0, count:0, stage:cascades[k].stage }; });
+      return { kind:'cascade', items:items };
+    }
+    if (metric === 'households') {
+      return { kind:'households', items:(GS._relocatedHouseholds || []).slice(0, WHY_LIMITS.households).map(function(n){ return { cause:'The ' + String(n).split(' ').slice(-1)[0] + ' household left', amount:0, count:1 }; }) };
+    }
+    return { kind:'none', items:[] };
+  }
+  function whyHint(focus, contrib, reason){
+    if (!focus) return 'No threshold was in question in the final state. A replay of this seed with a different early choice would show how much margin the term had.';
+    const g = focus.gate, top = contrib.items[0];
+    if (WHY_METRIC_NAMES[g.metric] && top) {
+      return 'In this run the largest recorded loss to ' + WHY_METRIC_NAMES[g.metric].toLowerCase() + ' was \u201c' + top.cause + '\u201d (' + whySigned(top.amount)
+        + '). Replaying the same seed with a different choice at or before that point would show whether it changes the result.';
+    }
+    if (g.metric === 'budget' && top) {
+      return 'The largest recorded cash outflow was \u201c' + top.cause + '\u201d (\u2212' + euroAmount(Math.abs(top.amount)) + '). A same-seed replay with a different spending order would show its effect.';
+    }
+    if (g.metric === 'deaths' && top) {
+      return 'Most model system deaths were recorded in ' + top.cause + ' (' + top.count + '). A same-seed replay with different care capacity choices before then would show whether that count changes.';
+    }
+    if (g.metric === 'promises' && top) {
+      return 'The promise \u201c' + top.cause + '\u201d was not met. A same-seed replay with a different manifesto, or a different plan for that metric, would show the difference.';
+    }
+    if (g.metric === 'cascade') return 'A crisis escalation reached stage ' + g.actual + '. A same-seed replay with an earlier response to that escalation would show whether it can be interrupted.';
+    if (g.metric === 'households') return 'Household departures reached ' + g.actual + '. A same-seed replay with different citizen-trust decisions would show whether fewer households leave.';
+    if (g.metric === 'score') return 'The final score was ' + g.actualText + ' against ' + g.requiredText + '. The score calculation section lists each component; a same-seed replay can test one change at a time.';
+    if (g.metric === 'mandate') return 'The mid-term election result was \u201c' + g.actualText + '\u201d. A same-seed replay with a different manifesto or earlier trust decisions would show how the result moves.';
+    return 'The closest margin was ' + g.label + ' (' + g.actualText + ' against ' + g.requiredText + '). A same-seed replay can test one change at a time.';
+  }
+  function endExplanation(reason, r){
+    const final = GS._finalSnapshot || MoC.care.snapshot();
+    const limits = whyLimitGates(reason);
+    const vote = (reason === 'election' || (reason === 'served' && GS.scenario === 'cabinetcrisis')) ? whyVoteGates() : null;
+    let deciding, other, kind, lead;
+    const politicalWin = GS.scenario === 'sandbox' || (GS.scenario === 'cabinetcrisis' ? GS._cabinetResult === 'strong'
+      : (MoC.TOTAL_QUARTERS < 16 || GS._electionResult === 'strong'));
+    if (reason === 'served') {
+      const win = whyWinGates(r);
+      deciding = win.gates;
+      other = (vote ? vote.gates : []).concat(limits);
+      const failed = deciding.filter(function(g){ return !g.passed; });
+      kind = failed.length ? 'served' : 'won';
+      lead = kind === 'won' ? 'The term was completed and every win condition below is met in the final state.'
+        : 'The term was completed. The win stamp needs every condition below; the unmet ones are marked.';
+    } else if (reason === 'election') {
+      deciding = vote ? vote.gates : [];
+      other = limits;
+      kind = 'lost';
+      lead = 'The final vote ended the term. Gates marked NOT MET failed in the final state.';
+    } else {
+      deciding = limits.filter(function(g){ return !g.passed; });
+      other = limits.filter(function(g){ return g.passed; });
+      kind = 'lost';
+      lead = deciding.length ? 'A term limit was crossed. The gate that decided the ending is marked NOT MET.'
+        : 'The ending was recorded as \u201c' + verdict(r, reason) + '\u201d, but no listed limit is crossed in the final state.';
+      if (!deciding.length) { deciding = []; other = limits; }
+    }
+    const failed = deciding.filter(function(g){ return !g.passed; });
+    // Closest margin: trust gates only, used when nothing failed (for example a win).
+    let focusGates = failed.slice(0, 3);
+    let closest = false;
+    if (!focusGates.length) {
+      const trusts = deciding.concat(other).filter(function(g){ return WHY_METRIC_NAMES[g.metric] && g.numeric; });
+      const margin = function(g){ return g.op === '<' || g.op === '<=' ? g.required - g.actual : g.actual - g.required; };
+      trusts.sort(function(a, b){ return margin(a) - margin(b); });
+      if (trusts.length) { focusGates = [trusts[0]]; closest = true; }
+    }
+    const focus = focusGates.map(function(g){ return { gate:g, contributors:whyContributors(g), closest:closest }; });
+    const hint = whyHint(focus[0] || null, focus[0] ? focus[0].contributors : { items:[] }, reason);
+    return { reason:reason, kind:kind, verdict:verdict(r, reason), tick:final.tick, lead:lead, deciding:deciding, other:other, focus:focus, hint:hint,
+      winStamp:kind === 'won' && politicalWin };
+  }
+  function whyGateHtml(g){
+    return '<li class="moc-gate ' + (g.passed ? 'ok' : 'fail') + '" data-gate="' + g.id + '" data-metric="' + g.metric + '" data-passed="' + g.passed + '"'
+      + (g.numeric ? ' data-actual="' + g.actual + '" data-required="' + g.required + '" data-op="' + g.op + '"' : '') + '>'
+      + '<span class="moc-gate-name">' + escapeResultText(g.label) + '</span>'
+      + '<span class="moc-gate-values"><b class="moc-gate-actual">' + escapeResultText(g.actualText) + '</b> / <span class="moc-gate-required">' + escapeResultText(g.requiredText) + ' needed</span></span>'
+      + '<span class="moc-gate-state">' + (g.passed ? '\u2714 MET' : '\u2718 NOT MET') + '</span>'
+      + (g.note ? '<span class="moc-gate-note">' + escapeResultText(g.note) + '</span>' : '') + '</li>';
+  }
+  function whyContributorHtml(entry){
+    const g = entry.gate, c = entry.contributors;
+    const name = g.metric === 'budget' ? 'Government cash' : WHY_METRIC_NAMES[g.metric] || g.label;
+    const title = (entry.closest ? 'Largest recorded losses to ' : 'Top 3 contributors to ') + name.toLowerCase() + (entry.closest ? ' (closest margin)' : '');
+    let h = '<div class="moc-why-block" data-metric="' + g.metric + '"><h4 class="moc-why-sub">' + escapeResultText(title) + '</h4>';
+    if (!c.items.length) {
+      h += '<p class="moc-sub moc-why-empty">' + (c.kind === 'ledger' ? 'No recorded losses to this metric.' : 'No contributors are recorded for this gate.') + '</p>';
+    } else {
+      h += '<ol class="moc-contrib">' + c.items.map(function(item){
+        const value = item.unmet ? 'not met' : item.stage ? 'stage ' + item.stage : item.deaths ? item.count + ' death' + (item.count === 1 ? '' : 's')
+          : c.money ? '\u2212' + euroAmount(Math.abs(item.amount)) : item.amount ? whySigned(item.amount) : '';
+        return '<li><span>' + escapeResultText(item.cause) + (item.count > 1 && !item.deaths ? ' <i>(' + item.count + ' changes)</i>' : '') + '</span><b>' + escapeResultText(value) + '</b></li>';
+      }).join('') + '</ol>';
+    }
+    if (c.kind === 'ledger') {
+      const fmt = c.money ? euroAmount : whyNumber;
+      const signed = c.money ? (c.recorded >= 0 ? '+' : '\u2212') + euroAmount(Math.abs(c.recorded)) : whySigned(c.recorded);
+      h += '<p class="moc-sub moc-why-recon">Opening ' + fmt(c.opening) + ' ' + signed + ' recorded changes = final ' + fmt(c.final) + '.</p>';
+    }
+    return h + '</div>';
+  }
+  function whyCareHtml(){
+    const player = GS._finalSnapshot || MoC.care.snapshot();
+    const reference = MoC.referenceAt(player.tick);
+    const diff = MoC.care.compare(player, reference);
+    const row = function(label, p, q){ return '<div class="moc-score-row"><span>' + label + '</span><b>' + p + ' / ' + q + '</b></div>'; };
+    if (!diff) return '<p class="moc-sub" role="status">Same-seed no-action reference pending or unavailable for tick ' + player.tick + '. No benefit claimed.</p>'
+      + '<div class="moc-score-row"><span>Model-classified system deaths (yours)</span><b>' + player.systemDeaths + '</b></div>';
+    const text = diff.livesDifference > 0 ? diff.livesDifference + ' fewer model-classified system deaths than the reference'
+      : diff.livesDifference < 0 ? Math.abs(diff.livesDifference) + ' more model-classified system deaths than the reference'
+      : 'The same number of model-classified system deaths as the reference';
+    return '<p class="moc-sub">At tick ' + player.tick + ' (yours / no-action reference, same seed): ' + text + '. Other outcomes may differ.</p>'
+      + row('Model-classified system deaths', player.systemDeaths, reference.systemDeaths)
+      + row('Deaths before treatment', player.deathsWaiting, reference.deathsWaiting)
+      + row('Cumulative treatment starts', player.treatments, reference.treatments)
+      + '<p class="moc-sub">A within-model comparison, not clinical evidence or proof of causation.</p>';
+  }
+  function whyEndedHtml(ex){
+    const title = ex.kind === 'won' ? 'Why you won' : ex.kind === 'served' ? 'Why this was not a win' : 'Why the term ended';
+    let h = '<section class="moc-why" id="moc-why" aria-labelledby="moc-why-title" data-ending="' + ex.reason + '" data-ending-kind="' + ex.kind + '" data-tick="' + ex.tick + '">'
+      + '<h3 id="moc-why-title">' + title + '</h3><p class="moc-sub moc-why-lead">' + escapeResultText(ex.lead) + '</p>'
+      + '<h4 class="moc-why-sub">Deciding gates \u00b7 final state at tick ' + ex.tick + '</h4>';
+    h += ex.deciding.length ? '<ul class="moc-gates" id="moc-why-gates">' + ex.deciding.map(whyGateHtml).join('') + '</ul>'
+      : '<p class="moc-sub">No gate fails in the final state.</p>';
+    if (ex.other.length) h += '<details class="moc-result-details" id="moc-why-other"><summary>Other limits at the end of the term</summary><ul class="moc-gates">'
+      + ex.other.map(whyGateHtml).join('') + '</ul></details>';
+    h += ex.focus.map(whyContributorHtml).join('');
+    h += '<h4 class="moc-why-sub">Care outcome vs same-seed no-action reference</h4><div id="moc-why-care">' + whyCareHtml() + '</div>';
+    h += '<h4 class="moc-why-sub">What you could try</h4><p class="moc-why-hint" id="moc-why-hint">' + escapeResultText(ex.hint) + '</p></section>';
+    return h;
+  }
+  MoC.endExplanation = function(){ return GS._endExplanation || null; };
+
   function endTerm(reason){
     if (GS.endReason) return;
     settleYearObjective();
@@ -15618,6 +15924,8 @@ async function initLLMSubsystem() {
     const earnedWinStamp = reason === 'served' && politicalWin && (GS.scenario === 'cabinetcrisis' || r.score >= 400);
     html += '<div class="moc-verdict"><span class="moc-stamp' + (earnedWinStamp ? ' win' : '') + '">' + verdict(r, reason) + '</span></div>';
     html += '<h3>Political outcome</h3><div class="moc-sub" style="text-align:center;font-size:13px">' + endStatement(r, reason) + '</div>';
+    GS._endExplanation = endExplanation(reason, r);
+    html += whyEndedHtml(GS._endExplanation);
     html += '<div id="moc-care-comparison">'+careComparisonHtml()+'</div>';
     html += '<section class="moc-community" id="moc-community"><h3>Same-town standings</h3>'
       + '<p class="moc-sub">Your completed run is published automatically under your chosen or generated public name. If publication succeeds, that name and run data are publicly listed. Community submissions are unverified.</p>'
@@ -15865,6 +16173,8 @@ async function initLLMSubsystem() {
     if (GS._publishedScore) r.score=GS._publishedScore.score;
     const comparison=document.getElementById('moc-care-comparison');
     if(comparison) comparison.innerHTML=careComparisonHtml();
+    const whyCare=document.getElementById('moc-why-care');
+    if(whyCare) whyCare.innerHTML=whyCareHtml();
     if (bv) bv.textContent = r.baseSd;
     const lv = document.getElementById('moc-livesval'); if (lv) lv.textContent = r.livesSaved;
     const sv = document.getElementById('moc-scoreval'); if (sv) sv.textContent = r.score;
@@ -16260,8 +16570,10 @@ async function initLLMSubsystem() {
     const result=requestResult(request,face,fx);
     if (fx.budget) recordTreasury(fx.budget,request.reason);
     if (request.health) { face.hp=result.health;FX.pop(face.name+': health +'+request.health,'#7bc67b'); }
-    if (fx.trust) MoC.adjustTrust(fx.trust);
-    if (fx.trustD) adjustStakeholders(0,fx.trustD,0);
+    withTrustCause('Resident request: '+(option.l || 'choice'),function(){
+      if (fx.trust) MoC.adjustTrust(fx.trust);
+      if (fx.trustD) adjustStakeholders(0,fx.trustD,0);
+    });
     if (request.score) GS.liveScore=result.score;
     if (request.carers) GS.mantelzorg=result.carers;
   }
@@ -16887,19 +17199,19 @@ async function initLLMSubsystem() {
           ov.remove();
           window.MoCA11y?.announce('Confidence vote: ' + (b.firstChild ? b.firstChild.textContent.trim() : '') + ' chosen.');
           if (v === 'promise') {
-            adjustStakeholders(0, 0, VOTE_OPTIONS.promise.fx.trustP);
+            adjustTrustAs('Confidence vote: '+VOTE_OPTIONS.promise.label,0, 0, VOTE_OPTIONS.promise.fx.trustP);
             const debt=VOTE_OPTIONS.promise.delayed;
             GS.delayed.push({ atQ: GS.quarter + debt.delay, fx:{...debt.fx}, label:debt.label });
             GS._promiseDebt = true;
             say('SYSTEM', 'Survived the confidence vote on promises. They will collect.', 'sys');
           } else if (v === 'sacrifice') {
             recordTreasury(VOTE_OPTIONS.sacrifice.fx.budget, 'Confidence vote: returned €100K');
-            adjustStakeholders(0, 0, VOTE_OPTIONS.sacrifice.fx.trustP);
+            adjustTrustAs('Confidence vote: '+VOTE_OPTIONS.sacrifice.label,0, 0, VOTE_OPTIONS.sacrifice.fx.trustP);
             say('SYSTEM', 'Survived the confidence vote by returning \u20ac100K.', 'sys');
           } else {
             if (Math.random() < VOTE_OPTIONS.defy.chance) {
               const gain=VOTE_OPTIONS.defy.fxChoices[0].trust;
-              adjustStakeholders(gain, gain, gain);
+              adjustTrustAs('Confidence vote: '+VOTE_OPTIONS.defy.label,gain, gain, gain);
               FX.pop('THEY BLINKED', '#58c858');
               Audio5.jingle();
               say('SYSTEM', 'The confidence vote passed. All trust +15.', 'sys');
@@ -17027,7 +17339,7 @@ async function initLLMSubsystem() {
       GS._cabinetResult = ev.strong ? 'strong' : ev.passes ? 'narrow' : 'failed';
       if (ev.strong && !GS._cabinetBonusApplied) {
         GS._cabinetBonusApplied = true;
-        adjustStakeholders(8, 4, 10);
+        adjustTrustAs('Final vote: strong result',8, 4, 10);
         GS.liveScore += 100;
       }
       return ev;
@@ -17077,7 +17389,7 @@ async function initLLMSubsystem() {
       if (ev.narrow) {
         GS._electionResult = 'narrow';
         GS._bruisedMandate = 6;
-        adjustStakeholders(-4, 0, -6);
+        adjustTrustAs('Election: narrow escape',-4, 0, -6);
         return {
           head:'⏳ ELECTION NIGHT: A NARROW ESCAPE',
           body:'<div style="text-align:center;font-size:22px;margin:8px 0">😓</div>'
@@ -17091,7 +17403,7 @@ async function initLLMSubsystem() {
         };
       }
       GS._electionResult = 'strong';
-      adjustStakeholders(8, 4, 10);
+      adjustTrustAs('Election: mandate renewed',8, 4, 10);
       GS.liveScore += 150;
       FX.pop('+150 RE-ELECTED!', '#58c858');
       Audio5.jingle();
@@ -17246,7 +17558,7 @@ async function initLLMSubsystem() {
       if (GS.pendingYearResult) {
         const yr = GS.pendingYearResult;
         GS.pendingYearResult = null;
-        if (!yr.achieved) MoC.adjustTrust(-1);
+        if (!yr.achieved) withTrustCause('Missed year objective',function(){ MoC.adjustTrust(-1); });
         townSay(yr.achieved ? EVENT_REACTIONS.yearWin : EVENT_REACTIONS.yearLoss);
         // Build next year objective preview
         const nextObj = GS.objective;
