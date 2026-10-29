@@ -19,6 +19,14 @@ with no holdout-driven changes.
   purchase policy (`balanced`, `capacity-first`, `structural`), response policy
   (`trust-first`, `budget-first`, `care-first`), and governance policy
   (`no-laws`, `parliament-first`, `care-bottleneck`, `resilience-first`).
+- Named strategy families: `balanced`, `technology-first`, `capacity-first`,
+  `structural`, and `adversarial`, using the corresponding runner aliases and
+  `resilience-first` governance. These five presets supplement the complete
+  matrix so the documented technology-first and adversarial families are
+  included even though they are not defaults in its policy axes. The
+  capacity-first preset duplicates one matrix cell and is excluded from
+  primary counts. The no-laws control is represented across all 9 combinations
+  of the matrix's purchase and response policies.
 - The runner's balanced/resilience-first replay repeat is retained as a
   reproducibility check and excluded from primary win-rate denominators.
 - Each seed/scenario pair has a full-horizon no-discretionary-action reference.
@@ -29,6 +37,10 @@ with no holdout-driven changes.
   intervals over the 20 holdout seeds.
 - No model parameters, strategy rules, clinical coefficients, or paired
   reference behavior will be changed in response to these results.
+
+The family clarification was made after checking the runner's available
+policies but before reviewing any holdout outcomes. It does not change the
+seed list or the frozen model.
 
 The holdout is a predeclared reproducibility sample, not a random sample from
 real-world outcomes or a clinical validation. The complete results and
