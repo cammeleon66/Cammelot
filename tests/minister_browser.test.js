@@ -2707,9 +2707,10 @@ test('Care reports preserve adverse outcomes and previews match purchases', { ti
     await page.evaluate(() => { document.getElementById('play-overlay')?.remove(); window._mocForceCouncil(2); });
     await openCouncilActions(page);
     const card = page.locator('[data-buy="scribes1"]');
-    assert.match(await card.evaluate(el=>el.closest('.moc-item').innerText), /30% → 18%/);
-    assert.match(await card.evaluate(el=>el.closest('.moc-item').innerText),/One-time treasury cost €100,000/);
-    assert.match(await card.evaluate(el=>el.closest('.moc-item').innerText),/GP burnout mean \(n=\d+\)\s+0% → 4%/);
+    const previewText = await card.evaluate(el=>el.closest('.moc-item').innerText);
+    assert.match(previewText,/Admin -11.6 pp \(30 → 18.4\)/);
+    assert.match(previewText,/Budget €-100,000 \(810000 → 710000\)/);
+    assert.match(previewText,/GP 1 burnout \+4 \(0 → 4\)/);
     const burnoutBefore=await page.evaluate(()=>agents.filter(a=>a.type==='gp').map(a=>a.burnoutLevel||0));
     await card.click();
     assert.ok(Math.abs(await page.evaluate(()=>M.IST.admin)-0.184)<1e-9,
