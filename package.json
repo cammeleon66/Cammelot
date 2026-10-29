@@ -11,7 +11,7 @@
     "leaderboard": "node src/leaderboard/server.js",
     "leaderboard:moderate": "node scripts/moderate_leaderboard.mjs",
     "benchmark:minister": "node scripts/benchmark_minister_strategies.cjs",
-    "test": "node --test tests/fhir_store.test.js tests/cognitive_loop.test.js tests/a2a_protocol.test.js tests/disease_engine.test.js tests/tile_map.test.js tests/llm_proxy.test.js tests/persona.test.js tests/leaderboard.test.js tests/minister_browser.test.js tests/minister_model_module.test.js tests/minister_pathway.test.js tests/minister_lifecycle.test.js tests/minister_r05.test.js tests/minister_deployment_smoke.test.js tests/minister_strategy_benchmark.test.js"
+    "test": "node --test tests/fhir_store.test.js tests/cognitive_loop.test.js tests/a2a_protocol.test.js tests/disease_engine.test.js tests/tile_map.test.js tests/llm_proxy.test.js tests/persona.test.js tests/leaderboard.test.js tests/minister_browser.test.js tests/minister_model_module.test.js tests/minister_pathway.test.js tests/minister_lifecycle.test.js tests/minister_r05.test.js tests/minister_deployment_smoke.test.js tests/minister_strategy_benchmark.test.js tests/minister_option_previews.test.js"
   },
   "keywords": [
     "multi-agent",
