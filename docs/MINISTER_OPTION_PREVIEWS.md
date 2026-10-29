@@ -87,8 +87,9 @@ words and numbers carry the meaning without relying on color.
 
 ## Reference identity and validation
 
-Baseline full-horizon serialized reference bytes were captured **before the first
-HTML edit**, using seed 2468 and `git show 729a2c8:site/minister.html` served locally:
+The historical model-10 full-horizon reference bytes were captured **before the
+first HTML edit**, using seed 2468 and `git show 729a2c8:site/minister.html`
+served locally:
 
 | Scenario | Ticks | Bytes | SHA-256 |
 |---|---:|---:|---|
@@ -96,8 +97,15 @@ HTML edit**, using seed 2468 and `git show 729a2c8:site/minister.html` served lo
 | Full Term | 2080 | 2756109 | `f6ef76684ae9e290087c3dc7a195bca3e110eb6e81e10521529030c85c1250f4` |
 
 The payload includes every tick snapshot, final care state, environmental
-schedule/log, and compact resident clinical state. The runner compares the
-original and current serialized strings, not just rounded metrics.
+schedule/log, and compact resident clinical state. Model 11 intentionally changes
+the death-related political-trust response, which also changes no-discretionary
+reference snapshots when deaths occur. The B02 fixture therefore pins the
+current model-11 references separately: Cabinet Crisis is 559004 bytes
+(`9b57b04eb3b232f6e8132eb5a5515cfeb56931b7c97b569dcee5f07fddb1417a`) and
+Full Term is 2766519 bytes
+(`8e69a149c91841eda8447e175235d53805c6267bc36e86d9457151f2aba67587`).
+The exhaustive preview checks still compare the original and current real
+option application states and trust/budget write ledgers.
 
 Validation results and screenshots will be recorded after execution. No physical
 device or human playtest is implied. All browser fixtures block non-GET/HEAD

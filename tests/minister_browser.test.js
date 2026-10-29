@@ -348,7 +348,7 @@ test('Elapsed model clock uses quarter-week ticks and exact calendar boundaries'
       }
     });
     assert.deepEqual(outcome.initial,{cycle:30,elapsed:0,ticksPerWeek:4,ticksPerDay:4/7,ticksPerQuarter:52,ticksPerYear:208,
-      modelVersion:'minister-care-10-access-time-replay'});
+      modelVersion:'minister-care-11-political-trust-balance'});
     assert.match(outcome.openingCopy.story,/Seven allocation councils remain, from Q2 through Q8/);
     assert.match(outcome.openingCopy.brief,/Seven allocation councils from Q2 through Q8/);
     assert.match(outcome.openingCopy.brief,/opening quarter has no purchase window/);
@@ -2858,12 +2858,12 @@ test('Early results match the reference date and replay preserves the prior atte
     const finishedTermDialogs=[];
     page.on('dialog',async dialog=>{finishedTermDialogs.push(dialog.type());await dialog.accept();});
     await page.locator('#moc-again').click();
-    await page.waitForURL(/&v=minister-care-10-access-time-replay/);
+    await page.waitForURL(/&v=minister-care-11-political-trust-balance/);
     assert.deepEqual(finishedTermDialogs,[],'retrying a completed term should not trigger the active-term warning');
     await page.locator('#moc-takeoffice').waitFor();
     assert.match(await page.locator('#moc-previous-attempt').innerText(),/tick 75/);
     assert.equal(await page.evaluate(()=>MoC.previousRun.final.tick),75);
-    assert.equal(await page.evaluate(()=>MoC.previousRun.modelVersion), 'minister-care-10-access-time-replay');
+    assert.equal(await page.evaluate(()=>MoC.previousRun.modelVersion), 'minister-care-11-political-trust-balance');
     assert.deepEqual(await page.evaluate(()=>MoC.previousRun.externalSchedule),await page.evaluate(()=>MoC.environment.schedule));
     assert.equal(await page.evaluate(()=>MoC.audio.isMuted()),true);
     // Controlled outcome fixture: political survival must not conceal worse care.
@@ -2938,7 +2938,7 @@ test('Completed runs publish automatically with a public or generated name', { t
     assert.equal(await page.locator('#moc-community-name,#moc-submit-score').count(),0,'publication is automatic, not an optional form');
     assert.equal(submitted.username,'');
     assert.equal(submitted.seed,2468);
-    assert.equal(submitted.modelVersion,'minister-care-10-access-time-replay');
+    assert.equal(submitted.modelVersion,'minister-care-11-political-trust-balance');
     assert.equal(submitted.endTick,75);
     assert.equal(typeof submitted.summary.meanWait,'number');
     assert.match(await page.locator('#moc-community-status').innerText(),/Published as Minister Silver Heron 468 · rank 2/);
@@ -3030,7 +3030,7 @@ test('Client publication reaches a real local leaderboard and filters by model a
   await new Promise(resolve=>leaderboard.listen(0,'127.0.0.1',resolve));
   const api=`http://127.0.0.1:${leaderboard.address().port}/api/leaderboard`;
   const browser=await launchBrowser();
-  const modelVersion='minister-care-10-access-time-replay';
+  const modelVersion='minister-care-11-political-trust-balance';
   const summary={systemDeaths:1,waiting:0,meanWait:0,treatments:1,deathsWaiting:0,admin:0.2,budget:100000,trust:60,fragility:12};
   async function seedRun(username,scenario,version,seed){
     const response=await fetch(api,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({
@@ -3303,9 +3303,22 @@ test('Minister cabinet crisis starts after phone walkthrough and reaches council
       MoC.S.trustP=34;
       const belowFloor=window._mocEvaluateElection({deathCap:100});
       Object.assign(MoC.S,{trustC:original.c,trustD:original.d,trustP:original.p});
-      return {trustFloor:atFloor.trustFloor,deathCap:window._mocEvaluateElection().deathCap,atFloor:atFloor.passes,belowFloor:belowFloor.passes};
+      return {
+        trustFloor:atFloor.trustFloor,
+        deathCap:window._mocEvaluateElection().deathCap,
+        atFloor:atFloor.passes,
+        belowFloor:belowFloor.passes,
+        deathTrustImpact:MoC.deathTrustImpact(3),
+        zeroDeathTrustImpact:MoC.deathTrustImpact(0),
+        invalidDeathTrustImpact:MoC.deathTrustImpact(Number.NaN),
+      };
     });
-    assert.deepEqual(cabinetThresholds,{trustFloor:35,deathCap:5,atFloor:true,belowFloor:false});
+    assert.deepEqual(cabinetThresholds,{
+      trustFloor:35,deathCap:5,atFloor:true,belowFloor:false,
+      deathTrustImpact:{citizens:-6,doctors:-3,parliament:-3},
+      zeroDeathTrustImpact:{citizens:0,doctors:0,parliament:0},
+      invalidDeathTrustImpact:{citizens:0,doctors:0,parliament:0},
+    });
     assert.match(await page.locator('[data-town-person]').first().evaluate(el => getComputedStyle(el).fontFamily), /VT323/, 'citizen names should use the game font');
     const boundary = await page.evaluate(() => {
       clearInterval(autoTimer); autoTimer = null;

@@ -3,12 +3,12 @@
   "htmlSha256": "dbe86e450f9556d5e92b442eae5adedfcd157d514f75e2f5a3a018156b691e52",
   "references": {
     "cabinetcrisis": {
-      "bytes": 556914,
-      "sha256": "bcb84cbe10d07e98029c78c32322bd02253e5e5423d254f0235fcb782933007b"
+      "bytes": 559004,
+      "sha256": "9b57b04eb3b232f6e8132eb5a5515cfeb56931b7c97b569dcee5f07fddb1417a"
     },
     "campaign": {
-      "bytes": 2756109,
-      "sha256": "f6ef76684ae9e290087c3dc7a195bca3e110eb6e81e10521529030c85c1250f4"
+      "bytes": 2766519,
+      "sha256": "8e69a149c91841eda8447e175235d53805c6267bc36e86d9457151f2aba67587"
     }
   },
   "inventory": [
