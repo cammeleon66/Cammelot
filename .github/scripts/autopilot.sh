@@ -91,6 +91,11 @@ for n in $QUEUE; do
 
   real_commits="$(gh pr view "$pr" -R "$R" --json commits -q '[.commits[]|select(.messageHeadline!="Initial plan")]|length')"
   open_items="$(jq -r '.body' <<<"$pr_json" | { grep -E '^\s*- \[ \]' || true; } | awk 'length($0) > 90 || tolower($0) !~ /codeql|code review/' | wc -l | tr -d ' ')"
+  # Copilot often finishes without ticking its checklist: if it pushed commits after
+  # our latest continue ping, treat the work as done and let Validate decide.
+  last_ping="$(gh pr view "$pr" -R "$R" --json comments -q "[.comments[]|select(.body|contains(\"$CONTINUE_MARK\"))]|last|.createdAt // \"\"")"
+  head_date="$(gh api "repos/$R/commits/$head" -q .commit.committer.date)"
+  if [[ "$real_commits" != "0" && -n "$last_ping" && "$head_date" > "$last_ping" ]]; then open_items=0; fi
   if [[ "$real_commits" == "0" || "$open_items" != "0" ]]; then
     pings="$(count_marked "$pr" "$CONTINUE_MARK")"
     (( pings >= MAX_PINGS )) && alert "$n" "Copilot stopped $pings times on #$pr with unfinished work ($open_items open checklist items, $real_commits implementation commits)."
