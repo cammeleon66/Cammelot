@@ -7,7 +7,7 @@ const require = createRequire(import.meta.url);
 const { BASE, scenarios, sha, fixture, reference, runExhaustive } =
   require('../scripts/minister_option_previews.cjs');
 
-test('Minister option previews match every applied effect and preserve reference runs', { timeout: 900_000 }, async () => {
+test('Minister option previews match every applied effect and preserve model-v11 reference runs', { timeout: 900_000 }, async () => {
   const baseline = JSON.parse(readFileSync(new URL('../scripts/output/minister_option_previews.json', import.meta.url), 'utf8'));
   assert.equal(baseline.base, BASE);
 
