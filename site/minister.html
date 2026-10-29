@@ -871,6 +871,13 @@ body.embed-mode #app{display:block!important}
 .embed-watermark{position:fixed;bottom:8px;right:8px;font-size:11px;opacity:0.6;color:white;text-decoration:none;z-index:9999;font-family:'Press Start 2P',monospace;text-shadow:1px 1px 2px rgba(0,0,0,.7);pointer-events:auto}
 .embed-watermark:hover{opacity:1}
 /* ═══ END SPRINT 26.3 CSS ═══ */
+
+/* B02: text and icons carry meaning as well as color; long plans wrap on phones. */
+.moc-preview{display:flex;flex-wrap:wrap;gap:4px;max-width:100%;white-space:normal}
+.moc-preview .moc-chip{white-space:normal;overflow-wrap:anywhere;max-width:100%;line-height:1.55}
+.moc-preview-time{flex-basis:100%;font-size:11px;color:#c5ccff;font-weight:700}
+.moc-opt,.moc-flash button,.moc-item{min-width:0;overflow-wrap:anywhere}
+.moc-flash .moc-preview{text-align:left;margin-top:8px}
 </style>
 <script defer data-domain="cammelot.org" src="https://plausible.io/js/script.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -12719,6 +12726,7 @@ async function initLLMSubsystem() {
   MoC.care = {
     episodes: referralEpisodes,
     accessEvents,
+    accessHoldWeeks:6,
     accessRemaining:function(a){
       const e = activeReferrals.get(a.id);
       return e ? Math.max(0,...(e.accessHolds || []).filter(h=>h.status==='active')
@@ -12732,7 +12740,7 @@ async function initLLMSubsystem() {
         outcome:episode?'held':'no_active_referral',episodeId:episode?.id || null};
       accessEvents.push(event);
       if (episode) {
-        const untilTick=modelTick+this.accessRemaining(a)*MoC.TICKS_PER_WEEK+6*MoC.TICKS_PER_WEEK;
+        const untilTick=modelTick+this.accessRemaining(a)*MoC.TICKS_PER_WEEK+this.accessHoldWeeks*MoC.TICKS_PER_WEEK;
         (episode.accessHolds ||= []).push({...event,untilTick,status:'active'});
       }
       GS._biasDeaths=(GS._biasDeaths || 0)+1;
@@ -13145,11 +13153,13 @@ async function initLLMSubsystem() {
   // Records remain after dispatch/cancellation; reset is a fresh page/term.
   GS.logicalEffects = [];
   MoC.logicalEffects = {
+    strikeFx:{trustD:-6},
+    strikeTicks:MoC.TICKS_PER_WEEK,
     strike:function(){
       const id='strike-consequence:'+GS.quarter;
       if (GS.over || GS.logicalEffects.some(e=>e.id===id)) return false;
-      GS.logicalEffects.push({id,tick:modelTick,dueTick:modelTick+MoC.TICKS_PER_WEEK,
-        fx:{trustD:-6},reason:'Strike ends bitter',status:'pending'});
+      GS.logicalEffects.push({id,tick:modelTick,dueTick:modelTick+this.strikeTicks,
+        fx:{...this.strikeFx},reason:'Strike ends bitter',status:'pending'});
       MoC.record?.note('scheduled','Strike political consequence due in four ticks',GS.logicalEffects.at(-1));
       return true;
     },
@@ -13437,6 +13447,7 @@ async function initLLMSubsystem() {
     catch (error) { return reportCareInputError(error); }
     const plan=choicePlan(option);
     if (!applyCarePlan(plan,true)) return false;
+    if (option.side) choiceSide(option.side, true);
     if (option.after) option.after();
     return plan;
   }
@@ -13486,14 +13497,14 @@ async function initLLMSubsystem() {
       desc:'Standalone pilot: 2 silos and up to 4 parliament trust on first purchase. No direct clinical benefit; low-adoption rollout and silo thresholds can add temporary GP paperwork and burnout.' },
     { id:'platform', name:'\ud83c\udfd7 Health Data Platform', cost:120000, requires:'scribes1',
       fx:{admin:-0.05, frag:-3, platform:1}, max:1,
-      desc:'Shared data layer. Paperwork -5 points; silos -3; platform +1. Requires the scribe pilot.' },
+      desc:'Shared data layer. Adds rollout work at low adoption; consolidates silos subject to a zero floor. Requires the scribe pilot.' },
     { id:'platformai', name:'\ud83e\udd16 Platform AI Applications', cost:80000,
       requiresMaturity:1,
       fx:{admin:-0.10, drainMult:0.90, trustD:3}, max:1,
       desc:'Shared-data applications reduce modeled paperwork and deterioration. Benefit depends on adoption.' },
     // G19: Change Management Programme — raises staff tech adoption rate
     { id:'changeprog', name:'\ud83d\udcca Change Management Programme', cost:25000,
-      fx:{trustD:3}, max:2,
+      fx:{trustD:3}, max:2, adoptionStep:0.15,
       desc:'Training and workflow redesign. Adoption +15 points; doctor trust +3. Maximum two.' },
     // G20: Digital Inclusion Officer — requires AI Triage Gate law to be active
     { id:'inclofficer', name:'\ud83e\udd1d Digital Inclusion Officer', cost:30000, requiresLaw:'dig2',
@@ -13504,11 +13515,12 @@ async function initLLMSubsystem() {
       fx:{trustC:2, mantelzorg:-15}, max:2,
       desc:'Respite support for informal carers. Carer pressure -15; citizen trust +2. Maximum two.' }
   ];
+  const FASTTRACK_COST_MULTIPLIER = 1.5;
   function shopCost(item){
     const owned = GS.owned[item.id] || 0;
     let c = item.cost + (item.costStep || 0) * owned;
     if (GS.trustP < 35) c = Math.round(c * 1.25); // parliament withholds co-funding
-    if (item.id === 'platformai' && GS._fasttrackTaken) c = Math.round(c * 1.5); // G22: FastTrack integration debt
+    if (item.id === 'platformai' && GS._fasttrackTaken) c = Math.round(c * FASTTRACK_COST_MULTIPLIER); // G22: FastTrack integration debt
     return c;
   }
   const BUY_CAP = 2; // implementation capacity per quarter
@@ -13604,7 +13616,7 @@ async function initLLMSubsystem() {
     GS._observation = { itemId:item.id, name:item.name, cost, before:beforePolicy };
     // G19: changeprog directly raises the adoption rate
     if (item.id === 'changeprog') {
-      GS.adoptionRate = Math.min(1.0, GS.adoptionRate + 0.15);
+      GS.adoptionRate = Math.min(1.0, GS.adoptionRate + item.adoptionStep);
       FX.pop('Adoption now ' + Math.round(GS.adoptionRate * 100) + '%', '#7bc67b');
     }
     const digitalRollout = ['scribes1','scribes2','a2a','twin','platform','platformai','pilotgrant'].includes(item.id);
@@ -13981,13 +13993,11 @@ async function initLLMSubsystem() {
       text:function(){ return 'FastTrack offers a six-week AI deployment outside the shared platform. It adds a separate data pipeline.'; },
       choices:[
         { label:'Take the deal', note:'Parliament +6 \u00b7 Fragmentation +2 \u00b7 Platform AI costs +50% later',
-          fx:{trustP:6,frag:2}, after:function(){
-            GS._fasttrackTaken = true;
+          fx:{trustP:6,frag:2}, side:{kind:'fasttrackTaken'}, after:function(){
             townSay(['"FastTrack\u2019s new AI feature is live. The demo was impressive. The waiting list is still the same.", said Van Dijk.', '"Quick win. Every politician\u2019s favourite technology."']);
           } },
         { label:'Not now. Stay the course.', note:'Nothing now \u00b7 Platform dividend fires 2 quarters earlier',
-          fx:{}, after:function(){
-            GS._fasttrackDeclined = true;
+          fx:{}, side:{kind:'fasttrackDeclined'}, after:function(){
             GS.pendingBanners = GS.pendingBanners || [];
             GS.pendingBanners.push({ head: '\ud83c\udfd7 FASTTRACK DECLINED', body: 'No immediate effect. The scheduled platform milestone moves two quarters earlier.', soft: true });
             townSay(['"The minister said no to the fast AI vendor. First time I\u2019ve seen that.", said Dr. Bakker.', '"Boring decision. Probably the right one."']);
@@ -14149,7 +14159,7 @@ async function initLLMSubsystem() {
       a:{ label:'Emergency mediator, grant a 10% bonus', fx:{budget:-45000, trustD:8, trustC:2, sick:-0.01}, note:'-\u20ac45K \u00b7 Doctors +8 \u00b7 Citizens +2 \u00b7 sick -1%' },
       b:{ label:'Publicly condemn the strike', fx:{trustD:-10, trustC:-3, trustP:4}, note:'Doctors -10 \u00b7 Citizens -3 \u00b7 Parliament +4' },
       c:{ label:'Let it run, wait them out', fx:{sick:0.02,trustC:-5},
-        after:function(){ MoC.logicalEffects.strike(); },
+        side:{kind:'strike'},
         note:'Sick +2% (ongoing) · Citizens -5 · Doctors -6 after 1 model week (4 ticks); canceled if term ends first' } },
     // G15: Mantelzorg / informal carer dilemma — biggest Dutch care gap
     { id:'mantelzorg', text:'One in five informal carers is at risk of burnout. Home-care waits rose for four quarters.',
@@ -14157,9 +14167,9 @@ async function initLLMSubsystem() {
       b:{ label:'Redirect to community networks (neighbours, faith groups)', fx:{mantelzorg:10, trustC:-3}, note:'Carer pressure +10 \u00b7 Citizens -3 (feel abandoned)' },
       c:{ label:'Pilot: respite care slots within existing budget', fx:{budget:-12000, trustD:2, trustC:3, mantelzorg:-5}, note:'-\u20ac12K \u00b7 Doctors +2 \u00b7 Citizens +3 \u00b7 Carer pressure -5' } },
     // G17: Point Solution Paradox dilemmas
-    { id:'buildorbuy', text:'A triage tool costs \u20ac40K/year and can launch in six weeks. An internal build costs \u20ac70K and takes eighteen months. The published pilot accuracy is not a Cammelot outcome.',
-      a:{ label:'Buy the startup tool, deploy fast', fx:{budget:-40000, trustP:3, frag:2}, note:'-\u20ac40K/yr \u00b7 Parliament +3 (decisive) \u00b7 Fragmentation +2' },
-      b:{ label:'Build in-house, own the data', plan:function(){ return {steps:[{fx:{budget:-70000,trustD:2},label:'In-house AI build: 18-month project started'},{fx:{trustD:3,admin:-0.03},delay:8,label:'In-house AI delivers: Doctors +3, Admin -3%'}]}; }, note:'-\u20ac70K \u00b7 Doctors +2 now \u00b7 18-month delay then: Doctors +3, Admin -3%' },
+    { id:'buildorbuy', text:'A triage tool has a one-time \u20ac40K game cost. An internal build costs \u20ac70K and delivers after eight quarters. The published pilot accuracy is not a Cammelot outcome.',
+      a:{ label:'Buy the startup tool, deploy fast', fx:{budget:-40000, trustP:3, frag:2}, note:'-\u20ac40K one-time \u00b7 Parliament +3 (decisive) \u00b7 Fragmentation +2' },
+      b:{ label:'Build in-house, own the data', plan:function(){ return {steps:[{fx:{budget:-70000,trustD:2},label:'In-house AI build: 18-month project started'},{fx:{trustD:3,admin:-0.03},delay:8,label:'In-house AI delivers: Doctors +3, Admin -3%'}]}; }, note:'-\u20ac70K \u00b7 Doctors +2 now \u00b7 8-quarter delay then: Doctors +3, Admin -3%' },
       c:{ label:'Require platform-first: no tool without shared data access', fxFn:function(){
         return (GS.platformMaturity || 0)>=1 ? {budget:-40000,frag:-1,trustD:3} : {trustP:-2};
       }, note:'If platform built: Frag -1, Doctors +3, -\u20ac40K \u00b7 If no platform: Parliament -2' } },
@@ -14542,6 +14552,7 @@ async function initLLMSubsystem() {
     return '<section class="moc-priority-strip" id="moc-priority-summary"><h4>CURRENT STATE · tick '+care.tick+'</h4><div class="moc-priority-list">'+priorities.join('')+'</div></section>';
   }
   function optionCost(option){
+    if(option?.request?.fx?.budget<0)return -option.request.fx.budget;
     if(option && option.fx && Number(option.fx.budget)<0)return Math.abs(Number(option.fx.budget));
     const text=((option&&(option.label||option.l))||'')+' '+((option&&option.note)||'');
     const match=text.replace(/[−–]/g,'-').match(/-\s*€\s*(\d+(?:\.\d+)?)K/i);
@@ -14549,7 +14560,7 @@ async function initLLMSubsystem() {
   }
   function optionAttrs(option){
     let invalid = '';
-    try { if (!option.run) for (const plan of choicePlans(option)) projectCarePlan(plan,true); }
+    try { if (!option.run && !option.request) for (const plan of choicePlans(option)) projectCarePlan(plan,true); }
     catch (error) { invalid = error.message; }
     const cost=optionCost(option),blocked=(cost>0 && cost>GS.budget) || !!invalid;
     return {cost,blocked,invalid,html:blocked?' disabled aria-disabled="true"':''};
@@ -14598,52 +14609,151 @@ async function initLLMSubsystem() {
       + '\ud83d\udcca System State ' + chevron + '</button>'
       + bodyHtml + '</div>';
   }
-  // ── Concrete now->after preview per intervention ──
-  // ── Impact preview as readable chips (green = better, red = worse) ──
-  function fxPreview(fx, purchaseCost=0){
-    let next;
-    try { next = projectedCareEffect(fx); }
-    catch (error) { return '<span class="moc-unaffordable">Unavailable: '+error.message+'</span>'; }
-    const chips = [];
-    if (purchaseCost > 0) chips.push('<span class="moc-chip money">One-time treasury cost '+euroAmount(purchaseCost)+'</span>');
-    // G18-B: plain-language tooltips so noobs know what each chip means
-    const CHIP_TIPS = {
-      Admin: 'Admin burden: lower means doctors spend more time on patients, not paperwork',
-      Sick: 'Sick leave rate: high sick leave reduces effective GP capacity across town',
-      Wait: 'Referral wait (Treeknorm): beyond the limit, HP drains faster toward death',
-      AI: 'GP productivity: scales remaining clinical work only; no extra admin reduction or specialist starts',
-      Decline: 'HP drain rate: how fast citizen health falls while waiting for a referral',
-      Fragile: 'Digital dependence: higher values mean hacks and outages cascade harder',
-      Citizens: 'Citizen trust: below 40 people avoid care until crisis, driving up deaths',
-      Doctors: 'Doctor trust: below 40 they start leaving for private practice permanently',
-      Parliament: 'Parliament trust: at 0 a confidence vote can end your term early'
-    };
-    function chip(icon, label, from, to, better){
-      const tip = CHIP_TIPS[label] || '';
-      chips.push('<span class="moc-chip ' + (better ? 'good' : 'bad') + '"' + (tip ? ' title="' + tip + '"' : '') + '>' + (icon ? pixIcon(icon) + ' ' : '') + label + ' ' + from + ' \u2192 ' + to + '</span>');
+  // B02: previews are pure projections of authoritative plans, never callbacks.
+  function choiceSide(side,apply=false){
+    const notes=[];
+    if (side.kind==='strike') {
+      notes.push('After '+MoC.logicalEffects.strikeTicks+' ticks: '+effectWords(MoC.logicalEffects.strikeFx)
+        +'; canceled if the term ends first; not scheduled twice in the same quarter.');
+      if(apply)MoC.logicalEffects.strike();
+    } else if (side.kind==='fasttrackTaken') {
+      notes.push('Conditional: future Platform AI purchase cost ×'+FASTTRACK_COST_MULTIPLIER+' (after any parliament surcharge).');
+      if(apply)GS._fasttrackTaken=true;
+    } else if (side.kind==='fasttrackDeclined') {
+      notes.push('Conditional: platform dividend becomes eligible at Q14 rather than Q16; event selection is not guaranteed.');
+      if(apply)GS._fasttrackDeclined=true;
+    } else if (side.kind==='accessRelease') {
+      notes.push('Now: release this resident’s active specialist-access holds; historical exclusions remain.');
+      if(apply)MoC.care.mitigateAccess(side.face,'Manual exception granted');
+    } else if (side.kind==='accessHold') {
+      notes.push('Now: log one exclusion (historical score penalty remains). '+(pendingReferral(side.face)
+        ? 'Hold specialist access, including emergency, for '+MoC.care.accessHoldWeeks+' additional weeks; elapsed wait unchanged.'
+        : 'No active referral: no wait added or future referral created.'));
+      if(apply)MoC.care.exclude(side.face,'digigate:'+side.q+':'+side.face.id,'Digital identity gate');
     }
-    if (fx.admin) { chip('scroll', 'Admin', Math.round(M.IST.admin * 100) + '%', Math.round(next.p.admin*100) + '%', fx.admin < 0); }
-    if (fx.sick) { chip('bed', 'Sick', Math.round(M.IST.sick * 100) + '%', Math.round(next.p.sick*100) + '%', fx.sick < 0); }
-    if (fx.capacity) { chip('clock', 'Starts/week', GS.specialistCapacity.toFixed(2), next.capacity.toFixed(2), fx.capacity > 0); }
-    if (fx.ai) { chip('chip', 'AI', M.IST.ai.toFixed(2) + '\u00d7', (M.IST.ai + fx.ai).toFixed(2) + '\u00d7', fx.ai > 0); }
-    if (fx.drainMult) { chip('brheart', 'Decline', M.IST.drain.toFixed(2) + '\u00d7', (M.IST.drain * fx.drainMult).toFixed(2) + '\u00d7', fx.drainMult < 1); }
-    if (fx.dep) { chip('plug', 'Dependence', GS.dependence, Math.max(0, GS.dependence + fx.dep), fx.dep < 0); }
-    if (fx._rolloutBurnout) {
-      const gps=agents.filter(function(agent){return agent.type==='gp';});
-      const current=averageGPBurnout();
-      const projected=gps.length?Math.round(gps.reduce(function(sum,gp){return sum+Math.min(100,(gp.burnoutLevel||0)+fx._rolloutBurnout);},0)/gps.length):null;
-      if(projected===null) chips.push('<span class="moc-chip risk">GP burnout mean unavailable (n=0)</span>');
-      else chip('cross','GP burnout mean (n='+gps.length+')',current+'%',projected+'%',false);
+    return notes;
+  }
+  function previewState(face){
+    return {budget:GS.budget,trustC:GS.trustC,trustD:GS.trustD,trustP:GS.trustP,
+      dependence:GS.dependence,mantelzorg:GS.mantelzorg,fragmentation:GS.fragmentation,
+      platformMaturity:GS.platformMaturity,adoptionRate:GS.adoptionRate,
+      admin:M.IST.admin,sick:M.IST.sick,tree:M.IST.tree,ai:M.IST.ai,drain:M.IST.drain,
+      capacity:GS.specialistCapacity,score:GS.liveScore,health:face?.hp,
+      burnout:agents.filter(a=>a.type==='gp').map(a=>a.burnoutLevel||0)};
+  }
+  function previewFx(state,fx){
+    const next={...state};
+    // Same ordering as commitFx: all-trust first, then stakeholder deltas.
+    for (const key of ['trustC','trustD','trustP']) {
+      if(fx.trust)next[key]=clamp01(next[key]+fx.trust);
+      if(fx[key])next[key]=clamp01(next[key]+fx[key]);
     }
-    if (fx.trust) chips.push('<span class="moc-chip ' + (fx.trust > 0 ? 'good' : 'bad') + '" title="All stakeholder trust bars: citizens, doctors, and parliament move together">All trust ' + (fx.trust > 0 ? '+' : '') + fx.trust + '</span>');
-    if (fx.trustC) chip('people', 'Citizens', GS.trustC, Math.max(0, Math.min(100, GS.trustC + fx.trustC)), fx.trustC > 0);
-    if (fx.trustD) chip('cross', 'Doctors', GS.trustD, Math.max(0, Math.min(100, GS.trustD + fx.trustD)), fx.trustD > 0);
-    if (fx.trustP) chip('bank', 'Parliament', GS.trustP, Math.max(0, Math.min(100, GS.trustP + fx.trustP)), fx.trustP > 0);
-    if (fx.budget) chips.push('<span class="moc-chip ' + (fx.budget > 0 ? 'good' : 'money') + '">' + pixIcon('coin') + ' ' + (fx.budget > 0 ? '+' : '\u2212') + fmtK(Math.abs(fx.budget)) + '</span>');
-    if (fx.mantelzorg) chips.push('<span class="moc-chip ' + (fx.mantelzorg < 0 ? 'good' : 'bad') + '" title="Informal carer pressure: above 80% triggers a carer burnout crisis and care quality drops">\ud83d\udc9c Carers ' + (fx.mantelzorg > 0 ? '+' : '') + fx.mantelzorg + '</span>'); // G15
-    if (fx.frag) chips.push('<span class="moc-chip ' + (fx.frag < 0 ? 'good' : 'bad') + '" title="AI silo count: 3+ unintegrated systems starts costing points at end of term">\ud83e\udde9 Silos ' + (fx.frag > 0 ? '+' : '') + fx.frag + '</span>'); // G17
-    if (fx.platform) chips.push('<span class="moc-chip good" title="Platform maturity unlocks shared-data applications">\ud83c\udfd7 Platform +' + fx.platform + '</span>'); // G17
-    return chips.length ? '<span class="delta">' + chips.join('') + '</span>' : '';
+    if(fx.budget)next.budget+=fx.budget;
+    if(fx.dep)next.dependence=Math.max(0,next.dependence+fx.dep);
+    if(fx.mantelzorg)next.mantelzorg=Math.max(0,Math.min(100,(next.mantelzorg||30)+fx.mantelzorg));
+    if(fx.frag)next.fragmentation=Math.max(0,(next.fragmentation||0)+fx.frag);
+    if(fx.platform)next.platformMaturity=Math.min(2,(next.platformMaturity||0)+fx.platform);
+    return next;
+  }
+  function previewOption(option,context={}){
+    const before=previewState(context.face), branches=[],notes=[];
+    let plans;
+    try {
+      if(context.purchase)plans=[shopPlan(option)];
+      else if(option.request)plans=(option.request.outcomes || [option.request.fx || {}]).map(fx=>({steps:[{fx}]}));
+      else if(context.vote)plans=option.fxChoices ? option.fxChoices.map(fx=>({steps:[{fx}]}))
+        : [{steps:[{fx:option.fx},...(option.delayed?[option.delayed]:[])]}];
+      else plans=choicePlans(option);
+      for (let i=0;i<plans.length;i++){
+        const plan=plans[i];
+        const projected=projectCarePlan(plan,!(context.vote || option.request));
+        let after={...before,budget:before.budget-projected.cost};
+        for(const step of projected.steps){
+          after=previewFx(after,step.fx);
+          Object.assign(after,{admin:step.next.p.admin,sick:step.next.p.sick,tree:step.next.p.tree,
+            ai:step.next.p.ai,drain:step.next.p.drain,capacity:step.next.capacity});
+        }
+        if(option.request){
+          const result=requestResult(option.request,context.face || {},plan.steps[0].fx);
+          if(option.request.health)after.health=result.health;
+          if(option.request.score)after.score=result.score;
+          if(option.request.carers)after.mantelzorg=result.carers;
+        }
+        if(context.purchase){
+          const fx=effectivePolicy(option);
+          if(option.adoptionStep)after.adoptionRate=Math.min(1,GS.adoptionRate+option.adoptionStep);
+          if(fx._rolloutBurnout)after.burnout=before.burnout.map(v=>Math.min(100,v+fx._rolloutBurnout));
+        }
+        if(option.endsOnFailure && i===1 && GS.objective && !GS.objective._settled && GS.objective.check())
+          after.score+=GS.objective.bonus; // endTerm settles the current objective once
+        const chance=option.request?.chance ?? option.chance;
+        branches.push({probability:plans.length>1 ? (i===0?chance:1-chance) : 1,
+          before,after,timed:projected.timed,delayed:projected.delayed,
+          endsTerm:!!option.endsOnFailure && i===1});
+      }
+      if(option.side)notes.push(...choiceSide(option.side));
+      if(context.purchase){
+        if(option.id==='inclofficer')notes.push('Now: release all current access holds. Prevent pending and recurring digital-gate exclusions; history remains.');
+        if(option.id==='prevention')notes.push('Conditional: moderates future annual aging pressure and scheduled flu; no guaranteed health outcome.');
+        if(option.id==='resilience')notes.push('Conditional: moderates future environmental disruption; breaks an armed digital-rot cascade at its next check.');
+        if(option.id==='security')notes.push('Conditional: reduces future ransomware disruption and DDoS trust loss.');
+        if(option.id==='pilotgrant')notes.push('Conditional: third grant queues a parliamentary accountability decision.');
+        if(option.id==='changeprog')notes.push('Adoption affects future purchases, not previously applied benefits.');
+      }
+      if(option.beat)notes.push('Next council: named-resident digital-access decision; recurring without an Inclusion Officer.');
+      if(context.law)notes.push('Irreversible law. One law per council; track prerequisites and parliament freeze still apply.');
+      if(context.vote && option.unfunded)notes.push('Budget reserve may be returned even without sufficient cash; deficit is allowed by this vote.');
+      return {branches,notes,unavailable:null};
+    } catch(error){return {branches:[],notes,unavailable:error.message};}
+  }
+  const PREVIEW_FIELDS = {
+    budget:['coin','Budget',1,'€'],trustC:['people','Citizens',1,''],trustD:['cross','Doctors',1,''],
+    trustP:['bank','Parliament',1,''],admin:['scroll','Admin',100,' pp'],sick:['bed','Sick leave',100,' pp'],
+    tree:['clock','Clinical threshold',1,' weeks'],ai:['chip','GP AI multiplier',1,''],
+    drain:['brheart','HP drain',1,'×'],capacity:['clock','Starts/week',1,''],
+    dependence:['plug','Dependence',1,''],mantelzorg:['people','Carer pressure',1,''],
+    fragmentation:['scroll','Silos',1,''],platformMaturity:['chip','Platform',1,''],
+    adoptionRate:['people','Adoption',100,' pp'],score:['scroll','Term score',1,''],health:['brheart','Resident HP',1,'']
+  };
+  function previewNumber(value){return String(Number(value.toFixed(6)));}
+  function effectWords(fx){
+    return Object.entries(fx).filter(([key,value])=>value && !key.startsWith('_')).map(([key,value])=>{
+      const field=key==='trust' ? [null,'All trust',1,''] : PREVIEW_FIELDS[key] ||
+        ({dep:[null,'Dependence',1,''],frag:[null,'Silos',1,''],platform:[null,'Platform',1,''],
+          drainMult:[null,'HP drain factor',1,'×']}[key]);
+      return field ? field[1]+' '+(value>0?'+':'')+previewNumber(value*field[2])+field[3] : key+' '+value;
+    }).join(' · ');
+  }
+  function previewHtml(option,context={}){
+    const preview=previewOption(option,context);
+    if(preview.unavailable)return '<span class="moc-unaffordable">Unavailable: '+escapeResultText(preview.unavailable)+'</span>';
+    let html='<span class="delta moc-preview">';
+    preview.branches.forEach((branch,index)=>{
+      if(preview.branches.length>1)html+='<span class="moc-preview-time">Outcome '+(index+1)+' · '+previewNumber(branch.probability*100)+'% chance</span>';
+      html+='<span class="moc-preview-time">Immediate · current state</span>';
+      let n=0;
+      for(const [key,[icon,label,mult,unit]] of Object.entries(PREVIEW_FIELDS)){
+        const from=branch.before[key],to=branch.after[key];
+        if(!Number.isFinite(from)||!Number.isFinite(to)||from===to)continue;
+        const delta=(to-from)*mult;
+        const good=['admin','sick','drain','dependence','mantelzorg','fragmentation'].includes(key)?delta<0:delta>0;
+        html+='<span class="moc-chip '+(key==='budget'?'money':good?'good':'bad')+'" data-preview-field="'+key+'" data-preview-branch="'+index+'" data-preview-delta="'+(to-from)+'">'
+          +pixIcon(icon)+' '+label+' '+(delta>0?'+':'')+(key==='budget'?euroAmount(delta):previewNumber(delta)+unit)
+          +' ('+previewNumber(from*mult)+' → '+previewNumber(to*mult)+')</span>';n++;
+      }
+      branch.after.burnout.forEach((to,i)=>{
+        const from=branch.before.burnout[i];if(from===to)return;
+        html+='<span class="moc-chip bad">✚ GP '+(i+1)+' burnout +'+previewNumber(to-from)+' ('+from+' → '+to+')</span>';n++;
+      });
+      if(!n)html+='<span class="moc-chip">No immediate trust, budget or care change</span>';
+      if(branch.endsTerm)html+='<span class="moc-chip bad">Term ends: removed by parliament</span>';
+      for(const effect of branch.timed)html+='<span class="moc-chip risk">Temporary: at Q'+effect.untilQ+' reverse '+escapeResultText(effectWords(effect.inverse))+'</span>';
+      for(const effect of branch.delayed)html+='<span class="moc-chip risk">Delayed: Q'+effect.atQ+' · '+escapeResultText(effectWords(effect.fx))+' (clamped to then-current trust)</span>';
+      if([...branch.timed.map(e=>e.untilQ),...branch.delayed.map(e=>e.atQ)].some(q=>q>MoC.TOTAL_QUARTERS))
+        html+='<span class="moc-chip risk">Scheduled beyond this term; will not be delivered</span>';
+    });
+    preview.notes.forEach(note=>html+='<span class="moc-chip risk">'+escapeResultText(note)+'</span>');
+    return html+'</span>';
   }
   function renderShop(wizardMode){
     const wrap = document.getElementById('moc-shop');
@@ -14684,7 +14794,7 @@ async function initLLMSubsystem() {
       }
       let preview = '';
       if (!locked) {
-        try { projectCarePlan(shopPlan(item),true); preview=fxPreview(effectivePolicy(item),shopCost(item)); }
+        try { projectCarePlan(shopPlan(item),true); preview=previewHtml(item,{purchase:true}); }
         catch (error) { preview='<span class="moc-unaffordable">Unavailable: '+error.message+'</span>'; }
       }
       return '<div class="moc-item"><b>' + item.name + (owned && !maxed ? ' (\u00d7' + owned + ')' : '') + '</b><span class="fx">' + item.desc + '</span>' + preview + btn + '</div>';
@@ -14866,10 +14976,10 @@ async function initLLMSubsystem() {
         beat = {
           text: face.name + ' (' + formatCompletedAge(face.age) + ') stands at the town hall counter. Your AI-Gated Specialist Access requires a digital identity. ' + face.name.split(' ')[0] + ' has never owned one. "I have been seeing Dr. Bakker for thirty years. Now a computer says I do not exist."',
           a:{ label:'Grant manual exceptions at the counter', fx:{admin:0.02},
-              after:function(){ MoC.care.mitigateAccess(face,'Manual exception granted'); },
+              side:{kind:'accessRelease',face},
               note:'Admin +2% (permanent); releases this resident’s current access hold' },
           b:{ label:'Hold the line: the gate applies to everyone',
-              fx:{trust:-4}, after:function(){ MoC.care.exclude(face,'digigate:'+q+':'+face.id,'Digital identity gate'); },
+              fx:{trust:-4}, side:{kind:'accessHold',face,q},
               note:'Trust -4 · Exclusion logged · ' + (pendingReferral(face)
                 ? 'Specialist access (including emergency) held for 6 additional weeks; elapsed wait unchanged'
                 : 'No active referral: no wait added or future referral created') }
@@ -15128,27 +15238,22 @@ async function initLLMSubsystem() {
           + decisionBriefHtml(evt.choices||[]);
         if (evt.choices && evt.choices.length > 0) {
           evt.choices.forEach(function(c, i){
-            html += '<button class="moc-opt" data-evtopt="' + i + '"' + (decided ? ' disabled' : optionAttrs(c).html) + '>' + c.label + '<span class="fx">' + c.note + unavailableHtml(c) + '</span></button>';
+            html += '<button class="moc-opt" data-evtopt="' + i + '"' + (decided ? ' disabled' : optionAttrs(c).html) + '>' + c.label + '<span class="fx">' + previewHtml(c) + unavailableHtml(c) + '</span></button>';
           });
         }
         html += '</div>';
       }
       if (beat) {
         html += '<div class="moc-dilemma"><div class="ec-head">' + pixIcon('people') + ' AT THE COUNTER</div><div class="dq">' + beat.text + '</div>'+decisionBriefHtml([beat.a,beat.b])
-          + '<button class="moc-opt" id="moc-opt-a"' + (decided ? ' disabled' : optionAttrs(beat.a).html) + '>' + beat.a.label + '<span class="fx">' + beat.a.note + unavailableHtml(beat.a) + '</span></button>'
-          + '<button class="moc-opt" id="moc-opt-b"' + (decided ? ' disabled' : optionAttrs(beat.b).html) + '>' + beat.b.label + '<span class="fx">' + beat.b.note + unavailableHtml(beat.b) + '</span></button></div>';
+          + '<button class="moc-opt" id="moc-opt-a"' + (decided ? ' disabled' : optionAttrs(beat.a).html) + '>' + beat.a.label + '<span class="fx">' + previewHtml(beat.a) + unavailableHtml(beat.a) + '</span></button>'
+          + '<button class="moc-opt" id="moc-opt-b"' + (decided ? ' disabled' : optionAttrs(beat.b).html) + '>' + beat.b.label + '<span class="fx">' + previewHtml(beat.b) + unavailableHtml(beat.b) + '</span></button></div>';
       }
       if (dilemma) {
-        const optHtml = function(opt){
-          if (opt.fx && Object.keys(opt.fx).length) return '<br>' + fxPreview(opt.fx).replace('class="delta"', 'class="delta" style="margin:2px 0 0"');
-          if (opt.fxChoices) return '<br><span class="delta" style="margin:2px 0 0"><span class="moc-chip risk">\ud83c\udfb2 Gamble \u2014 all possible outcomes must be feasible</span></span>';
-          if (opt.plan || opt.fxFn) return '<br><span class="delta" style="margin:2px 0 0">Immediate and scheduled effects checked together.</span>';
-          return '<br><span class="delta" style="margin:2px 0 0"><span class="moc-chip" style="background:#2a2a3a;color:#8a94d8">\u2696 No immediate effect</span></span>';
-        };
+        const optHtml = function(opt){ return previewHtml(opt); };
         html += '<div class="moc-dilemma"><div class="ec-head">' + pixIcon('scroll') + ' DECISION REQUIRED</div><div class="dq">' + dilemma.text + '</div>'+decisionBriefHtml([dilemma.a,dilemma.b,dilemma.c])
-          + '<button class="moc-opt" id="moc-opt-a"' + (decided ? ' disabled' : optionAttrs(dilemma.a).html) + '>' + dilemma.a.label + '<span class="fx">' + dilemma.a.note + optHtml(dilemma.a) + unavailableHtml(dilemma.a) + '</span></button>'
-          + '<button class="moc-opt" id="moc-opt-b"' + (decided ? ' disabled' : optionAttrs(dilemma.b).html) + '>' + dilemma.b.label + '<span class="fx">' + dilemma.b.note + optHtml(dilemma.b) + unavailableHtml(dilemma.b) + '</span></button>'
-          + (dilemma.c ? '<button class="moc-opt" id="moc-opt-c"' + (decided ? ' disabled' : optionAttrs(dilemma.c).html) + '>' + dilemma.c.label + '<span class="fx">' + dilemma.c.note + optHtml(dilemma.c) + unavailableHtml(dilemma.c) + '</span></button>' : '')
+          + '<button class="moc-opt" id="moc-opt-a"' + (decided ? ' disabled' : optionAttrs(dilemma.a).html) + '>' + dilemma.a.label + '<span class="fx">' + optHtml(dilemma.a) + unavailableHtml(dilemma.a) + '</span></button>'
+          + '<button class="moc-opt" id="moc-opt-b"' + (decided ? ' disabled' : optionAttrs(dilemma.b).html) + '>' + dilemma.b.label + '<span class="fx">' + optHtml(dilemma.b) + unavailableHtml(dilemma.b) + '</span></button>'
+          + (dilemma.c ? '<button class="moc-opt" id="moc-opt-c"' + (decided ? ' disabled' : optionAttrs(dilemma.c).html) + '>' + dilemma.c.label + '<span class="fx">' + optHtml(dilemma.c) + unavailableHtml(dilemma.c) + '</span></button>' : '')
           + '</div>';
       }
       const options=evt?.choices || [((beat || dilemma)?.a),((beat || dilemma)?.b),((beat || dilemma)?.c)].filter(Boolean);
@@ -15214,7 +15319,7 @@ async function initLLMSubsystem() {
         } else {
           html += '<div class="moc-item"><b>' + track.name + ' ' + (passed + 1) + '/3: ' + law.name + badge + '</b>'
             + '<span class="fx">' + law.desc + '</span>'
-            + fxPreview(law.fx)
+            + previewHtml(law,{law:true})
             + '<button class="moc-buy" data-law="' + law.id + '"'
             + (GS.budget < law.cost || optionAttrs(law).invalid ? ' disabled' : '') + (lawPassedThisCouncil ? ' disabled' : '') + '>'
             + (lawPassedThisCouncil ? '\u2713 Enacted this quarter' : 'Enact' + (law.cost ? ' ' + fmtK(law.cost) : ''))
@@ -16105,31 +16210,51 @@ async function initLLMSubsystem() {
   ];
   const FLASH_POOL = [
     { t:'Access request', d:function(f){return f.name+' ('+formatCompletedAge(f.age)+') cannot reach the GP by phone.';},
-      a:{l:'Assign case manager (−€5K)',run:function(f){if(GS.budget<5000){FX.pop('Insufficient budget','#e05858');return;}recordTreasury(-5000,'Resident access request: assign case manager');f.hp=Math.min(100,(f.hp||60)+8);FX.pop(f.name+': health +8','#7bc67b');}},
-      b:{l:'Keep normal queue',run:function(){MoC.adjustTrust(-1);}}},
+      a:{l:'Assign case manager (−€5K)',request:{fx:{budget:-5000},health:8,reason:'Resident access request: assign case manager'}},
+      b:{l:'Keep normal queue',request:{fx:{trust:-1}}}},
     { t:'Practice server issue', d:function(){return 'Clinical records are intermittently unavailable this afternoon.';},
-      a:{l:'Switch to paper',run:function(){GS.liveScore=Math.max(0,GS.liveScore-5);}},
-      b:{l:'Continue digitally',run:function(){if(Math.random()<0.3)MoC.adjustTrust(-2);}}},
+      a:{l:'Switch to paper',request:{score:-5}},
+      b:{l:'Continue digitally',request:{chance:0.3,outcomes:[{trust:-2},{}]}}},
     { t:'Patient transport offer', d:function(){return 'Volunteers offer weekly transport for older patients. Insurance costs €3K.';},
-      a:{l:'Fund insurance (−€3K)',run:function(){if(GS.budget<3000){FX.pop('Insufficient budget','#e05858');return;}recordTreasury(-3000,'Resident transport request: volunteer insurance');MoC.adjustTrust(2);}},
-      b:{l:'Decline',run:function(){MoC.adjustTrust(-1);}}},
+      a:{l:'Fund insurance (−€3K)',request:{fx:{budget:-3000,trust:2},reason:'Resident transport request: volunteer insurance'}},
+      b:{l:'Decline',request:{fx:{trust:-1}}}},
     { t:'Medicine shortage', d:function(){return 'The pharmacy is out of children’s antibiotics until Thursday.';},
-      a:{l:'Emergency courier (−€4K)',run:function(){if(GS.budget<4000){FX.pop('Insufficient budget','#e05858');return;}recordTreasury(-4000,'Resident medicine request: emergency courier');MoC.adjustTrust(2);}},
-      b:{l:'Wait for national supply',run:function(){MoC.adjustTrust(-2);}}},
+      a:{l:'Emergency courier (−€4K)',request:{fx:{budget:-4000,trust:2},reason:'Resident medicine request: emergency courier'}},
+      b:{l:'Wait for national supply',request:{fx:{trust:-2}}}},
     { t:'Leaked closure memo', d:function(){return 'A draft memo considers closing a GP practice. The Gazette requests comment.';},
-      a:{l:'Confirm the review',run:function(){MoC.adjustTrust(-1);}},
-      b:{l:'Deny the review',run:function(){if(Math.random()<0.5)MoC.adjustTrust(-4);}}},
-    { t:'Storm warning', d:function(){return 'Code orange is forecast. Safe mode is a score-only action: term score -4 (minimum 0), with no modeled service effect.';},
-      a:{l:'Use safe mode',run:function(){GS.liveScore=Math.max(0,GS.liveScore-4);}},
+      a:{l:'Confirm the review',request:{fx:{trust:-1}}},
+      b:{l:'Deny the review',request:{chance:0.5,outcomes:[{trust:-4},{}]}}},
+    { t:'Storm warning', d:function(){return 'Code orange is forecast. Safe mode is a score-only action, with no modeled service effect.';},
+      a:{l:'Use safe mode',request:{score:-4}},
       b:{l:'Keep systems online',get chance(){return GS.dependence>=6?0.45:0.15;},fxChoices:[{trust:-3,admin:0.01},{}]}},
     { t:'GP working-hours review', d:function(){return 'Dr. Willems is considering reduced hours.';},
-      a:{l:'Discuss retention',run:function(){adjustStakeholders(0,3,0);}},
+      a:{l:'Discuss retention',request:{fx:{trustD:3}}},
       b:{l:'Take no action',chance:0.25,fxChoices:[{sick:0.01},{}]}},
     { t:'Carer support request', d:function(){return 'Maria Jansen has provided unpaid care for four years and requests respite support.';},
       cond:function(){return (GS.mantelzorg||30)>=65;},
-      a:{l:'Fund two weeks (−€4K)',run:function(){if(GS.budget<4000){FX.pop('Insufficient budget','#e05858');return;}recordTreasury(-4000,'Resident carer request: two-week respite');MoC.adjustTrust(2);GS.mantelzorg=Math.max(30,(GS.mantelzorg||65)-8);}},
-      b:{l:'Refer to local service',run:function(){MoC.adjustTrust(-1);}}}
+      a:{l:'Fund two weeks (−€4K)',request:{fx:{budget:-4000,trust:2},carers:-8,carerFloor:30,reason:'Resident carer request: two-week respite'}},
+      b:{l:'Refer to local service',request:{fx:{trust:-1}}}}
   ];
+  function requestResult(request,face,fx=request.fx || {}){
+    return {
+      health:request.health ? Math.min(100,(face.hp || 60)+request.health) : face.hp,
+      score:request.score ? Math.max(0,GS.liveScore+request.score) : GS.liveScore,
+      carers:request.carers ? Math.max(request.carerFloor,(GS.mantelzorg || 65)+request.carers) : GS.mantelzorg,
+      fx
+    };
+  }
+  function runRequest(option,face){
+    const request=option.request;
+    const fx=request.outcomes ? request.outcomes[Math.random()<request.chance?0:1] : request.fx || {};
+    if (fx.budget<0 && GS.budget < -fx.budget) { FX.pop('Insufficient budget','#e05858');return; }
+    const result=requestResult(request,face,fx);
+    if (fx.budget) recordTreasury(fx.budget,request.reason);
+    if (request.health) { face.hp=result.health;FX.pop(face.name+': health +'+request.health,'#7bc67b'); }
+    if (fx.trust) MoC.adjustTrust(fx.trust);
+    if (fx.trustD) adjustStakeholders(0,fx.trustD,0);
+    if (request.score) GS.liveScore=result.score;
+    if (request.carers) GS.mantelzorg=result.carers;
+  }
   let flashActive = false;
   GS.flashSeen = [];
   function flashSnapshot(face){
@@ -16175,8 +16300,8 @@ async function initLLMSubsystem() {
     el.dataset.recordContext='request:'+GS.quarter+':'+FLASH_POOL.indexOf(flash)+':'+(face.id || 'none');
     el.innerHTML = '<h4>' + flash.t + '</h4><div class="moc-sub">Time is paused.</div>'
       + '<div class="ft">' + flash.d(face) + '</div>'
-      + '<button id="moc-fa"'+optionAttrs(flash.a).html+'>' + flash.a.l + unavailableHtml(flash.a) + '</button>'
-      + '<button id="moc-fb"'+optionAttrs(flash.b).html+'>' + flash.b.l + unavailableHtml(flash.b) + '</button>';
+      + '<button id="moc-fa"'+optionAttrs(flash.a).html+'>' + flash.a.l + previewHtml(flash.a,{face}) + unavailableHtml(flash.a) + '</button>'
+      + '<button id="moc-fb"'+optionAttrs(flash.b).html+'>' + flash.b.l + previewHtml(flash.b,{face}) + unavailableHtml(flash.b) + '</button>';
     document.body.appendChild(el);
     function cleanup(){ el.remove(); flashActive = false; if (!councilOpen && !GS.over) resumeSim(); }
     let decided=false;
@@ -16184,7 +16309,8 @@ async function initLLMSubsystem() {
       if (GS.over || decided) return;
       const before = flashSnapshot(face);
       if (optionAttrs(option).blocked) return;
-      if (option.run) option.run(face);
+      if (option.request) runRequest(option,face);
+      else if (option.run) option.run(face);
       else if (!applyChoice(option)) return;
       decided=true;
       refreshMeters(); renderMinistry(); renderTownWatch();
@@ -16722,6 +16848,12 @@ async function initLLMSubsystem() {
       }
       return null;
     }
+    const VOTE_OPTIONS = {
+      promise:{label:'Offer a recovery plan',fx:{trustP:10},delayed:{delay:3,fx:{trustP:-15},label:'Parliament remembers your moonshot promises. They were not kept.'}},
+      sacrifice:{label:'Return the budget reserve',fx:{budget:-100000,trustP:12},unfunded:true},
+      defy:{label:'Call the vote now',chance:0.5,fxChoices:[{trust:15},{}],endsOnFailure:true}
+    };
+    MoC.voteOptions=VOTE_OPTIONS;
     function confidenceVote(){
       // Near-death experience instead of instant game over (fires once per slump)
       if (GS.trustP > 22 || GS._voteHeld) return false;
@@ -16733,9 +16865,7 @@ async function initLLMSubsystem() {
         + '<div class="moc-sub">Parliament trust is below 22. Choose one measure to continue the term.</div>'
         + '<div class="moc-dilemma"><div class="ec-head ec-danger">\ud83c\udfdb THE VOTE</div>'
         + '<div class="dq">The coalition needs a reason to keep the cabinet in office.</div>'
-        + '<button class="moc-opt" data-vote="promise">Offer a recovery plan<span class="fx">Parliament +10 now \u00b7 Parliament \u221215 in 3 quarters</span></button>'
-        + '<button class="moc-opt" data-vote="sacrifice">Return the budget reserve<span class="fx">Parliament +12 \u00b7 Budget \u2212\u20ac100K</span></button>'
-        + '<button class="moc-opt" data-vote="defy">Call the vote now<span class="fx">50/50: all trust +15 or term ends</span></button>'
+        + Object.entries(VOTE_OPTIONS).map(([id,option])=>'<button class="moc-opt" data-vote="'+id+'">'+option.label+previewHtml(option,{vote:true})+'</button>').join('')
         + '</div></div>';
       document.body.appendChild(ov);
       let voted=false;
@@ -16747,17 +16877,19 @@ async function initLLMSubsystem() {
           ov.remove();
           window.MoCA11y?.announce('Confidence vote: ' + (b.firstChild ? b.firstChild.textContent.trim() : '') + ' chosen.');
           if (v === 'promise') {
-            adjustStakeholders(0, 0, 10);
-            GS.delayed.push({ atQ: GS.quarter + 3, fx:{trustP:-15}, label:'Parliament remembers your moonshot promises. They were not kept.' });
+            adjustStakeholders(0, 0, VOTE_OPTIONS.promise.fx.trustP);
+            const debt=VOTE_OPTIONS.promise.delayed;
+            GS.delayed.push({ atQ: GS.quarter + debt.delay, fx:{...debt.fx}, label:debt.label });
             GS._promiseDebt = true;
             say('SYSTEM', 'Survived the confidence vote on promises. They will collect.', 'sys');
           } else if (v === 'sacrifice') {
-            recordTreasury(-100000, 'Confidence vote: returned €100K');
-            adjustStakeholders(0, 0, 12);
+            recordTreasury(VOTE_OPTIONS.sacrifice.fx.budget, 'Confidence vote: returned €100K');
+            adjustStakeholders(0, 0, VOTE_OPTIONS.sacrifice.fx.trustP);
             say('SYSTEM', 'Survived the confidence vote by returning \u20ac100K.', 'sys');
           } else {
-            if (Math.random() < 0.5) {
-              adjustStakeholders(15, 15, 15);
+            if (Math.random() < VOTE_OPTIONS.defy.chance) {
+              const gain=VOTE_OPTIONS.defy.fxChoices[0].trust;
+              adjustStakeholders(gain, gain, gain);
               FX.pop('THEY BLINKED', '#58c858');
               Audio5.jingle();
               say('SYSTEM', 'The confidence vote passed. All trust +15.', 'sys');
@@ -16799,7 +16931,7 @@ async function initLLMSubsystem() {
         + '<div class="moc-sub">Pick <b>' + promiseCount + ' promises</b> for the Year ' + Math.ceil(MoC.TOTAL_QUARTERS / 8) + ' election. To stay in office: keep at least 2, keep each trust score at 45 or above, limit model system deaths to 8, and avoid a stage-3 cascade.</div>'
         + '<div class="moc-dilemma"><div class="ec-head">📜 CAMPAIGN PROMISES (pick ' + promiseCount + ')</div>';
       PROMISES.forEach(function(p, i){
-        html += '<button class="moc-opt" data-promise="' + i + '">' + p.text + '</button>';
+        html += '<button class="moc-opt" data-promise="' + i + '">' + p.text + '<span class="fx">No immediate trust, budget or care change. Conditional: judged with the other promises and election gates; no individual reward is guaranteed.</span></button>';
       });
       html += '</div><button class="moc-continue" id="moc-manifesto-done" disabled>SIGN THE MANIFESTO ▶</button></div>';
       ov.innerHTML = html;

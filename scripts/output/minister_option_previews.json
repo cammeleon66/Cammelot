@@ -1,0 +1,1967 @@
+{
+  "base": "729a2c815c410fec0164721216d438e0980ab307",
+  "htmlSha256": "dbe86e450f9556d5e92b442eae5adedfcd157d514f75e2f5a3a018156b691e52",
+  "references": {
+    "cabinetcrisis": {
+      "bytes": 556914,
+      "sha256": "bcb84cbe10d07e98029c78c32322bd02253e5e5423d254f0235fcb782933007b"
+    },
+    "campaign": {
+      "bytes": 2756109,
+      "sha256": "f6ef76684ae9e290087c3dc7a195bca3e110eb6e81e10521529030c85c1250f4"
+    }
+  },
+  "inventory": [
+    {
+      "id": "purchase:scribes1",
+      "kind": "purchase",
+      "label": "🎙 EchoScribe pilot",
+      "oldText": "Documentation support. Benefit depends on staff adoption; adds digital dependence.",
+      "path": "shopPlan → buy",
+      "effects": {
+        "admin": -0.18,
+        "dep": 2
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "purchase:scribes2",
+      "kind": "purchase",
+      "label": "🎙 EchoScribe full rollout",
+      "oldText": "Extend documentation support. Adoption limits the immediate benefit; adds dependence.",
+      "path": "shopPlan → buy",
+      "effects": {
+        "admin": -0.07,
+        "ai": 0.1,
+        "dep": 1
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "purchase:hire",
+      "kind": "purchase",
+      "label": "🩺 Recruit specialists",
+      "oldText": "Adds 1 nominal routine start/week and corresponding routine treatment places. Active next tick; actual starts need demand and credit. No GP productivity change. Later hires cost more.",
+      "path": "shopPlan → buy",
+      "effects": {
+        "capacity": 1,
+        "trustD": 3
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "purchase:a2a",
+      "kind": "purchase",
+      "label": "🔗 Referral mesh",
+      "oldText": "Referral scheduling adds 1.5 treatment starts/week at full adoption. Requires scribe rollout; adds digital dependence.",
+      "path": "shopPlan → buy",
+      "effects": {
+        "capacity": 1.5,
+        "dep": 3
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "purchase:twin",
+      "kind": "purchase",
+      "label": "🪞 Mirrorware digital twins",
+      "oldText": "Monitoring reduces modeled deterioration, scaled by staff adoption. Adds dependence.",
+      "path": "shopPlan → buy",
+      "effects": {
+        "drainMult": 0.85,
+        "dep": 3
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "purchase:mtvp",
+      "kind": "purchase",
+      "label": "⏳ More Time for the Patient",
+      "oldText": "Modeled deterioration ×0.90. Citizen trust +2; doctor trust +3.",
+      "path": "shopPlan → buy",
+      "effects": {
+        "drainMult": 0.9,
+        "trustC": 2,
+        "trustD": 3
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "purchase:audit",
+      "kind": "purchase",
+      "label": "⚖ Fairness audit",
+      "oldText": "Independent triage review. Parliament trust +5. Maximum three.",
+      "path": "shopPlan → buy",
+      "effects": {
+        "trustP": 5
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "purchase:prevention",
+      "kind": "purchase",
+      "label": "🥦 Prevention programme",
+      "oldText": "Halves annual aging-pressure growth and reduces scheduled flu impact. No immediate capacity gain.",
+      "path": "shopPlan → buy",
+      "effects": {
+        "trustC": 2
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "purchase:resilience",
+      "kind": "purchase",
+      "label": "🔋 Resilience pack",
+      "oldText": "Backup power and offline procedures. Dependence -2; reduces modeled shock impact. Maximum two.",
+      "path": "shopPlan → buy",
+      "effects": {
+        "dep": -2
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "purchase:security",
+      "kind": "purchase",
+      "label": "🛡 Security hardening",
+      "oldText": "Vendor audit and network segmentation. Dependence -1; all trust +1.",
+      "path": "shopPlan → buy",
+      "effects": {
+        "dep": -1,
+        "trust": 1
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "purchase:campaign",
+      "kind": "purchase",
+      "label": "📣 Public Awareness Campaign",
+      "oldText": "Public information campaign. Citizen trust +6. No clinical capacity change. Maximum two.",
+      "path": "shopPlan → buy",
+      "effects": {
+        "trustC": 6
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "purchase:gpfund",
+      "kind": "purchase",
+      "label": "🩺 GP Retention Fund",
+      "oldText": "Retention payment for GP teams. Doctor trust +8; sick leave -1 percentage point.",
+      "path": "shopPlan → buy",
+      "effects": {
+        "trustD": 8,
+        "sick": -0.01
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "purchase:pilotgrant",
+      "kind": "purchase",
+      "label": "📄 AI Pilot Grant",
+      "oldText": "Standalone pilot: 2 silos and up to 4 parliament trust on first purchase. No direct clinical benefit; low-adoption rollout and silo thresholds can add temporary GP paperwork and burnout.",
+      "path": "shopPlan → buy",
+      "effects": {
+        "trustP": 4,
+        "frag": 2
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "purchase:platform",
+      "kind": "purchase",
+      "label": "🏗 Health Data Platform",
+      "oldText": "Shared data layer. Paperwork -5 points; silos -3; platform +1. Requires the scribe pilot.",
+      "path": "shopPlan → buy",
+      "effects": {
+        "admin": -0.05,
+        "frag": -3,
+        "platform": 1
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "purchase:platformai",
+      "kind": "purchase",
+      "label": "🤖 Platform AI Applications",
+      "oldText": "Shared-data applications reduce modeled paperwork and deterioration. Benefit depends on adoption.",
+      "path": "shopPlan → buy",
+      "effects": {
+        "admin": -0.1,
+        "drainMult": 0.9,
+        "trustD": 3
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "purchase:changeprog",
+      "kind": "purchase",
+      "label": "📊 Change Management Programme",
+      "oldText": "Training and workflow redesign. Adoption +15 points; doctor trust +3. Maximum two.",
+      "path": "shopPlan → buy",
+      "effects": {
+        "trustD": 3
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "purchase:inclofficer",
+      "kind": "purchase",
+      "label": "🤝 Digital Inclusion Officer",
+      "oldText": "Citizen trust +3; releases current access holds and stops recurring exclusion. Requires AI Triage Gate.",
+      "path": "shopPlan → buy",
+      "effects": {
+        "trustC": 3
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "purchase:carersupport",
+      "kind": "purchase",
+      "label": "🫂 Carer Support Programme",
+      "oldText": "Respite support for informal carers. Carer pressure -15; citizen trust +2. Maximum two.",
+      "path": "shopPlan → buy",
+      "effects": {
+        "trustC": 2,
+        "mantelzorg": -15
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "law:dig1",
+      "kind": "law",
+      "label": "Cloud-First Records Act",
+      "oldText": "All records move to Halcyon One. Admin -2%, +1 dependence. Irreversible.",
+      "path": "projectCarePlan → law click",
+      "effects": {
+        "admin": -0.02,
+        "dep": 1
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "law:dig2",
+      "kind": "law",
+      "label": "AI Triage Gate",
+      "oldText": "Authored scheduling rule: +0.5 nominal routine starts/week, +2 dependence, Trust -2. Not a GP request-screening mechanism. Irreversible.",
+      "path": "projectCarePlan → law click",
+      "effects": {
+        "capacity": 0.5,
+        "dep": 2,
+        "trust": -2
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "law:dig3",
+      "kind": "law",
+      "label": "AI-Gated Specialist Access",
+      "oldText": "Algorithm required for referral. +1 treatment start/week, +2 dependence. Risks digital exclusion. Irreversible.",
+      "path": "projectCarePlan → law click",
+      "effects": {
+        "capacity": 1,
+        "dep": 2
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "law:work1",
+      "kind": "law",
+      "label": "Task Differentiation Act",
+      "oldText": "Nurses and assistants take over routine GP tasks. Admin -3%. Irreversible.",
+      "path": "projectCarePlan → law click",
+      "effects": {
+        "admin": -0.03
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "law:work2",
+      "kind": "law",
+      "label": "Regional Staffing Pool",
+      "oldText": "Shared locum pool across the region. Sick leave -1%. Irreversible.",
+      "path": "projectCarePlan → law click",
+      "effects": {
+        "sick": -0.01
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "law:work3",
+      "kind": "law",
+      "label": "Community Health Workers",
+      "oldText": "Neighbourhood teams reach citizens before crisis. Drain -8%, Trust +2. Irreversible.",
+      "path": "projectCarePlan → law click",
+      "effects": {
+        "drainMult": 0.92,
+        "trust": 2
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "law:inno1",
+      "kind": "law",
+      "label": "Open Algorithm Register",
+      "oldText": "All health algorithms used in Cammelot must be publicly registered. Parliament +3. Fragmentation -1 (visibility forces consolidation). Irreversible.",
+      "path": "projectCarePlan → law click",
+      "effects": {
+        "trustP": 3,
+        "frag": -1
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "law:inno2",
+      "kind": "law",
+      "label": "Platform-First Procurement Mandate",
+      "oldText": "Requires data interoperability for new health AI. Fragmentation -2; Parliament +2. Irreversible.",
+      "path": "projectCarePlan → law click",
+      "effects": {
+        "frag": -2,
+        "trustP": 2
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "law:inno3",
+      "kind": "law",
+      "label": "Regional AI Adoption Board",
+      "oldText": "Joint board of GPs, data scientists, and patient reps evaluates all health AI before deployment. Parliament +3, Doctors +2. Irreversible.",
+      "path": "projectCarePlan → law click",
+      "effects": {
+        "trustP": 3,
+        "trustD": 2
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:insurer:a",
+      "kind": "dilemma",
+      "label": "Take the deal",
+      "oldText": "+€60K · Citizens -8 · Doctors -4 · +1 dependence",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "budget": 60000,
+        "trustC": -8,
+        "trustD": -4,
+        "dep": 1
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:insurer:b",
+      "kind": "dilemma",
+      "label": "Decline: patient data is not a bargaining chip",
+      "oldText": "Citizens +3 · Doctors +2",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "trustC": 3,
+        "trustD": 2
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:assistant:a",
+      "kind": "dilemma",
+      "label": "Fund the assistant",
+      "oldText": "-€15K · admin -2%",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "budget": -15000,
+        "admin": -0.02
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:assistant:b",
+      "kind": "dilemma",
+      "label": "Decline",
+      "oldText": "All trust -3",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "trust": -3
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:press:a",
+      "kind": "dilemma",
+      "label": "Face the press",
+      "oldText": "Trust +5 if few model system deaths, else -5",
+      "path": "choicePlan → applyChoice",
+      "effects": null,
+      "stochastic": false,
+      "planned": false,
+      "conditional": true,
+      "callback": false
+    },
+    {
+      "id": "dilemma:press:b",
+      "kind": "dilemma",
+      "label": "No comment",
+      "oldText": "Trust -3",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "trust": -3
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:flu:a",
+      "kind": "dilemma",
+      "label": "Fund the campaign",
+      "oldText": "-€20K · drain -5%",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "budget": -20000,
+        "drainMult": 0.95
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:flu:b",
+      "kind": "dilemma",
+      "label": "Skip it this year",
+      "oldText": "Staff sick leave +1%",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "sick": 0.01
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:locum:a",
+      "kind": "dilemma",
+      "label": "Hire the locums",
+      "oldText": "-€25K · +0.5 starts/week",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "budget": -25000,
+        "capacity": 0.5
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:locum:b",
+      "kind": "dilemma",
+      "label": "Hold out for permanent staff",
+      "oldText": "No change",
+      "path": "choicePlan → applyChoice",
+      "effects": {},
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:overtime:a",
+      "kind": "dilemma",
+      "label": "Pay overtime",
+      "oldText": "-€30K · sick leave -2% · Doctors +6 · Parliament -2",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "budget": -30000,
+        "sick": -0.02,
+        "trustD": 6,
+        "trustP": -2
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:overtime:b",
+      "kind": "dilemma",
+      "label": "Refuse",
+      "oldText": "Sick leave +2 points · Doctors -7",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "sick": 0.02,
+        "trustD": -7
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:subsidy:a",
+      "kind": "dilemma",
+      "label": "Accept the subsidy",
+      "oldText": "+€80K · +2 dependence · Trust -2",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "budget": 80000,
+        "dep": 2,
+        "trust": -2
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:subsidy:b",
+      "kind": "dilemma",
+      "label": "Decline",
+      "oldText": "All trust +1",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "trust": 1
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:bus:a",
+      "kind": "dilemma",
+      "label": "Fund the bus",
+      "oldText": "-€15K · Trust +4 · drain -5%",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "budget": -15000,
+        "trust": 4,
+        "drainMult": 0.95
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:bus:b",
+      "kind": "dilemma",
+      "label": "Decline politely",
+      "oldText": "Trust -2",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "trust": -2
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:merger:a",
+      "kind": "dilemma",
+      "label": "Merge night services",
+      "oldText": "+0.5 starts/week · Trust -4",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "capacity": 0.5,
+        "trust": -4
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:merger:b",
+      "kind": "dilemma",
+      "label": "Keep care close to home",
+      "oldText": "Trust +2 · sick leave +1%",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "trust": 2,
+        "sick": 0.01
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:cyberins:a",
+      "kind": "dilemma",
+      "label": "Take the policy",
+      "oldText": "-€20K · -1 dependence",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "budget": -20000,
+        "dep": -1
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:cyberins:b",
+      "kind": "dilemma",
+      "label": "Self-insure",
+      "oldText": "No immediate change",
+      "path": "choicePlan → applyChoice",
+      "effects": {},
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:shortage:a",
+      "kind": "dilemma",
+      "label": "Pay for imports",
+      "oldText": "-€25K · Citizens +4",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "budget": -25000,
+        "trustC": 4
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:shortage:b",
+      "kind": "dilemma",
+      "label": "Substitute generics",
+      "oldText": "Citizens -3 · modeled deterioration ×1.03",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "trustC": -3,
+        "drainMult": 1.03
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:seh:a",
+      "kind": "dilemma",
+      "label": "Accept the closure",
+      "oldText": "+€30K savings · Citizens -7 · Parliament +2",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "budget": 30000,
+        "trustC": -7,
+        "trustP": 2
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:seh:b",
+      "kind": "dilemma",
+      "label": "Subsidise it to stay open",
+      "oldText": "-€35K · Citizens +5",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "budget": -35000,
+        "trustC": 5
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:algo:a",
+      "kind": "dilemma",
+      "label": "Deploy with public audit board",
+      "oldText": "-€15K · +0.5 starts/week · +1 dep · Citizens +2",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "budget": -15000,
+        "capacity": 0.5,
+        "dep": 1,
+        "trustC": 2
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:algo:b",
+      "kind": "dilemma",
+      "label": "Deploy fast, audit later",
+      "oldText": "+0.5 starts/week · +1 dep · 40% chance of a bias scandal",
+      "path": "choicePlan → applyChoice",
+      "effects": null,
+      "stochastic": true,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:grid:a",
+      "kind": "dilemma",
+      "label": "Run the generators",
+      "oldText": "Citizens -4 · Dependence +1",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "trustC": -4,
+        "dep": 1
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:grid:b",
+      "kind": "dilemma",
+      "label": "Delay the data centre",
+      "oldText": "AI capacity multiplier -0.03",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "ai": -0.03
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:verpleeghuis:a",
+      "kind": "dilemma",
+      "label": "Fund respite care beds",
+      "oldText": "-€30K · Citizens +6 · drain -3%",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "budget": -30000,
+        "trustC": 6,
+        "drainMult": 0.97
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:verpleeghuis:b",
+      "kind": "dilemma",
+      "label": "Prioritise the GP system first",
+      "oldText": "Citizens -4",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "trustC": -4
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:poach:a",
+      "kind": "dilemma",
+      "label": "Match with a retention bonus",
+      "oldText": "-€40K · Doctors +6 · sick -1%",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "budget": -40000,
+        "trustD": 6,
+        "sick": -0.01
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:poach:b",
+      "kind": "dilemma",
+      "label": "Let the market decide",
+      "oldText": "Doctors -6 · sick +1.5%",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "trustD": -6,
+        "sick": 0.015
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:digibeten:a",
+      "kind": "dilemma",
+      "label": "Keep a staffed phone line",
+      "oldText": "-€12K · admin +1% · Citizens +5",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "budget": -12000,
+        "admin": 0.01,
+        "trustC": 5
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:digibeten:b",
+      "kind": "dilemma",
+      "label": "Digital-only, with a helpdesk leaflet",
+      "oldText": "Citizens -6 · admin -1%",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "trustC": -6,
+        "admin": -0.01
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:interop:a",
+      "kind": "dilemma",
+      "label": "Connect the systems",
+      "oldText": "+0.5 starts/week · +1 dep · Doctors +3",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "capacity": 0.5,
+        "dep": 1,
+        "trustD": 3
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:interop:b",
+      "kind": "dilemma",
+      "label": "Demand a security audit first",
+      "oldText": "-€10K · connection delayed but safe",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "budget": -10000
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:sugarlobby:a",
+      "kind": "dilemma",
+      "label": "Endorse the sugar tax",
+      "oldText": "Parliament +3 · Citizens -2 · drain -3% long-term",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "trustP": 3,
+        "trustC": -2,
+        "drainMult": 0.97
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:sugarlobby:b",
+      "kind": "dilemma",
+      "label": "Stay neutral, protect jobs",
+      "oldText": "Citizens +2 · Parliament -2",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "trustC": 2,
+        "trustP": -2
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:sabbatical:a",
+      "kind": "dilemma",
+      "label": "Grant it, hire a locum",
+      "oldText": "-€20K · Doctors +5 · sick -1%",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "budget": -20000,
+        "trustD": 5,
+        "sick": -0.01
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:sabbatical:b",
+      "kind": "dilemma",
+      "label": "Ask them to push through",
+      "oldText": "Doctors -3 · 35% risk of a burnout wave",
+      "path": "choicePlan → applyChoice",
+      "effects": null,
+      "stochastic": true,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:mivd:a",
+      "kind": "dilemma",
+      "label": "Quiet patch + silence",
+      "oldText": "Dependence -1 · Parliament +3 · citizens suspicious",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "dep": -1,
+        "trustP": 3
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": true
+    },
+    {
+      "id": "dilemma:mivd:b",
+      "kind": "dilemma",
+      "label": "Go public, full transparency",
+      "oldText": "Citizens +5 · Parliament -4 · attackers now know you know (+1 dep)",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "trustC": 5,
+        "trustP": -4,
+        "dep": 1
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:longcovid:a",
+      "kind": "dilemma",
+      "label": "Open a dedicated Long COVID clinic",
+      "oldText": "-€70K · Citizens +6 · Doctors +3 · sick -0.8%",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "budget": -70000,
+        "trustC": 6,
+        "trustD": 3,
+        "sick": -0.008
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:longcovid:b",
+      "kind": "dilemma",
+      "label": "Route them through existing GPs",
+      "oldText": "Citizens -4 · Doctors -3 (overloaded) · sick +1%",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "trustC": -4,
+        "trustD": -3,
+        "sick": 0.01
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:longcovid:c",
+      "kind": "dilemma",
+      "label": "Commission a national research study first",
+      "oldText": "Citizens -2 (delay) · Parliament +2 (responsible)",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "trustC": -2,
+        "trustP": 2
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:refugees:a",
+      "kind": "dilemma",
+      "label": "Extra subsidy per registration",
+      "oldText": "-€40K · Doctors +4 · Citizens +3 · slight demand rise",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "budget": -40000,
+        "trustD": 4,
+        "trustC": 3,
+        "sick": 0.005
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:refugees:b",
+      "kind": "dilemma",
+      "label": "Mandatory intake, no extra funding",
+      "oldText": "Doctors -5 (furious) · Citizens +2 (solidarity)",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "trustD": -5,
+        "trustC": 2
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:refugees:c",
+      "kind": "dilemma",
+      "label": "Refer to regional asylum health service",
+      "oldText": "Cammelot off the hook · Citizens -3 · Parliament +2",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "trustC": -3,
+        "trustP": 2
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:nzatariff:a",
+      "kind": "dilemma",
+      "label": "Top up the full 40%",
+      "oldText": "-€55K · Doctors +5 · Saturday access maintained",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "budget": -55000,
+        "trustD": 5
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:nzatariff:b",
+      "kind": "dilemma",
+      "label": "Offer 20%, negotiate the rest",
+      "oldText": "50/50: deal at -€28K (Doctors +2) or capacity -0.5/week, Doctors -4",
+      "path": "choicePlan → applyChoice",
+      "effects": null,
+      "stochastic": true,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:nzatariff:c",
+      "kind": "dilemma",
+      "label": "Reject: not a municipal responsibility",
+      "oldText": "Doctors -6 · Parliament +3 (fiscal discipline)",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "trustD": -6,
+        "trustP": 3
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:gpstrike:a",
+      "kind": "dilemma",
+      "label": "Emergency mediator, grant a 10% bonus",
+      "oldText": "-€45K · Doctors +8 · Citizens +2 · sick -1%",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "budget": -45000,
+        "trustD": 8,
+        "trustC": 2,
+        "sick": -0.01
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:gpstrike:b",
+      "kind": "dilemma",
+      "label": "Publicly condemn the strike",
+      "oldText": "Doctors -10 · Citizens -3 · Parliament +4",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "trustD": -10,
+        "trustC": -3,
+        "trustP": 4
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:gpstrike:c",
+      "kind": "dilemma",
+      "label": "Let it run, wait them out",
+      "oldText": "Sick +2% (ongoing) · Citizens -5 · Doctors -6 after 1 model week (4 ticks); canceled if term ends first",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "sick": 0.02,
+        "trustC": -5
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": true
+    },
+    {
+      "id": "dilemma:mantelzorg:a",
+      "kind": "dilemma",
+      "label": "Formalise: pay informal carers a stipend",
+      "oldText": "-€25K · Citizens +5 · Carer pressure -10",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "budget": -25000,
+        "trustC": 5,
+        "mantelzorg": -10
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:mantelzorg:b",
+      "kind": "dilemma",
+      "label": "Redirect to community networks (neighbours, faith groups)",
+      "oldText": "Carer pressure +10 · Citizens -3 (feel abandoned)",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "mantelzorg": 10,
+        "trustC": -3
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:mantelzorg:c",
+      "kind": "dilemma",
+      "label": "Pilot: respite care slots within existing budget",
+      "oldText": "-€12K · Doctors +2 · Citizens +3 · Carer pressure -5",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "budget": -12000,
+        "trustD": 2,
+        "trustC": 3,
+        "mantelzorg": -5
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:buildorbuy:a",
+      "kind": "dilemma",
+      "label": "Buy the startup tool, deploy fast",
+      "oldText": "-€40K/yr · Parliament +3 (decisive) · Fragmentation +2",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "budget": -40000,
+        "trustP": 3,
+        "frag": 2
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:buildorbuy:b",
+      "kind": "dilemma",
+      "label": "Build in-house, own the data",
+      "oldText": "-€70K · Doctors +2 now · 18-month delay then: Doctors +3, Admin -3%",
+      "path": "choicePlan → applyChoice",
+      "effects": null,
+      "stochastic": false,
+      "planned": true,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:buildorbuy:c",
+      "kind": "dilemma",
+      "label": "Require platform-first: no tool without shared data access",
+      "oldText": "If platform built: Frag -1, Doctors +3, -€40K · If no platform: Parliament -2",
+      "path": "choicePlan → applyChoice",
+      "effects": null,
+      "stochastic": false,
+      "planned": false,
+      "conditional": true,
+      "callback": false
+    },
+    {
+      "id": "dilemma:phddata:a",
+      "kind": "dilemma",
+      "label": "Grant full access — science matters",
+      "oldText": "Parliament +3 (open science) · Fragmentation +1 (another external data consumer)",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "trustP": 3,
+        "frag": 1
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:phddata:b",
+      "kind": "dilemma",
+      "label": "Refuse — patient data stays local",
+      "oldText": "Parliament -3 · Citizens +2 (trust their data stays private)",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "trustP": -3,
+        "trustC": 2
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:phddata:c",
+      "kind": "dilemma",
+      "label": "Grant access only via federated query — data stays, insights travel",
+      "oldText": "If platform: Parliament +4, Doctors +2 · If no platform: Parliament -1",
+      "path": "choicePlan → applyChoice",
+      "effects": null,
+      "stochastic": false,
+      "planned": false,
+      "conditional": true,
+      "callback": false
+    },
+    {
+      "id": "dilemma:aistartup:a",
+      "kind": "dilemma",
+      "label": "Yes — innovation needs pilots",
+      "oldText": "+€20K · Parliament +2 · Fragmentation +2 (vendor-owned data silo)",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "budget": 20000,
+        "trustP": 2,
+        "frag": 2
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:aistartup:b",
+      "kind": "dilemma",
+      "label": "No — patient data leaving Cammelot is unacceptable",
+      "oldText": "Citizens +3 (data protection) · Parliament -2 (blocking innovation)",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "trustC": 3,
+        "trustP": -2
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "dilemma:aistartup:c",
+      "kind": "dilemma",
+      "label": "Yes, if data residency is Cammelot-controlled",
+      "oldText": "If platform: +€20K, Doctors +2, Frag +1 (managed) · If no platform: Parliament -2",
+      "path": "choicePlan → applyChoice",
+      "effects": null,
+      "stochastic": false,
+      "planned": false,
+      "conditional": true,
+      "callback": false
+    },
+    {
+      "id": "event:lockstep:0",
+      "kind": "event",
+      "label": "Negotiate quietly",
+      "oldText": "-€50K · Parliament -8 (secrecy) · disruption scales with your dependence",
+      "path": "choicePlan → applyChoice",
+      "effects": null,
+      "stochastic": false,
+      "planned": true,
+      "conditional": false,
+      "callback": true
+    },
+    {
+      "id": "event:lockstep:1",
+      "kind": "event",
+      "label": "Refuse and disclose everything",
+      "oldText": "Citizens -8 now, +6 later (honesty) · longer disruption · doctors respect it",
+      "path": "choicePlan → applyChoice",
+      "effects": null,
+      "stochastic": false,
+      "planned": true,
+      "conditional": false,
+      "callback": true
+    },
+    {
+      "id": "event:codeblack:0",
+      "kind": "event",
+      "label": "Push the staff harder",
+      "oldText": "Sick leave +3% for 2 quarters · Doctors -6",
+      "path": "choicePlan → applyChoice",
+      "effects": null,
+      "stochastic": false,
+      "planned": true,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "event:codeblack:1",
+      "kind": "event",
+      "label": "Transfer patients across the region",
+      "oldText": "Drain +15% for a quarter · Citizens -4",
+      "path": "choicePlan → applyChoice",
+      "effects": null,
+      "stochastic": false,
+      "planned": true,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "event:meds:0",
+      "kind": "event",
+      "label": "Therapeutic substitution",
+      "oldText": "GPs spend time switching medication: admin +3% for a quarter",
+      "path": "choicePlan → applyChoice",
+      "effects": null,
+      "stochastic": false,
+      "planned": true,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "event:meds:1",
+      "kind": "event",
+      "label": "Emergency import",
+      "oldText": "-€20K",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "budget": -20000
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "event:meds:2",
+      "kind": "event",
+      "label": "Rationing protocol",
+      "oldText": "Trust -5",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "trust": -5
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "event:gemeenteraad:0",
+      "kind": "event",
+      "label": "Full accountability session — open the books",
+      "oldText": "Parliament +6 · Citizens +2 · signals transparency",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "trustP": 6,
+        "trustC": 2
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": true
+    },
+    {
+      "id": "event:gemeenteraad:1",
+      "kind": "event",
+      "label": "Defend the record, deflect the questions",
+      "oldText": "Parliament −2 · opposition grows louder",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "trustP": -2
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": true
+    },
+    {
+      "id": "event:algodubbelop:0",
+      "kind": "event",
+      "label": "Halt the new tool, mandate integration",
+      "oldText": "Fragmentation -1 · Parliament +2",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "frag": -1,
+        "trustP": 2
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": true
+    },
+    {
+      "id": "event:algodubbelop:1",
+      "kind": "event",
+      "label": "Let both run — clinical choice is valuable",
+      "oldText": "Fragmentation +1 · Admin +2%",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "frag": 1,
+        "admin": 0.02
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": true
+    },
+    {
+      "id": "event:researchgrant:0",
+      "kind": "event",
+      "label": "Quick AI pilot: early sepsis detection",
+      "oldText": "+€30K · Fragmentation +2 · Parliament +3",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "budget": 30000,
+        "frag": 2,
+        "trustP": 3
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": true
+    },
+    {
+      "id": "event:researchgrant:1",
+      "kind": "event",
+      "label": "Platform investment: shared data infrastructure",
+      "oldText": "+€80K · Platform +1 · Fragmentation -2",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "budget": 80000,
+        "platform": 1,
+        "frag": -2
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": true
+    },
+    {
+      "id": "event:researchgrant:2",
+      "kind": "event",
+      "label": "GP recruitment and retention",
+      "oldText": "+€80K · Doctors +5 · +0.5 treatment starts/week",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "budget": 80000,
+        "trustD": 5,
+        "capacity": 0.5
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "event:fasttrack:0",
+      "kind": "event",
+      "label": "Take the deal",
+      "oldText": "Parliament +6 · Fragmentation +2 · Platform AI costs +50% later",
+      "path": "choicePlan → applyChoice",
+      "effects": {
+        "trustP": 6,
+        "frag": 2
+      },
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": true
+    },
+    {
+      "id": "event:fasttrack:1",
+      "kind": "event",
+      "label": "Not now. Stay the course.",
+      "oldText": "Nothing now · Platform dividend fires 2 quarters earlier",
+      "path": "choicePlan → applyChoice",
+      "effects": {},
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": true
+    },
+    {
+      "id": "request:0:a",
+      "kind": "request",
+      "label": "Assign case manager (−€5K)",
+      "oldText": "",
+      "path": "maybeFlash → request click",
+      "effects": null,
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": true
+    },
+    {
+      "id": "request:0:b",
+      "kind": "request",
+      "label": "Keep normal queue",
+      "oldText": "",
+      "path": "maybeFlash → request click",
+      "effects": null,
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": true
+    },
+    {
+      "id": "request:1:a",
+      "kind": "request",
+      "label": "Switch to paper",
+      "oldText": "",
+      "path": "maybeFlash → request click",
+      "effects": null,
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": true
+    },
+    {
+      "id": "request:1:b",
+      "kind": "request",
+      "label": "Continue digitally",
+      "oldText": "",
+      "path": "maybeFlash → request click",
+      "effects": null,
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": true
+    },
+    {
+      "id": "request:2:a",
+      "kind": "request",
+      "label": "Fund insurance (−€3K)",
+      "oldText": "",
+      "path": "maybeFlash → request click",
+      "effects": null,
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": true
+    },
+    {
+      "id": "request:2:b",
+      "kind": "request",
+      "label": "Decline",
+      "oldText": "",
+      "path": "maybeFlash → request click",
+      "effects": null,
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": true
+    },
+    {
+      "id": "request:3:a",
+      "kind": "request",
+      "label": "Emergency courier (−€4K)",
+      "oldText": "",
+      "path": "maybeFlash → request click",
+      "effects": null,
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": true
+    },
+    {
+      "id": "request:3:b",
+      "kind": "request",
+      "label": "Wait for national supply",
+      "oldText": "",
+      "path": "maybeFlash → request click",
+      "effects": null,
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": true
+    },
+    {
+      "id": "request:4:a",
+      "kind": "request",
+      "label": "Confirm the review",
+      "oldText": "",
+      "path": "maybeFlash → request click",
+      "effects": null,
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": true
+    },
+    {
+      "id": "request:4:b",
+      "kind": "request",
+      "label": "Deny the review",
+      "oldText": "",
+      "path": "maybeFlash → request click",
+      "effects": null,
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": true
+    },
+    {
+      "id": "request:5:a",
+      "kind": "request",
+      "label": "Use safe mode",
+      "oldText": "",
+      "path": "maybeFlash → request click",
+      "effects": null,
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": true
+    },
+    {
+      "id": "request:5:b",
+      "kind": "request",
+      "label": "Keep systems online",
+      "oldText": "",
+      "path": "maybeFlash → request click",
+      "effects": null,
+      "stochastic": true,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "request:6:a",
+      "kind": "request",
+      "label": "Discuss retention",
+      "oldText": "",
+      "path": "maybeFlash → request click",
+      "effects": null,
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": true
+    },
+    {
+      "id": "request:6:b",
+      "kind": "request",
+      "label": "Take no action",
+      "oldText": "",
+      "path": "maybeFlash → request click",
+      "effects": null,
+      "stochastic": true,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "request:7:a",
+      "kind": "request",
+      "label": "Fund two weeks (−€4K)",
+      "oldText": "",
+      "path": "maybeFlash → request click",
+      "effects": null,
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": true
+    },
+    {
+      "id": "request:7:b",
+      "kind": "request",
+      "label": "Refer to local service",
+      "oldText": "",
+      "path": "maybeFlash → request click",
+      "effects": null,
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": true
+    },
+    {
+      "id": "beat:digigate:a",
+      "kind": "beat",
+      "label": "digigate a",
+      "oldText": "",
+      "path": "openCouncil → applyChoice → after",
+      "effects": null,
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "beat:digigate:b",
+      "kind": "beat",
+      "label": "digigate b",
+      "oldText": "",
+      "path": "openCouncil → applyChoice → after",
+      "effects": null,
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "beat:archipchallenge:a",
+      "kind": "beat",
+      "label": "archipchallenge a",
+      "oldText": "",
+      "path": "openCouncil → applyChoice → after",
+      "effects": null,
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "beat:archipchallenge:b",
+      "kind": "beat",
+      "label": "archipchallenge b",
+      "oldText": "",
+      "path": "openCouncil → applyChoice → after",
+      "effects": null,
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "vote:promise",
+      "kind": "vote",
+      "label": "promise",
+      "oldText": "",
+      "path": "confidenceVote → vote click",
+      "effects": null,
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "vote:sacrifice",
+      "kind": "vote",
+      "label": "sacrifice",
+      "oldText": "",
+      "path": "confidenceVote → vote click",
+      "effects": null,
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "vote:defy",
+      "kind": "vote",
+      "label": "defy",
+      "oldText": "",
+      "path": "confidenceVote → vote click",
+      "effects": null,
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "promise:waits",
+      "kind": "promise",
+      "label": "Waits ≤8w",
+      "oldText": "",
+      "path": "showManifesto → selection → evaluateElection",
+      "effects": null,
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "promise:nodeaths",
+      "kind": "promise",
+      "label": "<3 deaths",
+      "oldText": "",
+      "path": "showManifesto → selection → evaluateElection",
+      "effects": null,
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "promise:admin",
+      "kind": "promise",
+      "label": "Admin <15%",
+      "oldText": "",
+      "path": "showManifesto → selection → evaluateElection",
+      "effects": null,
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "promise:digital",
+      "kind": "promise",
+      "label": "2+ tech",
+      "oldText": "",
+      "path": "showManifesto → selection → evaluateElection",
+      "effects": null,
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    },
+    {
+      "id": "promise:doctors",
+      "kind": "promise",
+      "label": "Doctors ≥60",
+      "oldText": "",
+      "path": "showManifesto → selection → evaluateElection",
+      "effects": null,
+      "stochastic": false,
+      "planned": false,
+      "conditional": false,
+      "callback": false
+    }
+  ],
+  "counts": {
+    "purchase": 18,
+    "law": 9,
+    "dilemma": 66,
+    "event": 16,
+    "request": 16,
+    "beat": 4,
+    "vote": 3,
+    "promise": 5
+  }
+}
