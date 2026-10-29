@@ -471,6 +471,8 @@ The 20-seed purchase × response matrix is valid for those two dimensions, but i
 
 **Exit:** sampled traces reconstruct every trust and budget change; policies actually enact distinct laws and purchases.
 
+**Status (B01, #52):** done. See `docs/MINISTER_BALANCE_DIAGNOSIS.md`: 1,440 runs, ledger reconciles in all of them; Cabinet Crisis wins 2.9% and is blocked mainly by the model-system-deaths gate (specialist throughput); Full Term reaches Year 10 in 13.6%, blocked mainly by parliament support.
+
 ### 2. Prove Cabinet Crisis has a legitimate winning path
 
 - Build one documented survival policy using only information visible to a player; no direct state mutation or hidden future knowledge.

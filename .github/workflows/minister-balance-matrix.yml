@@ -1,0 +1,84 @@
+name: Minister balance matrix
+
+# Runs the full strategy benchmark (B01/B03/B05) sharded per scenario and seed,
+# then aggregates it with scripts/summarize_minister_balance.cjs.
+on:
+  workflow_dispatch:
+    inputs:
+      seeds:
+        description: Comma-separated seeds
+        default: "1001,1002,1003,1004,1005,1006,1007,1008,1009,1010,1011,1012,1013,1014,1015,1016,1017,1018,1019,1020"
+      scenarios:
+        description: Comma-separated scenarios
+        default: "cabinetcrisis,campaign"
+      label:
+        description: Artifact label
+        default: development
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      seeds: ${{ steps.p.outputs.seeds }}
+      scenarios: ${{ steps.p.outputs.scenarios }}
+    steps:
+      - id: p
+        env:
+          SEEDS: ${{ inputs.seeds }}
+          SCENARIOS: ${{ inputs.scenarios }}
+        run: |
+          echo "seeds=$(jq -cn --arg s "$SEEDS" '$s|split(",")|map(tonumber)')" >> "$GITHUB_OUTPUT"
+          echo "scenarios=$(jq -cn --arg s "$SCENARIOS" '$s|split(",")')" >> "$GITHUB_OUTPUT"
+
+  run:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      max-parallel: 20
+      matrix:
+        seed: ${{ fromJson(needs.plan.outputs.seeds) }}
+        scenario: ${{ fromJson(needs.plan.outputs.scenarios) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: >
+          node scripts/benchmark_minister_strategies.cjs
+          --seeds ${{ matrix.seed }} --scenarios ${{ matrix.scenario }}
+          --concurrency 4 --output out/${{ matrix.scenario }}-${{ matrix.seed }}.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: shard-${{ matrix.scenario }}-${{ matrix.seed }}
+          path: out/*.json
+          retention-days: 30
+
+  aggregate:
+    needs: run
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: shard-*
+          path: shards
+          merge-multiple: true
+      - run: |
+          node scripts/summarize_minister_balance.cjs --output summary.json --markdown summary.md shards/*.json
+          cat summary.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: balance-summary-${{ inputs.label }}
+          path: |
+            summary.json
+            summary.md
+          retention-days: 90
