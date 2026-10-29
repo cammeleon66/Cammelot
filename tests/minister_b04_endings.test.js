@@ -77,7 +77,8 @@ async function readEnding(page) {
         shown: li.querySelector('.moc-gate-actual').textContent, state: li.querySelector('.moc-gate-state').textContent };
     });
     const blocks = [...root.querySelectorAll('.moc-why-block')].map(b => ({ metric: b.dataset.metric, title: b.querySelector('h4').textContent,
-      items: [...b.querySelectorAll('.moc-contrib li')].map(li => li.innerText.replace(/\s+/g, ' ').trim()), recon: b.querySelector('.moc-why-recon')?.textContent || '' }));
+      items: [...b.querySelectorAll('.moc-contrib li')].map(li => li.innerText.replace(/\s+/g, ' ').trim()), recon: b.querySelector('.moc-why-recon')?.textContent || '',
+      distribution: b.querySelector('.moc-why-distribution')?.textContent || '' }));
     return { ending: root.dataset.ending, kind: root.dataset.endingKind, tick: Number(root.dataset.tick), finalTick: GS._finalSnapshot.tick, gates, blocks,
       hint: document.getElementById('moc-why-hint').textContent, care: document.getElementById('moc-why-care').innerText,
       winStamp: !!document.querySelector('#moc-endscreen .moc-stamp.win'), text: root.innerText, modelVersion: MoC.MODEL_VERSION, endReason: GS.endReason,
@@ -165,8 +166,11 @@ test('B04 doctor strike, scandal and budget endings are explained from the final
     assertGatesMatchFinalState(result, 'scandal');
     assert.deepEqual(decidingFailed(result), ['system-deaths-limit']);
     assert.equal(result.gates.find(g => g.id === 'system-deaths-limit').actual, 15);
-    assert.equal(result.blocks.find(b => b.metric === 'deaths').items.length, 1);
-    assert.match(result.hint, /Year 1 \(15\)/);
+    const deathDistribution = result.blocks.find(b => b.metric === 'deaths');
+    assert.equal(deathDistribution.items.length, 1);
+    assert.match(deathDistribution.title, /deaths by year \(distribution\)/i);
+    assert.match(deathDistribution.distribution, /not causal attribution or B01-ledger entries/);
+    assert.match(result.hint, /highest annual count.*Year 1 \(15\).*distribution, not B01-ledger attribution/i);
   });
   await withEnding('cabinetcrisis', async page => {
     await page.evaluate(() => { _mocDebug.applyFx({ budget: -900000 }, 'Spending: Emergency bridge'); _mocForceCouncil(2); });

@@ -15752,7 +15752,7 @@ async function initLLMSubsystem() {
       return 'The largest recorded cash outflow was \u201c' + top.cause + '\u201d (\u2212' + euroAmount(Math.abs(top.amount)) + '). A same-seed replay with a different spending order would show its effect.';
     }
     if (g.metric === 'deaths' && top) {
-      return 'Most model system deaths were recorded in ' + top.cause + ' (' + top.count + '). A same-seed replay with different care capacity choices before then would show whether that count changes.';
+      return 'The highest annual count of model system deaths was in ' + top.cause + ' (' + top.count + '). This is a distribution, not B01-ledger attribution. A same-seed replay with different care capacity choices could test whether that count changes.';
     }
     if (g.metric === 'promises' && top) {
       return 'The promise \u201c' + top.cause + '\u201d was not met. A same-seed replay with a different manifesto, or a different plan for that metric, would show the difference.';
@@ -15817,10 +15817,12 @@ async function initLLMSubsystem() {
   function whyContributorHtml(entry){
     const g = entry.gate, c = entry.contributors;
     const name = g.metric === 'budget' ? 'Government cash' : WHY_METRIC_NAMES[g.metric] || g.label;
-    const title = (entry.closest ? 'Largest recorded losses to ' : 'Top 3 contributors to ') + name.toLowerCase() + (entry.closest ? ' (closest margin)' : '');
+    const title = c.kind === 'deaths' ? 'Model system deaths by year (distribution)' :
+      (entry.closest ? 'Largest recorded losses to ' : 'Top 3 contributors to ') + name.toLowerCase() + (entry.closest ? ' (closest margin)' : '');
     let h = '<div class="moc-why-block" data-metric="' + g.metric + '"><h4 class="moc-why-sub">' + escapeResultText(title) + '</h4>';
     if (!c.items.length) {
-      h += '<p class="moc-sub moc-why-empty">' + (c.kind === 'ledger' ? 'No recorded losses to this metric.' : 'No contributors are recorded for this gate.') + '</p>';
+      h += '<p class="moc-sub moc-why-empty">' + (c.kind === 'ledger' ? 'No recorded losses to this metric.' :
+        c.kind === 'deaths' ? 'No model system deaths are recorded in the year distribution.' : 'No contributors are recorded for this gate.') + '</p>';
     } else {
       h += '<ol class="moc-contrib">' + c.items.map(function(item){
         const value = item.unmet ? 'not met' : item.stage ? 'stage ' + item.stage : item.deaths ? item.count + ' death' + (item.count === 1 ? '' : 's')
@@ -15828,6 +15830,7 @@ async function initLLMSubsystem() {
         return '<li><span>' + escapeResultText(item.cause) + (item.count > 1 && !item.deaths ? ' <i>(' + item.count + ' changes)</i>' : '') + '</span><b>' + escapeResultText(value) + '</b></li>';
       }).join('') + '</ol>';
     }
+    if (c.kind === 'deaths') h += '<p class="moc-sub moc-why-distribution">Annual counts show when deaths were recorded; they are not causal attribution or B01-ledger entries.</p>';
     if (c.kind === 'ledger') {
       const fmt = c.money ? euroAmount : whyNumber;
       const signed = c.money ? (c.recorded >= 0 ? '+' : '\u2212') + euroAmount(Math.abs(c.recorded)) : whySigned(c.recorded);

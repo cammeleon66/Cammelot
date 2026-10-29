@@ -13,9 +13,9 @@ A section directly under the political outcome explains the ending from the **fi
 | Part | Source |
 |---|---|
 | Deciding gates, `actual / required needed`, MET / NOT MET | Final trust scores, model system deaths, government cash, crisis-escalation stage, promises and the live `evaluateElection()` gates |
-| Top 3 contributors to the failed metric | Trust: an in-game trust ledger (below). Cash: the existing treasury ledger. Deaths: model system deaths per model year. Promises, cascade and household gates list the unmet items |
+| Top 3 contributors to the failed metric | Trust: an in-game trust ledger (below). Cash: the existing treasury ledger. Deaths: a distribution of model system deaths grouped by year, not causal attribution or B01-ledger contributors. Promises, cascade and household gates list the unmet items |
 | Care outcome vs same-seed no-action reference | `MoC.care.compare` against `MoC.referenceAt(finalTick)`; shows “pending or unavailable. No benefit claimed” until a matched reference exists, then refreshes with the existing late-reference path |
-| One “what you could try” hint | One sentence chosen from the largest recorded contributor (or the closest margin after a win). It states a same-seed replay could test a different choice; it makes no claim that the change would help |
+| One “what you could try” hint | One sentence chosen from the largest recorded contributor, largest annual death count, or closest margin after a win. It states a same-seed replay could test a different choice; it makes no claim that the change would help |
 
 Gates by ending:
 
