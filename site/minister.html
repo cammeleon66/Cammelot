@@ -13130,7 +13130,8 @@ async function initLLMSubsystem() {
   // Authored political response to deaths; the final-vote death cap remains independent.
   function deathTrustImpact(deaths){
     const count=Number.isFinite(deaths)?Math.max(0,Math.floor(deaths)):0;
-    return {citizens:-2*count,doctors:-count,parliament:-count};
+    const loss=count===0?0:-count;
+    return {citizens:2*loss,doctors:loss,parliament:loss};
   }
   MoC.deathTrustImpact=deathTrustImpact;
   function syncTrustAvg(){
