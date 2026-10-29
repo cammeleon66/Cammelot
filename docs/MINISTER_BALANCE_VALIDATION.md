@@ -35,12 +35,18 @@ with no holdout-driven changes.
   final vote when held and an explicitly labelled ending-state projection when
   a run ends before the vote. Win-rate intervals are two-sided 95% Wilson
   intervals over the 20 holdout seeds.
+- The 20–40% development target is evaluated descriptively against the point
+  win rate of each named coherent family (`balanced`, `technology-first`,
+  `capacity-first`, and `structural`) in each scenario. The adversarial family
+  and no-laws governance control are reported, not required to meet that
+  target. Year 10 is considered reachable if at least one coherent Full Term
+  run reaches `served` at tick 2,080.
 - No model parameters, strategy rules, clinical coefficients, or paired
   reference behavior will be changed in response to these results.
 
-The family clarification was made after checking the runner's available
-policies but before reviewing any holdout outcomes. It does not change the
-seed list or the frozen model.
+The family and target clarifications were made after checking the runner's
+available policies but before reviewing any holdout outcomes. They do not
+change the seed list or the frozen model.
 
 The holdout is a predeclared reproducibility sample, not a random sample from
 real-world outcomes or a clinical validation. The complete results and
