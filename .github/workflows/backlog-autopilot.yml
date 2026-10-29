@@ -4,6 +4,12 @@ on:
   schedule:
     - cron: "*/15 * * * *"
   workflow_dispatch:
+  # Scheduled runs are heavily throttled by GitHub; react to events too.
+  workflow_run:
+    workflows: ["Copilot cloud agent", "Minister backlog checks"]
+    types: [completed]
+  pull_request_target:
+    types: [closed]
 
 concurrency:
   group: backlog-autopilot
