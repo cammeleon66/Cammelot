@@ -90,7 +90,7 @@ for n in $QUEUE; do
   if [[ "$(agent_running "$branch")" != "0" ]]; then log "Copilot is working on #$pr"; exit 0; fi
 
   real_commits="$(gh pr view "$pr" -R "$R" --json commits -q '[.commits[]|select(.messageHeadline!="Initial plan")]|length')"
-  open_items="$(jq -r '.body' <<<"$pr_json" | { grep -E '^\s*- \[ \]' || true; } | { grep -viE 'codeql|code review' || true; } | wc -l | tr -d ' ')"
+  open_items="$(jq -r '.body' <<<"$pr_json" | { grep -E '^\s*- \[ \]' || true; } | awk 'length($0) > 90 || tolower($0) !~ /codeql|code review/' | wc -l | tr -d ' ')"
   if [[ "$real_commits" == "0" || "$open_items" != "0" ]]; then
     pings="$(count_marked "$pr" "$CONTINUE_MARK")"
     (( pings >= MAX_PINGS )) && alert "$n" "Copilot stopped $pings times on #$pr with unfinished work ($open_items open checklist items, $real_commits implementation commits)."
