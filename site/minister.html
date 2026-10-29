@@ -12698,7 +12698,7 @@ async function initLLMSubsystem() {
 (function(){
   const GS = MoC.S;
   // Finite resources/queued emergencies change outcomes; earlier versions are incompatible.
-  MoC.MODEL_VERSION = 'minister-care-10-access-time-replay';
+  MoC.MODEL_VERSION = 'minister-care-11-political-trust-balance';
   MoC.REFERENCE_PROTOCOL = 'no-discretionary-action-v1';
   MoC.referencePolicy = MoC.IS_BASELINE;
   MoC.comparisonValidated = true;
@@ -13127,6 +13127,12 @@ async function initLLMSubsystem() {
   // ═══ G6c: STAKEHOLDER TRUST (Citizens / Doctors / Parliament) ═══
   GS.trustC = GS.trust; GS.trustD = GS.trust; GS.trustP = GS.trust;
   function clamp01(v){ return Math.max(0, Math.min(100, v)); }
+  // Authored political response to deaths; the final-vote death cap remains independent.
+  function deathTrustImpact(deaths){
+    const count=Number.isFinite(deaths)?Math.max(0,Math.floor(deaths)):0;
+    return {citizens:-2*count,doctors:-count,parliament:-count};
+  }
+  MoC.deathTrustImpact=deathTrustImpact;
   function syncTrustAvg(){
     GS.trust = Math.round((GS.trustC + GS.trustD + GS.trustP) / 3);
     window._mocTrustC = GS.trustC; // world renderer reads this for citizen moods
@@ -14851,7 +14857,10 @@ async function initLLMSubsystem() {
     const sdNow = systemDeaths();
     const newDeaths = sdNow - (GS._sdLastQ || 0);
     GS._sdLastQ = sdNow;
-    if (newDeaths > 0) adjustStakeholders(-4 * newDeaths, -1 * newDeaths, -2 * newDeaths);
+    if (newDeaths > 0) {
+      const impact=deathTrustImpact(newDeaths);
+      adjustStakeholders(impact.citizens,impact.doctors,impact.parliament);
+    }
     else adjustStakeholders(1, 1, 1);
     // Doctors: workload pressure — but relief is felt too
     if (M.IST.admin > 0.25 && M.IST.sick > 0.09) adjustStakeholders(0, -2, 0);

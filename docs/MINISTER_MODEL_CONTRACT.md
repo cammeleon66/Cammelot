@@ -1,6 +1,6 @@
 # Minister model contract
 
-**Status:** Selected engineering target contract; not clinical validation. **Audited baseline:** [`bb6df6490ceb56e68cc8922ae167660ac6079b18`](https://github.com/cammeleon66/Cammelot/commit/bb6df6490ceb56e68cc8922ae167660ac6079b18), model `minister-care-5-rollout`. **Verified deployed model:** `minister-care-10-access-time-replay` ([publication evidence](MINISTER_RELEASE_STATUS.md#verified-model-10-publication)). **Paired-reference protocol:** `no-discretionary-action-v1`.
+**Status:** Selected engineering target contract; not clinical validation. **Audited baseline:** [`bb6df6490ceb56e68cc8922ae167660ac6079b18`](https://github.com/cammeleon66/Cammelot/commit/bb6df6490ceb56e68cc8922ae167660ac6079b18), model `minister-care-5-rollout`. **Verified deployed model:** `minister-care-10-access-time-replay` ([publication evidence](MINISTER_RELEASE_STATUS.md#verified-model-10-publication)); the unreleased B03 worktree successor is documented below. **Paired-reference protocol:** `no-discretionary-action-v1`.
 
 The proposed, non-implementation simulation boundary for R02 is documented in [MINISTER_SIMULATION_BOUNDARY.md](MINISTER_SIMULATION_BOUNDARY.md).
 
@@ -348,6 +348,40 @@ HTML executable fingerprint nevertheless changes: complete command records from
 the previous HTML are rejected by the existing exact-executable replay check.
 Display strings can also occur in recorded context/events; no cross-executable
 record migration or replay-compatibility claim is made.
+
+## Model 11 — political trust balance (B03 working branch)
+
+The unreleased B03 working executable is
+`minister-care-11-political-trust-balance`. This identity supersedes model 10
+for results produced by this branch; it is not evidence that model 11 has been
+published. The paired-reference protocol remains
+`no-discretionary-action-v1`.
+
+The sole outcome-affecting rule change is the quarterly political response to
+new model-system deaths in the player council: citizens -2 trust per death
+(previously -4), doctors -1 (unchanged), and parliament -1 (previously -2).
+The +1-per-group no-new-death response, doctor-workload trust rules, other
+stakeholder effects, trust end conditions, final-vote gates and numeric targets
+are unchanged. This moderates the additional political penalty because deaths
+already count against a separate final-vote death cap, while retaining a
+citizen-first response. These coefficients are authored game rules informed by
+the B01 within-model trust ledger, not empirically estimated effects; the
+rationale and selected-seed results are recorded in
+[`MINISTER_BALANCE_REDESIGN.md`](MINISTER_BALANCE_REDESIGN.md).
+
+No care mechanism or care parameter changed: mortality, deterioration, routine
+or emergency capacity, treatment resources, the 12-week authored threshold,
+scenario clocks, external schedule, RNG, and paired-reference execution are
+unchanged. The reference protocol and no-action policy are unchanged. Identical
+outcomes are not guaranteed for discretionary player runs because revised
+political state can change which policies remain affordable or available.
+
+Model-10 and earlier leaderboard rows remain historical and are excluded from
+model-11 queries by the existing model-version filter; no migration or
+cross-version ranking is performed. Replay records from model 10 are refused
+by model-version and executable-identity checks, not rewritten to model 11.
+Model-11 records require the exact matching executable. The shared
+`minister-model-core.js` did not change, so its SRI value is unchanged.
 
 ## Glossary
 
