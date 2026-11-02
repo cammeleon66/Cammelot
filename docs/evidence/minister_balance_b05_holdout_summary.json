@@ -1,0 +1,869 @@
+{
+  "generatedAt": "2026-11-02T12:10:15.117Z",
+  "sources": [
+    {
+      "file": "shards/cabinetcrisis-3001.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:18:45.066Z"
+    },
+    {
+      "file": "shards/cabinetcrisis-3002.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:18:10.906Z"
+    },
+    {
+      "file": "shards/cabinetcrisis-3003.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:18:46.623Z"
+    },
+    {
+      "file": "shards/cabinetcrisis-3004.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:18:19.407Z"
+    },
+    {
+      "file": "shards/cabinetcrisis-3005.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:18:29.791Z"
+    },
+    {
+      "file": "shards/cabinetcrisis-3006.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:18:13.602Z"
+    },
+    {
+      "file": "shards/cabinetcrisis-3007.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:17:31.946Z"
+    },
+    {
+      "file": "shards/cabinetcrisis-3008.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:18:04.439Z"
+    },
+    {
+      "file": "shards/cabinetcrisis-3009.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:17:53.909Z"
+    },
+    {
+      "file": "shards/cabinetcrisis-3010.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:19:12.738Z"
+    },
+    {
+      "file": "shards/cabinetcrisis-3011.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:25:47.470Z"
+    },
+    {
+      "file": "shards/cabinetcrisis-3012.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:24:48.915Z"
+    },
+    {
+      "file": "shards/cabinetcrisis-3013.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:25:33.432Z"
+    },
+    {
+      "file": "shards/cabinetcrisis-3014.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:26:09.845Z"
+    },
+    {
+      "file": "shards/cabinetcrisis-3015.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:25:51.040Z"
+    },
+    {
+      "file": "shards/cabinetcrisis-3016.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:30:58.581Z"
+    },
+    {
+      "file": "shards/cabinetcrisis-3017.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:33:53.395Z"
+    },
+    {
+      "file": "shards/cabinetcrisis-3018.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:32:49.764Z"
+    },
+    {
+      "file": "shards/cabinetcrisis-3019.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:39:58.346Z"
+    },
+    {
+      "file": "shards/cabinetcrisis-3020.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:41:15.312Z"
+    },
+    {
+      "file": "shards/campaign-3001.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T11:15:43.394Z"
+    },
+    {
+      "file": "shards/campaign-3002.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:39:29.706Z"
+    },
+    {
+      "file": "shards/campaign-3003.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:59:48.721Z"
+    },
+    {
+      "file": "shards/campaign-3004.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:51:22.362Z"
+    },
+    {
+      "file": "shards/campaign-3005.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:40:08.853Z"
+    },
+    {
+      "file": "shards/campaign-3006.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:27:58.240Z"
+    },
+    {
+      "file": "shards/campaign-3007.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:59:37.992Z"
+    },
+    {
+      "file": "shards/campaign-3008.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:42:06.315Z"
+    },
+    {
+      "file": "shards/campaign-3009.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:40:24.296Z"
+    },
+    {
+      "file": "shards/campaign-3010.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T11:15:57.449Z"
+    },
+    {
+      "file": "shards/campaign-3011.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:40:07.121Z"
+    },
+    {
+      "file": "shards/campaign-3012.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T11:09:47.376Z"
+    },
+    {
+      "file": "shards/campaign-3013.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:37:47.765Z"
+    },
+    {
+      "file": "shards/campaign-3014.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:39:59.870Z"
+    },
+    {
+      "file": "shards/campaign-3015.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T11:34:59.041Z"
+    },
+    {
+      "file": "shards/campaign-3016.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T11:20:37.466Z"
+    },
+    {
+      "file": "shards/campaign-3017.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T11:01:06.371Z"
+    },
+    {
+      "file": "shards/campaign-3018.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:53:29.534Z"
+    },
+    {
+      "file": "shards/campaign-3019.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:53:58.181Z"
+    },
+    {
+      "file": "shards/campaign-3020.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T11:57:05.650Z"
+    }
+  ],
+  "scenarios": {
+    "cabinetcrisis": {
+      "seeds": [
+        3001,
+        3002,
+        3003,
+        3004,
+        3005,
+        3006,
+        3007,
+        3008,
+        3009,
+        3010,
+        3011,
+        3012,
+        3013,
+        3014,
+        3015,
+        3016,
+        3017,
+        3018,
+        3019,
+        3020
+      ],
+      "runs": 720,
+      "wins": 170,
+      "winRate": 0.2361111111111111,
+      "completedHorizon": 695,
+      "finalVoteHeld": 695,
+      "noActionReference": {
+        "runs": 20,
+        "wins": 0
+      },
+      "endReasons": {
+        "election": 525,
+        "served": 170,
+        "noconfidence": 20,
+        "protest": 5
+      },
+      "endings": {
+        "LOST ELECTION": 525,
+        "TERM COMPLETED": 170,
+        "REMOVED BY PARLIAMENT": 20,
+        "TERM ENDED BY PUBLIC PROTEST": 5
+      },
+      "gateFailures": {
+        "model-system-deaths": 490,
+        "parliament-support": 222,
+        "citizen-trust": 141,
+        "doctor-trust": 5
+      },
+      "onlyFailingGate": {
+        "parliament-support": 48,
+        "model-system-deaths": 260,
+        "citizen-trust": 4
+      },
+      "endingTick": {
+        "min": 312,
+        "median": 416,
+        "max": 416
+      },
+      "meanSystemDeaths": 7.1097222222222225,
+      "meanTreatments": 1.3652777777777778,
+      "runsWithZeroTreatments": 228,
+      "meanTrustLossPerRun": {
+        "simulation:doctors": 18.35,
+        "simulation:parliament": 17.44,
+        "simulation:citizens": 16.45,
+        "event:parliament": 4.11,
+        "response:citizens": 2.64,
+        "response:doctors": 1.74,
+        "event:doctors": 1.41,
+        "event:citizens": 1.39,
+        "response:parliament": 0.8,
+        "law:citizens": 0.5,
+        "law:doctors": 0.5,
+        "law:parliament": 0.5,
+        "cascade:doctors": 0.03,
+        "cascade:parliament": 0.03,
+        "cascade:citizens": 0.01
+      },
+      "meanTrustGainPerRun": {
+        "purchase:doctors": 17.03,
+        "response:doctors": 7.51,
+        "response:citizens": 5.8,
+        "response:parliament": 4.05,
+        "law:parliament": 3.88,
+        "purchase:citizens": 3.65,
+        "simulation:parliament": 2.58,
+        "simulation:doctors": 2.45,
+        "simulation:citizens": 2.34,
+        "event:doctors": 1.77,
+        "law:doctors": 1.25,
+        "event:parliament": 1.01,
+        "event:citizens": 0.98,
+        "purchase:parliament": 0.62,
+        "law:citizens": 0.61
+      },
+      "ledgerMismatches": 0,
+      "axes": {
+        "purchasePolicy": {
+          "balanced": {
+            "runs": 240,
+            "wins": 41
+          },
+          "capacity-first": {
+            "runs": 240,
+            "wins": 58
+          },
+          "structural": {
+            "runs": 240,
+            "wins": 71
+          }
+        },
+        "responsePolicy": {
+          "trust-first": {
+            "runs": 240,
+            "wins": 62
+          },
+          "budget-first": {
+            "runs": 240,
+            "wins": 51
+          },
+          "care-first": {
+            "runs": 240,
+            "wins": 57
+          }
+        },
+        "governancePolicy": {
+          "no-laws": {
+            "runs": 180,
+            "wins": 19
+          },
+          "parliament-first": {
+            "runs": 180,
+            "wins": 54
+          },
+          "care-bottleneck": {
+            "runs": 180,
+            "wins": 38
+          },
+          "resilience-first": {
+            "runs": 180,
+            "wins": 59
+          }
+        }
+      },
+      "policies": {
+        "capacity-first/budget-first/parliament-first": {
+          "runs": 20,
+          "wins": 7,
+          "completed": 20
+        },
+        "capacity-first/budget-first/resilience-first": {
+          "runs": 20,
+          "wins": 7,
+          "completed": 20
+        },
+        "capacity-first/care-first/resilience-first": {
+          "runs": 20,
+          "wins": 7,
+          "completed": 20
+        },
+        "capacity-first/trust-first/parliament-first": {
+          "runs": 20,
+          "wins": 7,
+          "completed": 20
+        },
+        "capacity-first/trust-first/resilience-first": {
+          "runs": 20,
+          "wins": 7,
+          "completed": 20
+        },
+        "structural/budget-first/parliament-first": {
+          "runs": 20,
+          "wins": 7,
+          "completed": 20
+        },
+        "structural/budget-first/resilience-first": {
+          "runs": 20,
+          "wins": 7,
+          "completed": 20
+        },
+        "structural/care-first/parliament-first": {
+          "runs": 20,
+          "wins": 7,
+          "completed": 20
+        },
+        "structural/care-first/resilience-first": {
+          "runs": 20,
+          "wins": 7,
+          "completed": 20
+        },
+        "structural/trust-first/care-bottleneck": {
+          "runs": 20,
+          "wins": 7,
+          "completed": 20
+        },
+        "structural/trust-first/parliament-first": {
+          "runs": 20,
+          "wins": 7,
+          "completed": 20
+        },
+        "structural/trust-first/resilience-first": {
+          "runs": 20,
+          "wins": 7,
+          "completed": 20
+        },
+        "balanced/budget-first/resilience-first": {
+          "runs": 20,
+          "wins": 6,
+          "completed": 20
+        },
+        "balanced/trust-first/resilience-first": {
+          "runs": 20,
+          "wins": 6,
+          "completed": 20
+        },
+        "capacity-first/care-first/parliament-first": {
+          "runs": 20,
+          "wins": 6,
+          "completed": 20
+        },
+        "capacity-first/trust-first/care-bottleneck": {
+          "runs": 20,
+          "wins": 6,
+          "completed": 19
+        },
+        "structural/care-first/care-bottleneck": {
+          "runs": 20,
+          "wins": 6,
+          "completed": 20
+        },
+        "balanced/care-first/resilience-first": {
+          "runs": 20,
+          "wins": 5,
+          "completed": 20
+        },
+        "balanced/trust-first/parliament-first": {
+          "runs": 20,
+          "wins": 5,
+          "completed": 20
+        },
+        "structural/budget-first/care-bottleneck": {
+          "runs": 20,
+          "wins": 5,
+          "completed": 20
+        },
+        "structural/care-first/no-laws": {
+          "runs": 20,
+          "wins": 5,
+          "completed": 20
+        },
+        "structural/trust-first/no-laws": {
+          "runs": 20,
+          "wins": 5,
+          "completed": 20
+        },
+        "balanced/budget-first/parliament-first": {
+          "runs": 20,
+          "wins": 4,
+          "completed": 20
+        },
+        "balanced/care-first/parliament-first": {
+          "runs": 20,
+          "wins": 4,
+          "completed": 20
+        },
+        "capacity-first/care-first/care-bottleneck": {
+          "runs": 20,
+          "wins": 4,
+          "completed": 18
+        },
+        "balanced/trust-first/care-bottleneck": {
+          "runs": 20,
+          "wins": 3,
+          "completed": 19
+        },
+        "capacity-first/budget-first/care-bottleneck": {
+          "runs": 20,
+          "wins": 3,
+          "completed": 19
+        },
+        "balanced/budget-first/care-bottleneck": {
+          "runs": 20,
+          "wins": 2,
+          "completed": 17
+        },
+        "balanced/care-first/care-bottleneck": {
+          "runs": 20,
+          "wins": 2,
+          "completed": 19
+        },
+        "balanced/care-first/no-laws": {
+          "runs": 20,
+          "wins": 2,
+          "completed": 18
+        },
+        "capacity-first/care-first/no-laws": {
+          "runs": 20,
+          "wins": 2,
+          "completed": 20
+        },
+        "balanced/budget-first/no-laws": {
+          "runs": 20,
+          "wins": 1,
+          "completed": 16
+        },
+        "balanced/trust-first/no-laws": {
+          "runs": 20,
+          "wins": 1,
+          "completed": 17
+        },
+        "capacity-first/budget-first/no-laws": {
+          "runs": 20,
+          "wins": 1,
+          "completed": 15
+        },
+        "capacity-first/trust-first/no-laws": {
+          "runs": 20,
+          "wins": 1,
+          "completed": 20
+        },
+        "structural/budget-first/no-laws": {
+          "runs": 20,
+          "wins": 1,
+          "completed": 18
+        }
+      }
+    },
+    "campaign": {
+      "seeds": [
+        3001,
+        3002,
+        3003,
+        3004,
+        3005,
+        3006,
+        3007,
+        3008,
+        3009,
+        3010,
+        3011,
+        3012,
+        3013,
+        3014,
+        3015,
+        3016,
+        3017,
+        3018,
+        3019,
+        3020
+      ],
+      "runs": 720,
+      "wins": 192,
+      "winRate": 0.26666666666666666,
+      "completedHorizon": 192,
+      "finalVoteHeld": 641,
+      "noActionReference": {
+        "runs": 20,
+        "wins": 0
+      },
+      "endReasons": {
+        "election": 445,
+        "served": 192,
+        "scandal": 79,
+        "noconfidence": 4
+      },
+      "endings": {
+        "LOST ELECTION": 445,
+        "TERM COMPLETED": 192,
+        "RESIGNED": 79,
+        "REMOVED BY PARLIAMENT": 4
+      },
+      "gateFailures": {
+        "model-system-deaths": 451,
+        "citizen-trust": 183,
+        "promises-kept": 161,
+        "parliament-support": 160,
+        "stage-3-cascade": 17,
+        "doctor-trust": 2
+      },
+      "onlyFailingGate": {
+        "model-system-deaths": 212,
+        "citizen-trust": 30,
+        "promises-kept": 69,
+        "parliament-support": 27,
+        "stage-3-cascade": 1
+      },
+      "endingTick": {
+        "min": 572,
+        "median": 988,
+        "max": 2080
+      },
+      "meanSystemDeaths": 10.6,
+      "meanTreatments": 3.720833333333333,
+      "runsWithZeroTreatments": 59,
+      "meanTrustLossPerRun": {
+        "simulation:doctors": 27.64,
+        "simulation:citizens": 27.11,
+        "simulation:parliament": 22.74,
+        "response:citizens": 8.1,
+        "event:parliament": 8.06,
+        "response:doctors": 5.72,
+        "event:citizens": 4.85,
+        "event:doctors": 4.6,
+        "response:parliament": 3.21,
+        "law:citizens": 0.88,
+        "law:doctors": 0.88,
+        "law:parliament": 0.88,
+        "cascade:doctors": 0.11,
+        "cascade:citizens": 0.1,
+        "cascade:parliament": 0.1
+      },
+      "meanTrustGainPerRun": {
+        "purchase:doctors": 24.52,
+        "simulation:parliament": 21.31,
+        "simulation:doctors": 16.16,
+        "response:doctors": 15.62,
+        "simulation:citizens": 14.92,
+        "response:citizens": 12.12,
+        "event:parliament": 9.6,
+        "response:parliament": 9.12,
+        "purchase:citizens": 6.27,
+        "law:parliament": 4.99,
+        "event:doctors": 4.45,
+        "event:citizens": 2.61,
+        "law:doctors": 1.96,
+        "law:citizens": 0.99,
+        "purchase:parliament": 0.93
+      },
+      "ledgerMismatches": 0,
+      "axes": {
+        "purchasePolicy": {
+          "balanced": {
+            "runs": 240,
+            "wins": 75
+          },
+          "capacity-first": {
+            "runs": 240,
+            "wins": 54
+          },
+          "structural": {
+            "runs": 240,
+            "wins": 63
+          }
+        },
+        "responsePolicy": {
+          "trust-first": {
+            "runs": 240,
+            "wins": 69
+          },
+          "budget-first": {
+            "runs": 240,
+            "wins": 61
+          },
+          "care-first": {
+            "runs": 240,
+            "wins": 62
+          }
+        },
+        "governancePolicy": {
+          "no-laws": {
+            "runs": 180,
+            "wins": 47
+          },
+          "parliament-first": {
+            "runs": 180,
+            "wins": 44
+          },
+          "care-bottleneck": {
+            "runs": 180,
+            "wins": 35
+          },
+          "resilience-first": {
+            "runs": 180,
+            "wins": 66
+          }
+        }
+      },
+      "policies": {
+        "balanced/care-first/resilience-first": {
+          "runs": 20,
+          "wins": 11,
+          "completed": 11
+        },
+        "balanced/trust-first/resilience-first": {
+          "runs": 20,
+          "wins": 11,
+          "completed": 11
+        },
+        "balanced/budget-first/resilience-first": {
+          "runs": 20,
+          "wins": 8,
+          "completed": 8
+        },
+        "balanced/trust-first/no-laws": {
+          "runs": 20,
+          "wins": 8,
+          "completed": 8
+        },
+        "balanced/budget-first/no-laws": {
+          "runs": 20,
+          "wins": 7,
+          "completed": 7
+        },
+        "balanced/care-first/no-laws": {
+          "runs": 20,
+          "wins": 7,
+          "completed": 7
+        },
+        "capacity-first/budget-first/resilience-first": {
+          "runs": 20,
+          "wins": 7,
+          "completed": 7
+        },
+        "capacity-first/care-first/resilience-first": {
+          "runs": 20,
+          "wins": 7,
+          "completed": 7
+        },
+        "capacity-first/trust-first/resilience-first": {
+          "runs": 20,
+          "wins": 7,
+          "completed": 7
+        },
+        "structural/trust-first/no-laws": {
+          "runs": 20,
+          "wins": 7,
+          "completed": 7
+        },
+        "balanced/budget-first/parliament-first": {
+          "runs": 20,
+          "wins": 6,
+          "completed": 6
+        },
+        "balanced/trust-first/parliament-first": {
+          "runs": 20,
+          "wins": 6,
+          "completed": 6
+        },
+        "capacity-first/trust-first/care-bottleneck": {
+          "runs": 20,
+          "wins": 6,
+          "completed": 6
+        },
+        "structural/budget-first/parliament-first": {
+          "runs": 20,
+          "wins": 6,
+          "completed": 6
+        },
+        "structural/trust-first/parliament-first": {
+          "runs": 20,
+          "wins": 6,
+          "completed": 6
+        },
+        "capacity-first/budget-first/parliament-first": {
+          "runs": 20,
+          "wins": 5,
+          "completed": 5
+        },
+        "capacity-first/care-first/care-bottleneck": {
+          "runs": 20,
+          "wins": 5,
+          "completed": 5
+        },
+        "structural/budget-first/no-laws": {
+          "runs": 20,
+          "wins": 5,
+          "completed": 5
+        },
+        "structural/budget-first/resilience-first": {
+          "runs": 20,
+          "wins": 5,
+          "completed": 5
+        },
+        "structural/care-first/care-bottleneck": {
+          "runs": 20,
+          "wins": 5,
+          "completed": 5
+        },
+        "structural/care-first/no-laws": {
+          "runs": 20,
+          "wins": 5,
+          "completed": 5
+        },
+        "structural/care-first/parliament-first": {
+          "runs": 20,
+          "wins": 5,
+          "completed": 5
+        },
+        "structural/care-first/resilience-first": {
+          "runs": 20,
+          "wins": 5,
+          "completed": 5
+        },
+        "structural/trust-first/care-bottleneck": {
+          "runs": 20,
+          "wins": 5,
+          "completed": 5
+        },
+        "structural/trust-first/resilience-first": {
+          "runs": 20,
+          "wins": 5,
+          "completed": 5
+        },
+        "balanced/care-first/parliament-first": {
+          "runs": 20,
+          "wins": 4,
+          "completed": 4
+        },
+        "capacity-first/budget-first/no-laws": {
+          "runs": 20,
+          "wins": 4,
+          "completed": 4
+        },
+        "structural/budget-first/care-bottleneck": {
+          "runs": 20,
+          "wins": 4,
+          "completed": 4
+        },
+        "balanced/care-first/care-bottleneck": {
+          "runs": 20,
+          "wins": 3,
+          "completed": 3
+        },
+        "balanced/trust-first/care-bottleneck": {
+          "runs": 20,
+          "wins": 3,
+          "completed": 3
+        },
+        "capacity-first/budget-first/care-bottleneck": {
+          "runs": 20,
+          "wins": 3,
+          "completed": 3
+        },
+        "capacity-first/care-first/parliament-first": {
+          "runs": 20,
+          "wins": 3,
+          "completed": 3
+        },
+        "capacity-first/trust-first/parliament-first": {
+          "runs": 20,
+          "wins": 3,
+          "completed": 3
+        },
+        "capacity-first/care-first/no-laws": {
+          "runs": 20,
+          "wins": 2,
+          "completed": 2
+        },
+        "capacity-first/trust-first/no-laws": {
+          "runs": 20,
+          "wins": 2,
+          "completed": 2
+        },
+        "balanced/budget-first/care-bottleneck": {
+          "runs": 20,
+          "wins": 1,
+          "completed": 1
+        }
+      }
+    }
+  }
+}
