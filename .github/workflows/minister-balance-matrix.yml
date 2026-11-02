@@ -14,6 +14,10 @@ on:
       label:
         description: Artifact label
         default: development
+      families:
+        description: Also run the five named strategy families (resilience-first governance)
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -55,6 +59,21 @@ jobs:
           node scripts/benchmark_minister_strategies.cjs
           --seeds ${{ matrix.seed }} --scenarios ${{ matrix.scenario }}
           --concurrency 4 --output out/${{ matrix.scenario }}-${{ matrix.seed }}.json
+      - name: Named strategy families
+        if: inputs.families
+        run: |
+          mkdir -p families
+          for pair in balanced:balanced technology-first:trust-first capacity-first:care-first structural:balanced adversarial:adversarial; do
+            node scripts/benchmark_minister_strategies.cjs --seeds ${{ matrix.seed }} --scenarios ${{ matrix.scenario }} \
+              --purchase-policies "${pair%%:*}" --response-policies "${pair##*:}" --governance-policies resilience-first \
+              --no-repeat-balanced --output "families/${{ matrix.scenario }}-${{ matrix.seed }}-${pair%%:*}.json"
+          done
+      - if: inputs.families
+        uses: actions/upload-artifact@v4
+        with:
+          name: family-${{ matrix.scenario }}-${{ matrix.seed }}
+          path: families/*.json
+          retention-days: 30
       - uses: actions/upload-artifact@v4
         with:
           name: shard-${{ matrix.scenario }}-${{ matrix.seed }}
@@ -75,10 +94,22 @@ jobs:
       - run: |
           node scripts/summarize_minister_balance.cjs --output summary.json --markdown summary.md shards/*.json
           cat summary.md >> "$GITHUB_STEP_SUMMARY"
+      - if: inputs.families
+        uses: actions/download-artifact@v4
+        with:
+          pattern: family-*
+          path: families
+          merge-multiple: true
+      - if: inputs.families
+        run: |
+          node scripts/summarize_minister_balance.cjs --output families-summary.json --markdown families-summary.md families/*.json
+          { echo "## Named families"; cat families-summary.md; } >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         with:
           name: balance-summary-${{ inputs.label }}
           path: |
             summary.json
             summary.md
+            families-summary.json
+            families-summary.md
           retention-days: 90
