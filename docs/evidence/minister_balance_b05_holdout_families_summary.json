@@ -1,0 +1,1348 @@
+{
+  "generatedAt": "2026-11-02T12:10:16.204Z",
+  "sources": [
+    {
+      "file": "families/cabinetcrisis-3001-adversarial.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:20:02.359Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3001-balanced.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:19:00.707Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3001-capacity-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:19:31.386Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3001-structural.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:19:46.913Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3001-technology-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:19:15.919Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3002-adversarial.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:19:20.539Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3002-balanced.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:18:24.669Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3002-capacity-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:18:53.035Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3002-structural.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:19:06.902Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3002-technology-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:18:39.062Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3003-adversarial.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:19:59.308Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3003-balanced.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:19:00.902Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3003-capacity-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:19:30.451Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3003-structural.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:19:45.386Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3003-technology-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:19:15.492Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3004-adversarial.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:19:29.889Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3004-balanced.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:18:33.557Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3004-capacity-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:19:02.459Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3004-structural.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:19:16.614Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3004-technology-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:18:48.434Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3005-adversarial.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:19:40.387Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3005-balanced.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:18:43.711Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3005-capacity-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:19:12.113Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3005-structural.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:19:26.537Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3005-technology-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:18:58.167Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3006-adversarial.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:19:23.816Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3006-balanced.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:18:28.069Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3006-capacity-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:18:55.595Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3006-structural.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:19:10.044Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3006-technology-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:18:41.496Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3007-adversarial.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:18:35.701Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3007-balanced.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:17:44.776Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3007-capacity-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:18:10.078Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3007-structural.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:18:22.971Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3007-technology-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:17:57.166Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3008-adversarial.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:19:10.896Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3008-balanced.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:18:17.767Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3008-capacity-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:18:44.388Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3008-structural.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:18:57.907Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3008-technology-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:18:31.063Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3009-adversarial.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:19:01.452Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3009-balanced.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:18:08.270Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3009-capacity-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:18:35.846Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3009-structural.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:18:49.114Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3009-technology-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:18:22.526Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3010-adversarial.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:20:33.267Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3010-balanced.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:19:29.137Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3010-capacity-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:20:01.481Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3010-structural.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:20:17.727Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3010-technology-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:19:45.749Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3011-adversarial.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:27:11.890Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3011-balanced.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:26:04.753Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3011-capacity-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:26:38.017Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3011-structural.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:26:55.239Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3011-technology-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:26:20.622Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3012-adversarial.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:25:59.034Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3012-balanced.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:25:02.990Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3012-capacity-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:25:30.954Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3012-structural.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:25:45.333Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3012-technology-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:25:16.769Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3013-adversarial.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:26:48.862Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3013-balanced.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:25:49.041Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3013-capacity-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:26:19.343Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3013-structural.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:26:34.358Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3013-technology-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:26:04.313Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3014-adversarial.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:27:31.158Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3014-balanced.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:26:25.996Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3014-capacity-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:26:59.177Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3014-structural.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:27:15.282Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3014-technology-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:26:43.080Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3015-adversarial.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:27:06.799Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3015-balanced.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:26:06.432Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3015-capacity-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:26:36.653Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3015-structural.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:26:51.814Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3015-technology-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:26:21.440Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3016-adversarial.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:32:03.426Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3016-balanced.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:31:11.605Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3016-capacity-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:31:38.033Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3016-structural.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:31:50.818Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3016-technology-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:31:25.077Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3017-adversarial.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:35:18.965Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3017-balanced.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:34:10.099Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3017-capacity-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:34:45.246Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3017-structural.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:35:02.628Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3017-technology-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:34:28.606Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3018-adversarial.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:34:00.623Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3018-balanced.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:33:03.838Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3018-capacity-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:33:32.502Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3018-structural.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:33:46.618Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3018-technology-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:33:18.616Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3019-adversarial.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:41:16.577Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3019-balanced.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:40:13.881Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3019-capacity-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:40:45.553Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3019-structural.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:41:01.179Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3019-technology-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:40:30.180Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3020-adversarial.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:42:32.057Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3020-balanced.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:41:30.603Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3020-capacity-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:42:01.983Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3020-structural.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:42:17.279Z"
+    },
+    {
+      "file": "families/cabinetcrisis-3020-technology-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:41:46.666Z"
+    },
+    {
+      "file": "families/campaign-3001-adversarial.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T11:30:01.185Z"
+    },
+    {
+      "file": "families/campaign-3001-balanced.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T11:19:24.022Z"
+    },
+    {
+      "file": "families/campaign-3001-capacity-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T11:26:59.165Z"
+    },
+    {
+      "file": "families/campaign-3001-structural.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T11:28:31.458Z"
+    },
+    {
+      "file": "families/campaign-3001-technology-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T11:23:14.851Z"
+    },
+    {
+      "file": "families/campaign-3002-adversarial.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:49:53.228Z"
+    },
+    {
+      "file": "families/campaign-3002-balanced.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:43:53.387Z"
+    },
+    {
+      "file": "families/campaign-3002-capacity-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:46:52.849Z"
+    },
+    {
+      "file": "families/campaign-3002-structural.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:48:23.278Z"
+    },
+    {
+      "file": "families/campaign-3002-technology-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:45:24.332Z"
+    },
+    {
+      "file": "families/campaign-3003-adversarial.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T11:10:38.912Z"
+    },
+    {
+      "file": "families/campaign-3003-balanced.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T11:02:34.526Z"
+    },
+    {
+      "file": "families/campaign-3003-capacity-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T11:06:37.948Z"
+    },
+    {
+      "file": "families/campaign-3003-structural.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T11:09:29.691Z"
+    },
+    {
+      "file": "families/campaign-3003-technology-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T11:05:27.108Z"
+    },
+    {
+      "file": "families/campaign-3004-adversarial.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T11:05:27.786Z"
+    },
+    {
+      "file": "families/campaign-3004-balanced.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:55:14.870Z"
+    },
+    {
+      "file": "families/campaign-3004-capacity-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T11:02:40.812Z"
+    },
+    {
+      "file": "families/campaign-3004-structural.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T11:04:04.357Z"
+    },
+    {
+      "file": "families/campaign-3004-technology-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:59:02.447Z"
+    },
+    {
+      "file": "families/campaign-3005-adversarial.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:48:53.498Z"
+    },
+    {
+      "file": "families/campaign-3005-balanced.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:43:24.844Z"
+    },
+    {
+      "file": "families/campaign-3005-capacity-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:46:09.238Z"
+    },
+    {
+      "file": "families/campaign-3005-structural.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:47:30.276Z"
+    },
+    {
+      "file": "families/campaign-3005-technology-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:44:47.564Z"
+    },
+    {
+      "file": "families/campaign-3006-adversarial.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:34:24.331Z"
+    },
+    {
+      "file": "families/campaign-3006-balanced.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:29:18.272Z"
+    },
+    {
+      "file": "families/campaign-3006-capacity-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:31:50.000Z"
+    },
+    {
+      "file": "families/campaign-3006-structural.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:33:06.665Z"
+    },
+    {
+      "file": "families/campaign-3006-technology-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:30:33.931Z"
+    },
+    {
+      "file": "families/campaign-3007-adversarial.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T11:11:22.166Z"
+    },
+    {
+      "file": "families/campaign-3007-balanced.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T11:02:13.375Z"
+    },
+    {
+      "file": "families/campaign-3007-capacity-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T11:05:48.447Z"
+    },
+    {
+      "file": "families/campaign-3007-structural.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T11:08:29.789Z"
+    },
+    {
+      "file": "families/campaign-3007-technology-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T11:03:21.181Z"
+    },
+    {
+      "file": "families/campaign-3008-adversarial.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:49:13.168Z"
+    },
+    {
+      "file": "families/campaign-3008-balanced.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:43:15.834Z"
+    },
+    {
+      "file": "families/campaign-3008-capacity-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:46:55.022Z"
+    },
+    {
+      "file": "families/campaign-3008-structural.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:48:04.214Z"
+    },
+    {
+      "file": "families/campaign-3008-technology-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:45:43.438Z"
+    },
+    {
+      "file": "families/campaign-3009-adversarial.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:46:02.979Z"
+    },
+    {
+      "file": "families/campaign-3009-balanced.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:41:28.531Z"
+    },
+    {
+      "file": "families/campaign-3009-capacity-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:43:48.087Z"
+    },
+    {
+      "file": "families/campaign-3009-structural.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:44:55.621Z"
+    },
+    {
+      "file": "families/campaign-3009-technology-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:42:37.913Z"
+    },
+    {
+      "file": "families/campaign-3010-adversarial.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T11:27:34.097Z"
+    },
+    {
+      "file": "families/campaign-3010-balanced.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T11:18:59.943Z"
+    },
+    {
+      "file": "families/campaign-3010-capacity-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T11:25:02.831Z"
+    },
+    {
+      "file": "families/campaign-3010-structural.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T11:26:18.335Z"
+    },
+    {
+      "file": "families/campaign-3010-technology-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T11:22:04.684Z"
+    },
+    {
+      "file": "families/campaign-3011-adversarial.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:46:47.977Z"
+    },
+    {
+      "file": "families/campaign-3011-balanced.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:41:15.288Z"
+    },
+    {
+      "file": "families/campaign-3011-capacity-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:43:55.325Z"
+    },
+    {
+      "file": "families/campaign-3011-structural.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:45:21.137Z"
+    },
+    {
+      "file": "families/campaign-3011-technology-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:42:43.170Z"
+    },
+    {
+      "file": "families/campaign-3012-adversarial.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T11:20:43.458Z"
+    },
+    {
+      "file": "families/campaign-3012-balanced.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T11:14:01.534Z"
+    },
+    {
+      "file": "families/campaign-3012-capacity-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T11:17:22.237Z"
+    },
+    {
+      "file": "families/campaign-3012-structural.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T11:19:03.814Z"
+    },
+    {
+      "file": "families/campaign-3012-technology-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T11:15:42.651Z"
+    },
+    {
+      "file": "families/campaign-3013-adversarial.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:43:58.756Z"
+    },
+    {
+      "file": "families/campaign-3013-balanced.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:39:00.182Z"
+    },
+    {
+      "file": "families/campaign-3013-capacity-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:41:28.587Z"
+    },
+    {
+      "file": "families/campaign-3013-structural.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:42:42.976Z"
+    },
+    {
+      "file": "families/campaign-3013-technology-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:40:14.709Z"
+    },
+    {
+      "file": "families/campaign-3014-adversarial.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:46:59.497Z"
+    },
+    {
+      "file": "families/campaign-3014-balanced.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:41:24.507Z"
+    },
+    {
+      "file": "families/campaign-3014-capacity-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:44:09.342Z"
+    },
+    {
+      "file": "families/campaign-3014-structural.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:45:26.393Z"
+    },
+    {
+      "file": "families/campaign-3014-technology-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:42:53.642Z"
+    },
+    {
+      "file": "families/campaign-3015-adversarial.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T11:47:42.462Z"
+    },
+    {
+      "file": "families/campaign-3015-balanced.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T11:37:54.190Z"
+    },
+    {
+      "file": "families/campaign-3015-capacity-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T11:43:24.325Z"
+    },
+    {
+      "file": "families/campaign-3015-structural.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T11:46:26.147Z"
+    },
+    {
+      "file": "families/campaign-3015-technology-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T11:40:39.727Z"
+    },
+    {
+      "file": "families/campaign-3016-adversarial.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T11:35:56.851Z"
+    },
+    {
+      "file": "families/campaign-3016-balanced.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T11:24:04.245Z"
+    },
+    {
+      "file": "families/campaign-3016-capacity-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T11:31:16.913Z"
+    },
+    {
+      "file": "families/campaign-3016-structural.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T11:34:35.848Z"
+    },
+    {
+      "file": "families/campaign-3016-technology-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T11:27:58.779Z"
+    },
+    {
+      "file": "families/campaign-3017-adversarial.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T11:15:09.896Z"
+    },
+    {
+      "file": "families/campaign-3017-balanced.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T11:02:46.856Z"
+    },
+    {
+      "file": "families/campaign-3017-capacity-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T11:08:29.373Z"
+    },
+    {
+      "file": "families/campaign-3017-structural.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T11:10:10.180Z"
+    },
+    {
+      "file": "families/campaign-3017-technology-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T11:06:49.418Z"
+    },
+    {
+      "file": "families/campaign-3018-adversarial.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T11:00:35.668Z"
+    },
+    {
+      "file": "families/campaign-3018-balanced.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:54:55.938Z"
+    },
+    {
+      "file": "families/campaign-3018-capacity-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:57:45.827Z"
+    },
+    {
+      "file": "families/campaign-3018-structural.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:59:11.999Z"
+    },
+    {
+      "file": "families/campaign-3018-technology-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:56:22.812Z"
+    },
+    {
+      "file": "families/campaign-3019-adversarial.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T11:00:05.876Z"
+    },
+    {
+      "file": "families/campaign-3019-balanced.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:55:13.271Z"
+    },
+    {
+      "file": "families/campaign-3019-capacity-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:57:40.904Z"
+    },
+    {
+      "file": "families/campaign-3019-structural.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:58:53.285Z"
+    },
+    {
+      "file": "families/campaign-3019-technology-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T10:56:28.217Z"
+    },
+    {
+      "file": "families/campaign-3020-adversarial.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T12:10:01.696Z"
+    },
+    {
+      "file": "families/campaign-3020-balanced.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T11:59:59.425Z"
+    },
+    {
+      "file": "families/campaign-3020-capacity-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T12:05:59.811Z"
+    },
+    {
+      "file": "families/campaign-3020-structural.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T12:08:49.700Z"
+    },
+    {
+      "file": "families/campaign-3020-technology-first.json",
+      "sourceRevision": "59c6fec85535ebca47e840934cb1e30c05fd04ed",
+      "generatedAt": "2026-11-02T12:02:58.862Z"
+    }
+  ],
+  "scenarios": {
+    "cabinetcrisis": {
+      "seeds": [
+        3001,
+        3002,
+        3003,
+        3004,
+        3005,
+        3006,
+        3007,
+        3008,
+        3009,
+        3010,
+        3011,
+        3012,
+        3013,
+        3014,
+        3015,
+        3016,
+        3017,
+        3018,
+        3019,
+        3020
+      ],
+      "runs": 100,
+      "wins": 33,
+      "winRate": 0.33,
+      "completedHorizon": 98,
+      "finalVoteHeld": 98,
+      "noActionReference": {
+        "runs": 100,
+        "wins": 0
+      },
+      "endReasons": {
+        "served": 33,
+        "election": 65,
+        "protest": 2
+      },
+      "endings": {
+        "TERM COMPLETED": 33,
+        "LOST ELECTION": 65,
+        "TERM ENDED BY PUBLIC PROTEST": 2
+      },
+      "gateFailures": {
+        "model-system-deaths": 65,
+        "citizen-trust": 22,
+        "doctor-trust": 5
+      },
+      "onlyFailingGate": {
+        "model-system-deaths": 43,
+        "citizen-trust": 1
+      },
+      "endingTick": {
+        "min": 364,
+        "median": 416,
+        "max": 416
+      },
+      "meanSystemDeaths": 7.1,
+      "meanTreatments": 1.42,
+      "runsWithZeroTreatments": 31,
+      "meanTrustLossPerRun": {
+        "simulation:doctors": 16.92,
+        "simulation:citizens": 16.41,
+        "simulation:parliament": 14.71,
+        "response:citizens": 3.7,
+        "event:parliament": 2.97,
+        "response:doctors": 1.82,
+        "event:citizens": 1.29,
+        "event:doctors": 1.29,
+        "response:parliament": 1.23,
+        "cascade:parliament": 0.04
+      },
+      "meanTrustGainPerRun": {
+        "purchase:doctors": 10.69,
+        "law:parliament": 7.31,
+        "response:doctors": 6.99,
+        "response:citizens": 5.09,
+        "response:parliament": 4.41,
+        "simulation:parliament": 3.72,
+        "simulation:citizens": 3.18,
+        "simulation:doctors": 2.87,
+        "law:doctors": 2.7,
+        "purchase:parliament": 2.61,
+        "purchase:citizens": 2.29,
+        "law:citizens": 2,
+        "event:doctors": 1.88,
+        "event:parliament": 1.28,
+        "event:citizens": 1.16
+      },
+      "ledgerMismatches": 0,
+      "axes": {
+        "purchasePolicy": {
+          "adversarial": {
+            "runs": 20,
+            "wins": 6
+          },
+          "balanced": {
+            "runs": 20,
+            "wins": 6
+          },
+          "capacity-first": {
+            "runs": 20,
+            "wins": 7
+          },
+          "structural": {
+            "runs": 20,
+            "wins": 7
+          },
+          "technology-first": {
+            "runs": 20,
+            "wins": 7
+          }
+        },
+        "responsePolicy": {
+          "adversarial": {
+            "runs": 20,
+            "wins": 6
+          },
+          "balanced": {
+            "runs": 40,
+            "wins": 13
+          },
+          "care-first": {
+            "runs": 20,
+            "wins": 7
+          },
+          "trust-first": {
+            "runs": 20,
+            "wins": 7
+          }
+        },
+        "governancePolicy": {
+          "resilience-first": {
+            "runs": 100,
+            "wins": 33
+          }
+        }
+      },
+      "policies": {
+        "capacity-first/care-first/resilience-first": {
+          "runs": 20,
+          "wins": 7,
+          "completed": 20
+        },
+        "structural/balanced/resilience-first": {
+          "runs": 20,
+          "wins": 7,
+          "completed": 20
+        },
+        "technology-first/trust-first/resilience-first": {
+          "runs": 20,
+          "wins": 7,
+          "completed": 18
+        },
+        "adversarial/adversarial/resilience-first": {
+          "runs": 20,
+          "wins": 6,
+          "completed": 20
+        },
+        "balanced/balanced/resilience-first": {
+          "runs": 20,
+          "wins": 6,
+          "completed": 20
+        }
+      }
+    },
+    "campaign": {
+      "seeds": [
+        3001,
+        3002,
+        3003,
+        3004,
+        3005,
+        3006,
+        3007,
+        3008,
+        3009,
+        3010,
+        3011,
+        3012,
+        3013,
+        3014,
+        3015,
+        3016,
+        3017,
+        3018,
+        3019,
+        3020
+      ],
+      "runs": 100,
+      "wins": 34,
+      "winRate": 0.34,
+      "completedHorizon": 34,
+      "finalVoteHeld": 90,
+      "noActionReference": {
+        "runs": 100,
+        "wins": 0
+      },
+      "endReasons": {
+        "election": 56,
+        "served": 34,
+        "scandal": 10
+      },
+      "endings": {
+        "LOST ELECTION": 56,
+        "TERM COMPLETED": 34,
+        "RESIGNED": 10
+      },
+      "gateFailures": {
+        "model-system-deaths": 58,
+        "citizen-trust": 35,
+        "promises-kept": 29,
+        "stage-3-cascade": 9,
+        "doctor-trust": 5,
+        "parliament-support": 1
+      },
+      "onlyFailingGate": {
+        "promises-kept": 8,
+        "citizen-trust": 6,
+        "model-system-deaths": 25,
+        "stage-3-cascade": 1
+      },
+      "endingTick": {
+        "min": 572,
+        "median": 988,
+        "max": 2080
+      },
+      "meanSystemDeaths": 10.63,
+      "meanTreatments": 3.78,
+      "runsWithZeroTreatments": 10,
+      "meanTrustLossPerRun": {
+        "simulation:citizens": 27.77,
+        "simulation:doctors": 25.33,
+        "simulation:parliament": 20.03,
+        "response:citizens": 11.34,
+        "event:parliament": 6.31,
+        "response:doctors": 5.33,
+        "event:citizens": 5.19,
+        "event:doctors": 4.91,
+        "response:parliament": 4.48,
+        "law:citizens": 1.54,
+        "law:doctors": 1.54,
+        "law:parliament": 1.54,
+        "cascade:doctors": 0.54,
+        "cascade:citizens": 0.51,
+        "cascade:parliament": 0.51
+      },
+      "meanTrustGainPerRun": {
+        "simulation:parliament": 24.16,
+        "simulation:doctors": 20.34,
+        "simulation:citizens": 17.48,
+        "purchase:doctors": 15.43,
+        "response:doctors": 15.36,
+        "event:parliament": 12,
+        "response:citizens": 11.26,
+        "law:parliament": 10,
+        "response:parliament": 9.48,
+        "event:doctors": 4.8,
+        "purchase:citizens": 4.1,
+        "law:doctors": 3.92,
+        "event:citizens": 3.32,
+        "purchase:parliament": 3.3,
+        "law:citizens": 2,
+        "cascade:parliament": 0.05
+      },
+      "ledgerMismatches": 0,
+      "axes": {
+        "purchasePolicy": {
+          "adversarial": {
+            "runs": 20,
+            "wins": 2
+          },
+          "balanced": {
+            "runs": 20,
+            "wins": 11
+          },
+          "capacity-first": {
+            "runs": 20,
+            "wins": 7
+          },
+          "structural": {
+            "runs": 20,
+            "wins": 5
+          },
+          "technology-first": {
+            "runs": 20,
+            "wins": 9
+          }
+        },
+        "responsePolicy": {
+          "adversarial": {
+            "runs": 20,
+            "wins": 2
+          },
+          "balanced": {
+            "runs": 40,
+            "wins": 16
+          },
+          "care-first": {
+            "runs": 20,
+            "wins": 7
+          },
+          "trust-first": {
+            "runs": 20,
+            "wins": 9
+          }
+        },
+        "governancePolicy": {
+          "resilience-first": {
+            "runs": 100,
+            "wins": 34
+          }
+        }
+      },
+      "policies": {
+        "balanced/balanced/resilience-first": {
+          "runs": 20,
+          "wins": 11,
+          "completed": 11
+        },
+        "technology-first/trust-first/resilience-first": {
+          "runs": 20,
+          "wins": 9,
+          "completed": 9
+        },
+        "capacity-first/care-first/resilience-first": {
+          "runs": 20,
+          "wins": 7,
+          "completed": 7
+        },
+        "structural/balanced/resilience-first": {
+          "runs": 20,
+          "wins": 5,
+          "completed": 5
+        },
+        "adversarial/adversarial/resilience-first": {
+          "runs": 20,
+          "wins": 2,
+          "completed": 2
+        }
+      }
+    }
+  }
+}

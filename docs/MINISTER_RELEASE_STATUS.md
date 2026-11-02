@@ -432,7 +432,7 @@ The `github-pages` environment must allow only `feature/agentic-overhaul`. The f
 These improve evidence and quality; they do not mean the currently deployed game or leaderboard is offline.
 
 - [x] Complete the active-copy pass: council newspaper, escalation banners, aging/flu updates and confidence-vote choices now report actual mechanics without invented testimonials or moralizing verdicts.
-- [ ] Complete balance validation: the versioned Cabinet Crisis correction produced 11/400 narrow re-elections (2.75%) across five development seeds and every purchase family; freeze it and validate on unseen holdout seeds.
+- [x] Complete balance validation: B05 holdout (seeds 3001-3020, model `minister-care-11-political-trust-balance`, 1,640 runs) in `docs/MINISTER_BALANCE_VALIDATION.md`. Coherent families win 30-35% of Cabinet Crisis and 25-55% of Full Term; Year 10 is reachable. Open defect: Cabinet Crisis is largely decided by the seed (9/20 seeds unwinnable by every policy) and the adversarial control wins as often as coherent play; see the proposed follow-up there.
 - [x] Reproduce the legacy emergency/GP admission violations, implement finite resources in model 8, and verify publication as recorded above.
 
 ## Human validation
